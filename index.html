@@ -296,10 +296,8 @@ a:hover{text-decoration:underline}
           <h2 style="font-size:16px;color:var(--maroon)">四級勾選架構 + 級聯自動完成</h2>
         </div>
         <div class="level-structure">
-          <div class="level-box"><div class="level-num">L1</div><div class="level-name">會員章</div><div class="level-desc">12項 • 含保護兒童</div></div>
-          <div class="level-box"><div class="level-num">L2</div><div class="level-name">肩章</div><div class="level-desc">23項基礎技能</div></div>
-                    <div class="level-box"><div class="level-num">L1</div><div class="level-name">會員章</div><div class="level-desc">入團3個月內</div></div>
-          <div class="level-box"><div class="level-num">L2</div><div class="level-name">幼童軍獎章</div><div class="level-desc">基本課程</div></div>
+          <div class="level-box"><div class="level-num">L1</div><div class="level-name">會員章</div><div class="level-desc">入團3個月內 • 保護兒童必修</div></div>
+          <div class="level-box"><div class="level-num">L2</div><div class="level-name">幼童軍獎章</div><div class="level-desc">基本課程 • 追蹤繩結郊野守則</div></div>
           <div class="level-box"><div class="level-num">L3</div><div class="level-name">歷奇章</div><div class="level-desc">戶外/運動/幫助</div></div>
           <div class="level-box"><div class="level-num">L4</div><div class="level-name">高級歷奇章</div><div class="level-desc">進階挑戰</div></div>
           <div class="level-box"><div class="level-num">L5</div><div class="level-name">金紫荊獎章</div><div class="level-desc">最高榮譽 PT/68</div></div>
@@ -2186,7 +2184,7 @@ function renderInfoTab(){
         <h4 style="color:var(--maroon);font-size:14px">👨‍💼 領袖 (branch_leader / group_leader / admin / SHEEP) 可以做什麼</h4>
         <ul style="font-size:12px;line-height:1.8;padding-left:16px;color:var(--text-light);margin-top:6px">
           <li>可在「我的進度」選任何成員看其所有紀錄</li>
-          <li>可在「👥全團總覽」一眼睇邊個已完成會員章/肩章等（卡片百分比+會員章✓標籤）</li>
+          <li>可在「👥全團總覽」一眼睇邊個已完成會員章（卡片百分比+會員章✓標籤）</li>
           <li>可使用「🚀考驗營批量完成」：選成員+選項目+日期，一鍵幫全團剔，不用逐個跳轉</li>
           <li>可直接勾選+輸入日期，離線暫存按確認批量寫入，過程有提示</li>
           <li>可在「📝待批」批量批准/拒絕成員申請</li>
@@ -2343,17 +2341,12 @@ function openPermissionModal(ymis, name, role, allowed){
   document.getElementById('permUserName').textContent=`${name} (${ymis}) [${role}]`;
   // badges list
   const badges=[
-    {id:'L1', name:'會員章 (全部12項)'},
-    {id:'L1-CP', name:'會員章-保護兒童 (必修)'},
-    {id:'L2', name:'肩章 (基礎技能23項)'},
-    {id:'L3-SELF', name:'活動策劃段章 (舊自立)'},
-    {id:'L3-RESP', name:'社會服務段章 (舊責任)'},
-    {id:'L3-ACT-SCOUT', name:'多元技能-範疇一 童軍技能'},
-    {id:'L3-ACT-SP', name:'多元技能-範疇二 康樂體育'},
-    {id:'L3-ACT-INT', name:'多元技能-範疇三 新體驗 (個人興趣)'},
-    {id:'L3-EXP', name:'戶外探險段章'},
-    {id:'L5', name:'金紫荊獎章 (幼童軍最高榮譽)'},
-    {id:'L4-ACT', name:'活動策劃金帶/多元技能金帶'},
+    {id:'L1', name:'會員章 (認識自己/小隊/旅團/國家/徽章/森林故事/口號手號/禮儀/童軍大家庭/保護兒童)'},
+    {id:'L2', name:'幼童軍獎章 (追蹤/繩結/郊野守則/日行一善/護理救傷/誓詞規律/童軍大家庭)'},
+    {id:'L3', name:'歷奇章 (戶外活動-地圖/烹飪/繩結必修/指南針/遠足/先鋒/露營 + 運動與愛好 + 幫助他人 + 照顧自己 + 科學大自然)'},
+    {id:'L4', name:'高級歷奇章 (戶外進階-比例尺/生火/繩結Clove/Bowline/指南針Silva/遠足計劃/庇護/過夜露營/營藝)'},
+    {id:'L5', name:'金紫荊獎章 (戶外挑戰-露營必修2晚+遠足6km/先鋒/烹飪選2 + 歷險挑戰甲乙共3項 + 領導才能 + 服務與分享8次8小時) PT/68'},
+    {id:'ACT', name:'活動徽章 (單車/游泳/歷奇/公園定向/地圖閱讀/運動員/風帆/獨木舟/帆船/箭藝/體適能 等最少4個)'},
   ];
   const allowedArr = (allowed==='*'||allowed==='') ? (role==='member'?[]:badges.map(b=>b.id)) : allowed.split(',').map(s=>s.trim()).filter(Boolean);
   // If allowed is * => all checked
