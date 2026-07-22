@@ -1,0 +1,160 @@
+{
+  "meta": {
+    "version": "2026 Cub Pure",
+    "base": "2025年8月擬定簡易版 + 2026 P022-26 過渡",
+    "updated": "2026-07-21 Cub v1.0"
+  },
+  "badges": [
+    {
+      "id": "L1",
+      "icon": "🐾",
+      "name": "會員章 / 體驗章",
+      "en": "Membership / Experience",
+      "color": "#FFC107",
+      "purpose": "幫助新成員認識幼童軍活動",
+      "description": "入團後3個月內完成，新制為體驗章",
+      "segments": [
+        {
+          "code": "L1-PROMISE",
+          "name": "誓詞規律",
+          "items": [
+            {"id": "L1-PRM-01", "name": "明瞭並接納幼童軍誓詞、規律、日行一善", "detail": "能背誦並解釋"}
+          ]
+        },
+        {
+          "code": "L1-SAFE",
+          "name": "保護兒童",
+          "items": [
+            {"id": "L1-SAFE-01", "name": "完成保護童軍成員免受傷害網上課程 (2025年8月1日起必修)", "detail": "Safe from Harm"}
+          ]
+        }
+      ]
+    },
+    {
+      "id": "L2",
+      "icon": "🌟",
+      "name": "幼童軍獎章",
+      "en": "Cub Scout Award",
+      "color": "#FF9800",
+      "purpose": "入團後6個月內完成",
+      "segments": [
+        {
+          "code": "L2-TRACK",
+          "name": "追蹤、繩結、郊野守則等",
+          "items": [
+            {"id": "L2-TRACK-01", "name": "追蹤 - 認識追蹤符號並完成追蹤活動"},
+            {"id": "L2-KNOT-01", "name": "繩結 - 平結、接繩結、八字結"},
+            {"id": "L2-OUTDOOR-01", "name": "郊野守則 - 認識並實踐"}
+          ]
+        }
+      ]
+    },
+    {
+      "id": "L3",
+      "icon": "🗺️",
+      "name": "幼童軍歷奇章",
+      "en": "Adventure Award",
+      "color": "#4CAF50",
+      "purpose": "考獲幼童軍獎章後1年內完成",
+      "segments": [
+        {
+          "code": "L3-OUTDOOR",
+          "name": "戶外活動",
+          "items": [
+            {"id": "L3-OUT-01", "name": "露營活動 - 認識環保及不留痕露營，承諾參與露營"},
+            {"id": "L3-SPORT-01", "name": "運動與愛好 - 於團內發揮體育及團隊精神"}
+          ]
+        }
+      ]
+    },
+    {
+      "id": "L4",
+      "icon": "⛰️",
+      "name": "幼童軍高級歷奇章",
+      "en": "Adventure Crest",
+      "color": "#2196F3",
+      "purpose": "考獲歷奇章後1.5年內完成",
+      "segments": [
+        {
+          "code": "L4-ADV",
+          "name": "進階",
+          "items": [
+            {"id": "L4-ADV-01", "name": "戶外活動進階、照顧自己、科學與大自然等"}
+          ]
+        }
+      ]
+    },
+    {
+      "id": "L5",
+      "icon": "👑",
+      "name": "金紫荊獎章",
+      "en": "Golden Bauhinia Award",
+      "color": "#9C27B0",
+      "purpose": "最高獎章，9歲半完成歷奇章方可申請，10歲半至12歲內獲頒，新制12歲仍小學可延長",
+      "description": "考核項目：戶外活動、歷險挑戰、分享經驗、領導才能、至少1個活動徽章",
+      "segments": [
+        {
+          "code": "L5-CAMP",
+          "name": "露營考驗",
+          "items": [
+            {"id": "L5-CAMP-01", "name": "以小組形式完成2晚露營：收拾裝備、架拆營幕、保養營幕、簡單紮作、協助烹調、露營衛生安全、清理場地"}
+          ]
+        },
+        {
+          "code": "L5-HIKE",
+          "name": "遠足考驗",
+          "items": [
+            {"id": "L5-HIKE-01", "name": "小組遠足最少6公里，商討主題、收拾戶外裝備、運用指南針及地圖、實踐郊野守則、遠足分享"}
+          ]
+        },
+        {
+          "code": "L5-ADV",
+          "name": "歷險挑戰",
+          "items": [
+            {"id": "L5-ADV-01", "name": "黑夜歷程：安全守則裝備，二人一組完成不少於2公里夜行"}
+          ]
+        },
+        {
+          "code": "L5-ACT",
+          "name": "活動徽章",
+          "items": [
+            {"id": "L5-ACT-01", "name": "考核期間最少考獲1個指定活動徽章：單車/游泳/探險/公園定向/讀圖/田徑/風帆/獨木舟/水手/射箭/體適能等"}
+          ]
+        }
+      ]
+    }
+  ],
+  "otherBadges": [
+    {"id": "ACT-CYCLIST", "name": "單車章 (三級制)", "icon": "🚲", "desc": "初級紅、中級黃、高級綠"},
+    {"id": "ACT-SWIMMER", "name": "游泳章 (三級制)", "icon": "🏊", "desc": "三級制"},
+    {"id": "ACT-PIONEER", "name": "探險章", "icon": "🧭", "desc": "活動徽章"},
+    {"id": "ACT-READER", "name": "讀圖章", "icon": "🗺️", "desc": "地圖閱讀"},
+    {"id": "ACT-ORIENTEER", "name": "公園定向章", "icon": "🧭", "desc": "定向"},
+    {"id": "ACT-ATHLETE", "name": "田徑章 (三級)", "icon": "🏃", "desc": "田徑"},
+    {"id": "ACT-SAILOR", "name": "風帆章 (三級)", "icon": "⛵", "desc": "風帆"},
+    {"id": "ACT-CANOE", "name": "獨木舟章 (三級)", "icon": "🛶", "desc": "獨木舟"},
+    {"id": "ACT-ARCHER", "name": "射箭章 (三級)", "icon": "🏹", "desc": "射箭"},
+    {"id": "ACT-FITNESS", "name": "體適能章", "icon": "💪", "desc": "體適能"}
+  ],
+  "trainingPlan": {
+    "title": "幼童軍支部的訓練計劃 (2025年8月擬定簡易版 + 2026 P022-26)",
+    "purpose": "幼童軍支部旨在促進兒童身心精神陶冶，四個進度性徽章為主，輔以活動徽章，設童軍先修章給十歲半成員",
+    "method": ["小隊制度", "進度性獎章：體驗/獎章/歷奇/高級歷奇/金紫荊", "活動徽章：一級制33個及三級制"],
+    "expected": ["身心精神陶冶", "團隊精神", "戶外技能"],
+    "progressFlow": "會員章/體驗章→幼童軍獎章→歷奇章→高級歷奇章→金紫荊獎章",
+    "assessmentPrinciples": "所有徽章由團長或總會/地域/區訓練班委任合適人士評核，團長有最終決定及簽發權",
+    "links": [{"title": "幼童軍訓練綱要 2025年8月網上擬定簡易版", "url": "https://prog.scouting.org.hk/cub/training-scheme/"}]
+  },
+  "safeFromHarm": {
+    "title": "保護童軍成員免受傷害",
+    "policy": "2025年8月1日起會員章必修Safe from Harm課程",
+    "learning": [{"title": "Safe from Harm", "url": "https://sfh.scout.org.hk"}],
+    "prevention": ["兩人同行"],
+    "handling": ["聆聽", "報告"],
+    "hotlines": [{"name": "總會", "tel": "2957 6414"}]
+  },
+  "forms": {
+    "PT68": {"name": "金紫荊獎章及證書申請表 PT/68", "code": "PT/68"},
+    "PT67": {"name": "金紫荊獎章開展通知書 PT/67", "code": "PT/67"}
+  }
+}
