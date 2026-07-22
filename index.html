@@ -273,7 +273,7 @@ a:hover{text-decoration:underline}
         <p>Venture Scout Progress Tracker v4.2 • PNG Logo + 第11版綱要</p>
       </div>
     </div>
-    <div class="header-subtitle">基於 2026年第11版《幼童軍訓練綱要》• 支援離線暫存•批量寫入•成員申請確認•表格自動填寫</div>
+    <div class="header-subtitle">基於 2025年8月《幼童軍訓練綱要擬定簡易版》純新版• 無執委• 全部領袖處理• PT/68金紫荊官方格式</div>
     <div class="welcome-nav">
       <button class="active" data-tab="enter" onclick="showWelcomeTab('enter', this)">🏠 進入系統</button>
       <button data-tab="setup" onclick="showWelcomeTab('setup', this)">📋 新旅團部署</button>
@@ -356,7 +356,7 @@ a:hover{text-decoration:underline}
           <div class="step"><div class="step-number">2</div><div class="step-content"><h4>登入</h4><p>成員：YMIS 10位數字 + 密碼；領袖：Email + 密碼。首次登入預設密碼請洽管理員。</p></div></div>
           <div class="step"><div class="step-number">3</div><div class="step-content"><h4>成員操作：申請完成</h4><p>成員不可直接勾選，點擊「📝 申請完成」→選擇日期→填寫證據→提交。領袖會在「待批」頁看到。</p></div></div>
           <div class="step"><div class="step-number">4</div><div class="step-content"><h4>領袖操作：勾選+日期</h4><p>領袖可直接勾選，系統自動填今日日期，亦可手動改日期。所有勾選先存瀏覽器，底部顯示未保存數量，按「確認寫入」才批量寫入雲端，寫入時有進度提示。</p></div></div>
-          <div class="step"><div class="step-number">5</div><div class="step-content"><h4>其他功能</h4><p>全團總覽：按段章篩選，避免卡死；按項目統計：百分比+人數；其他獎章已併入我的進度；表格列印：VS/DRAGON FORM官方格式自動填入後列印。</p></div></div>
+          <div class="step"><div class="step-number">5</div><div class="step-content"><h4>其他功能</h4><p>全團總覽：按段章篩選，避免卡死；按項目統計：百分比+人數；其他獎章已併入我的進度；表格列印：PT/68 金紫荊獎章官方格式自動填入後列印。</p></div></div>
         </div>
       </div>
       <div class="info-section" style="margin-top:16px">
@@ -813,8 +813,8 @@ function checkSavedSession(){
   }catch(e){ console.error(e); }
 }
 function setupTabsByRole(){
-  const isLeader = ['admin','group_leader','branch_leader','exec_committee','super_admin'].includes(currentUser.role);
-  const isManage = ['admin','group_leader','branch_leader','super_admin'].includes(currentUser.role);
+  const isLeader = ['admin','group_leader','branch_leader','super_admin'].includes(currentUser.role);
+  const isManage = ['admin','group_leader','branch_leader','super_admin'].includes(currentUser.role); // 幼童軍無執委 // 幼童軍無執委
   const isMember = currentUser.role==='member';
   const canMemberViewOthers = appConfig.allow_member_view_others==='true';
   // 領袖顯示全部，成員預設只看自己，能否看其他成員由團長開放
@@ -835,8 +835,8 @@ function setupTabsByRole(){
     showToast('成員模式：只能查看自己進度，其他獎章及申請','warning');
   }
 }
-function getRoleName(r){ const m={'super_admin':'超管','admin':'管理員','group_leader':'團長','branch_leader':'支部領袖','exec_committee':'執委','member':'團員'}; return m[r]||r; }
-function canUserTickRole(role){ return ['admin','group_leader','branch_leader','exec_committee','super_admin'].includes(role); }
+function getRoleName(r){ const m={'super_admin':'超管','admin':'管理員','group_leader':'團長','branch_leader':'幼童軍團長','exec_committee':'執委(此支部不適用)','member':'幼童軍成員'}; return m[r]||r; }
+function canUserTickRole(role){ return ['admin','group_leader','branch_leader','super_admin'].includes(role); } // 幼童軍無執委，全部領袖處理
 
 function canCurrentUserTickItem(itemId){
   // 超管全部可勾
@@ -1723,7 +1723,7 @@ async function renderRequestsTab(){
     }catch(e){}
   }
   // 載入用戶申請 (僅管理層)
-  const isManage = ['admin','group_leader','branch_leader','super_admin'].includes(currentUser.role);
+  const isManage = ['admin','group_leader','branch_leader','super_admin'].includes(currentUser.role); // 幼童軍無執委
   if(isManage){
     try{
       const r2=await fetch(currentBackend,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify({action:'getApplications',token:currentToken})});
@@ -1960,121 +1960,125 @@ function handleOtherBadgeCert(badgeId, name, targetYmis, certVal){
 
 /* ================== Forms Tab ================== */
 function renderFormsTab(){
+  
   const c=document.getElementById('tab-forms');
   const isLeader=canUserTickRole(currentUser.role);
   const targetYmis=isLeader? (selectedProgressYmis||currentUser.ymis) : currentUser.ymis;
   const member=members.find(m=>m.ymis===targetYmis)||{name:currentUser.name,ymis:targetYmis};
   const flat=progressFlat[targetYmis]||{};
-  // compute badge completion dates
-  const badgeDates={};
-  itemsData.badges.forEach(b=>{
-    const ids=getBadgeItemIds(b);
-    const dates=ids.map(id=>flat[id]).filter(Boolean).sort();
-    badgeDates[b.id]=dates.length? dates[dates.length-1] : '';
-  });
   c.innerHTML=`<div class="info-grid">
-    <div class="info-card"><h3>🖨️ 表格自動填寫功能</h3><p>系統會根據進度自動填寫 PT/19 及 PT/20 表格所需完成日期，領袖/成員可修改後直接列印。支援雙面列印，符合總會要求。</p><ul><li>自動帶入姓名、YMIS、旅團、段章完成日期</li><li>可手動編輯補充服務時數、證書編號</li><li>一鍵列印，隱藏操作按鈕</li></ul></div>
-    <div class="info-card" style="border-color:var(--blue)"><h3 style="color:var(--blue)">📋 表格說明</h3><p><b>PT/19 幼童軍獎章</b>：完成4段章後申請。<br><b>PT/20 榮譽童軍獎章</b>：完成4金帶+服務紀錄，每年9月15日前交總會，安排當年大會操頒發。<br><b>PT/65 考驗計劃</b>：開展金帶前需提交計劃書。</p></div>
+    <div class="info-card"><h3>🖨️ 幼童軍表格自動填寫</h3><p>系統根據進度自動填寫 PT/68 金紫荊獎章申請表所需日期，領袖可修改後列印。幼童軍支部無執委，全部由領袖處理。</p><ul><li>自動帶入姓名、YMIS、旅團、年齡、證書號碼</li><li>戶外挑戰/歷險挑戰/領導才能/服務與分享 自動填日期</li><li>一鍵列印，符合總會官方格式</li></ul></div>
+    <div class="info-card" style="border-color:var(--blue)"><h3 style="color:var(--blue)">📋 幼童軍表格說明 (已修正)</h3><p><b>PT/68 金紫荊獎章及證書申請表</b>：幼童軍最高榮譽，需先完成高級歷奇章，10.5-12歲或完成小學前。<br><b>PT/67 開展通知書</b>：開始考驗前提交。<br><b>考驗紀錄冊</b>：24頁紀錄露營、遠足、先鋒、烹飪、黑夜歷程/攀登/繩網、活動徽章、領導、服務。</p><p style="font-size:10px;color:var(--text-light)">之前誤用深資 PT/19/PT/20 已修正，現為幼童軍專用。</p></div>
   </div>
   <div class="filter-bar"><label>選擇成員：</label><select id="formMemberSelect" onchange="renderFormsTab()">${members.map(m=>`<option value="${m.ymis}" ${m.ymis===targetYmis?'selected':''}>${m.name} (${m.ymis})</option>`).join('')}</select></div>
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px">
-    <button class="btn btn-primary" onclick="generatePrintableForm('PT19')">🖨️ 產生 PT/19 幼童軍獎章申請表</button>
-    <button class="btn btn-warning" onclick="generatePrintableForm('PT20')">🐉 產生 PT/20 榮譽童軍獎章申請表</button>
+    <button class="btn btn-primary" onclick="generatePrintableForm('PT68')">🏅 產生 PT/68 金紫荊獎章申請表</button>
+    <button class="btn btn-secondary" onclick="generatePrintableForm('PT67')">📄 產生 PT/67 開展通知書</button>
+    <button class="btn btn-warning" onclick="generatePrintableForm('RECORD')">📓 產生考驗紀錄冊摘要</button>
   </div>
   <div id="printableArea" class="print-area"></div>`;
 }
+
 
 function generatePrintableForm(type){
   const targetYmis=document.getElementById('formMemberSelect')?.value||selectedProgressYmis||currentUser.ymis;
   const member=members.find(m=>m.ymis===targetYmis)||{name:currentUser.name,ymis:targetYmis};
   const flat=progressFlat[targetYmis]||{};
-  const other=otherBadgesMap[targetYmis]||{};
   const today=todayISO();
   function getDoneDate(ids){ const ds=ids.map(id=>flat[id]).filter(Boolean).sort(); return ds.length?ds[ds.length-1]:''; }
   function badgeIds(bId){ const b=itemsData.badges.find(x=>x.id===bId); return b?getBadgeItemIds(b):[]; }
 
   let html='';
-  if(type==='PT19'){
-    const l1Done=getDoneDate(badgeIds('L1'));
-    const l2Done=getDoneDate(badgeIds('L2'));
+  if(type==='PT68'){
     const l3=itemsData.badges.find(b=>b.id==='L3');
-    const segDates={};
-    if(l3){ l3.segments.forEach(seg=>{ segDates[seg.code]=getDoneDate(getSegmentItemIds(seg)); }); }
-    html=`<div class="print-area" id="officialPT19">
+    const l4=itemsData.badges.find(b=>b.id==='L4');
+    const l5=itemsData.badges.find(b=>b.id==='L5'); // Golden Bauhinia maybe L5?
+    const goldBadge = itemsData.badges.find(b=>b.id==='L5') || itemsData.badges.find(b=>b.name.includes('金紫荊')) || itemsData.badges[itemsData.badges.length-1];
+    const outdoorDone = getDoneDate(badgeIds('L3').concat(badgeIds('L4')));
+    const leadershipDone = getDoneDate(badgeIds('L4') ? [] : []);
+    // For PT/68 structure
+    html=`<div class="print-area" id="officialForm">
       <div style="text-align:center;border-bottom:3px double #000;padding-bottom:10px;margin-bottom:12px">
         <div style="font-size:12px;font-weight:700">香港童軍總會 Scout Association of Hong Kong</div>
-        <div style="font-size:15px;font-weight:800;margin-top:4px">幼童軍獎章及證書申請表 (PT/19 04/2019)</div>
-        <div style="font-size:11px">Application Form for the Venture Scout Award and Certificate</div>
+        <div style="font-size:15px;font-weight:800;margin-top:4px">金紫荊獎章及證書申請表 (PT/68 01/2020)</div>
+        <div style="font-size:11px">Golden Bauhinia Award - 幼童軍支部最高榮譽 (修正版，非深資PT/19)</div>
       </div>
-      <div style="font-size:12px;font-weight:700;background:#F0F0F0;padding:4px 8px;border:1px solid #000">(1) 個人摘要 Personal Particulars</div>
+      <div style="font-size:12px;font-weight:700;background:#FFF3CD;padding:4px 8px;border:1px solid #000">(1) 個人資料 Personal Particulars</div>
       <table class="print-table" style="font-size:11px">
-        <tr><td style="width:22%">姓名 (中文)<br>Name (Chinese)</td><td style="width:30%"><input value="${member.name}" style="width:95%"></td><td style="width:22%">姓名 (英文)<br>Name (English)</td><td><input placeholder="Same as HKID" style="width:90%"></td><td rowspan="4" style="width:90px;text-align:center">近照 Recent Photo<div style="width:80px;height:100px;border:1px dashed #999;margin:4px auto"></div></td></tr>
-        <tr><td>出生日期 Date of Birth</td><td><input type="date" style="width:60%"> Age <input style="width:30px"></td><td>性別 Gender / HKID首4位*</td><td><select style="width:50px"><option>男</option><option>女</option></select> <input style="width:50px" placeholder="A123"></td></tr>
-        <tr><td>童軍成員編號 Scout ID</td><td><input value="${member.ymis}" style="width:95%"></td><td>發證日期 Issue Date / 肩章簽發日期</td><td><input type="date" style="width:45%"> <input value="${l2Done}" style="width:45%"></td></tr>
-        <tr><td>所屬單位 Unit</td><td colspan="3"><input value="${currentTroopName}" style="width:30%"> 區 District <input placeholder="九龍城區" style="width:18%"> 地域 Region <input placeholder="九龍地域" style="width:18%"></td></tr>
-        <tr><td>通訊地址 Address (中文)</td><td colspan="4"><input style="width:98%" placeholder="中文地址"></td></tr>
-        <tr><td>通訊地址 (英文)</td><td colspan="4"><input style="width:98%" placeholder="English Address"></td></tr>
-        <tr><td>聯絡電話 Contact No.</td><td><input style="width:95%"></td><td>電郵 E-mail</td><td colspan="2"><input style="width:90%"></td></tr>
+        <tr><td style="width:25%">姓名 Name (中/英) (須與身份證相同)</td><td><input value="${member.name}" style="width:90%"> YMIS/Scout ID ${member.ymis}</td><td style="width:80px" rowspan="3">近照</td></tr>
+        <tr><td>出生日期 DOB / 年齡 Age / 就讀年級 / 性別</td><td><input type="date" style="width:110px"> 年齡<input style="width:40px"> 年級<input style="width:60px"> 性別<select><option>男</option><option>女</option></select> HKID首4位<input style="width:60px"></td></tr>
+        <tr><td>所屬單位 旅/區/地域<br>Unit Group/District/Region ${currentTroopName}</td><td colspan="2">郵寄地址 Mailing Address<br><input style="width:95%"><br><input style="width:95%"></td></tr>
+        <tr><td>家長/監護人 Parent/Guardian</td><td>姓名<input style="width:120px"> 關係<input style="width:60px"> 電話<input style="width:90px"> 電郵<input style="width:120px"></td><td>負責領袖 Responsible Leader<br>姓名<input style="width:80px"><br>電話<input></td></tr>
+        <tr><td>考獲高級歷奇章日期 Date of Adventure Crest / Cert No.</td><td colspan="2"><input value="${getDoneDate(badgeIds('L4'))}" style="width:120px"> 證書號碼<input style="width:120px"> (必須先完成高級歷奇章戶外活動)</td></tr>
       </table>
-      <div style="font-size:12px;font-weight:700;background:#F0F0F0;padding:4px 8px;border:1px solid #000;margin-top:10px">(2) 完成項目 Completed Items</div>
+      <div style="font-size:12px;font-weight:700;background:#F0F0F0;padding:4px 8px;border:1px solid #000;margin-top:10px">(2) 完成項目 Completed Items - 金紫荊獎章考驗</div>
       <table class="print-table" style="font-size:11px">
-        <tr><th style="width:13%">段章</th><th style="width:13%">項目</th><th style="width:28%">單元編號及名稱 Module Code & Name</th><th>所選擇考驗之內容</th><th style="width:12%">完成日期</th></tr>
-        <tr><td>自立<br>Self-reliance</td><td>人際關係<br>Interpersonal</td><td>S-A1 (S-A101~106)</td><td>團外活動/活動支援/交流/執委研習/會議程序/社區參與 選1</td><td><input value="${segDates['L3-SELF']||''}" style="width:90px"></td></tr>
-        <tr><td></td><td>生活探討<br>Life Exploration</td><td>S-A2 (S-A201~214)</td><td>生活教育/職業/專上學院/宗教/社會議題等 選1</td><td><input style="width:90px"></td></tr>
-        <tr><td>責任<br>Responsibility</td><td>A組 Group A</td><td>R-A1 急救/拯溺I/II/手語/精神健康/SOUL/共融 選1</td><td>${Object.keys(other).length?Object.keys(other).join(', '):''}</td><td><input value="${segDates['L3-RESP']||''}" style="width:90px"></td></tr>
-        <tr><td>活動<br>Activity</td><td>童軍技能<br>Scoutcraft</td><td>A-101 原野生活<br>A-102 先鋒工程知識及技巧</td><td></td><td><input style="width:90px"></td></tr>
-        <tr><td></td><td>個人興趣<br>Personal Interest</td><td>A-2 (A-203~A-240&A-999)</td><td>需2項不同類型(第11版)</td><td><input style="width:90px"></td></tr>
-        <tr><td></td><td>體育技能<br>Sports</td><td>A-3 (A-301~A-312)</td><td></td><td><input style="width:90px"></td></tr>
-        <tr><td>探險<br>Exploration</td><td>必修 Compulsory</td><td>E-A001 地圖閱讀<br>E-A002 遠足訓練</td><td>訓練班</td><td><input value="${getDoneDate(['L3-EXP-01','L3-EXP-02'])}" style="width:90px"></td></tr>
-        <tr><td></td><td>選修 Elective</td><td>E-A003~E-A009 40km等</td><td>3日2夜</td><td><input value="${segDates['L3-EXP']||''}" style="width:90px"></td></tr>
+        <tr><th>項目 Item</th><th>考驗內容 Assessment Details</th><th>完成日期 Date</th><th>備註 Remarks</th></tr>
+        <tr><td rowspan="3">*戶外挑戰 Outdoor Challenge<br>(露營必修+其餘2項)</td><td>1.露營(必修) Camping mandatory 2晚 - 架搭營帳、露營生活最難忘經歷</td><td><input value="${getDoneDate(['L3-OUT-CAMP-01','L3-OUT-CAMP-02'])}" style="width:90px"></td><td></td></tr>
+        <tr><td>2.<input placeholder="遠足/先鋒/烹飪 選" style="width:200px"></td><td><input style="width:90px"></td><td></td></tr>
+        <tr><td>3.<input placeholder="選" style="width:200px"></td><td><input style="width:90px"></td><td></td></tr>
+        <tr><td>歷險挑戰 Adventure Challenge<br>甲部+乙部共3項，甲乙各最少1項</td><td>甲部：黑夜歷程/運動攀登/兒童繩網陣<br>乙部：活動徽章 (單車/游泳/歷奇/公園定向/地圖閱讀/運動員/風帆/獨木舟/帆船/箭藝/體適能等)<br>安全守則遵守3條以上記錄</td><td><input style="width:90px"><br><input style="width:90px"><br><input style="width:90px"></td><td>需貼活動徽章購買表或證書副本</td></tr>
+        <tr><td>領導才能 Helping To Lead</td><td>領袖領導下完成指定活動，擔任角色，帶領活動，感想30字以上</td><td><input style="width:90px"></td><td>記錄日期地點</td></tr>
+        <tr><td>服務與分享 Service and Sharing</td><td>持續服務不少於8次、8小時，服務紀錄表+短講分享目的心得</td><td><input style="width:90px"></td><td>8次8小時</td></tr>
       </table>
-      <div style="margin-top:12px;font-size:11px;display:grid;grid-template-columns:1fr 1fr;gap:20px"><div>申請者簽署 Applicant’s Signature<br><br>簽署 Signature：__________________ 日期 Date：${today}</div><div>提名 Nomination 旅長/幼童軍團長 GSL/VSL<br>姓名 Name：__________ 日期 Date：__________<br>旅印 Group Stamp</div></div>
-      <div style="margin-top:12px;font-size:11px;display:grid;grid-template-columns:1fr 1fr;gap:20px;border-top:1px solid #000;padding-top:8px"><div>推薦 Recommendation 區總監 District Commissioner<br>姓名：__________ 日期：__________<br>區印 District Stamp</div><div>批核 Approval 地域總監 Regional Commissioner / 青少年活動總監<br>姓名：__________ 日期：__________<br>地域印/署印</div></div>
-      <div style="margin-top:10px;font-size:9px;color:#666">同一張紙雙面列印，附紀錄冊影印及證書，經地域交總會。表格2年後銷毀。</div>
-      <div class="no-print" style="margin-top:14px;text-align:center"><button class="btn btn-primary" onclick="window.print()">🖨️ 列印 (官方格式)</button></div>
-    </div>`;
-  }else{
-    const vsAwardDate=getDoneDate(badgeIds('L3'));
-    html=`<div class="print-area" id="officialPT20">
-      <div style="text-align:center;border-bottom:3px double #000;padding-bottom:10px;margin-bottom:12px">
-        <div style="font-size:12px;font-weight:700">香港童軍總會 Scout Association of Hong Kong</div>
-        <div style="font-size:15px;font-weight:800;margin-top:4px">榮譽童軍獎章及證書申請表 (PT/20 04/2019) Dragon Scout Award</div>
-      </div>
-      <div style="font-size:12px;font-weight:700;background:#F0F0F0;padding:4px 8px;border:1px solid #000">(1) 個人摘要 Personal Particulars</div>
-      <table class="print-table" style="font-size:11px">
-        <tr><td style="width:20%">姓名 Name (中/英)</td><td colspan="2"><input value="${member.name}" style="width:95%"></td><td rowspan="3" style="width:90px;text-align:center">近照<div style="width:80px;height:100px;border:1px dashed #999;margin:4px auto"></div></td></tr>
-        <tr><td>出生日期/年齡/性別<br>Scout ID ${member.ymis}</td><td><input type="date" style="width:100px"> Age <input style="width:30px"> Gender <select style="width:50px"><option>男</option><option>女</option></select></td><td>單位 Unit ${currentTroopName}</td></tr>
-        <tr><td>地址 Address / 電話 Contact</td><td colspan="2"><input style="width:95%"></td></tr>
-        <tr><td>幼童軍獎章證書號碼 Cert No. / 發出日期</td><td><input style="width:50%"> Date <input value="${vsAwardDate}" style="width:80px"></td><td colspan="2">HKID首4位* <input placeholder="A123" style="width:60px"></td></tr>
-      </table>
-      <div style="font-size:12px;font-weight:700;background:#F0F0F0;padding:4px 8px;border:1px solid #000;margin-top:10px">(2) 完成項目 Completed Items</div>
-      <table class="print-table" style="font-size:11px">
-        <tr><th>段章/金帶 Bars</th><th>項目 Items / 單元 Module Code & Name</th><th>完成日期</th></tr>
-        <tr><td>自立 Self-reliance</td><td>S-B101 活動策劃 Activity Planning / S-B201 專題研究</td><td><input style="width:90px" value="${getDoneDate(['L4-PRJ-01'])}"></td></tr>
-        <tr><td>責任 Responsibility</td><td>R-B201 志願服務 / R-B202 專門技能 / R-B203 童軍及社區 (48小時)</td><td><input style="width:90px" value=""></td></tr>
-        <tr><td>活動 Activity</td><td>A-103 露營技藝 Campcraft & A-104 先鋒工程實踐 Pioneering (Practice) / A-2 進階興趣 / A-3 進階體育</td><td><input style="width:90px" value=""></td></tr>
-        <tr><td>探險 Exploration</td><td>E-B001~E-B007 60km徒步/240km單車/80km海上 四日三夜</td><td><input style="width:90px" value=""></td></tr>
-      </table>
+      <div style="font-size:9px;color:#666;margin-top:8px">* 進行戶外挑戰前，幼童必須完成高級歷奇章內戶外活動一項。</div>
       <div style="margin-top:12px;font-size:11px">
-        <div>申請者簽署 Applicant’s Signature：__________________ 日期 Date：${today}</div>
-        <div style="margin-top:12px;display:grid;grid-template-columns:1fr 1fr;gap:20px;border-top:1px solid #000;padding-top:8px">
-          <div>提名 Nomination 旅長 GSL/VSL 姓名：__________ 日期：__________</div>
-          <div>推薦 Recommendation 區總監 DC 姓名：__________ 日期：__________</div>
-        </div>
+        <div>申請者簽署 Applicant’s Signature：__________________ 日期 Date：${today} (幼童軍可由家長協助)</div>
         <div style="margin-top:10px;display:grid;grid-template-columns:1fr 1fr;gap:20px;border-top:1px solid #000;padding-top:8px">
-          <div>批核 Approval 地域總監 RC 姓名：__________ 日期：__________</div>
-          <div>青少年活動總監 PC 姓名：__________ 日期：__________</div>
+          <div>提名 Nomination 旅長/團長 GSL/CSL<br>姓名：__________ 日期：__________<br>旅/團印 Group/Pack Stamp</div>
+          <div>區總監 DC<br>姓名：__________ 日期：__________<br>區印 District Stamp<br>需與區總監會面</div>
         </div>
-        <div style="margin-top:10px;font-size:9px;background:#FFF3CD;padding:6px;border:1px solid #FFE69C">全年接受申請，9月15日前交總會，證書安排當年大會操頒發，逾期翌年。需附紀錄冊及證書影印。</div>
+        <div style="margin-top:10px;border-top:1px solid #000;padding-top:8px">批核 Approval 地域總監 RC<br>姓名：__________ 日期：__________<br>地域印 Regional Stamp<br>每年8月31日前交地域，安排同年大會操嘉許</div>
+        <div style="margin-top:10px;font-size:9px;background:#FFF3CD;padding:6px;border:1px solid #FFE69C">文件：1.考驗紀錄冊 2.紀錄冊第1-3,5,12-15頁副本 3.證書副本。經區→地域審批。PT/68 官方格式，幼童軍專用，已修正深資表格錯誤。</div>
       </div>
-      <div class="no-print" style="margin-top:14px;text-align:center"><button class="btn btn-primary" onclick="window.print()">🖨️ 列印 (官方格式 雙面)</button></div>
+      <div class="no-print" style="margin-top:14px;text-align:center"><button class="btn btn-primary" onclick="window.print()">🖨️ 列印 PT/68 (官方格式)</button> <a href="https://www.scout.org.hk/uploads/tc/forms/16499/PT68.pdf" target="_blank" class="btn btn-secondary">📄 下載官方空白PT/68</a></div>
+    </div>`;
+  } else if(type==='PT67'){
+    html=`<div class="print-area" id="officialForm">
+      <div style="text-align:center;border-bottom:3px double #000;padding-bottom:10px;margin-bottom:12px">
+        <div style="font-size:12px;font-weight:700">香港童軍總會</div>
+        <div style="font-size:15px;font-weight:800;margin-top:4px">金紫荊獎章開展通知書 (PT/67)</div>
+        <div style="font-size:11px">Golden Bauhinia Award Commencement Notification - 幼童軍支部</div>
+      </div>
+      <table class="print-table" style="font-size:11px">
+        <tr><td>幼童軍姓名</td><td><input value="${member.name}" style="width:80%"> YMIS ${member.ymis}</td></tr>
+        <tr><td>所屬旅團</td><td><input value="${currentTroopName}" style="width:60%"></td></tr>
+        <tr><td>已考獲高級歷奇章日期</td><td><input value="${getDoneDate(badgeIds('L4'))}" style="width:120px"> 已年滿9歲半</td></tr>
+        <tr><td>家長同意</td><td>已得家長/監護人允許進行更具挑戰性活動 家長簽署__________</td></tr>
+        <tr><td>承諾</td><td>盡所能接受每項挑戰，努力考取金紫荊獎章 簽署__________ 日期${today}</td></tr>
+      </table>
+      <div style="margin-top:10px;font-size:11px">團長簽署 __________ 日期 ${today} 旅印</div>
+      <div class="no-print" style="margin-top:14px;text-align:center"><button class="btn btn-primary" onclick="window.print()">🖨️ 列印 PT/67</button></div>
+    </div>`;
+  } else if(type==='RECORD'){
+    html=`<div class="print-area" id="officialForm">
+      <div style="text-align:center;border-bottom:3px double #000;padding-bottom:10px;margin-bottom:12px">
+        <div style="font-size:12px;font-weight:700">香港童軍總會</div>
+        <div style="font-size:15px;font-weight:800;margin-top:4px">金紫荊獎章考驗紀錄冊摘要 (自行填寫版)</div>
+        <div style="font-size:10px">露營2晚、遠足6公里、先鋒天幕、原野烹飪、黑夜歷程/攀登/繩網、活動徽章x2、領導、服務8次8小時</div>
+      </div>
+      <p style="font-size:11px">姓名 ${member.name} 旅 ${currentTroopName} 日期 ${today}</p>
+      <table class="print-table" style="font-size:11px"><tr><th>項目</th><th>日期</th><th>地點</th><th>最難忘經歷/照片描述(30字)</th></tr>
+        <tr><td>露營-第一晚</td><td><input></td><td><input></td><td><input style="width:95%"></td></tr>
+        <tr><td>露營-第二晚</td><td><input></td><td><input></td><td><input style="width:95%"></td></tr>
+        <tr><td>遠足6km主題</td><td><input></td><td><input placeholder="起點-終點"></td><td><input style="width:95%"></td></tr>
+        <tr><td>先鋒-天幕</td><td><input></td><td><input></td><td><input style="width:95%"></td></tr>
+        <tr><td>烹飪-炭架+食物</td><td><input></td><td><input></td><td><input style="width:95%"></td></tr>
+        <tr><td>歷險甲1 黑夜/攀登/繩網 安全守則3條</td><td><input></td><td><input></td><td><input style="width:95%"></td></tr>
+        <tr><td>歷險甲2</td><td><input></td><td><input></td><td><input style="width:95%"></td></tr>
+        <tr><td>歷險乙1 活動徽章</td><td><input></td><td><input></td><td>證書副本貼此</td></tr>
+        <tr><td>歷險乙2</td><td><input></td><td><input></td><td>證書副本貼此</td></tr>
+        <tr><td>領導才能 角色</td><td><input></td><td><input></td><td><input style="width:95%"></td></tr>
+        <tr><td>服務8次8小時 總時數</td><td colspan="3"><input placeholder="列出日期內容時數"></td></tr>
+      </table>
+      <div class="no-print" style="margin-top:14px;text-align:center"><button class="btn btn-primary" onclick="window.print()">🖨️ 列印紀錄摘要</button> <a href="https://www.scout.org.hk/uploads/tc/forms/16498/%E9%87%91%E7%B4%AB%E8%8D%8A%E7%8D%8E%E7%AB%A0%E8%80%83%E9%A9%97%E7%B4%80%E9%8C%84%E5%86%8A.pdf" target="_blank" class="btn btn-secondary">📄 下載官方24頁紀錄冊</a></div>
     </div>`;
   }
   document.getElementById('printableArea').innerHTML=html;
 }
 
-
-/* ================== Help Tab - 角色分開教學 (內嵌版，不依賴外部MD，避免404) ================== */
+/* ================== Help Tab
+ - 角色分開教學 (內嵌版，不依賴外部MD，避免404) ================== */
 const EMBEDDED_GUIDES={
   member: `<h2>👤 成員使用教學 (Member)</h2>
   <blockquote>你只需關心自己的進度，其他功能由領袖處理</blockquote>
@@ -2313,7 +2317,7 @@ async function loadUsers(){
 
       let h=roleExplain+systemSettingHtml+mockTool+'<div class="filter-bar"><input type="text" id="userSearch" placeholder="搜尋姓名/ YMIS/ Email" oninput="filterUsers()" style="flex:1"></div><div id="userList">';
       h+=d.users.map(u=>`<div class="user-item" data-search="${(u.name+u.ymis+u.email).toLowerCase()}"><div class="user-item-info"><b>${u.name}</b> ${u.ymis?`(${u.ymis})`:''} ${u.email?` - ${u.email}`:''}<span class="role-badge role-${u.role}">${getRoleName(u.role)}</span> ${u.can_tick?'<span style="background:var(--green-light);color:var(--green);padding:1px 6px;border-radius:999px;font-size:9px">可勾選</span>':''}<br><small style="font-size:10px;color:var(--text-light)">權限: ${u.allowed_badges|| (u.role==='member'?'無':(u.role==='exec_committee'?'L1,活動段章,其他部分':'全部(*)'))}</small></div><div class="user-item-actions">`+
-        (['admin','group_leader','branch_leader','super_admin'].includes(currentUser.role)&&u.ymis!==currentUser.ymis?`<select onchange="updateUserRole('${u.ymis}',this.value)"><option value="member" ${u.role==='member'?'selected':''}>團員</option><option value="exec_committee" ${u.role==='exec_committee'?'selected':''}>執委</option><option value="branch_leader" ${u.role==='branch_leader'?'selected':''}>支部領袖</option><option value="group_leader" ${u.role==='group_leader'?'selected':''}>團長</option><option value="admin" ${u.role==='admin'?'selected':''}>管理員</option></select><button class="btn btn-sm ${u.can_tick?'btn-danger':'btn-success'}" onclick="toggleCanTick('${u.ymis}',${!u.can_tick})">${u.can_tick?'收回勾選':'授權勾選'}</button><button class="btn btn-sm btn-warning" onclick="openPermissionModal('${u.ymis}','${u.name.replace(/'/g,"\'") }','${u.role}','${(u.allowed_badges||'').replace(/'/g,"")}')">⚙️ 權限</button>`:'' )+
+        (['admin','group_leader','branch_leader','super_admin'].includes(currentUser.role)&&u.ymis!==currentUser.ymis?`<select onchange="updateUserRole('${u.ymis}',this.value)"><option value="member" ${u.role==='member'?'selected':''}>團員</option><!-- 幼童軍無執委，已移除 <option value="exec_committee">執委</option> --><option value="branch_leader" ${u.role==='branch_leader'?'selected':''}>支部領袖</option><option value="group_leader" ${u.role==='group_leader'?'selected':''}>團長</option><option value="admin" ${u.role==='admin'?'selected':''}>管理員</option></select><button class="btn btn-sm ${u.can_tick?'btn-danger':'btn-success'}" onclick="toggleCanTick('${u.ymis}',${!u.can_tick})">${u.can_tick?'收回勾選':'授權勾選'}</button><button class="btn btn-sm btn-warning" onclick="openPermissionModal('${u.ymis}','${u.name.replace(/'/g,"\'") }','${u.role}','${(u.allowed_badges||'').replace(/'/g,"")}')">⚙️ 權限</button>`:'' )+
         `</div></div>`).join('');
       h+='</div>';
       c.innerHTML=h;
