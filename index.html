@@ -2439,18 +2439,27 @@ async function savePermissions(){
   }
 }
 
+async function fetchMockData(){
+  const response=await fetch('data/mock_members.json?_='+Date.now());
+  if(!response.ok) throw new Error(`MOCK 資料檔無法載入（HTTP ${response.status}）`);
+  const data=await response.json();
+  if(!Array.isArray(data.members) || data.members.length===0) throw new Error('MOCK 資料格式錯誤：找不到成員資料');
+  if(!data.progress_mock || typeof data.progress_mock!=='object') throw new Error('MOCK 資料格式錯誤：找不到進度資料');
+  return data;
+}
+
 async function enterDemoMode(){
   try{
     const btn=document.querySelector('button[onclick="enterDemoMode()"]');
     if(btn){ btn.disabled=true; btn.textContent='載入 MOCK 中...'; }
     if(!itemsData){
       const r1=await fetch('data/items.json');
+      if(!r1.ok) throw new Error(`訓練綱要無法載入（HTTP ${r1.status}）`);
       itemsData=await r1.json();
     }
-    const r=await fetch('data/mock_members.json?_='+Date.now());
-    const data=await r.json();
-    const mockMembers=data.members||[];
-    const mockProgress=data.progress_mock||{};
+    const data=await fetchMockData();
+    const mockMembers=data.members;
+    const mockProgress=data.progress_mock;
     members=mockMembers.map(m=>({ymis:m.ymis, name:m.name}));
     progressFlat={};
     for(const ymis in mockProgress){
@@ -2487,10 +2496,9 @@ async function loadMockMembers(){
   const status=document.getElementById('mockStatus');
   if(status) status.textContent='載入中...';
   try{
-    const r=await fetch('data/mock_members.json');
-    const data=await r.json();
-    const mockMembers=data.members||[];
-    const mockProgress=data.progress_mock||{};
+    const data=await fetchMockData();
+    const mockMembers=data.members;
+    const mockProgress=data.progress_mock;
     // 合併到現有 members (去重)
     const existingIds=new Set(members.map(m=>m.ymis));
     let added=0;
