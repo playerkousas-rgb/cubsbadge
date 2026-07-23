@@ -280,12 +280,17 @@ function doPost(e){
       if(action==='addMember') return handleAddMember(body.ymis,body.name);
       if(action==='saveOtherBadge') return handleSaveOtherBadge(body.records, body.apikey);
     }
-    // member request - needs token but also allow apikey for member self
+    // member request - ONLY leaders can submit completion requests (Cub Scouts are young children)
     if(action==='requestComplete'){
       // allow token or apikey
       let ymis=null; if(body.token){ ymis=validateToken(body.token); } 
       if(!ymis && body.apikey && body.apikey===getApiKey()){ ymis=body.ymis; } // standalone mode
       if(!ymis) return jsonResponse({success:false,error:'未授權'});
+      // Only leaders (can_tick roles) may submit completion requests
+      const user = getUser(ymis);
+      if(!user || !canUserTick(user.role)) {
+        return jsonResponse({success:false,error:'權限不足：幼童軍完成申請僅限領袖提交'});
+      }
       return handleRequestComplete(body, ymis);
     }
 
