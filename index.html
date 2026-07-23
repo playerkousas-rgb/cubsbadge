@@ -1977,6 +1977,11 @@ function renderFormsTab(){
     <div class="info-card" style="border-color:var(--blue)"><h3 style="color:var(--blue)">📋 幼童軍表格說明 (已修正)</h3><p><b>PT/68 金紫荊獎章及證書申請表</b>：幼童軍最高榮譽，需先完成高級歷奇章，10.5-12歲或完成小學前。<br><b>PT/67 開展通知書</b>：開始考驗前提交。<br><b>考驗紀錄冊</b>：24頁紀錄露營、遠足、先鋒、烹飪、黑夜歷程/攀登/繩網、活動徽章、領導、服務。</p><p style="font-size:10px;color:var(--text-light)">之前誤用深資 PT/19/PT/20 已修正，現為幼童軍專用。</p></div>
   </div>
   <div class="filter-bar"><label>選擇成員：</label><select id="formMemberSelect" onchange="renderFormsTab()">${members.map(m=>`<option value="${m.ymis}" ${m.ymis===targetYmis?'selected':''}>${m.name} (${m.ymis})</option>`).join('')}</select></div>
+  <div class="info-section" style="border-left-color:var(--gold);background:#fffdf4;margin-bottom:14px">
+    <h3>🏆 幼童軍旅團證書</h3>
+    <p style="font-size:11px;color:var(--text-light);margin-bottom:8px">供旅團頒發會員章、進度性徽章及活動徽章完成證書。金紫荊獎章的正式證書及程序仍以香港童軍總會安排為準。</p>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center"><label style="font-size:12px">證書類別：</label><select id="certificateBadgeSelect">${[...itemsData.badges,...itemsData.otherBadges].map(b=>`<option value="${b.id}">${b.icon||'🏅'} ${b.name}</option>`).join('')}</select><button class="btn btn-warning" onclick="generatePrintableForm('CERTIFICATE')">🏆 產生旅團證書</button></div>
+  </div>
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px">
     <button class="btn btn-primary" onclick="generatePrintableForm('PT68')">🏅 金紫荊申請資料核對</button>
     <button class="btn btn-secondary" onclick="generatePrintableForm('PT67')">📄 金紫荊開展資料核對</button>
@@ -1995,7 +2000,29 @@ function generatePrintableForm(type){
   function badgeIds(bId){ const b=itemsData.badges.find(x=>x.id===bId); return b?getBadgeItemIds(b):[]; }
 
   let html='';
-  if(type==='PT68'){
+  if(type==='CERTIFICATE'){
+    const certificateId=document.getElementById('certificateBadgeSelect')?.value||'L1';
+    const award=[...itemsData.badges,...itemsData.otherBadges].find(b=>b.id===certificateId)||itemsData.badges[0];
+    const isProgress=!!award.segments;
+    const awardIds=isProgress ? getBadgeItemIds(award) : [];
+    const completed=isProgress ? awardIds.filter(id=>flat[id]).length : (otherBadgesMap[targetYmis]?.[award.id]?.date ? 1 : 0);
+    const total=isProgress ? awardIds.length : 1;
+    const completedDate=isProgress ? getDoneDate(awardIds) : (otherBadgesMap[targetYmis]?.[award.id]?.date||'');
+    const status=isProgress ? `系統紀錄：${completed}/${total} 項已完成` : (completedDate?'系統紀錄：已登記完成':'系統紀錄：尚未登記完成');
+    html=`<div class="print-area" id="officialForm" style="max-width:900px;margin:auto;border:12px double #8B0000;padding:34px 42px;min-height:520px;background:#fffdf4;text-align:center">
+      <div style="font-size:16px;letter-spacing:4px;color:#8B0000;font-weight:700">${currentTroopName}</div>
+      <div style="font-size:34px;font-weight:800;margin:20px 0 6px;color:#6e0000">幼童軍完成證書</div>
+      <div style="font-size:13px;letter-spacing:2px;color:#805d16">CUB SCOUT ACHIEVEMENT CERTIFICATE</div>
+      <div style="margin:34px 0 16px;font-size:16px">謹此嘉許</div>
+      <div style="font-size:32px;font-weight:800;border-bottom:2px solid #8B0000;display:inline-block;min-width:300px;padding:0 22px 8px">${member.name}</div>
+      <div style="font-size:12px;margin-top:8px">YMIS：${member.ymis}</div>
+      <div style="font-size:16px;line-height:2;margin:28px auto;max-width:650px">已完成幼童軍訓練綱要所列之<br><b style="font-size:24px;color:#8B0000">${award.icon||'🏅'} ${award.name}</b><br>特頒此證，以資嘉許。</div>
+      <div style="font-size:10px;color:#666;margin-bottom:22px">${status}　（由領袖按實際評核結果簽發）</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:30px;text-align:center;font-size:12px;margin-top:35px"><div>簽發日期<br><input type="date" value="${completedDate||today}" style="border:0;border-bottom:1px solid #333;text-align:center;width:130px"></div><div>幼童軍團長／旅長簽署<br><br>________________</div><div>證書編號<br><input placeholder="例如 082-CUB-001" style="border:0;border-bottom:1px solid #333;text-align:center;width:140px"></div></div>
+      <div style="font-size:9px;color:#777;margin-top:28px">旅團內部完成證書。正式徽章簽發及金紫荊獎章證書以香港童軍總會最新程序為準。</div>
+      <div class="no-print" style="margin-top:18px"><button class="btn btn-primary" onclick="window.print()">🖨️ 列印證書</button></div>
+    </div>`;
+  } else if(type==='PT68'){
     const l3=itemsData.badges.find(b=>b.id==='L3');
     const l4=itemsData.badges.find(b=>b.id==='L4');
     const l5=itemsData.badges.find(b=>b.id==='L5'); // Golden Bauhinia maybe L5?
