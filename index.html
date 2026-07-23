@@ -355,7 +355,7 @@ a:hover{text-decoration:underline}
         <div class="steps">
           <div class="step"><div class="step-number">1</div><div class="step-content"><h4>選擇旅團</h4><p>首頁點擊旅團卡片（例如 0082 第82旅）</p></div></div>
           <div class="step"><div class="step-number">2</div><div class="step-content"><h4>登入</h4><p>成員：YMIS 10位數字 + 密碼；領袖：Email + 密碼。首次登入預設密碼請洽管理員。</p></div></div>
-          <div class="step"><div class="step-number">3</div><div class="step-content"><h4>成員操作：申請完成</h4><p>成員不可直接勾選，點擊「📝 申請完成」→選擇日期→填寫證據→提交。領袖會在「待批」頁看到。</p></div></div>
+          <div class="step"><div class="step-number">3</div><div class="step-content"><h4>成員操作：查看進度</h4><p>幼童軍年紀小，所有進度由領袖負責更新。成員只能查看自己的進度，不可直接勾選、不可申請完成。</p></div></div>
           <div class="step"><div class="step-number">4</div><div class="step-content"><h4>領袖操作：勾選+日期</h4><p>領袖可直接勾選，系統自動填今日日期，亦可手動改日期。所有勾選先存瀏覽器，底部顯示未保存數量，按「確認寫入」才批量寫入雲端，寫入時有進度提示。</p></div></div>
           <div class="step"><div class="step-number">5</div><div class="step-content"><h4>其他功能</h4><p>全團總覽：按段章篩選，避免卡死；按項目統計：百分比+人數；其他獎章已併入我的進度；表格列印：PT/68 金紫荊獎章官方格式自動填入後列印。</p></div></div>
         </div>
@@ -363,7 +363,7 @@ a:hover{text-decoration:underline}
       <div class="info-section" style="margin-top:16px">
         <h3>👥 角色功能教學（登入後）</h3>
         <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:10px;margin-top:8px">
-          <div style="background:var(--bg);padding:10px;border-radius:8px;border-left:3px solid var(--green)"><b>👤 成員 member</b><ul style="font-size:11px;margin:6px 0 0 16px"><li>只能看自己進度</li><li>不能直接剔，按📝申請</li><li>待批查看自己申請</li><li>其他獎章只讀自己</li><li>表格列印官方格式</li><li>資料庫看綱要及安全指引</li></ul></div>
+          <div style="background:var(--bg);padding:10px;border-radius:8px;border-left:3px solid var(--green)"><b>👤 成員 member</b><ul style="font-size:11px;margin:6px 0 0 16px"><li>只能看自己進度</li><li>不可直接勾選、不可申請完成，所有進度由領袖負責更新</li><li>其他獎章只讀自己</li><li>表格列印官方格式</li><li>資料庫看綱要及安全指引</li></ul></div>
           <!-- 幼童軍無執委，已移除執委介紹 -->
           <div style="background:var(--bg);padding:10px;border-radius:8px;border-left:3px solid var(--maroon)"><b>👨‍💼 領袖 leader (幼童軍團長/旅長/管理員)</b><ul style="font-size:11px;margin:6px 0 0 16px"><li>全部功能 - 幼童軍年紀小，全部由領袖處理</li><li>我的進度選任何成員看紀錄</li><li>全團一眼睇會員章+百分比</li><li>考驗營批量一鍵幫全團剔</li><li>離線暫存確認寫入</li><li>待批批量批准 (幼童軍無成員申請，僅領袖用)</li><li>用戶管理改角色(無執委)</li><li>領袖默認全部權限</li><li>審批新帳號</li></ul></div>
         </div>
@@ -1052,7 +1052,7 @@ function renderProgressTab(){
         <div style="font-size:12px">完成度 <b>${completedCount}/${totalCount}</b> (${pct}%)</div>
       </div>
       <div class="progress-bar-outer"><div class="progress-bar-inner" style="width:${pct}%"></div></div>
-      ${isMember() && targetYmis===currentUser.ymis ? '<div style="font-size:11px;color:var(--blue);background:var(--blue-light);padding:6px 10px;border-radius:6px;margin-top:8px">ℹ️ 成員模式：你不能直接勾選。若你已完成某項，請按「📝 申請完成」，填寫日期及證據，領袖確認後會自動寫入。</div>' : ''}
+      ${isMember() && targetYmis===currentUser.ymis ? '<div style="font-size:11px;color:var(--blue);background:var(--blue-light);padding:6px 10px;border-radius:6px;margin-top:8px">ℹ️ 幼童軍年紀小，所有進度由領袖負責更新。你只能查看自己的進度。</div>' : ''}
       ${!isLeader && targetYmis!==currentUser.ymis ? '<div style="font-size:11px;color:var(--red);background:#FFF5F5;padding:6px 10px;border-radius:6px;margin-top:8px">只能查看他人進度，不能編輯</div>' : ''}
     </div>`;
 
@@ -1165,13 +1165,12 @@ function renderItemRow(item, flat, targetYmis, isLeaderView){
       <div class="item-actions">
         ${editable?`<input type="date" value="${dateVal}" max="${todayISO()}" onchange="handleDateChange('${item.id}', this.value, '${targetYmis}')">`:''}
         <button class="info-btn" onclick="toggleDetail('${item.id}')" title="查看考驗說明">ⓘ</button>
-        ${!editable?`<button class="btn btn-sm btn-outline" onclick="openRequestModal('${item.id}', '${escapeAttr(item.name)}')" title="申請完成">${checked?'✅ 已完成':'📝 申請'}</button>`:''}
       </div>
     </div>`;
   }else{
-    // parent with subitems
-    const subDone=item.subItems.filter(si=>flat[si.id]).length;
-    return `<div class="item-row ${checked?'checked':''}" data-item-id="${item.id}" style="background:#FAFAFA;border-radius:8px;padding:8px;margin:4px 0">
+// parent with subitems
+  const subDone=item.subItems.filter(si=>flat[si.id]).length;
+  return `<div class="item-row ${checked?'checked':''}" data-item-id="${item.id}" style="background:#FAFAFA;border-radius:8px;padding:8px;margin:4px 0">
       <input type="checkbox" class="checkbox" ${checked?'checked':''} ${editable?'':'disabled'} onchange="handleCheckboxToggle('${item.id}', this.checked, '${targetYmis}', true)">
       <div class="item-main">
         <div class="item-name"><b>${item.name}</b> <span class="sub-count">${subDone}/${item.subItems.length}</span></div>
@@ -1193,7 +1192,6 @@ function renderItemRow(item, flat, targetYmis, isLeaderView){
             <div class="item-actions">
               ${editable?`<input type="date" value="${sd}" max="${todayISO()}" onchange="handleDateChange('${sub.id}', this.value, '${targetYmis}')">`:''}
               <button class="info-btn" onclick="showSubDetail('${escapeAttr(sub.name)}','${escapeAttr(sub.detail||'')}')">ⓘ</button>
-              ${!editable?`<button class="btn btn-sm btn-outline" onclick="openRequestModal('${sub.id}', '${escapeAttr(sub.name)}')">${sc?'✅':'📝'}</button>`:''}
             </div>
           </div>`;
         }).join('')}
@@ -2114,19 +2112,16 @@ function generatePrintableForm(type){
  - 角色分開教學 (內嵌版，不依賴外部MD，避免404) ================== */
 const EMBEDDED_GUIDES={
   member: `<h2>👤 成員使用教學 (Member)</h2>
-  <blockquote>你只需關心自己的進度，其他功能由領袖處理</blockquote>
+  <blockquote>幂童軍年紀小，所有進度由領袖負責更新。你只能查看自己的進度。</blockquote>
   <h3>登入後你會見到</h3>
   <ul>
-    <li><b>📊 我的進度</b>：預設只顯示你自己的完成度，綠色進度條=已完成，點擊獎章展開，右側ⓘ查看考驗說明，<b>不能直接剔</b>，只能按「📝申請完成」</li>
-    <li><b>⭐ 其他獎章</b>：已併入我的進度最底虛線卡片</li>
-    <li><b>📝 待批</b>：查看你提交的申請是否已批</li>
+    <li><b>📊 我的進度</b>：預設只顯示你自己的完成度，綠色進度條=已完成，點擊獎章展開，右側ⓘ查看考驗說明。<b>不可直接勾選，不可申請完成</b>，所有進度由領袖負責更新。</li>
+    <li><b>⭐ 其他獎章</b>：已併入我的進度最底虛線卡片（只讀）</li>
     <li><b>🖨️ 表格列印</b>：日常進度已在 APP 保存；金紫荊申請時才使用官方紀錄冊填寫清單</li>
     <li><b>📚 資料庫</b>：保護兒童課程連結、訓練綱要</li>
   </ul>
-  <h3>如何申請完成？</h3>
-  <ol><li>我的進度找到項目</li><li>按📝申請</li><li>選日期+證據</li><li>提交，領袖在待批看到</li><li>批准後進度更新</li></ol>
   <h4>為何看不到其他成員？</h4>
-  <p>預設私隱，成員只看自己。團長可在用戶管理開啟「允許成員互相查看進度」。</p>`,
+  <p>預設私隱，成員只看自己。團長可在用戶管理開啟「允許成員互相查看進度」（僅查看，不可編輯）。</p>`,
 
   exec: `<h2>🎖️ 執委 (此支部不適用)</h2><blockquote>幼童軍支部無執委會、無管理委員會，全部由領袖處理，成員年紀小不設執委，以免混淆</blockquote><p>此教學不適用於幼童軍，請看成員或領袖教學。</p>`,
 
@@ -2194,7 +2189,7 @@ function renderInfoTab(){
         <h4 style="color:var(--green);font-size:14px">👤 成員 (member) 可以做什麼</h4>
         <ul style="font-size:12px;line-height:1.8;padding-left:16px;color:var(--text-light);margin-top:6px">
           <li>只能看自己的進度，不能看全團</li>
-          <li>不能直接剔，只能按「📝申請完成」提交日期+證據</li>
+          <li>不可直接勾選、不可申請完成，所有進度由領袖負責更新</li>
           <li>可在「📝待批」查看自己申請是否已批</li>
           <li>可查看「⭐其他獎章」中自己的其他獎章</li>
           <li>可使用「🖨️表格列印」自動填PT/68金紫荊後列印(幼童軍專用)</li>
