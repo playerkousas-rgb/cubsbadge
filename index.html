@@ -1973,14 +1973,15 @@ function renderFormsTab(){
   const member=members.find(m=>m.ymis===targetYmis)||{name:currentUser.name,ymis:targetYmis};
   const flat=progressFlat[targetYmis]||{};
   c.innerHTML=`<div class="info-grid">
-    <div class="info-card"><h3>🖨️ 幼童軍表格自動填寫</h3><p>系統根據進度自動填寫 PT/68 金紫荊獎章申請表所需日期，領袖可修改後列印。幼童軍支部無執委，全部由領袖處理。</p><ul><li>自動帶入姓名、YMIS、旅團、年齡、證書號碼</li><li>戶外挑戰/歷險挑戰/領導才能/服務與分享 自動填日期</li><li>一鍵列印，符合總會官方格式</li></ul></div>
+    <div class="info-card"><h3>📒 幼童軍電子紀錄冊及表格支援</h3><p>系統把每個進度項目、完成日期及領袖核對集中為可列印的電子紀錄冊，減少重覆抄寫。正式徽章簽發及申請仍須按總會最新通告及官方表格辦理。</p><ul><li>完整列印會員章、四個進度性徽章的項目、日期、證據及領袖核對欄</li><li>金紫荊摘要自動帶入已完成日期，供填寫官方申請文件時核對</li><li>保留官方空白表格下載，避免自製表格取代官方申請表</li></ul></div>
     <div class="info-card" style="border-color:var(--blue)"><h3 style="color:var(--blue)">📋 幼童軍表格說明 (已修正)</h3><p><b>PT/68 金紫荊獎章及證書申請表</b>：幼童軍最高榮譽，需先完成高級歷奇章，10.5-12歲或完成小學前。<br><b>PT/67 開展通知書</b>：開始考驗前提交。<br><b>考驗紀錄冊</b>：24頁紀錄露營、遠足、先鋒、烹飪、黑夜歷程/攀登/繩網、活動徽章、領導、服務。</p><p style="font-size:10px;color:var(--text-light)">之前誤用深資 PT/19/PT/20 已修正，現為幼童軍專用。</p></div>
   </div>
   <div class="filter-bar"><label>選擇成員：</label><select id="formMemberSelect" onchange="renderFormsTab()">${members.map(m=>`<option value="${m.ymis}" ${m.ymis===targetYmis?'selected':''}>${m.name} (${m.ymis})</option>`).join('')}</select></div>
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px">
-    <button class="btn btn-primary" onclick="generatePrintableForm('PT68')">🏅 產生 PT/68 金紫荊獎章申請表</button>
-    <button class="btn btn-secondary" onclick="generatePrintableForm('PT67')">📄 產生 PT/67 開展通知書</button>
-    <button class="btn btn-warning" onclick="generatePrintableForm('RECORD')">📓 產生考驗紀錄冊摘要</button>
+    <button class="btn btn-success" onclick="generatePrintableForm('PROGRESS_RECORD')">📒 產生完整幼童軍電子紀錄冊</button>
+    <button class="btn btn-primary" onclick="generatePrintableForm('PT68')">🏅 產生金紫荊申請支援摘要</button>
+    <button class="btn btn-secondary" onclick="generatePrintableForm('PT67')">📄 產生金紫荊開展支援摘要</button>
+    <button class="btn btn-warning" onclick="generatePrintableForm('RECORD')">📓 產生金紫荊考驗紀錄摘要</button>
   </div>
   <div id="printableArea" class="print-area"></div>`;
 }
@@ -1995,7 +1996,20 @@ function generatePrintableForm(type){
   function badgeIds(bId){ const b=itemsData.badges.find(x=>x.id===bId); return b?getBadgeItemIds(b):[]; }
 
   let html='';
-  if(type==='PT68'){
+  if(type==='PROGRESS_RECORD'){
+    const sectionRows=itemsData.badges.map(badge=>{
+      const segments=badge.segments.map(segment=>{
+        const rows=segment.items.map(item=>{
+          const checks=item.subItems || [item];
+          return checks.map(check=>`<tr><td>${check.name}</td><td>${flat[check.id]||''}</td><td style="min-width:100px"></td><td style="min-width:90px"></td></tr>`).join('');
+        }).join('');
+        return `<tr><th colspan="4" style="text-align:left;background:#f7f2e8">${segment.name}${segment.desc?`（${segment.desc}）`:''}</th></tr>${rows}`;
+      }).join('');
+      return `<section style="page-break-inside:avoid;margin:16px 0"><h3 style="border-left:5px solid ${badge.color};padding-left:8px">${badge.icon} ${badge.name}</h3><p style="font-size:10px">${badge.purpose||''}</p><table class="print-table" style="font-size:10px"><tr><th style="width:48%">官方考驗項目</th><th style="width:16%">完成日期</th><th style="width:20%">證據／活動備註</th><th style="width:16%">領袖核對</th></tr>${segments}</table></section>`;
+    }).join('');
+    const activityRows=(itemsData.otherBadges||[]).map(ob=>{const rec=(otherBadgesMap[targetYmis]||{})[ob.id]||{};return `<tr><td>${ob.icon||'🏅'} ${ob.name}</td><td>${rec.date||''}</td><td>${rec.cert||''}</td><td></td></tr>`;}).join('');
+    html=`<div class="print-area" id="officialForm"><div style="text-align:center;border-bottom:3px double #000;padding-bottom:10px"><div style="font-size:13px;font-weight:700">${currentTroopName}・幼童軍電子紀錄冊</div><div style="font-size:11px">依據《幼童軍訓練綱要》2025年8月網上擬定簡易版</div></div><p style="font-size:11px">幼童軍姓名：<b>${member.name}</b>　YMIS：${member.ymis}　列印日期：${today}</p><p style="font-size:9px;background:#fff3cd;padding:6px">本紀錄冊供團內教學、評核及保存紀錄使用；徽章簽發、金紫荊開展／申請及安全要求，必須以香港童軍總會最新官方程序、表格及通告為準。</p>${sectionRows}<section style="page-break-inside:avoid"><h3>🏅 活動徽章紀錄</h3><table class="print-table" style="font-size:10px"><tr><th>活動徽章</th><th>完成日期</th><th>證書／級別／備註</th><th>領袖核對</th></tr>${activityRows}</table></section><div class="no-print" style="margin-top:14px;text-align:center"><button class="btn btn-primary" onclick="window.print()">🖨️ 列印電子紀錄冊</button></div></div>`;
+  } else if(type==='PT68'){
     const l3=itemsData.badges.find(b=>b.id==='L3');
     const l4=itemsData.badges.find(b=>b.id==='L4');
     const l5=itemsData.badges.find(b=>b.id==='L5'); // Golden Bauhinia maybe L5?
@@ -2035,9 +2049,9 @@ function generatePrintableForm(type){
           <div>區總監 DC<br>姓名：__________ 日期：__________<br>區印 District Stamp<br>需與區總監會面</div>
         </div>
         <div style="margin-top:10px;border-top:1px solid #000;padding-top:8px">批核 Approval 地域總監 RC<br>姓名：__________ 日期：__________<br>地域印 Regional Stamp<br>每年8月31日前交地域，安排同年大會操嘉許</div>
-        <div style="margin-top:10px;font-size:9px;background:#FFF3CD;padding:6px;border:1px solid #FFE69C">文件：1.考驗紀錄冊 2.紀錄冊第1-3,5,12-15頁副本 3.證書副本。經區→地域審批。PT/68 官方格式，幼童軍專用，已修正深資表格錯誤。</div>
+        <div style="margin-top:10px;font-size:9px;background:#FFF3CD;padding:6px;border:1px solid #FFE69C">文件：1.考驗紀錄冊 2.紀錄冊第1-3,5,12-15頁副本 3.證書副本。經區→地域審批。此為申請支援摘要；請另附並使用總會最新 PT/68 官方表格。</div>
       </div>
-      <div class="no-print" style="margin-top:14px;text-align:center"><button class="btn btn-primary" onclick="window.print()">🖨️ 列印 PT/68 (官方格式)</button> <a href="https://www.scout.org.hk/uploads/tc/forms/16499/PT68.pdf" target="_blank" class="btn btn-secondary">📄 下載官方空白PT/68</a></div>
+      <div class="no-print" style="margin-top:14px;text-align:center"><button class="btn btn-primary" onclick="window.print()">🖨️ 列印申請支援摘要</button> <a href="https://www.scout.org.hk/uploads/tc/forms/16499/PT68.pdf" target="_blank" class="btn btn-secondary">📄 下載官方空白PT/68</a></div>
     </div>`;
   } else if(type==='PT67'){
     html=`<div class="print-area" id="officialForm">
@@ -2093,7 +2107,7 @@ const EMBEDDED_GUIDES={
     <li><b>📊 我的進度</b>：預設只顯示你自己的完成度，綠色進度條=已完成，點擊獎章展開，右側ⓘ查看考驗說明，<b>不能直接剔</b>，只能按「📝申請完成」</li>
     <li><b>⭐ 其他獎章</b>：已併入我的進度最底虛線卡片</li>
     <li><b>📝 待批</b>：查看你提交的申請是否已批</li>
-    <li><b>🖨️ 表格列印</b>：自動填PT/68金紫荊日期，可編輯後列印官方格式</li>
+    <li><b>🖨️ 表格列印</b>：自動整理進度，列印電子紀錄冊或金紫荊支援摘要</li>
     <li><b>📚 資料庫</b>：保護兒童課程連結、訓練綱要</li>
   </ul>
   <h3>如何申請完成？</h3>
@@ -2109,7 +2123,7 @@ const EMBEDDED_GUIDES={
   <h3>1. 我的進度</h3><ul><li>選任何成員看所有紀錄</li><li>直接勾選+日期，離線暫存確認寫入</li></ul>
   <h3>2. 全團總覽</h3><ul><li>卡片一眼睇會員章✓</li><li>表格矩陣最多30欄</li><li>🚀考驗營批量：選成員+選項目→一鍵標記→暫存→確認寫入</li><li>子切換：按成員/按項目</li></ul>
   <h3>3. 審批中心</h3><ul><li>🏅獎章審批+👤用戶審批合併</li></ul>
-  <h3>4. 表格列印 (幼童軍專用)</h3><p>自動填入，官方PT/68金紫荊格式，非深資PT/19/20</p>
+  <h3>4. 表格列印 (幼童軍專用)</h3><p>自動整理為電子紀錄冊及金紫荊支援摘要；正式申請使用官方表格</p>
   <h3>5. 用戶管理 (幼童軍專用 - 無執委)</h3><ul><li>成員改為領袖(幼童軍團長/旅長)</li><li>⚙️權限：領袖默認全部(*)，成員無</li><li>可按個別成員設定可考核範圍 (領袖之間)</li></ul>
   <h3>6. 系統設定</h3><p>允許成員互相查看進度：預設關，團長可開</p>`
 };
