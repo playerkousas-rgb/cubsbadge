@@ -1,5 +1,5 @@
 // ============================================================
-// 深資童軍進度追蹤系統 - Apps Script 後端 v4.0 - 全功能版
+// 幼童軍進度追蹤系統 - Apps Script 後端 v4.0 - 全功能版
 // 完全兼容舊版 + 新增待批申請、批量寫入優化、日誌
 // ============================================================
 
@@ -7,6 +7,18 @@ const ADMIN_YMIS = '1111111111';
 const ADMIN_NAME = '管理員';
 const ADMIN_EMAIL = 'admin@example.com';
 const ADMIN_PASS = 'changeme';
+
+// This deployment is intentionally scoped to the Cub Scout section only.
+const APP_SECTION = 'cub';
+const CUB_BRANCH_VALUES = ['cub', 'b4', '幼童軍', 'cub_scout'];
+function isSystemAccount(ymis, role) {
+  return String(ymis || '').toLowerCase() === 'sheep' || String(role || '') === 'super_admin';
+}
+function isCubBranch(branch) {
+  const value = String(branch || '').trim().toLowerCase();
+  // Blank is accepted for legacy Cub sheets; explicit other sections are never shown here.
+  return !value || CUB_BRANCH_VALUES.indexOf(value) >= 0;
+}
 
 // ===== 工具 =====
 function getSheet() { return SpreadsheetApp.getActiveSpreadsheet(); }
@@ -80,7 +92,7 @@ function initializeSheets() {
     uSheet.getRange(2,3).setValue(ADMIN_EMAIL);
     uSheet.getRange(2,4).setValue('admin');
     uSheet.getRange(2,5).setValue(hashPassword(ADMIN_PASS));
-    uSheet.getRange(2,6).setValue('b4');
+    uSheet.getRange(2,6).setValue(APP_SECTION);
     uSheet.getRange(2,7).setValue(true);
     uSheet.getRange(2,8).setValue('system');
     uSheet.getRange(2,9).setValue(now());
@@ -115,6 +127,7 @@ function initializeSheets() {
     cSheet.setFrozenRows(1);
     cSheet.appendRow(['login_mode','standalone',now(),'system']);
     cSheet.appendRow(['admin_email',ADMIN_EMAIL,now(),'system']);
+    cSheet.appendRow(['app_section',APP_SECTION,now(),'system']);
   }
   // 新增：待批完成表
   let prSheet = ss.getSheetByName('待批完成');
@@ -141,6 +154,9 @@ function initializeSheets() {
     if(!hasAllow){
       cfgSheet.appendRow(['allow_member_view_others','false',now(),'system']);
     }
+    let hasSection=false;
+    for(let i=1;i<cfgData.length;i++){ if(cfgData[i][0]==='app_section'){ hasSection=true; break; } }
+    if(!hasSection){ cfgSheet.appendRow(['app_section',APP_SECTION,now(),'system']); }
   }
 
   const apiKey = getApiKey();
@@ -195,7 +211,13 @@ function getAllUsers(){
   const sheet=getSheet().getSheetByName('Users'); if(!sheet) return [];
   const users=[]; const data=sheet.getDataRange().getValues();
   const hasAllowed = sheet.getLastColumn()>=13;
-  for(let i=1;i<data.length;i++){ if(data[i][11].toString()==='active'){ users.push({ymis:data[i][0].toString(),name:data[i][1]?data[i][1].toString():'',email:data[i][2]?data[i][2].toString():'',role:data[i][3]?data[i][3].toString():'member',can_tick:data[i][6]===true||data[i][6]==='TRUE',branch:data[i][5]?data[i][5].toString():'',allowed_badges: hasAllowed ? (data[i][12]?data[i][12].toString():'') : ''}); } }
+  for(let i=1;i<data.length;i++){
+    const ymis=data[i][0].toString(); const role=data[i][3]?data[i][3].toString():'member';
+    const branch=data[i][5]?data[i][5].toString():'';
+    if(data[i][11].toString()==='active' && !isSystemAccount(ymis, role) && isCubBranch(branch)){
+      users.push({ymis:ymis,name:data[i][1]?data[i][1].toString():'',email:data[i][2]?data[i][2].toString():'',role:role,can_tick:data[i][6]===true||data[i][6]==='TRUE',branch:branch,allowed_badges: hasAllowed ? (data[i][12]?data[i][12].toString():'') : ''});
+    }
+  }
   return users;
 }
 
@@ -361,7 +383,7 @@ function handleApply(ymis,name,email,role,branch){
   if(ymis && getUser(ymis)) return jsonResponse({success:false,error:'YMIS 已註冊'});
   if(email && getUserByEmail(email)) return jsonResponse({success:false,error:'Email 已註冊'});
   const sheet=getSheet().getSheetByName('Applications');
-  sheet.appendRow(['APP_'+Date.now(),ymis||'',name,email||'',role||'member',branch||'b4','pending',now(),'','', '']);
+  sheet.appendRow(['APP_'+Date.now(),ymis||'',name,email||'',role||'member',branch||APP_SECTION,'pending',now(),'','', '']);
   return jsonResponse({success:true,message:'申請已提交'});
 }
 function handleGetApplications(){
@@ -432,25 +454,46 @@ function handleGetConfig(){
   return jsonResponse({success:true,config:cfg});
 }
 function getMembers(){
+  // Do not surface maintenance accounts or records explicitly belonging to another section.
   const mSheet=getSheet().getSheetByName('成員名單'); const members=[];
-  if(mSheet){ const data=mSheet.getDataRange().getValues(); for(let i=1;i<data.length;i++){ if(data[i][0]) members.push({ymis:data[i][0].toString(),name:data[i][1]?data[i][1].toString():''}); } }
-  const uSheet=getSheet().getSheetByName('Users'); if(uSheet){ const data=uSheet.getDataRange().getValues(); for(let i=1;i<data.length;i++){ if(data[i][11].toString()==='active' && data[i][0]){ const y=data[i][0].toString(); if(!members.some(m=>m.ymis===y)){ members.push({ymis:y,name:data[i][1].toString()}); } } } }
+  if(mSheet){
+    const data=mSheet.getDataRange().getValues();
+    for(let i=1;i<data.length;i++){
+      const y=data[i][0] ? data[i][0].toString() : '';
+      const branch=data[i][3] ? data[i][3].toString() : '';
+      if(y && !isSystemAccount(y, '') && isCubBranch(branch)) members.push({ymis:y,name:data[i][1]?data[i][1].toString():''});
+    }
+  }
+  const uSheet=getSheet().getSheetByName('Users');
+  if(uSheet){
+    const data=uSheet.getDataRange().getValues();
+    for(let i=1;i<data.length;i++){
+      const y=data[i][0] ? data[i][0].toString() : '';
+      const role=data[i][3] ? data[i][3].toString() : 'member';
+      const branch=data[i][5] ? data[i][5].toString() : '';
+      // Only Cub members belong in the progress roster; leaders and system accounts never do.
+      if(data[i][11].toString()==='active' && role==='member' && y && !isSystemAccount(y,role) && isCubBranch(branch) && !members.some(m=>m.ymis===y)){
+        members.push({ymis:y,name:data[i][1]?data[i][1].toString():''});
+      }
+    }
+  }
   return members;
 }
 function handleLoad(){
   const ss=getSheet();
+  const members=getMembers();
+  const memberIds={}; members.forEach(function(m){ memberIds[m.ymis]=true; });
   const pSheet=ss.getSheetByName('進度追蹤'); const progress={};
-  if(pSheet){ const data=pSheet.getDataRange().getValues(); for(let i=1;i<data.length;i++){ const ymis=data[i][0].toString(); if(!ymis) continue; if(!progress[ymis]) progress[ymis]={}; progress[ymis][data[i][1].toString()]={date:data[i][2]?formatDate(data[i][2]):'',confirmer:data[i][4]?data[i][4].toString():''}; } }
+  if(pSheet){ const data=pSheet.getDataRange().getValues(); for(let i=1;i<data.length;i++){ const ymis=data[i][0].toString(); if(!ymis || !memberIds[ymis]) continue; if(!progress[ymis]) progress[ymis]={}; progress[ymis][data[i][1].toString()]={date:data[i][2]?formatDate(data[i][2]):'',confirmer:data[i][4]?data[i][4].toString():''}; } }
   // 簡化版：同時提供 flat
   const flat={}; for(const y in progress){ flat[y]={}; for(const k in progress[y]){ flat[y][k]=progress[y][k].date; } }
-  const members=getMembers();
   // pending requests
   const prSheet=ss.getSheetByName('待批完成'); const pending=[];
-  if(prSheet){ const data=prSheet.getDataRange().getValues(); for(let i=1;i<data.length;i++){ if(data[i][7].toString()==='pending'){ pending.push({request_id:data[i][0].toString(),ymis:data[i][1].toString(),name:data[i][2].toString(),item_id:data[i][3].toString(),item_name:data[i][4].toString(),requested_date:data[i][5]?formatDate(data[i][5]):'',evidence:data[i][6]?data[i][6].toString():'',status:'pending',created_at:data[i][8]?formatDate(data[i][8]):''}); } } }
+  if(prSheet){ const data=prSheet.getDataRange().getValues(); for(let i=1;i<data.length;i++){ if(data[i][7].toString()==='pending' && memberIds[data[i][1].toString()]){ pending.push({request_id:data[i][0].toString(),ymis:data[i][1].toString(),name:data[i][2].toString(),item_id:data[i][3].toString(),item_name:data[i][4].toString(),requested_date:data[i][5]?formatDate(data[i][5]):'',evidence:data[i][6]?data[i][6].toString():'',status:'pending',created_at:data[i][8]?formatDate(data[i][8]):''}); } } }
   // other badges
   const oSheet=ss.getSheetByName('其他獎章'); const other={};
-  if(oSheet){ const data=oSheet.getDataRange().getValues(); for(let i=1;i<data.length;i++){ const y=data[i][0].toString(); if(!y) continue; if(!other[y]) other[y]={}; other[y][data[i][1].toString()]={name:data[i][2]?data[i][2].toString():'',date:data[i][3]?formatDate(data[i][3]):'',cert:data[i][4]?data[i][4].toString():''}; } }
-  return jsonResponse({success:true,members:members,progress:progress,flatProgress:flat,pendingRequests:pending,otherBadges:other});
+  if(oSheet){ const data=oSheet.getDataRange().getValues(); for(let i=1;i<data.length;i++){ const y=data[i][0].toString(); if(!y || !memberIds[y]) continue; if(!other[y]) other[y]={}; other[y][data[i][1].toString()]={name:data[i][2]?data[i][2].toString():'',date:data[i][3]?formatDate(data[i][3]):'',cert:data[i][4]?data[i][4].toString():''}; } }
+  return jsonResponse({success:true,section:APP_SECTION,members:members,progress:progress,flatProgress:flat,pendingRequests:pending,otherBadges:other});
 }
 function handleSave(changes, confirmer){
   const sheet=getSheet().getSheetByName('進度追蹤'); if(!sheet) return jsonResponse({success:false,error:'Sheet not found'});

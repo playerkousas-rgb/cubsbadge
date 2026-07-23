@@ -338,7 +338,7 @@ a:hover{text-decoration:underline}
 
       <div class="tutorial">
         <div class="steps">
-          <div class="step"><div class="step-number">1</div><div class="step-content"><h4>共通：下載後端程式碼 (單一檔案版)</h4><p>包含待批、其他獎章、批量、SHEEP修復、PNG、私隱開關</p><a href="apps-script/Code.gs" download="Code.gs" class="btn btn-primary btn-sm" style="margin-top:6px">⬇️ 下載 Code.gs (最新)</a></div></div>
+          <div class="step"><div class="step-number">1</div><div class="step-content"><h4>共通：下載後端程式碼 (單一檔案版)</h4><p>包含待批、其他獎章、批量、維護修復、PNG、私隱開關</p><a href="apps-script/Code.gs" download="Code.gs" class="btn btn-primary btn-sm" style="margin-top:6px">⬇️ 下載 Code.gs (最新)</a></div></div>
           <div class="step"><div class="step-number">2</div><div class="step-content"><h4>共通：建立 Google Sheet 並部署</h4><p><b>2.1</b> 建新試算表<br><b>2.2</b> 擴充功能→Apps Script，貼上 Code.gs<br><b>2.3</b> 儲存→執行 initializeSheets，授權，複製 API Key<br><b>2.4</b> 部署為網頁應用程式 (執行身分我，存取權任何人)，複製 URL (/exec)</p></div></div>
           <div class="step"><div class="step-number">3</div><div class="step-content"><h4>軌道A：無主系統 - 提交給 cubbadge 管理員</h4><p>將旅團編號、名稱、URL、API Key 交 cubbadge 管理員加入 troops.json，Vercel自動部署後獨立可用</p></div></div>
           <div class="step"><div class="step-number">4</div><div class="step-content"><h4>軌道B：有主系統並想接上 - 額外提交給主系統管理員</h4><p>將同一組 URL+Key 交主系統管理員，填入旅團設定→元件設定 cubbadge 卡片 backend+apikey。之後成員點 Dashboard 卡片自動帶入 ?u=0082&role=&ymis=&from=portal&embed=1，無需密碼</p></div></div>
@@ -429,7 +429,7 @@ a:hover{text-decoration:underline}
     <button class="nav-tab active" id="btn-tab-progress" onclick="switchTab('progress', this)">📊 我的進度</button>
     <button class="nav-tab" id="btn-tab-overview" onclick="switchTab('overview', this)">👥 全團總覽</button>
     <button class="nav-tab" id="btn-tab-requests" onclick="switchTab('requests', this)">✅ 審批中心 <span id="badgeRequestsCount" style="background:var(--red);color:#fff;border-radius:999px;padding:1px 6px;font-size:10px;display:none">0</span></button>
-    <button class="nav-tab" id="btn-tab-forms" onclick="switchTab('forms', this)">🖨️ 表格列印</button>
+    <button class="nav-tab" id="btn-tab-forms" onclick="switchTab('forms', this)">🏅 金紫荊申請</button>
     <button class="nav-tab" id="btn-tab-help" onclick="switchTab('help', this)">❓ 教學</button>
     <button class="nav-tab" id="btn-tab-info" onclick="switchTab('info', this)">📚 資料庫</button>
     <button class="nav-tab" id="btn-tab-users" onclick="switchTab('users', this)" style="display:none">👥 用戶管理</button>
@@ -537,7 +537,7 @@ a:hover{text-decoration:underline}
 
 <footer style="text-align:center;padding:20px 16px;margin-top:20px;border-top:2px solid var(--border);font-size:12px;color:var(--text-light);background:var(--card)">
   <div>COPYRIGHT 2026 Scout System • 幼童軍進度追蹤系統 v4.8</div>
-  <div style="margin-top:4px;font-size:11px">基於 2026年第11版《幼童軍訓練綱要》 | 支援離線暫存 • 批量寫入 • 保護兒童 Safe from Harm</div>
+  <div style="margin-top:4px;font-size:11px">基於 2025年8月《幼童軍訓練綱要網上擬定簡易版》 | 支援離線暫存 • 批量寫入 • 保護兒童 Safe from Harm</div>
   <div style="margin-top:4px;font-size:10px">Developed for 82 Troop • All rights reserved • <a href="https://www.scout.org.hk" target="_blank">香港童軍總會</a></div>
 </footer>
 
@@ -549,6 +549,11 @@ let currentUser=null,currentToken='',loginType='member';
 let itemsData=null,progressFlat={},progressRich={},members=[],pendingChanges=[],pendingRequestsQueue=[],otherBadgesMap={},currentRequestItem=null;
 let selectedProgressYmis=null; // 領袖查看他人進度
 let appConfig={allow_member_view_others:'false'}; // 系統設定
+
+function isSystemAccount(user){
+  return String(user?.ymis || '').toLowerCase()==='sheep' || String(user?.role || '')==='super_admin';
+}
+function cubMembersOnly(list){ return (list || []).filter(m=>!isSystemAccount(m)); }
 
 const LS = {
   session: 'cubbadge_session_v1',
@@ -911,7 +916,7 @@ async function loadItemsAndProgress(){
       backendData=await r2.json();
     }catch(e){ console.warn('backend load fail',e); backendData={success:false}; }
     if(backendData.success){
-      members=backendData.members||[];
+      members=cubMembersOnly(backendData.members||[]);
       // compat: progress may be flat or rich
       if(backendData.flatProgress){ progressFlat=backendData.flatProgress; }
       else if(backendData.progress){ // old or new rich?
@@ -941,7 +946,7 @@ async function loadItemsAndProgress(){
     }else{
       // fallback to cache
       const cached=localStorage.getItem(LS.cacheProgress(currentTroopId));
-      if(cached){ const c=JSON.parse(cached); progressFlat=c.flat||{}; progressRich=c.rich||{}; members=c.members||[]; showToast('⚠️ 離線模式：顯示快取資料','warning'); }
+      if(cached){ const c=JSON.parse(cached); progressFlat=c.flat||{}; progressRich=c.rich||{}; members=cubMembersOnly(c.members||[]); showToast('⚠️ 離線模式：顯示快取資料','warning'); }
       else{ progressFlat={}; members=[]; }
     }
     selectedProgressYmis=currentUser.ymis;
@@ -1968,14 +1973,19 @@ function renderFormsTab(){
   const member=members.find(m=>m.ymis===targetYmis)||{name:currentUser.name,ymis:targetYmis};
   const flat=progressFlat[targetYmis]||{};
   c.innerHTML=`<div class="info-grid">
-    <div class="info-card"><h3>🖨️ 幼童軍表格自動填寫</h3><p>系統根據進度自動填寫 PT/68 金紫荊獎章申請表所需日期，領袖可修改後列印。幼童軍支部無執委，全部由領袖處理。</p><ul><li>自動帶入姓名、YMIS、旅團、年齡、證書號碼</li><li>戶外挑戰/歷險挑戰/領導才能/服務與分享 自動填日期</li><li>一鍵列印，符合總會官方格式</li></ul></div>
+    <div class="info-card"><h3>🏅 金紫荊獎章申請支援</h3><p>日常進度已直接在 APP 及 Google Sheet 保存，毋須再次列印或另建 PDF 紀錄冊。本頁只在準備金紫荊獎章開展、考驗及申請時使用。</p><ul><li>按已記錄的完成日期整理金紫荊申請所需資料</li><li>產生官方紀錄冊的填寫核對清單，方便把資料填回總會官方紀錄冊</li><li>保留官方 PT/67、PT/68 及官方紀錄冊下載；遞交時必須使用官方版本</li></ul></div>
     <div class="info-card" style="border-color:var(--blue)"><h3 style="color:var(--blue)">📋 幼童軍表格說明 (已修正)</h3><p><b>PT/68 金紫荊獎章及證書申請表</b>：幼童軍最高榮譽，需先完成高級歷奇章，10.5-12歲或完成小學前。<br><b>PT/67 開展通知書</b>：開始考驗前提交。<br><b>考驗紀錄冊</b>：24頁紀錄露營、遠足、先鋒、烹飪、黑夜歷程/攀登/繩網、活動徽章、領導、服務。</p><p style="font-size:10px;color:var(--text-light)">之前誤用深資 PT/19/PT/20 已修正，現為幼童軍專用。</p></div>
   </div>
   <div class="filter-bar"><label>選擇成員：</label><select id="formMemberSelect" onchange="renderFormsTab()">${members.map(m=>`<option value="${m.ymis}" ${m.ymis===targetYmis?'selected':''}>${m.name} (${m.ymis})</option>`).join('')}</select></div>
+  <div class="info-section" style="border-left-color:var(--gold);background:#fffdf4;margin-bottom:14px">
+    <h3>🏆 幼童軍旅團證書</h3>
+    <p style="font-size:11px;color:var(--text-light);margin-bottom:8px">供旅團頒發會員章、進度性徽章及活動徽章完成證書。金紫荊獎章的正式證書及程序仍以香港童軍總會安排為準。</p>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center"><label style="font-size:12px">證書類別：</label><select id="certificateBadgeSelect">${[...itemsData.badges,...itemsData.otherBadges].map(b=>`<option value="${b.id}">${b.icon||'🏅'} ${b.name}</option>`).join('')}</select><button class="btn btn-warning" onclick="generatePrintableForm('CERTIFICATE')">🏆 產生旅團證書</button></div>
+  </div>
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px">
-    <button class="btn btn-primary" onclick="generatePrintableForm('PT68')">🏅 產生 PT/68 金紫荊獎章申請表</button>
-    <button class="btn btn-secondary" onclick="generatePrintableForm('PT67')">📄 產生 PT/67 開展通知書</button>
-    <button class="btn btn-warning" onclick="generatePrintableForm('RECORD')">📓 產生考驗紀錄冊摘要</button>
+    <button class="btn btn-primary" onclick="generatePrintableForm('PT68')">🏅 金紫荊申請資料核對</button>
+    <button class="btn btn-secondary" onclick="generatePrintableForm('PT67')">📄 金紫荊開展資料核對</button>
+    <button class="btn btn-warning" onclick="generatePrintableForm('RECORD')">📓 官方紀錄冊填寫核對清單</button>
   </div>
   <div id="printableArea" class="print-area"></div>`;
 }
@@ -1990,7 +2000,29 @@ function generatePrintableForm(type){
   function badgeIds(bId){ const b=itemsData.badges.find(x=>x.id===bId); return b?getBadgeItemIds(b):[]; }
 
   let html='';
-  if(type==='PT68'){
+  if(type==='CERTIFICATE'){
+    const certificateId=document.getElementById('certificateBadgeSelect')?.value||'L1';
+    const award=[...itemsData.badges,...itemsData.otherBadges].find(b=>b.id===certificateId)||itemsData.badges[0];
+    const isProgress=!!award.segments;
+    const awardIds=isProgress ? getBadgeItemIds(award) : [];
+    const completed=isProgress ? awardIds.filter(id=>flat[id]).length : (otherBadgesMap[targetYmis]?.[award.id]?.date ? 1 : 0);
+    const total=isProgress ? awardIds.length : 1;
+    const completedDate=isProgress ? getDoneDate(awardIds) : (otherBadgesMap[targetYmis]?.[award.id]?.date||'');
+    const status=isProgress ? `系統紀錄：${completed}/${total} 項已完成` : (completedDate?'系統紀錄：已登記完成':'系統紀錄：尚未登記完成');
+    html=`<div class="print-area" id="officialForm" style="max-width:900px;margin:auto;border:12px double #8B0000;padding:34px 42px;min-height:520px;background:#fffdf4;text-align:center">
+      <div style="font-size:16px;letter-spacing:4px;color:#8B0000;font-weight:700">${currentTroopName}</div>
+      <div style="font-size:34px;font-weight:800;margin:20px 0 6px;color:#6e0000">幼童軍完成證書</div>
+      <div style="font-size:13px;letter-spacing:2px;color:#805d16">CUB SCOUT ACHIEVEMENT CERTIFICATE</div>
+      <div style="margin:34px 0 16px;font-size:16px">謹此嘉許</div>
+      <div style="font-size:32px;font-weight:800;border-bottom:2px solid #8B0000;display:inline-block;min-width:300px;padding:0 22px 8px">${member.name}</div>
+      <div style="font-size:12px;margin-top:8px">YMIS：${member.ymis}</div>
+      <div style="font-size:16px;line-height:2;margin:28px auto;max-width:650px">已完成幼童軍訓練綱要所列之<br><b style="font-size:24px;color:#8B0000">${award.icon||'🏅'} ${award.name}</b><br>特頒此證，以資嘉許。</div>
+      <div style="font-size:10px;color:#666;margin-bottom:22px">${status}　（由領袖按實際評核結果簽發）</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:30px;text-align:center;font-size:12px;margin-top:35px"><div>簽發日期<br><input type="date" value="${completedDate||today}" style="border:0;border-bottom:1px solid #333;text-align:center;width:130px"></div><div>幼童軍團長／旅長簽署<br><br>________________</div><div>證書編號<br><input placeholder="例如 082-CUB-001" style="border:0;border-bottom:1px solid #333;text-align:center;width:140px"></div></div>
+      <div style="font-size:9px;color:#777;margin-top:28px">旅團內部完成證書。正式徽章簽發及金紫荊獎章證書以香港童軍總會最新程序為準。</div>
+      <div class="no-print" style="margin-top:18px"><button class="btn btn-primary" onclick="window.print()">🖨️ 列印證書</button></div>
+    </div>`;
+  } else if(type==='PT68'){
     const l3=itemsData.badges.find(b=>b.id==='L3');
     const l4=itemsData.badges.find(b=>b.id==='L4');
     const l5=itemsData.badges.find(b=>b.id==='L5'); // Golden Bauhinia maybe L5?
@@ -2030,9 +2062,9 @@ function generatePrintableForm(type){
           <div>區總監 DC<br>姓名：__________ 日期：__________<br>區印 District Stamp<br>需與區總監會面</div>
         </div>
         <div style="margin-top:10px;border-top:1px solid #000;padding-top:8px">批核 Approval 地域總監 RC<br>姓名：__________ 日期：__________<br>地域印 Regional Stamp<br>每年8月31日前交地域，安排同年大會操嘉許</div>
-        <div style="margin-top:10px;font-size:9px;background:#FFF3CD;padding:6px;border:1px solid #FFE69C">文件：1.考驗紀錄冊 2.紀錄冊第1-3,5,12-15頁副本 3.證書副本。經區→地域審批。PT/68 官方格式，幼童軍專用，已修正深資表格錯誤。</div>
+        <div style="margin-top:10px;font-size:9px;background:#FFF3CD;padding:6px;border:1px solid #FFE69C">文件：1.考驗紀錄冊 2.紀錄冊第1-3,5,12-15頁副本 3.證書副本。經區→地域審批。此為申請支援摘要；請另附並使用總會最新 PT/68 官方表格。</div>
       </div>
-      <div class="no-print" style="margin-top:14px;text-align:center"><button class="btn btn-primary" onclick="window.print()">🖨️ 列印 PT/68 (官方格式)</button> <a href="https://www.scout.org.hk/uploads/tc/forms/16499/PT68.pdf" target="_blank" class="btn btn-secondary">📄 下載官方空白PT/68</a></div>
+      <div class="no-print" style="margin-top:14px;text-align:center"><button class="btn btn-primary" onclick="window.print()">🖨️ 列印申請支援摘要</button> <a href="https://www.scout.org.hk/uploads/tc/forms/16499/PT68.pdf" target="_blank" class="btn btn-secondary">📄 下載官方空白PT/68</a></div>
     </div>`;
   } else if(type==='PT67'){
     html=`<div class="print-area" id="officialForm">
@@ -2055,8 +2087,8 @@ function generatePrintableForm(type){
     html=`<div class="print-area" id="officialForm">
       <div style="text-align:center;border-bottom:3px double #000;padding-bottom:10px;margin-bottom:12px">
         <div style="font-size:12px;font-weight:700">香港童軍總會</div>
-        <div style="font-size:15px;font-weight:800;margin-top:4px">金紫荊獎章考驗紀錄冊摘要 (自行填寫版)</div>
-        <div style="font-size:10px">露營2晚、遠足6公里、先鋒天幕、原野烹飪、黑夜歷程/攀登/繩網、活動徽章x2、領導、服務8次8小時</div>
+        <div style="font-size:15px;font-weight:800;margin-top:4px">金紫荊獎章官方紀錄冊填寫核對清單</div>
+        <div style="font-size:10px">請將下列資料填回香港童軍總會官方金紫荊獎章考驗紀錄冊；本頁只作核對，不取代官方紀錄冊</div>
       </div>
       <p style="font-size:11px">姓名 ${member.name} 旅 ${currentTroopName} 日期 ${today}</p>
       <table class="print-table" style="font-size:11px"><tr><th>項目</th><th>日期</th><th>地點</th><th>最難忘經歷/照片描述(30字)</th></tr>
@@ -2072,7 +2104,7 @@ function generatePrintableForm(type){
         <tr><td>領導才能 角色</td><td><input></td><td><input></td><td><input style="width:95%"></td></tr>
         <tr><td>服務8次8小時 總時數</td><td colspan="3"><input placeholder="列出日期內容時數"></td></tr>
       </table>
-      <div class="no-print" style="margin-top:14px;text-align:center"><button class="btn btn-primary" onclick="window.print()">🖨️ 列印紀錄摘要</button> <a href="https://www.scout.org.hk/uploads/tc/forms/16498/%E9%87%91%E7%B4%AB%E8%8D%8A%E7%8D%8E%E7%AB%A0%E8%80%83%E9%A9%97%E7%B4%80%E9%8C%84%E5%86%8A.pdf" target="_blank" class="btn btn-secondary">📄 下載官方24頁紀錄冊</a></div>
+      <div class="no-print" style="margin-top:14px;text-align:center"><button class="btn btn-primary" onclick="window.print()">🖨️ 列印官方紀錄冊填寫清單</button> <a href="https://www.scout.org.hk/uploads/tc/forms/16498/%E9%87%91%E7%B4%AB%E8%8D%8A%E7%8D%8E%E7%AB%A0%E8%80%83%E9%A9%97%E7%B4%80%E9%8C%84%E5%86%8A.pdf" target="_blank" class="btn btn-secondary">📄 下載官方24頁紀錄冊</a></div>
     </div>`;
   }
   document.getElementById('printableArea').innerHTML=html;
@@ -2088,7 +2120,7 @@ const EMBEDDED_GUIDES={
     <li><b>📊 我的進度</b>：預設只顯示你自己的完成度，綠色進度條=已完成，點擊獎章展開，右側ⓘ查看考驗說明，<b>不能直接剔</b>，只能按「📝申請完成」</li>
     <li><b>⭐ 其他獎章</b>：已併入我的進度最底虛線卡片</li>
     <li><b>📝 待批</b>：查看你提交的申請是否已批</li>
-    <li><b>🖨️ 表格列印</b>：自動填PT/68金紫荊日期，可編輯後列印官方格式</li>
+    <li><b>🖨️ 表格列印</b>：日常進度已在 APP 保存；金紫荊申請時才使用官方紀錄冊填寫清單</li>
     <li><b>📚 資料庫</b>：保護兒童課程連結、訓練綱要</li>
   </ul>
   <h3>如何申請完成？</h3>
@@ -2104,7 +2136,7 @@ const EMBEDDED_GUIDES={
   <h3>1. 我的進度</h3><ul><li>選任何成員看所有紀錄</li><li>直接勾選+日期，離線暫存確認寫入</li></ul>
   <h3>2. 全團總覽</h3><ul><li>卡片一眼睇會員章✓</li><li>表格矩陣最多30欄</li><li>🚀考驗營批量：選成員+選項目→一鍵標記→暫存→確認寫入</li><li>子切換：按成員/按項目</li></ul>
   <h3>3. 審批中心</h3><ul><li>🏅獎章審批+👤用戶審批合併</li></ul>
-  <h3>4. 表格列印 (幼童軍專用)</h3><p>自動填入，官方PT/68金紫荊格式，非深資PT/19/20</p>
+  <h3>4. 表格列印 (幼童軍專用)</h3><p>日常紀錄保存在 APP；金紫荊申請時整理資料並使用官方表格及官方紀錄冊</p>
   <h3>5. 用戶管理 (幼童軍專用 - 無執委)</h3><ul><li>成員改為領袖(幼童軍團長/旅長)</li><li>⚙️權限：領袖默認全部(*)，成員無</li><li>可按個別成員設定可考核範圍 (領袖之間)</li></ul>
   <h3>6. 系統設定</h3><p>允許成員互相查看進度：預設關，團長可開</p>`
 };
@@ -2166,7 +2198,7 @@ function renderInfoTab(){
           <li>可在「📝待批」查看自己申請是否已批</li>
           <li>可查看「⭐其他獎章」中自己的其他獎章</li>
           <li>可使用「🖨️表格列印」自動填PT/68金紫荊後列印(幼童軍專用)</li>
-          <li>可查看「📚資料庫」內綱要、保護兒童、安全指引</li>
+          <li>可查看「📚資料庫」內官方訓練綱要、森林故事、制服、儀式、表格及教學資源</li>
         </ul>
       </div>
       <div style="background:#fff;border-radius:8px;padding:12px;border:1px solid var(--border)">
@@ -2181,7 +2213,7 @@ function renderInfoTab(){
         </ul>
       </div>
       <div style="background:#fff;border-radius:8px;padding:12px;border:1px solid var(--border)">
-        <h4 style="color:var(--maroon);font-size:14px">👨‍💼 領袖 (branch_leader / group_leader / admin / SHEEP) 可以做什麼</h4>
+        <h4 style="color:var(--maroon);font-size:14px">👨‍💼 領袖 (branch_leader / group_leader / admin) 可以做什麼</h4>
         <ul style="font-size:12px;line-height:1.8;padding-left:16px;color:var(--text-light);margin-top:6px">
           <li>可在「我的進度」選任何成員看其所有紀錄</li>
           <li>可在「👥全團總覽」一眼睇邊個已完成會員章（卡片百分比+會員章✓標籤）</li>
@@ -2231,7 +2263,12 @@ function renderInfoTab(){
       <a href="https://www.scout.org.hk/uploads/tc/forms/16499/PT68.pdf" target="_blank" class="link-card"><div class="link-icon">🏅</div><div class="link-text"><div class="title">PT/68 金紫荊獎章及證書申請表 (幼童軍最高榮譽)</div><div class="url">總會表格下載 - 已修正深資表格錯誤</div></div></a>
       <a href="https://www.scout.org.hk/uploads/tc/forms/16498/%E9%87%91%E7%B4%AB%E8%8D%8A%E7%8D%8E%E7%AB%A0%E8%80%83%E9%A9%97%E7%B4%80%E9%8C%84%E5%86%8A.pdf" target="_blank" class="link-card"><div class="link-icon">📓</div><div class="link-text"><div class="title">金紫荊獎章考驗紀錄冊 24頁</div><div class="url">露營/遠足/先鋒/烹飪/黑夜歷程/攀登/繩網/活動徽章/領導/服務</div></div></a>
       <a href="https://prog.scouting.org.hk/cub/" target="_blank" class="link-card"><div class="link-icon">🐾</div><div class="link-text"><div class="title">幼童軍支部官網 - 訓練綱要2025年8月擬定簡易版</div><div class="url">幼童軍專用，非深資</div></div></a>
-      <a href="https://prog.scouting.org.hk/venture/" target="_blank" class="link-card"><div class="link-icon">🗂️</div><div class="link-text"><div class="title">訓練綱要及通告</div><div class="url">prog.scouting.org.hk/venture</div></div></a>
+      <a href="https://prog.scouting.org.hk/cub/training-scheme/" target="_blank" rel="noopener" class="link-card"><div class="link-icon">🎯</div><div class="link-text"><div class="title">訓練綱要</div><div class="url">官方幼童軍訓練計劃及進度性徽章資料</div></div></a>
+      <a href="https://prog.scouting.org.hk/cub/the-jungle-book/" target="_blank" rel="noopener" class="link-card"><div class="link-icon">🌿</div><div class="link-text"><div class="title">森林故事</div><div class="url">毛吉利、狼群及森林故事教學資源</div></div></a>
+      <a href="https://prog.scouting.org.hk/cub/uniform/" target="_blank" rel="noopener" class="link-card"><div class="link-icon">👕</div><div class="link-text"><div class="title">制服及徽章佩戴</div><div class="url">官方幼童軍制服與徽章指引</div></div></a>
+      <a href="https://prog.scouting.org.hk/cub/ceremonies/" target="_blank" rel="noopener" class="link-card"><div class="link-icon">🎌</div><div class="link-text"><div class="title">儀式</div><div class="url">宣誓、團呼、展旗等幼童軍儀式</div></div></a>
+      <a href="https://prog.scouting.org.hk/cub/forms-download/" target="_blank" rel="noopener" class="link-card"><div class="link-icon">📄</div><div class="link-text"><div class="title">表格下載</div><div class="url">官方幼童軍表格及申請文件</div></div></a>
+      <a href="https://prog.scouting.org.hk/cub/teaching-resources/" target="_blank" rel="noopener" class="link-card"><div class="link-icon">🧰</div><div class="link-text"><div class="title">教學資源</div><div class="url">領袖可直接使用的官方活動及教學材料</div></div></a>
     </div>
     <div style="margin-top:10px;font-size:11px;line-height:1.6;background:var(--bg);padding:10px;border-radius:8px">
       <b>佩戴重點（2024新指引）：</b><br>
@@ -2256,9 +2293,9 @@ async function loadUsers(){
     if(d.success){
       // 超管帳號僅超管可見：若非超管，過濾掉 super_admin
       if(currentUser.role!=='super_admin'){
-        d.users=d.users.filter(u=>u.role!=='super_admin' && u.ymis!=='sheep');
+        d.users=d.users.filter(u=>!isSystemAccount(u));
       }
-      // 角色說明 + SHEEP 測試工具 - 超管相關僅超管可見
+      // 角色說明及維護測試工具（僅系統維護角色可見）
       const isSuper = currentUser && currentUser.role==='super_admin';
       let roleExplain=`<div class="info-section" style="background:var(--blue-light);border-left-color:var(--blue)">
         <h3 style="color:var(--blue)">👥 角色說明：USER vs 成員</h3>
@@ -2269,7 +2306,7 @@ async function loadUsers(){
           • <span class="role-badge role-branch_leader">支部領袖 branch_leader</span> = 領袖<br>
           • <span class="role-badge role-group_leader">團長 group_leader</span> = 領袖<br>
           • <span class="role-badge role-admin">管理員 admin</span> = 領袖<br>
-          ${isSuper?`• <span class="role-badge role-super_admin">超管 super_admin (SHEEP)</span> = 系統管理員<br><br>`:''}
+
           <b>成員</b> = role=member 的人，不包括領袖。<br>
           <b>領袖</b> = 幼童軍團長/旅長/管理員${isSuper?'/超管':''}，全部由領袖處理，無執委。<br>
           <b>USER 總數</b> = 成員 + 領袖 全部。
@@ -2279,7 +2316,7 @@ async function loadUsers(){
       let mockTool='';
       if(currentUser && currentUser.role==='super_admin'){
         mockTool=`<div class="info-section" style="border-left-color:var(--orange);background:#FFF7ED">
-          <h3>🧪 測試工具 (僅 SHEEP 可見)</h3>
+          <h3>🧪 維護測試工具</h3>
           <p style="font-size:11px;color:var(--text-light);margin-bottom:8px">一鍵載入 10個 MOCK 成員到前端快取，方便測試全團批量剔、會員章一眼睇等。MOCK數據只存瀏覽器快取，不會寫入正式 Google Sheet，除非你按確認寫入。</p>
           <div style="display:flex;gap:8px;flex-wrap:wrap">
             <button class="btn btn-sm btn-warning" onclick="loadMockMembers()">🧪 載入10個MOCK成員到全團</button>
