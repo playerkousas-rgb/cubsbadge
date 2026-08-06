@@ -61,7 +61,7 @@ function canManageRole(m,t){ return (CAN_MANAGE_ROLES[m]||[]).indexOf(t)>=0; }
 
 // ===== 活動履歷（服務紀錄／活動紀錄／訓練班紀錄） =====
 const LOG_SHEET_NAME = '活動履歷';
-const LOG_HEADERS = ['record_id','type','ymis','name','date','title','role','hours','cert_no','detail','recorder','recorded_at','updated_at','organizer'];
+const LOG_HEADERS = ['record_id','type','ymis','name','date','title','role','hours','cert_no','detail','recorder','recorded_at','updated_at'];
 const LOG_TYPES = ['service','activity','training'];
 function safeSheetText(v,maxLen){
   let text=String(v||'').trim().substring(0,maxLen||200);
@@ -174,11 +174,6 @@ function initializeSheets() {
     lSheet.appendRow(LOG_HEADERS);
     lSheet.getRange(1,1,1,LOG_HEADERS.length).setFontWeight('bold').setBackground('#8B0000').setFontColor('#FFFFFF');
     lSheet.setFrozenRows(1);
-  }
-  // 向下兼容：舊版只有 13 欄 → 自動補建 organizer（第 14 欄），不影響既有資料
-  if(lSheet.getLastColumn()<LOG_HEADERS.length){
-    lSheet.getRange(1,LOG_HEADERS.length).setValue('organizer');
-    lSheet.getRange(1,1,1,LOG_HEADERS.length).setFontWeight('bold').setBackground('#8B0000').setFontColor('#FFFFFF');
   }
   // 確保系統設定有 allow_member_view_others
   let cfgSheet = ss.getSheetByName('SystemConfig');
@@ -764,8 +759,7 @@ function getLogRecordsList(){
         role:String(data[i][6]||''), hours:String(data[i][7]||''),
         cert_no:String(data[i][8]||''), detail:String(data[i][9]||''),
         recorder:String(data[i][10]||''),
-        recorded_at:data[i][11]?String(data[i][11]):'',
-        organizer:String(data[i][13]||'')
+        recorded_at:data[i][11]?String(data[i][11]):''
       });
     }
   }
@@ -778,24 +772,23 @@ function handleGetLogRecords(){
 }
 function sanitizeLogRecord(r){
   r=r||{};
+  const type = LOG_TYPES.indexOf(r.type)>=0 ? r.type : 'activity';
   return {
-    type: LOG_TYPES.indexOf(r.type)>=0 ? r.type : 'activity',
+    type: type,
     ymis: String(r.ymis||'').trim().substring(0,20),
     name: safeSheetText(r.name,60),
     date: String(r.date||'').substring(0,20),
     title: safeSheetText(r.title,120),
-    role: safeSheetText(r.role,60),
-    hours: String(r.hours==null?'':r.hours).substring(0,20),
+    // 幼童軍訓練班身份只會是學員，不需時數：強制固定，防止前端/API 傳入其他值
+    role: type==='training' ? '學員' : safeSheetText(r.role,60),
+    hours: type==='training' ? '' : String(r.hours==null?'':r.hours).substring(0,20),
     cert_no: safeSheetText(r.cert_no,60),
-    detail: safeSheetText(r.detail,500),
-    organizer: safeSheetText(r.organizer,60)
+    detail: safeSheetText(r.detail,500)
   };
 }
 function handleSaveLogRecord(records, recorderYmis, recorderName){
   const sheet=getSheet().getSheetByName(LOG_SHEET_NAME);
   if(!sheet) return jsonResponse({success:false,error:'「'+LOG_SHEET_NAME+'」工作表不存在：請在 Apps Script 執行 initializeSheets() 補建'});
-  // 舊版 13 欄 → 自動補 organizer 表頭，避免寫入出界
-  if(sheet.getLastColumn()<LOG_HEADERS.length){ sheet.getRange(1,LOG_HEADERS.length).setValue('organizer'); }
   if(!Array.isArray(records)||records.length===0) return jsonResponse({success:false,error:'沒有可儲存的紀錄'});
   if(records.length>200) return jsonResponse({success:false,error:'一次最多 200 筆，請分批'});
   const results=[]; let processed=0;
@@ -808,8 +801,8 @@ function handleSaveLogRecord(records, recorderYmis, recorderName){
       const data=sheet.getDataRange().getValues();
       for(let i=1;i<data.length;i++){
         if(String(data[i][0])===rid){
-          // 更新第 2~14 欄（type..organizer），record_id 不變
-          sheet.getRange(i+1,2,1,13).setValues([[rec.type,rec.ymis,rec.name,rec.date,rec.title,rec.role,rec.hours,rec.cert_no,rec.detail,sheet.getRange(i+1,11).getValue()||recorderName||recorderYmis,String(data[i][11]||''),now(),rec.organizer]]);
+          // 更新第 2~13 欄（type..updated_at），record_id 不變
+          sheet.getRange(i+1,2,1,12).setValues([[rec.type,rec.ymis,rec.name,rec.date,rec.title,rec.role,rec.hours,rec.cert_no,rec.detail,sheet.getRange(i+1,11).getValue()||recorderName||recorderYmis,String(data[i][11]||''),now()]]);
           results.push({success:true,record_id:rid}); processed++;
           writeAudit(recorderYmis,'update_log',rec.ymis,rec.type+': '+rec.title+' '+rec.date);
           return;
@@ -818,7 +811,7 @@ function handleSaveLogRecord(records, recorderYmis, recorderName){
       results.push({success:false,record_id:rid,error:'找不到紀錄'}); return;
     }
     const newId='LOG_'+Date.now()+'_'+Math.random().toString(36).substr(2,5);
-    sheet.appendRow([newId,rec.type,rec.ymis,rec.name,rec.date,rec.title,rec.role,rec.hours,rec.cert_no,rec.detail,recorderName||recorderYmis,now(),'',rec.organizer]);
+    sheet.appendRow([newId,rec.type,rec.ymis,rec.name,rec.date,rec.title,rec.role,rec.hours,rec.cert_no,rec.detail,recorderName||recorderYmis,now(),'']);
     results.push({success:true,record_id:newId}); processed++;
     writeAudit(recorderYmis,'add_log',rec.ymis,rec.type+': '+rec.title+' '+rec.date);
   });

@@ -665,11 +665,10 @@ a:hover{text-decoration:underline}
     </div>
     <div class="form-group"><label>日期 *</label><input type="date" id="lgDate"></div>
     <div class="form-group"><label id="lgTitleLabel">活動名稱 *</label><input type="text" id="lgTitle" maxlength="120" placeholder="例如：全旅秋季大露營 2026"></div>
-    <div class="form-group" id="lgOrgGroup" style="display:none"><label>主辦機構</label><input type="text" id="lgOrg" maxlength="60" placeholder="例如：香港童軍總會 / 地域 / 區會（選填）"></div>
-    <div class="form-group"><label>崗位／身份</label><input type="text" id="lgRole" maxlength="60" list="lgRoleHints" placeholder="選填"><datalist id="lgRoleHints"></datalist></div>
+    <div class="form-group" id="lgRoleGroup"><label>崗位／身份</label><input type="text" id="lgRole" maxlength="60" list="lgRoleHints" placeholder="選填"><datalist id="lgRoleHints"></datalist></div>
     <div class="form-group" id="lgHoursGroup"><label id="lgHoursLabel">時數</label><input type="number" id="lgHours" min="0" step="0.5" placeholder="例如 6"></div>
     <div class="form-group" id="lgCertGroup"><label>證書編號</label><input type="text" id="lgCertNo" maxlength="60" placeholder="選填"></div>
-    <div class="form-group"><label>內容／備註</label><textarea id="lgDetail" rows="2" maxlength="500" placeholder="地點、主辦單位、內容摘要……（選填）"></textarea></div>
+    <div class="form-group"><label>內容／備註</label><textarea id="lgDetail" rows="2" maxlength="500" placeholder="地點、內容摘要……（選填）"></textarea></div>
     <div class="modal-actions">
       <button class="btn btn-secondary" onclick="closeModal('logRecordModal')">取消</button>
       <button class="btn btn-primary" id="btnSaveLogRecord" onclick="submitLogRecord()">💾 儲存</button>
@@ -2332,7 +2331,7 @@ function handleOtherBadgeCert(badgeId, name, targetYmis, certVal){
 const LOG_TYPES_CONFIG={
   service:{icon:'🤝',label:'服務紀錄',color:'var(--green)',roleHints:['服務員','統籌','站崗','工作人員','領隊'],showHours:true,showCert:false},
   activity:{icon:'🏕️',label:'活動紀錄',color:'var(--blue)',roleHints:['參加者','籌委','領隊','工作人員'],showHours:false,showCert:false},
-  training:{icon:'🎓',label:'訓練班紀錄',color:'var(--maroon)',roleHints:['學員','助教','導師','班領導人'],showHours:true,showCert:true}
+  training:{icon:'🎓',label:'訓練班紀錄',color:'var(--maroon)',roleHints:['學員'],showHours:false,showCert:true} // 幼童軍訓練班身份只會是學員
 };
 function logTypeLabel(t){ return (LOG_TYPES_CONFIG[t]||LOG_TYPES_CONFIG.activity).label; }
 function logTypeIcon(t){ return (LOG_TYPES_CONFIG[t]||LOG_TYPES_CONFIG.activity).icon; }
@@ -2379,7 +2378,6 @@ function renderLogsTab(){
           <b>${escapeHtmlText(r.title)}</b> <small style="color:var(--text-light)">📅 ${escapeHtmlText(r.date)}</small>
           <div style="font-size:11px;margin-top:3px;display:flex;gap:6px;flex-wrap:wrap">
             ${r.role?`<span style="background:var(--bg);padding:1px 8px;border-radius:999px">崗位：${escapeHtmlText(r.role)}</span>`:''}
-            ${r.organizer?`<span style="background:var(--bg);padding:1px 8px;border-radius:999px">主辦：${escapeHtmlText(r.organizer)}</span>`:''}
             ${r.hours?`<span style="background:var(--bg);padding:1px 8px;border-radius:999px">時數：${escapeHtmlText(r.hours)}</span>`:''}
             ${r.cert_no?`<span style="background:var(--bg);padding:1px 8px;border-radius:999px">證書：${escapeHtmlText(r.cert_no)}</span>`:''}
           </div>
@@ -2430,7 +2428,6 @@ function openLogRecordModal(recordId){
     document.getElementById('lgBatchMode').disabled=true;
     document.getElementById('lgDate').value=r.date||todayISO();
     document.getElementById('lgTitle').value=r.title||'';
-    document.getElementById('lgOrg').value=r.organizer||'';
     document.getElementById('lgRole').value=r.role||'';
     document.getElementById('lgHours').value=r.hours||'';
     document.getElementById('lgCertNo').value=r.cert_no||'';
@@ -2443,7 +2440,7 @@ function openLogRecordModal(recordId){
     document.getElementById('lgType').value='service';
     document.getElementById('lgMember').value=selectedProgressYmis||currentUser.ymis;
     document.getElementById('lgDate').value=todayISO();
-    ['lgTitle','lgOrg','lgRole','lgHours','lgCertNo','lgDetail'].forEach(id=>document.getElementById(id).value='');
+    ['lgTitle','lgRole','lgHours','lgCertNo','lgDetail'].forEach(id=>document.getElementById(id).value='');
   }
   syncLogTypeFields();
   document.getElementById('logRecordModal').classList.add('active');
@@ -2462,7 +2459,8 @@ function syncLogTypeFields(){
   document.getElementById('lgHoursGroup').style.display=cfg.showHours?'block':'none';
   document.getElementById('lgHoursLabel').textContent=t==='service'?'服務時數':'時數';
   document.getElementById('lgCertGroup').style.display=cfg.showCert?'block':'none';
-  document.getElementById('lgOrgGroup').style.display=t==='training'?'block':'none';
+  // 幼童軍訓練班身份只會是學員：隱藏崗位欄，儲存時自動填「學員」
+  document.getElementById('lgRoleGroup').style.display=t==='training'?'none':'block';
   document.getElementById('lgRoleHints').innerHTML=(cfg.roleHints||[]).map(h=>`<option value="${h}">`).join('');
 }
 async function submitLogRecord(){
@@ -2472,9 +2470,9 @@ async function submitLogRecord(){
   const type=oldRec?oldRec.type:document.getElementById('lgType').value;
   const date=document.getElementById('lgDate').value;
   const title=document.getElementById('lgTitle').value.trim();
-  const organizer=document.getElementById('lgOrg').value.trim();
-  const role=document.getElementById('lgRole').value.trim();
-  const hours=document.getElementById('lgHours').value;
+  // 訓練班身份固定為學員；訓練班不需時數
+  const role=type==='training'?'學員':document.getElementById('lgRole').value.trim();
+  const hours=type==='training'?'':document.getElementById('lgHours').value;
   const cert_no=document.getElementById('lgCertNo').value.trim();
   const detail=document.getElementById('lgDetail').value.trim();
   if(!date||!title){ showToast('請填寫日期及名稱','error'); return; }
@@ -2489,7 +2487,7 @@ async function submitLogRecord(){
     const y=document.getElementById('lgMember').value;
     targets=[{ymis:y,name:(members.find(m=>m.ymis===y)||{}).name||''}];
   }
-  const records=targets.map(t=>({...(oldRec?{record_id:oldRec.record_id}:{}),type,ymis:t.ymis,name:t.name,date,title,role,hours:hours!==''?String(hours):'',cert_no,detail,organizer}));
+  const records=targets.map(t=>({...(oldRec?{record_id:oldRec.record_id}:{}),type,ymis:t.ymis,name:t.name,date,title,role,hours:hours!==''?String(hours):'',cert_no,detail}));
   btn.disabled=true; btn.textContent='儲存中...';
   try{
     if(currentTroopId==='DEMO'){
@@ -3085,7 +3083,7 @@ async function enterDemoMode(){
       ['activity','旅際足球邀請賽','籌委','','2026-06-14']
     ].forEach((row,i)=>{
       members.slice(0,4).forEach((m,mi)=>{
-        logRecords.push({record_id:'DEMOLOG_seed_'+i+'_'+mi,type:row[0],ymis:m.ymis,name:m.name,date:row[4],title:row[1],role:row[2],hours:row[3],cert_no:row[0]==='training'?'CERT-C2502-'+m.ymis.slice(-4):'',organizer:row[0]==='training'?'香港童軍總會 / 地域':'',detail:'DEMO 範例資料',recorder:'DEMO 團長',recorded_at:row[4]});
+        logRecords.push({record_id:'DEMOLOG_seed_'+i+'_'+mi,type:row[0],ymis:m.ymis,name:m.name,date:row[4],title:row[1],role:row[2],hours:row[0]==='training'?'':row[3],cert_no:row[0]==='training'?'CERT-C2502-'+m.ymis.slice(-4):'',detail:'DEMO 範例資料',recorder:'DEMO 團長',recorded_at:row[4]});
       });
     });
     showToast('✅ 已進入 MOCK 試用模式，10個成員進度、活動履歷、批量剔、表格等皆可用，數據僅在瀏覽器', 'success');
