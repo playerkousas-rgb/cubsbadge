@@ -7,7 +7,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="format-detection" content="telephone=no">
-<title>幼童軍進度追蹤系統 v5.0 - 完整版</title>
+<title>幼童軍進度追蹤系統 v5.1 - 完整版</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <style>
 :root{
@@ -469,8 +469,8 @@ a:hover{text-decoration:underline}
         <div style="margin-top:8px;font-size:11px;color:var(--text-light)">COPYRIGHT 2026 Scout System</div>
       </div>
       <div class="info-section" style="margin-top:12px">
-        <h3>最新：v5.0 FINAL</h3>
-        <p style="font-size:12px">PNG LOGO 256px、防卡死、批量、官方表格、細緻權限、MOCK測試、成員私隱開關、教學按角色分開</p>
+        <h3>最新：v5.1 活動履歷</h3>
+        <p style="font-size:12px">新增「📅 活動履歷」：記錄成員的服務／活動／訓練班紀錄，支援批量套用多個成員、服務時數統計、訓練班證書編號，需後端 Code.gs 升級至 v5.1 並執行 initializeSheets() 補建「活動履歷」工作表。</p>
       </div>
     </div>
   </div>
@@ -481,7 +481,7 @@ a:hover{text-decoration:underline}
   <div class="app-header-common" style="padding:14px">
     <div class="logo-row" style="margin-bottom:0">
       <div class="logo-svg-wrap"><img src="assets/cub-logo-256.png" alt="Logo" onerror="this.style.display='none'"><svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" style="width:32px;height:32px"><path d="M30 85 L50 38 L70 85" fill="none" stroke="#FFD700" stroke-width="3" stroke-linecap="round"/><rect x="47" y="42" width="6" height="34" fill="#8B0000" rx="2"/><ellipse cx="50" cy="42" rx="9" ry="2.5" fill="none" stroke="#FFD700" stroke-width="1.2"/><path d="M45 46 Q42 36 48 28 Q50 24 50 20 Q50 16 52 13 Q55 18 54 24 Q53 28 55 32 Q58 38 55 46" fill="#FFA000"/></svg></div>
-      <div><h1 style="font-size:18px">幼童軍進度追蹤 v5.0</h1></div>
+      <div><h1 style="font-size:18px">幼童軍進度追蹤 v5.1</h1></div>
     </div>
   </div>
   <div class="container">
@@ -520,6 +520,7 @@ a:hover{text-decoration:underline}
     <button class="nav-tab active" id="btn-tab-progress" onclick="switchTab('progress', this)">📊 我的進度</button>
     <button class="nav-tab" id="btn-tab-overview" onclick="switchTab('overview', this)">👥 全團總覽</button>
     <button class="nav-tab" id="btn-tab-requests" onclick="switchTab('requests', this)">✅ 審批中心 <span id="badgeRequestsCount" style="background:var(--red);color:#fff;border-radius:999px;padding:1px 6px;font-size:10px;display:none">0</span></button>
+    <button class="nav-tab" id="btn-tab-logs" onclick="switchTab('logs', this)">📅 活動履歷</button>
     <button class="nav-tab" id="btn-tab-forms" onclick="switchTab('forms', this)">🏅 金紫荊申請</button>
     <button class="nav-tab" id="btn-tab-help" onclick="switchTab('help', this)">❓ 教學</button>
     <button class="nav-tab" id="btn-tab-info" onclick="switchTab('info', this)">📚 資料庫</button>
@@ -534,6 +535,7 @@ a:hover{text-decoration:underline}
   <div id="tab-overview" class="tab-content"></div>
   <div id="tab-byitem" class="tab-content"></div>
   <div id="tab-requests" class="tab-content"></div>
+  <div id="tab-logs" class="tab-content"></div>
   <div id="tab-other" class="tab-content"></div>
   <div id="tab-forms" class="tab-content"></div>
   <div id="tab-help" class="tab-content"></div>
@@ -640,6 +642,40 @@ a:hover{text-decoration:underline}
   </div>
 </div>
 
+<!-- 活動履歷：新增/編輯（服務／活動／訓練班） -->
+<div id="logRecordModal" class="modal">
+  <div class="modal-content">
+    <h3 id="logModalTitle">➕ 新增活動履歷紀錄</h3>
+    <div class="form-group">
+      <label>類型 *</label>
+      <select id="lgType" onchange="syncLogTypeFields()">
+        <option value="service">🤝 服務紀錄</option>
+        <option value="activity">🏕️ 活動紀錄</option>
+        <option value="training">🎓 訓練班紀錄</option>
+      </select>
+    </div>
+    <div class="form-group" id="lgMemberGroup">
+      <label id="lgMemberLabel">成員 *</label>
+      <select id="lgMember"></select>
+      <label id="lgBatchToggleLabel" style="font-size:11px;display:flex;gap:6px;align-items:center;margin-top:6px">
+        <input type="checkbox" id="lgBatchMode" onchange="syncLogBatchMode()"> 📥 批量：同一活動套用到多個成員
+      </label>
+      <select id="lgBatchMembers" multiple size="6" style="display:none;margin-top:4px;width:100%"></select>
+      <div id="lgBatchHint" style="display:none;font-size:10px;color:var(--text-light);margin-top:2px">按住 Ctrl（電腦）或逐點（手機）可多選成員</div>
+    </div>
+    <div class="form-group"><label>日期 *</label><input type="date" id="lgDate"></div>
+    <div class="form-group"><label id="lgTitleLabel">活動名稱 *</label><input type="text" id="lgTitle" maxlength="120" placeholder="例如：全旅秋季大露營 2026"></div>
+    <div class="form-group" id="lgRoleGroup"><label>崗位／身份</label><input type="text" id="lgRole" maxlength="60" list="lgRoleHints" placeholder="選填"><datalist id="lgRoleHints"></datalist></div>
+    <div class="form-group" id="lgHoursGroup"><label id="lgHoursLabel">時數</label><input type="number" id="lgHours" min="0" step="0.5" placeholder="例如 6"></div>
+    <div class="form-group" id="lgCertGroup"><label>證書編號</label><input type="text" id="lgCertNo" maxlength="60" placeholder="選填"></div>
+    <div class="form-group"><label>內容／備註</label><textarea id="lgDetail" rows="2" maxlength="500" placeholder="地點、內容摘要……（選填）"></textarea></div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeModal('logRecordModal')">取消</button>
+      <button class="btn btn-primary" id="btnSaveLogRecord" onclick="submitLogRecord()">💾 儲存</button>
+    </div>
+  </div>
+</div>
+
 <!-- 新增成員/帳號 Modal（手機友善表單，取代 prompt） -->
 <div id="addMemberModal" class="modal">
   <div class="modal-content" style="max-width:480px">
@@ -712,8 +748,8 @@ a:hover{text-decoration:underline}
 <div id="toast" class="toast"></div>
 
 <footer style="text-align:center;padding:20px 16px;margin-top:20px;border-top:2px solid var(--border);font-size:12px;color:var(--text-light);background:var(--card)">
-  <div>COPYRIGHT 2026 Scout System • 幼童軍進度追蹤系統 v5.0</div>
-  <div style="margin-top:4px;font-size:11px">基於 2025年8月《幼童軍訓練綱要網上擬定簡易版》 | 支援離線暫存 • 批量寫入 • 保護兒童 Safe from Harm</div>
+  <div>COPYRIGHT 2026 Scout System • 幼童軍進度追蹤系統 v5.1</div>
+  <div style="margin-top:4px;font-size:11px">基於 2025年8月《幼童軍訓練綱要網上擬定簡易版》 | 支援離線暫存 • 批量寫入 • 活動履歷（服務/活動/訓練班） • 保護兒童 Safe from Harm</div>
   <div style="margin-top:4px;font-size:10px">Developed for 82 Troop • All rights reserved • <a href="https://www.scout.org.hk" target="_blank">香港童軍總會</a></div>
 </footer>
 
@@ -724,6 +760,7 @@ let currentTroopId='',currentTroopName='',currentBackend='',currentApikey='';
 let currentUser=null,currentToken='',loginType='member';
 let itemsData=null,progressFlat={},progressRich={},members=[],pendingChanges=[],pendingRequestsQueue=[],otherBadgesMap={},currentRequestItem=null;
 let selectedProgressYmis=null; // 領袖查看他人進度
+let logRecords=[],logRecordsSupported=false,logFilterType='all'; // 活動履歷（服務／活動／訓練班紀錄）
 let appConfig={allow_member_view_others:'false'}; // 系統設定
 
 // ===== API Proxy 架構 v6.0 - 同源代理，解決 CORS / redirect / Failed to fetch =====
@@ -1230,6 +1267,9 @@ async function loadItemsAndProgress(){
         }
       }
       otherBadgesMap=backendData.otherBadges||{};
+      // v5.1 活動履歷：舊後端沒有 logs 欄位 → 顯示升級提示
+      logRecords=Array.isArray(backendData.logs)?backendData.logs:[];
+      logRecordsSupported=backendData.logsSupported===true || Array.isArray(backendData.logs);
       // pending requests from backend
       const pr=backendData.pendingRequests||[];
       // merge with local queue
@@ -1240,11 +1280,11 @@ async function loadItemsAndProgress(){
       }catch(e){ pendingRequestsQueue=pr; }
       updateRequestsBadge();
       // cache
-      localStorage.setItem(LS.cacheProgress(currentTroopId), JSON.stringify({flat:progressFlat, rich:progressRich, members, savedAt:Date.now()}));
+      localStorage.setItem(LS.cacheProgress(currentTroopId), JSON.stringify({flat:progressFlat, rich:progressRich, members, logs:logRecords, savedAt:Date.now()}));
     }else{
       // fallback to cache
       const cached=localStorage.getItem(LS.cacheProgress(currentTroopId));
-      if(cached){ const c=JSON.parse(cached); progressFlat=c.flat||{}; progressRich=c.rich||{}; members=cubMembersOnly(c.members||[]); showToast('⚠️ 離線模式：顯示快取資料','warning'); }
+      if(cached){ const c=JSON.parse(cached); progressFlat=c.flat||{}; progressRich=c.rich||{}; members=cubMembersOnly(c.members||[]); logRecords=c.logs||[]; if(Array.isArray(c.logs)) logRecordsSupported=true; showToast('⚠️ 離線模式：顯示快取資料','warning'); }
       else{ progressFlat={}; members=[]; }
     }
     selectedProgressYmis=currentUser.ymis;
@@ -1278,6 +1318,7 @@ function switchTab(name, btn){
         if(name==='progress') renderProgressTab();
         else if(name==='overview') renderOverviewTab();
         else if(name==='requests') renderRequestsTab();
+        else if(name==='logs') renderLogsTab();
         else if(name==='forms') renderFormsTab();
         else if(name==='help') renderHelpTab();
         else if(name==='info') renderInfoTab();
@@ -1498,6 +1539,7 @@ function renderItemRow(item, flat, targetYmis, isLeaderView){
   }
 }
 function escapeAttr(s){ return (s||'').replace(/'/g,"\\'").replace(/"/g,'&quot;').substring(0,120); }
+function escapeHtmlText(value){ return String(value??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch])); }
 
 function toggleBadgeBody(header){
   const body=header.nextElementSibling;
@@ -1652,7 +1694,7 @@ async function saveChanges(){
       pendingChanges=[];
       localStorage.removeItem(LS.pending(currentTroopId));
       updateSaveBar();
-      localStorage.setItem(LS.cacheProgress(currentTroopId), JSON.stringify({flat:progressFlat, rich:progressRich, members, savedAt:Date.now()}));
+      localStorage.setItem(LS.cacheProgress(currentTroopId), JSON.stringify({flat:progressFlat, rich:progressRich, members, logs:logRecords, savedAt:Date.now()}));
       setTimeout(()=>{ overlay.classList.remove('active'); if(btnSave){btnSave.disabled=false; btnSave.textContent='✅ 確認寫入雲端';} renderProgressTab(); renderOverviewTab(); renderByItemTab(); showToast('✅ 已成功寫入雲端','success'); },1000);
     }else throw new Error(d.error||'寫入失敗');
   }catch(e){
@@ -2285,6 +2327,217 @@ function handleOtherBadgeCert(badgeId, name, targetYmis, certVal){
   else otherBadgesMap[targetYmis][badgeId].cert=certVal;
 }
 
+/* ================== 活動履歷 (v5.1)：服務／活動／訓練班紀錄 ================== */
+const LOG_TYPES_CONFIG={
+  service:{icon:'🤝',label:'服務紀錄',color:'var(--green)',roleHints:['服務員','統籌','站崗','工作人員','領隊'],showHours:true,showCert:false},
+  activity:{icon:'🏕️',label:'活動紀錄',color:'var(--blue)',roleHints:['參加者','籌委','領隊','工作人員'],showHours:false,showCert:false},
+  training:{icon:'🎓',label:'訓練班紀錄',color:'var(--maroon)',roleHints:['學員'],showHours:false,showCert:true} // 幼童軍訓練班身份只會是學員
+};
+function logTypeLabel(t){ return (LOG_TYPES_CONFIG[t]||LOG_TYPES_CONFIG.activity).label; }
+function logTypeIcon(t){ return (LOG_TYPES_CONFIG[t]||LOG_TYPES_CONFIG.activity).icon; }
+
+function renderLogsTab(){
+  const c=document.getElementById('tab-logs');
+  const isLeader=canUserTickRole(currentUser.role);
+  const targetYmis=isLeader?(selectedProgressYmis||currentUser.ymis):currentUser.ymis;
+  // 舊後端未支援 → 顯示升級提示（現有功能完全不受影響）
+  if(!logRecordsSupported && currentTroopId!=='DEMO'){
+    c.innerHTML=`<div class="info-section" style="border-left:4px solid var(--orange);background:#FFFBEB">
+      <h3>📅 活動履歷（服務／活動／訓練班紀錄）</h3>
+      <p style="font-size:13px;margin-top:6px">⚠️ 此旅團後端尚未升級到 <b>v5.1</b>，暫未能使用活動履歷。進度、審批、用戶管理等現有功能完全不受影響。</p>
+      <p style="font-size:12px;color:var(--text-light);margin-top:8px">升級方法（約 5 分鐘）：Apps Script 貼上最新 Code.gs → 執行 initializeSheets() 補建「活動履歷」工作表 → 部署 → 管理部署 → 編輯 → 版本選「新版本」→ 部署。URL 不變。</p>
+      <button class="btn btn-sm btn-secondary" style="margin-top:8px" onclick="refreshLogRecords()">🔄 重新檢查</button>
+    </div>`;
+    return;
+  }
+  const memberLogs=logRecords.filter(r=>r.ymis===targetYmis);
+  const countOf=t=>memberLogs.filter(r=>r.type===t).length;
+  const serviceHours=memberLogs.filter(r=>r.type==='service').reduce((s,r)=>s+(parseFloat(r.hours)||0),0);
+  let html='<div class="filter-bar">';
+  if(isLeader){
+    const opts=members.map(m=>`<option value="${m.ymis}" ${m.ymis===targetYmis?'selected':''}>${escapeHtmlText(m.name)} (${m.ymis})</option>`).join('');
+    html+=`<label style="font-size:12px;font-weight:600">檢視成員：</label><select onchange="selectedProgressYmis=this.value;renderLogsTab()">${opts}</select>`;
+  }
+  html+=`<span style="font-size:11px;color:var(--text-light)">🤝 服務 ${countOf('service')} · 🏕️ 活動 ${countOf('activity')} · 🎓 訓練班 ${countOf('training')}${serviceHours?` · 服務總時數 <b>${serviceHours}</b>`:''}</span>`;
+  html+=`<button class="btn btn-sm btn-secondary" onclick="refreshLogRecords()" title="重新載入">🔄</button>`;
+  if(isLeader) html+=`<button class="btn btn-sm btn-primary" onclick="openLogRecordModal()">➕ 新增紀錄</button>`;
+  html+='</div>';
+  // 類型篩選
+  html+=`<div style="display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap">${['all','service','activity','training'].map(t=>`<button class="btn btn-sm ${logFilterType===t?'btn-primary':'btn-outline'}" onclick="logFilterType='${t}';renderLogsTab()">${t==='all'?'全部':logTypeIcon(t)+' '+logTypeLabel(t)}</button>`).join('')}</div>`;
+  // 三類區塊
+  ['service','activity','training'].forEach(t=>{
+    if(logFilterType!=='all'&&logFilterType!==t) return;
+    const cfg=LOG_TYPES_CONFIG[t];
+    const rows=memberLogs.filter(r=>r.type===t).sort((a,b)=>(b.date||'').localeCompare(a.date||''));
+    html+=`<div class="info-section" style="border-left:4px solid ${cfg.color}"><h3>${cfg.icon} ${cfg.label} <small style="color:var(--text-light)">(${rows.length})</small></h3>`;
+    if(rows.length===0){
+      html+=`<p style="font-size:12px;color:var(--text-light);padding:8px 0">暫無紀錄${isLeader?'，可按上方「➕ 新增紀錄」補登':''}</p>`;
+    }else{
+      html+=rows.map(r=>`<div class="app-item" style="align-items:flex-start">
+        <div class="app-item-info">
+          <b>${escapeHtmlText(r.title)}</b> <small style="color:var(--text-light)">📅 ${escapeHtmlText(r.date)}</small>
+          <div style="font-size:11px;margin-top:3px;display:flex;gap:6px;flex-wrap:wrap">
+            ${r.role?`<span style="background:var(--bg);padding:1px 8px;border-radius:999px">崗位：${escapeHtmlText(r.role)}</span>`:''}
+            ${r.hours?`<span style="background:var(--bg);padding:1px 8px;border-radius:999px">時數：${escapeHtmlText(r.hours)}</span>`:''}
+            ${r.cert_no?`<span style="background:var(--bg);padding:1px 8px;border-radius:999px">證書：${escapeHtmlText(r.cert_no)}</span>`:''}
+          </div>
+          ${r.detail?`<div style="font-size:11px;background:#FAFAFA;padding:6px;border-radius:6px;margin-top:4px;border-left:2px solid var(--border)">${escapeHtmlText(r.detail)}</div>`:''}
+          ${r.recorder?`<div style="font-size:10px;color:var(--text-light);margin-top:3px">記錄：${escapeHtmlText(r.recorder)}</div>`:''}
+        </div>
+        ${isLeader?`<div class="app-item-actions" style="flex-direction:column">
+          <button class="btn btn-sm btn-outline" title="編輯" onclick="openLogRecordModal('${escapeAttr(r.record_id)}')">✏️</button>
+          <button class="btn btn-sm btn-danger" title="刪除" onclick="deleteLogRecord('${escapeAttr(r.record_id)}')">🗑️</button>
+        </div>`:''}
+      </div>`).join('');
+    }
+    html+='</div>';
+  });
+  c.innerHTML=html;
+}
+
+async function refreshLogRecords(){
+  try{
+    const d=await apiRequest({action:'getLogRecords',token:currentToken});
+    if(d.success){
+      logRecords=d.logs||[]; logRecordsSupported=true;
+      renderLogsTab(); showToast('✅ 活動履歷已更新','success');
+    }else{
+      // 後端未升級 v5.1 → 顯示升級提示
+      logRecordsSupported=false; renderLogsTab();
+      showToast(d.error||'未能讀取紀錄','warning');
+    }
+  }catch(e){ showToast('讀取失敗：'+e.message,'error'); }
+}
+
+let editingLogRecordId=null;
+function openLogRecordModal(recordId){
+  if(!canUserTickRole(currentUser.role)){ showToast('只有領袖可以新增／編輯紀錄','warning'); return; }
+  if(!logRecordsSupported && currentTroopId!=='DEMO'){ showToast('後端未升級 v5.1，暫未能儲存','error'); return; }
+  editingLogRecordId=recordId||null;
+  const opts=members.map(m=>`<option value="${m.ymis}">${escapeHtmlText(m.name)} (${m.ymis})</option>`).join('');
+  document.getElementById('lgMember').innerHTML=opts;
+  document.getElementById('lgBatchMembers').innerHTML=opts;
+  document.getElementById('lgBatchMode').checked=false;
+  syncLogBatchMode();
+  if(recordId){
+    const r=logRecords.find(x=>x.record_id===recordId);
+    if(!r){ showToast('找不到紀錄，請先重新載入','error'); return; }
+    document.getElementById('logModalTitle').textContent='✏️ 編輯紀錄';
+    document.getElementById('lgType').value=r.type; document.getElementById('lgType').disabled=true;
+    document.getElementById('lgMember').value=r.ymis; document.getElementById('lgMember').disabled=true;
+    document.getElementById('lgBatchMode').disabled=true;
+    document.getElementById('lgDate').value=r.date||todayISO();
+    document.getElementById('lgTitle').value=r.title||'';
+    document.getElementById('lgRole').value=r.role||'';
+    document.getElementById('lgHours').value=r.hours||'';
+    document.getElementById('lgCertNo').value=r.cert_no||'';
+    document.getElementById('lgDetail').value=r.detail||'';
+  }else{
+    document.getElementById('logModalTitle').textContent='➕ 新增活動履歷紀錄';
+    document.getElementById('lgType').disabled=false;
+    document.getElementById('lgMember').disabled=false;
+    document.getElementById('lgBatchMode').disabled=false;
+    document.getElementById('lgType').value='service';
+    document.getElementById('lgMember').value=selectedProgressYmis||currentUser.ymis;
+    document.getElementById('lgDate').value=todayISO();
+    ['lgTitle','lgRole','lgHours','lgCertNo','lgDetail'].forEach(id=>document.getElementById(id).value='');
+  }
+  syncLogTypeFields();
+  document.getElementById('logRecordModal').classList.add('active');
+}
+function syncLogBatchMode(){
+  const on=document.getElementById('lgBatchMode').checked;
+  document.getElementById('lgBatchMembers').style.display=on?'block':'none';
+  document.getElementById('lgBatchHint').style.display=on?'block':'none';
+  document.getElementById('lgMember').style.display=on?'none':'block';
+}
+function syncLogTypeFields(){
+  const t=document.getElementById('lgType').value;
+  const cfg=LOG_TYPES_CONFIG[t]||LOG_TYPES_CONFIG.activity;
+  document.getElementById('lgTitleLabel').textContent=(t==='service'?'服務名稱':t==='training'?'訓練班名稱':'活動名稱')+' *';
+  document.getElementById('lgTitle').placeholder=(t==='service'?'例如：賣旗服務 2026':t==='training'?'例如：幼童軍領袖訓練班 (C25/02)':'例如：全旅秋季大露營 2026');
+  document.getElementById('lgHoursGroup').style.display=cfg.showHours?'block':'none';
+  document.getElementById('lgHoursLabel').textContent=t==='service'?'服務時數':'時數';
+  document.getElementById('lgCertGroup').style.display=cfg.showCert?'block':'none';
+  // 幼童軍訓練班身份只會是學員：隱藏崗位欄，儲存時自動填「學員」
+  document.getElementById('lgRoleGroup').style.display=t==='training'?'none':'block';
+  document.getElementById('lgRoleHints').innerHTML=(cfg.roleHints||[]).map(h=>`<option value="${h}">`).join('');
+}
+async function submitLogRecord(){
+  const btn=document.getElementById('btnSaveLogRecord');
+  if(btn.disabled) return; // 防止重複提交
+  const oldRec=editingLogRecordId?logRecords.find(x=>x.record_id===editingLogRecordId):null;
+  const type=oldRec?oldRec.type:document.getElementById('lgType').value;
+  const date=document.getElementById('lgDate').value;
+  const title=document.getElementById('lgTitle').value.trim();
+  // 訓練班身份固定為學員；訓練班不需時數
+  const role=type==='training'?'學員':document.getElementById('lgRole').value.trim();
+  const hours=type==='training'?'':document.getElementById('lgHours').value;
+  const cert_no=document.getElementById('lgCertNo').value.trim();
+  const detail=document.getElementById('lgDetail').value.trim();
+  if(!date||!title){ showToast('請填寫日期及名稱','error'); return; }
+  // 目標成員：編輯=原成員；批量=多選；否則單選
+  let targets=[];
+  if(oldRec){
+    targets=[{ymis:oldRec.ymis,name:oldRec.name||(members.find(m=>m.ymis===oldRec.ymis)||{}).name||''}];
+  }else if(document.getElementById('lgBatchMode').checked){
+    targets=[...document.getElementById('lgBatchMembers').selectedOptions].map(o=>({ymis:o.value,name:(members.find(m=>m.ymis===o.value)||{}).name||''}));
+    if(targets.length===0){ showToast('請選擇至少一位成員','error'); return; }
+  }else{
+    const y=document.getElementById('lgMember').value;
+    targets=[{ymis:y,name:(members.find(m=>m.ymis===y)||{}).name||''}];
+  }
+  const records=targets.map(t=>({...(oldRec?{record_id:oldRec.record_id}:{}),type,ymis:t.ymis,name:t.name,date,title,role,hours:hours!==''?String(hours):'',cert_no,detail}));
+  btn.disabled=true; btn.textContent='儲存中...';
+  try{
+    if(currentTroopId==='DEMO'){
+      // DEMO：本機寫入（重新整理即消失），方便試用
+      records.forEach(r=>{
+        const idx=logRecords.findIndex(x=>x.record_id===r.record_id);
+        if(idx>=0) logRecords[idx]={...logRecords[idx],...r};
+        else logRecords.push({...r,record_id:'DEMOLOG_'+Date.now()+'_'+Math.random().toString(36).slice(2,5),recorder:currentUser.name});
+      });
+      closeModal('logRecordModal'); renderLogsTab();
+      showToast('✅ 已儲存（DEMO 本機模式，不寫入雲端）','success');
+      return;
+    }
+    // await 真實後端回應；確認成功才更新畫面
+    const d=await apiRequest({action:'saveLogRecord',token:currentToken,records,recorder_name:currentUser.name});
+    if(!d.success){
+      throw new Error(/工作表不存在|Unknown action/i.test(d.error||'')?'旅團後端未升級 v5.1：請通知管理員更新 Code.gs 並執行 initializeSheets()':(d.error||'儲存失敗'));
+    }
+    (d.results||[]).forEach((res,i)=>{
+      if(!res.success) return;
+      const localRec={...records[i],record_id:res.record_id,recorder:currentUser.name};
+      const idx=logRecords.findIndex(x=>x.record_id===res.record_id);
+      if(idx>=0) logRecords[idx]={...logRecords[idx],...localRec};
+      else logRecords.push(localRec);
+    });
+    const failed=(d.results||[]).filter(r=>!r.success);
+    try{ localStorage.setItem(LS.cacheProgress(currentTroopId), JSON.stringify({flat:progressFlat,rich:progressRich,members,logs:logRecords,savedAt:Date.now()})); }catch(e){}
+    closeModal('logRecordModal'); renderLogsTab();
+    if(failed.length===0) showToast(`✅ 已儲存 ${d.processed||records.length} 筆活動履歷`,'success');
+    else showToast(`已儲存 ${d.processed||0} 筆；${failed.length} 筆失敗（${failed[0].error||''}）`,'error');
+  }catch(e){ showToast('儲存失敗：'+e.message,'error'); }
+  finally{ btn.disabled=false; btn.textContent='💾 儲存'; }
+}
+async function deleteLogRecord(recordId){
+  if(!canUserTickRole(currentUser.role)){ showToast('只有領袖可以刪除紀錄','warning'); return; }
+  const r=logRecords.find(x=>x.record_id===recordId);
+  if(!confirm(`確定刪除「${r?r.title:recordId}」？此操作不能復原。`)) return;
+  try{
+    if(currentTroopId==='DEMO'){
+      logRecords=logRecords.filter(x=>x.record_id!==recordId);
+      renderLogsTab(); showToast('已刪除（DEMO 本機模式）','success'); return;
+    }
+    const d=await apiRequest({action:'deleteLogRecord',token:currentToken,record_id:recordId});
+    if(!d.success) throw new Error(d.error||'刪除失敗');
+    logRecords=logRecords.filter(x=>x.record_id!==recordId);
+    try{ localStorage.setItem(LS.cacheProgress(currentTroopId), JSON.stringify({flat:progressFlat,rich:progressRich,members,logs:logRecords,savedAt:Date.now()})); }catch(e){}
+    renderLogsTab(); showToast('✅ 已刪除紀錄','success');
+  }catch(e){ showToast('刪除失敗：'+e.message,'error'); }
+}
+
 /* ================== Forms Tab ================== */
 function renderFormsTab(){
   
@@ -2440,6 +2693,7 @@ const EMBEDDED_GUIDES={
   <ul>
     <li><b>📊 我的進度</b>：預設只顯示你自己的完成度，綠色進度條=已完成，點擊獎章展開，右側ⓘ查看考驗說明。<b>不可直接勾選，不可申請完成</b>，所有進度由領袖負責更新。</li>
     <li><b>⭐ 其他獎章</b>：已併入我的進度最底虛線卡片（只讀）</li>
+    <li><b>📅 活動履歷</b>：查看自己的服務／活動／訓練班紀錄（只讀）</li>
     <li><b>🖨️ 表格列印</b>：日常進度已在 APP 保存；金紫荊申請時才使用官方紀錄冊填寫清單</li>
     <li><b>📚 資料庫</b>：保護兒童課程連結、訓練綱要</li>
   </ul>
@@ -2454,9 +2708,10 @@ const EMBEDDED_GUIDES={
   <h3>1. 我的進度</h3><ul><li>選任何成員看所有紀錄</li><li>直接勾選+日期，離線暫存確認寫入</li></ul>
   <h3>2. 全團總覽</h3><ul><li>卡片一眼睇會員章✓</li><li>表格矩陣最多30欄</li><li>🚀考驗營批量：選成員+選項目→一鍵標記→暫存→確認寫入</li><li>子切換：按成員/按項目</li></ul>
   <h3>3. 審批中心</h3><ul><li>🏅獎章審批+👤用戶審批合併</li></ul>
-  <h3>4. 表格列印 (幼童軍專用)</h3><p>日常紀錄保存在 APP；金紫荊申請時整理資料並使用官方表格及官方紀錄冊</p>
-  <h3>5. 用戶管理 (幼童軍專用 - 無執委)</h3><ul><li>成員改為領袖(幼童軍團長/旅長)</li><li>⚙️權限：領袖默認全部(*)，成員無</li><li>可按個別成員設定可考核範圍 (領袖之間)</li><li>📥 批量開戶：下載CSV範本→填寫→上傳，一次過幫全團開戶；亦可貼JSON</li><li>➕ 單個新增成員/帳號（有密碼=可登入，無密碼=純成員）</li><li>🔑 重設密碼（產生一次性密碼，首次登入強制改密）</li><li>🗑️ 停用帳號、🧾 操作紀錄、✅ 審批歷史</li></ul>
-  <h3>6. 系統設定</h3><p>允許成員互相查看進度：預設關，團長可開</p>`
+  <h3>4. 活動履歷 (服務／活動／訓練班紀錄)</h3><ul><li>為成員補登/編輯/刪除服務、活動、訓練班紀錄</li><li>支援同一活動批量套用到多個成員（例如全團露營一次過補登）</li><li>服務紀錄含時數統計；訓練班紀錄可填證書編號</li></ul>
+  <h3>5. 表格列印 (幼童軍專用)</h3><p>日常紀錄保存在 APP；金紫荊申請時整理資料並使用官方表格及官方紀錄冊</p>
+  <h3>6. 用戶管理 (幼童軍專用 - 無執委)</h3><ul><li>成員改為領袖(幼童軍團長/旅長)</li><li>⚙️權限：領袖默認全部(*)，成員無</li><li>可按個別成員設定可考核範圍 (領袖之間)</li><li>📥 批量開戶：下載CSV範本→填寫→上傳，一次過幫全團開戶；亦可貼JSON</li><li>➕ 單個新增成員/帳號（有密碼=可登入，無密碼=純成員）</li><li>🔑 重設密碼（產生一次性密碼，首次登入強制改密）</li><li>🗑️ 停用帳號、🧾 操作紀錄、✅ 審批歷史</li></ul>
+  <h3>7. 系統設定</h3><p>允許成員互相查看進度：預設關，團長可開</p>`
 };
 
 async function renderHelpTab(){
@@ -2515,6 +2770,7 @@ function renderInfoTab(){
           <li>不可直接勾選、不可申請完成，所有進度由領袖負責更新</li>
           <li>可在「📝待批」查看自己申請是否已批</li>
           <li>可查看「⭐其他獎章」中自己的其他獎章</li>
+          <li>可在「📅活動履歷」查看自己的服務／活動／訓練班紀錄</li>
           <li>可使用「🖨️表格列印」自動填PT/68金紫荊後列印(幼童軍專用)</li>
           <li>可查看「📚資料庫」內官方訓練綱要、森林故事、制服、儀式、表格及教學資源</li>
         </ul>
@@ -2538,6 +2794,7 @@ function renderInfoTab(){
           <li>可使用「🚀考驗營批量完成」：選成員+選項目+日期，一鍵幫全團剔，不用逐個跳轉</li>
           <li>可直接勾選+輸入日期，離線暫存按確認批量寫入，過程有提示</li>
           <li>可在「📝待批」批量批准/拒絕成員申請</li>
+          <li>可在「📅活動履歷」為成員補登/編輯/刪除服務、活動、訓練班紀錄，支援同一活動批量套用到多個成員</li>
           <!-- 幼童軍無執委，已移除 -->
           <li>領袖默認全部權限，團長/管理員可更改低層級可勾選範圍</li>
           <li>團長/管理員可在「👥用戶管理」授權/收回勾選權限，設定細緻權限</li>
@@ -2816,7 +3073,20 @@ async function enterDemoMode(){
     setupTabsByRole();
     renderProgressTab();
     renderInfoTab();
-    showToast('✅ 已進入 MOCK 試用模式，10個成員進度、批量剔、表格等皆可用，數據僅在瀏覽器', 'success');
+    // v5.1：DEMO 範例活動履歷（僅本機記憶體，方便試用）
+    logRecordsSupported=true;
+    logRecords=[];
+    [
+      ['service','暑期賣旗籌款','服務員','4',todayISO()],
+      ['activity','全團春季露營','參加者','','2026-03-21'],
+      ['training','幼童軍領袖訓練班 (C25/02)','學員','18','2026-05-10'],
+      ['activity','旅際足球邀請賽','籌委','','2026-06-14']
+    ].forEach((row,i)=>{
+      members.slice(0,4).forEach((m,mi)=>{
+        logRecords.push({record_id:'DEMOLOG_seed_'+i+'_'+mi,type:row[0],ymis:m.ymis,name:m.name,date:row[4],title:row[1],role:row[2],hours:row[0]==='training'?'':row[3],cert_no:row[0]==='training'?'CERT-C2502-'+m.ymis.slice(-4):'',detail:'DEMO 範例資料',recorder:'DEMO 團長',recorded_at:row[4]});
+      });
+    });
+    showToast('✅ 已進入 MOCK 試用模式，10個成員進度、活動履歷、批量剔、表格等皆可用，數據僅在瀏覽器', 'success');
   }catch(e){
     console.error(e);
     showToast('MOCK試用載入失敗：'+e.message,'error');
