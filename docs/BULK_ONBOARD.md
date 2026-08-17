@@ -33,12 +33,15 @@ auth_date, created_at, last_login, status, allowed_badges, squad, squad_role, fo
 ## 方法一：在 APP 內直接上傳 CSV（最快，手機都做到）
 
 1. 領袖登入 APP → 進入「👥 用戶管理」。
-2. 按 **📥 批量開戶** → **⬇️ 下載成員範本 CSV**（即 `data/members_template.csv`）。
-3. 在試算表軟件打開，填寫每位成員的資料。
+2. 按 **📥 批量開戶** → **⬇️ 下載成員範本 Excel**（`data/members_template.xlsx`，含「成員開戶」＋「填寫說明」兩個工作表）或 **CSV 版**（`data/members_template.csv`）。
+3. 在 Excel / Google Sheets 打開，填寫每位成員的資料。
+4. 回到對話框，按 **📥 上傳填好的 Excel / CSV**（支援 `.xlsx` / `.xls` / `.csv` 直接上傳，唔使再另存 CSV），系統逐筆開戶並顯示進度：
 4. 回到對話框，按 **📥 上傳填好的 CSV**，系統逐筆開戶並顯示進度：
-   - 有填 `password` → 開立可登入帳號（後端 `addUser`）。
+   - 有填 `password` → 開立可登入帳號（後端 `addUser`，首次登入強制改密碼）。
    - 只填 `ymis` + `name` → 只加入成員（後端 `addMember`，不可登入）。
 5. 亦可把 JSON 陣列貼到文字框，按 **🚀 由 JSON 批量開戶**。
+
+> 前端 Excel 解析在瀏覽器完成（SheetJS），轉出與 CSV 相同的 JSON 後仍呼叫後端既有的 `addUser`／`addMember`，**後端 Code.gs 毋須因 Excel 上傳而更新**。若旅團後端過舊、批量開戶回傳「Unknown action」，才需要貼上最新 Code.gs → 執行 initializeSheets() → 重新部署。
 
 ### 範本欄位（CSV）
 
