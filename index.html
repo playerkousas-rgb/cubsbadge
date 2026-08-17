@@ -624,14 +624,16 @@ a:hover{text-decoration:underline}
   <div class="modal-content" style="max-width:640px">
     <h3>📥 批量開戶 - 全前端控制</h3>
     <div class="info-section" style="font-size:12px;line-height:1.7;margin-bottom:10px">
-      <p><b>方法一：上傳 CSV（推薦，手機都做到）</b><br>下載範本 → 在 Excel/Google Sheets 填寫 → 上傳。有填密碼=開立可登入帳號；只填 YMIS+姓名=純成員（不可登入）。</p>
+      <p><b>方法一：上傳 CSV（推薦，手機都做到）</b><br>下載範本（Excel 或 CSV）→ 在 Excel/Google Sheets 填寫 → 上傳。有填密碼=開立可登入帳號（首次登入強制改密碼）；只填 YMIS+姓名=純成員（不可登入）。</p>
       <p><b>方法二：貼上 JSON 陣列</b>（進階）</p>
       <p style="font-size:11px;color:var(--text-light)">備用（日常唔建議）：入 Google Sheet 直接寫入，詳見 <a href="docs/BULK_ONBOARD.md" target="_blank">批量開戶說明</a> 及 <a href="assets/batch-onboard/Code.gs" target="_blank">Sheets 腳本</a>。</p>
     </div>
     <div style="display:flex;gap:8px;flex-wrap:wrap;margin:10px 0">
-      <button class="btn btn-sm btn-primary" onclick="downloadMembersTemplate()">⬇️ 下載成員範本 CSV</button>
-      <label class="btn btn-sm btn-secondary" style="cursor:pointer">📥 上傳填好的 CSV<input type="file" accept=".csv,text/csv" onchange="importMembersFull(this.files[0]);this.value=''" style="display:none"></label>
+      <a href="data/members_template.xlsx" download="members_template.xlsx" class="btn btn-sm btn-primary">⬇️ 下載成員範本 Excel</a>
+      <button class="btn btn-sm btn-outline" onclick="downloadMembersTemplate()">⬇️ CSV 版</button>
+      <label class="btn btn-sm btn-secondary" style="cursor:pointer">📥 上傳填好的 Excel / CSV<input type="file" accept=".xlsx,.xls,.csv,text/csv" onchange="importMembersFull(this.files[0]);this.value=''" style="display:none"></label>
     </div>
+    <p style="font-size:11px;color:var(--text-light);margin:0 0 6px">💡 可直接上傳 Excel（.xlsx）或 CSV。Excel 範本適合在電腦一次過整理全團名單。（欄位：ymis 號碼＝登入帳號、name 姓名、password 初始密碼＝開可登入帳號，首次登入強制改密碼）</p>
     <div id="bulkProgress" class="bulk-progress"></div>
     <div style="font-size:11px;color:var(--text-light);margin:8px 0 4px">或直接貼上 JSON 陣列（[{"ymis":"1234560001","name":"陳大文","squad":"紅隊","role":"member","password":""}, ...]）：</div>
     <textarea id="bulkJson" style="width:100%;height:110px;font-family:monospace;font-size:11px;padding:8px;border:2px solid var(--border);border-radius:8px" placeholder='[{"ymis":"1234560001","name":"陳大文","email":"","squad":"紅隊","squad_role":"member","role":"member","can_tick":false,"password":""}]'></textarea>
@@ -753,6 +755,7 @@ a:hover{text-decoration:underline}
   <div style="margin-top:4px;font-size:10px">Developed for 82 Troop • All rights reserved • <a href="https://www.scout.org.hk" target="_blank">香港童軍總會</a></div>
 </footer>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script>
 /* ================== 全局狀態 ================== */
 const SCOUT_ADMIN_API_DEPRECATED='https://script.google.com/macros/s/AKfycbxj5BDDGgjs559smkK4Z5aYImWYeXbN5af8U1ObON0z9WnsN6QJW4I1XWolhs5kQ_H-UQ/exec';
@@ -3234,10 +3237,41 @@ function parseMemberCSV(text){
 async function importMembersFull(file){
   if(!file) return;
   if(bulkGuard()) return;
-  const text=await file.text();
-  const list=parseMemberCSV(text);
-  if(!list.length){ showToast('CSV 無有效資料（YMIS 須為10位數字，首行須為表頭）','warning'); return; }
+  const fname=(file.name||'').toLowerCase();
+  let list;
+  if(fname.endsWith('.xlsx')||fname.endsWith('.xls')){
+    list=await parseMemberXLSX(file);
+  }else{
+    const text=await file.text();
+    list=parseMemberCSV(text);
+  }
+  if(!list.length){ showToast('檔案無有效資料（YMIS 須為10位數字，首行須為表頭）','warning'); return; }
   if(confirm(`即將批量開戶 ${list.length} 筆\n（有密碼=可登入帳號；無密碼=純成員）\n確定開始？`)) bulkAddMembers(list);
+}
+/* 直接解析 Excel（.xlsx/.xls），輸出與 parseMemberCSV 相同的物件陣列 */
+async function parseMemberXLSX(file){
+  if(typeof XLSX==='undefined'){ showToast('Excel 解析庫未載入，請改用 CSV 或稍後重試','error'); return []; }
+  try{
+    const buf=await file.arrayBuffer();
+    const wb=XLSX.read(buf,{type:'array'});
+    const ws=wb.Sheets[wb.SheetNames[0]]; // 取第一個工作表「成員開戶」
+    if(!ws) return [];
+    const rows=XLSX.utils.sheet_to_json(ws,{header:1,raw:false,defval:''});
+    if(!rows.length) return [];
+    const headers=rows[0].map(h=>String(h).trim());
+    if(!headers.includes('ymis')) return [];
+    const out=[];
+    for(const row of rows.slice(1)){
+      const o={}; headers.forEach((h,i)=>o[h]=String(row[i]??'').trim());
+      if(/^\d{10}$/.test(o.ymis||'')){
+        out.push({ymis:o.ymis,name:o.name||'',email:o.email||'',squad:o.squad||'',squad_role:o.squad_role||'member',role:o.role||'member',can_tick:['true','1','yes','y'].includes((o.can_tick||'').toLowerCase()),password:o.password||'',note:o.note||''});
+      }
+    }
+    return out;
+  }catch(e){
+    showToast('Excel 讀取失敗：'+e.message,'error');
+    return [];
+  }
 }
 async function bulkAddMembers(list){
   if(!list.length){ showToast('沒有有效資料（YMIS 須為10位數字）','warning'); return; }
