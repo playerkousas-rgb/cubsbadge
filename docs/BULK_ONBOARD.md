@@ -2,20 +2,22 @@
 
 一次過為整團開立多名成員 / 帳號，不用逐個填表，**全部在前端完成**。
 
-## 三種開戶方式定位
+## 開戶方式定位
 
 | 方式 | 定位 | 說明 |
 |---|---|---|
-| ① 後端 Sheet 直接寫（本文件 Apps Script） | **進階／備用，日常不建議** | 特殊情況或無前端權限時使用 |
-| ② 領袖前端「➕ 新增成員/帳號」 | 單個開戶 | APP 內「👥 用戶管理」逐個新增 |
-| ③ 領袖前端上傳批量範本（APP 內「📥 批量開戶」） | **批量開戶主路（推薦）** | 下載範本 → 前端上傳 → APP 轉 JSON 寫入後端 |
+| ① 領袖前端上傳 YMIS 自訂報表 PDF（APP 內「📥 批量開戶」） | **整團批量開戶主路（最推薦）** | 在 YMIS 匯出「自訂報表」PDF → 上載（可輸密碼）→ 自動讀出編號/姓名/電郵 → 預覽 → 一次過開戶 |
+| ② 領袖前端上傳批量範本 CSV / Excel（APP 內「📥 批量開戶」） | 批量開戶（推薦，日常） | 下載範本 → 前端上傳 → APP 轉 JSON 寫入後端 |
+| ③ 領袖前端「➕ 新增成員/帳號」 | 單個開戶 | APP 內「👥 用戶管理」逐個新增 |
+| ④ 後端 Sheet 直接寫（本文件 Apps Script） | **進階／備用，日常不建議** | 特殊情況或無前端權限時使用 |
 
-> 設計原則：所有開戶盡量在前端完成（全前端控制）。方法①僅作備用。
+> 設計原則：所有開戶盡量在前端完成（全前端控制）。方法④僅作備用。
 
 ## 流程總覽
 
 ```
-下載範本 CSV ──► 填寫 ──► 前端上傳 ──► APP 轉 JSON ──► 寫入我們的 Sheet
+YMIS 自訂報表 PDF ──► 前端解密讀取 ──► 預覽確認 ──► 寫入我們的 Sheet
+      （或：下載範本 CSV ──► 填寫 ──► 前端上傳 ──► APP 轉 JSON ──► 寫入我們的 Sheet）
 ```
 
 「我們的 Sheet」即 app 後端所用的 Google Sheet，帳號存放在名為 **`Users`** 的工作表，
@@ -30,13 +32,24 @@ auth_date, created_at, last_login, status, allowed_badges, squad, squad_role, fo
 - 有填 `password` 的成員：`password_hash` 以 SHA-256 儲存，`force_change_password=TRUE`，首次登入 APP 會要求自行設定新密碼。
 - 純成員（無密碼）：status=active 但無法登入，進度仍由領袖記錄。
 
-## 方法一：在 APP 內直接上傳 CSV（最快，手機都做到）
+## 方法一：YMIS 自訂報表 PDF 匯入（最推薦，整團一次過）
+
+1. 在 YMIS 匯出「自訂報表」PDF，欄位次序必須為：**童軍成員編號 → 中文姓名 → 電郵地址**。
+2. 領袖登入 APP → 「👥 用戶管理」→ 按 **📥 批量開戶**。
+3. （如有）輸入 PDF 密碼 → **📄 上載 YMIS PDF 報表**。PDF 在瀏覽器內解密，不會上傳伺服器。
+4. 系統自動讀出成員並顯示**匯入預覽**（可即場修改編號/姓名/電郵、勾選要開戶的人）。
+5. 設定預設小隊、預設角色、初始密碼（留空＝只加入成員）→ 按 **🚀 確認批量開戶**。
+6. 每筆依序呼叫後端 `addUser`（有密碼）／`addMember`（無密碼），進度即時顯示。
+
+> 完整教學（含 PDF 有密碼、欄位設定、常見問題）：見 [`docs/YMIS_EXPORT.md`](YMIS_EXPORT.md)。
+> 解析器為 [`assets/ymis-parse.js`](../assets/ymis-parse.js)（純前端，支援多頁報表、中英雙行表頭、密碼 PDF）。
+
+## 方法二：在 APP 內直接上傳 CSV / Excel（手機都做到）
 
 1. 領袖登入 APP → 進入「👥 用戶管理」。
 2. 按 **📥 批量開戶** → **⬇️ 下載成員範本 Excel**（`data/members_template.xlsx`，含「成員開戶」＋「填寫說明」兩個工作表）或 **CSV 版**（`data/members_template.csv`）。
 3. 在 Excel / Google Sheets 打開，填寫每位成員的資料。
 4. 回到對話框，按 **📥 上傳填好的 Excel / CSV**（支援 `.xlsx` / `.xls` / `.csv` 直接上傳，唔使再另存 CSV），系統逐筆開戶並顯示進度：
-4. 回到對話框，按 **📥 上傳填好的 CSV**，系統逐筆開戶並顯示進度：
    - 有填 `password` → 開立可登入帳號（後端 `addUser`，首次登入強制改密碼）。
    - 只填 `ymis` + `name` → 只加入成員（後端 `addMember`，不可登入）。
 5. 亦可把 JSON 陣列貼到文字框，按 **🚀 由 JSON 批量開戶**。
@@ -57,7 +70,7 @@ auth_date, created_at, last_login, status, allowed_badges, squad, squad_role, fo
 | password | 有填則開立可登入帳號（首次登入強制改密） |
 | note | 備註（僅提醒用，不寫入 Users 工作表） |
 
-## 方法二：Google Sheets + Apps Script（符合「SAMPLE → JSON → 寫入 SHEET」）
+## 方法三：Google Sheets + Apps Script（符合「SAMPLE → JSON → 寫入 SHEET」）
 
 適合直接在 Google Sheets 操作，資料在試算表內轉 JSON 並直接寫入我們的 Sheet。
 
