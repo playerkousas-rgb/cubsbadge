@@ -1,0 +1,9 @@
+{
+  "private": true,
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "test": "node test/ymis_parse.test.js"
+  }
+}
