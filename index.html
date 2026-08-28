@@ -764,8 +764,22 @@ async function apiRequest(gasData, opts={}){
     }
     clearTimeout(timer);
     text=await resp.text();
-    try{ json=JSON.parse(text); }catch{ throw new Error(`${t('api_bad_response')} (HTTP ${resp.status})`); }
-    if(!resp.ok) throw new Error(json.error||`請求失敗 ${resp.status}`);
+    try{ json=JSON.parse(text); }catch{
+      // Vercel 404 HTML or GAS HTML error page - provide troubleshooting hint (aligned with ScoutBadge recent fix)
+      const isHtml = /<!DOCTYPE|<html/i.test(text);
+      const isVercel404 = resp.status===404 && isHtml;
+      if(isVercel404){
+        throw new Error(`${t('api_bad_response')} (HTTP 404) - Vercel 未部署 API / Vercel API not deployed。請檢查 vercel.json 是否為 {\"version\":2} 且已重新部署，另檢查 /api/health?troopId=${troopId} 和 /api/troops 是否 404。若 /api/troops 404 屬正常靜態部署，請直接使用內置 0082，但 /api/proxy 必須存在，否則需等待 Vercel 重新部署完成。原始: ${text.slice(0,120)}`);
+      }
+      if(isHtml){
+        throw new Error(`${t('api_bad_response')} (HTTP ${resp.status}) - 後端返回非 JSON，可能是 Google Sheet 缺少工作表或 Apps Script 未部署為「任何人可存取」。請執行 diagnoseSheets() / initializeSheets()。預覽: ${text.slice(0,200)}`);
+      }
+      throw new Error(`${t('api_bad_response')} (HTTP ${resp.status})`);
+    }
+    if(!resp.ok){
+      const hint = json.troubleshooting ? ` - ${json.troubleshooting.hint||''}` : '';
+      throw new Error((json.error||`請求失敗 ${resp.status}`)+hint);
+    }
     if(json.success===false && !allowFail) throw new Error(json.error||t('api_failed'));
     return json;
   }catch(err){
