@@ -1,267 +1,163 @@
-// Vercel Serverless Function - Same-origin proxy to GAS
-// Security: only connects to registry-registered HTTPS GAS /exec URLs
-// No frontend-supplied backend URL accepted (SSRF prevention)
+// Vercel Serverless Function - Same-origin Proxy for Google Apps Script v2.1 (CubBadge aligned with ScoutBadge v5.2)
+const { getTroopConfig, getRegistry, normalizeToPadded4, normalizeStripped } = require('./_lib/registry');
 
-const { getTroopsRegistry, isValidGasUrl } = require('./_lib/registry');
-
-const FORBIDDEN_FORWARD_KEYS = new Set([
-  'troopId', 'troop', 'u', 'troopId_', 'troopKey',
-  'backend', 'backendUrl', 'gasUrl', 'scriptUrl', 'execUrl', 'url',
-  'TROOP_BACKEND', 'GAS_URL'
-]);
-
-const UPSTREAM_TIMEOUT_MS = 15000;
-
-function sanitizeLog(obj) {
-  if (!obj || typeof obj !== 'object') return obj;
-  const clone = { ...obj };
-  ['password', 'old_password', 'new_password', 'token', 'apikey', 'apiKey', 'API_KEY'].forEach(k => {
-    if (clone[k]) clone[k] = '[REDACTED]';
-    if (clone[k.toLowerCase()]) clone[k.toLowerCase()] = '[REDACTED]';
-  });
-  return clone;
-}
-
-function getTroopIdFromRequest(req) {
-  let tid = '';
-  if (req.query) {
-    tid = req.query.troopId || req.query.troop || req.query.u || req.query.troopKey || '';
+module.exports = async function handler(req, res) {
+  if (!res.status) {
+    res.status = function(code) { res.statusCode = code; return res; };
   }
-  if (!tid && req.body && typeof req.body === 'object') {
-    tid = req.body.troopId || req.body.troop || req.body.u || req.body.troopKey || '';
-  }
-  if (!tid && req.headers && req.headers['x-troop-id']) {
-    tid = req.headers['x-troop-id'];
-  }
-  return String(tid || '').trim();
-}
-
-function parseBody(req) {
-  if (!req.body) return {};
-  if (typeof req.body === 'object') return req.body;
-  try {
-    return JSON.parse(req.body);
-  } catch {
-    return {};
-  }
-}
-
-function buildForwardQuery(incomingQuery) {
-  const params = new URLSearchParams();
-  for (const [k, v] of Object.entries(incomingQuery || {})) {
-    if (FORBIDDEN_FORWARD_KEYS.has(k)) continue;
-    if (v === undefined || v === null) continue;
-    if (Array.isArray(v)) {
-      v.forEach(val => {
-        if (val !== undefined) params.append(k, String(val));
-      });
-    } else {
-      params.append(k, String(v));
-    }
-  }
-  return params;
-}
-
-function buildForwardBody(bodyObj) {
-  const out = {};
-  for (const [k, v] of Object.entries(bodyObj || {})) {
-    if (FORBIDDEN_FORWARD_KEYS.has(k)) continue;
-    if (k === '_proxyMethod' || k === '_proxyQuery') continue;
-    out[k] = v;
-  }
-  return out;
-}
-
-async function handleUpstreamResponse(upstreamResp, res, troopId) {
-  const contentType = upstreamResp.headers.get('content-type') || '';
-  let text;
-  try {
-    text = await upstreamResp.text();
-  } catch (e) {
-    console.error(`[proxy] Failed to read upstream body troop=${troopId}`);
-    return res.status(502).json({ success: false, error: 'Failed to read upstream response' });
+  if (!res.json) {
+    res.json = function(data) {
+      res.setHeader('Content-Type', 'application/json; charset=utf-8');
+      res.end(JSON.stringify(data));
+      return res;
+    };
   }
 
-  let json = null;
-  try {
-    json = JSON.parse(text);
-  } catch {
-    json = null;
+  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+  res.setHeader('Content-Type', 'application/json; charset=utf-8');
+
+  if (req.method !== 'POST' && req.method !== 'GET') {
+    return res.status(405).json({ success: false, error: `Method ${req.method} Not Allowed` });
   }
 
-  if (!upstreamResp.ok) {
-    console.warn(`[proxy] Upstream non-2xx troop=${troopId} status=${upstreamResp.status}`);
-    if (json) {
-      return res.status(upstreamResp.status).json(json);
-    } else {
-      return res.status(upstreamResp.status).json({
-        success: false,
-        error: `Upstream error ${upstreamResp.status}`,
-        details: text.slice(0,500)
-      });
-    }
-  }
-
-  if (json) {
-    return res.status(upstreamResp.status).json(json);
-  } else {
-    console.warn(`[proxy] Upstream returned non-JSON troop=${troopId} ct=${contentType} len=${text.length}`);
-    return res.status(502).json({
-      success: false,
-      error: 'Invalid upstream response format',
-      details: text.slice(0,500)
-    });
-  }
-}
-
-async function handler(req, res) {
-  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
-  res.setHeader('Pragma', 'no-cache');
-
-  if (req.method === 'OPTIONS') {
-    res.setHeader('Allow', 'GET, POST, OPTIONS');
-    return res.status(204).end();
-  }
-
-  if (req.method !== 'GET' && req.method !== 'POST') {
-    res.setHeader('Allow', 'GET, POST, OPTIONS');
-    return res.status(405).json({ success: false, error: 'Method not allowed' });
-  }
-
-  const troopIdRaw = getTroopIdFromRequest(req);
-  if (!troopIdRaw) {
-    return res.status(400).json({ success: false, error: 'Missing troopId' });
-  }
-
-  if (!/^[A-Za-z0-9_\-]{1,32}$/.test(troopIdRaw)) {
-    return res.status(400).json({ success: false, error: 'Invalid troopId format' });
-  }
-
-  const registry = getTroopsRegistry();
-  const lookupKeys = [troopIdRaw, troopIdRaw.toUpperCase(), troopIdRaw.toLowerCase()];
-  let troopEntry = null;
-  let resolvedId = troopIdRaw;
-  for (const key of lookupKeys) {
-    if (registry[key]) {
-      troopEntry = registry[key];
-      resolvedId = key;
-      break;
-    }
-  }
-  if (!troopEntry) {
-    const noZero = troopIdRaw.replace(/^0+/, '') || troopIdRaw;
-    for (const key of [noZero, noZero.toUpperCase(), noZero.toLowerCase()]) {
-      if (registry[key]) {
-        troopEntry = registry[key];
-        resolvedId = key;
-        break;
-      }
-    }
-  }
-  if (!troopEntry) {
-    const withZeros = troopIdRaw.padStart(4, '0');
-    if (registry[withZeros]) {
-      troopEntry = registry[withZeros];
-      resolvedId = withZeros;
-    }
-  }
-
-  if (!troopEntry || !troopEntry.backend) {
-    return res.status(404).json({ success: false, error: 'Troop not found or not registered', troopId: troopIdRaw });
-  }
-
-  const backendUrl = troopEntry.backend;
-  if (!isValidGasUrl(backendUrl)) {
-    console.warn(`[proxy] Rejected invalid backend URL for troop ${resolvedId}`);
-    return res.status(403).json({ success: false, error: 'Invalid backend URL - not trusted' });
-  }
-
-  let upstreamUrl = backendUrl;
-  let upstreamMethod = req.method;
-
-  const bodyParsed = req.method === 'POST' ? parseBody(req) : {};
-  const proxyMethodOverride = (req.query._proxyMethod || bodyParsed._proxyMethod || '').toString().toUpperCase();
-  if (proxyMethodOverride === 'GET' || proxyMethodOverride === 'POST') {
-    upstreamMethod = proxyMethodOverride;
-  }
+  const startTime = Date.now();
 
   try {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), UPSTREAM_TIMEOUT_MS);
-
-    if (upstreamMethod === 'GET') {
-      let forwardParams;
-      if (req.method === 'GET') {
-        forwardParams = buildForwardQuery(req.query);
+    let payload = {};
+    if (req.method === 'POST') {
+      if (typeof req.body === 'string') {
+        try { payload = JSON.parse(req.body || '{}'); } catch (e) {
+          return res.status(400).json({ success: false, error: 'Invalid JSON request body' });
+        }
       } else {
-        const queryObj = {};
-        if (bodyParsed._proxyQuery && typeof bodyParsed._proxyQuery === 'object') {
-          Object.assign(queryObj, bodyParsed._proxyQuery);
-        } else {
-          ['action', 'apikey', 'apiKey', 'token', 'ymis'].forEach(k => {
-            if (bodyParsed[k] !== undefined) queryObj[k] = bodyParsed[k];
-          });
-          if (bodyParsed.params && typeof bodyParsed.params === 'object') {
-            Object.assign(queryObj, bodyParsed.params);
-          }
-        }
-        forwardParams = buildForwardQuery(queryObj);
+        payload = req.body || {};
       }
-
-      if (!forwardParams.has('apikey') && !forwardParams.has('apiKey') && troopEntry.apikey) {
-        forwardParams.set('apikey', troopEntry.apikey);
-      }
-
-      if (forwardParams.toString()) {
-        upstreamUrl += (upstreamUrl.includes('?') ? '&' : '?') + forwardParams.toString();
-      }
-
-      console.log(`[proxy] GET troop=${resolvedId} action=${forwardParams.get('action') || '-'} -> upstream`);
-
-      const upstreamResp = await fetch(upstreamUrl, {
-        method: 'GET',
-        redirect: 'follow',
-        signal: controller.signal,
-        headers: {
-          'User-Agent': 'cubsbadge-proxy/1.0'
-        }
-      });
-
-      clearTimeout(timeoutId);
-      return await handleUpstreamResponse(upstreamResp, res, resolvedId);
-
     } else {
-      const forwardBody = buildForwardBody(bodyParsed);
+      payload = req.query || {};
+    }
 
-      if (!forwardBody.apikey && troopEntry.apikey) {
-        forwardBody.apikey = troopEntry.apikey;
-      }
+    const rawTroopId = payload.troopId || payload.troopKey || payload.troop || (req.query && (req.query.troopId || req.query.u || req.query.troop)) || '0082';
+    const troopId = String(rawTroopId).trim();
+    const action = payload.action || (req.query && req.query.action);
 
-      const loggedAction = forwardBody.action || 'unknown';
-      console.log(`[proxy] POST troop=${resolvedId} action=${loggedAction} payload=${JSON.stringify(sanitizeLog(forwardBody)).slice(0,200)}`);
+    if (!action) {
+      return res.status(400).json({ success: false, error: 'Missing required parameter: action' });
+    }
 
-      const upstreamResp = await fetch(upstreamUrl, {
-        method: 'POST',
-        redirect: 'follow',
-        signal: controller.signal,
-        headers: {
-          'Content-Type': 'text/plain;charset=utf-8',
-          'User-Agent': 'cubsbadge-proxy/1.0'
-        },
-        body: JSON.stringify(forwardBody)
+    const troopConfig = getTroopConfig(troopId);
+    if (!troopConfig) {
+      let available = [];
+      try {
+        const reg = getRegistry();
+        const uniq = new Set();
+        Object.keys(reg).forEach(k => {
+          const n = normalizeToPadded4(k);
+          if (/^\d{4}$/.test(n) || /^\d+$/.test(k)) uniq.add(n);
+        });
+        available = Array.from(uniq).sort().slice(0, 20);
+      } catch(e) {}
+      return res.status(404).json({
+        success: false,
+        error: `Unregistered or invalid troop ID: ${troopId}. 請檢查旅團編號是否為 0082 / 82？可用旅團: ${available.join(', ') || '無'}`,
+        troubleshooting: {
+          requested: troopId,
+          normalizedPadded: normalizeToPadded4(troopId),
+          normalizedStripped: normalizeStripped(troopId),
+          availableTroops: available,
+          hint: '若你看到「找不到82的SHEET」，請確認 data/troops.json 或 Vercel 環境變數 TROOP_0082_BACKEND 已正確設定，並且 Apps Script 已執行 initializeSheets()'
+        }
       });
-
-      clearTimeout(timeoutId);
-      return await handleUpstreamResponse(upstreamResp, res, resolvedId);
     }
+
+    const gasUrl = troopConfig.backend;
+
+    if (troopConfig.apikey && !payload.apikey) {
+      payload.apikey = troopConfig.apikey;
+    }
+
+    const controller = new AbortController();
+    const timeoutMs = 25000;
+    const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
+    let gasResponse;
+
+    if (action === 'load') {
+      // Frontend sends load as POST via apiRequest, but Apps Script implements load in doGet().
+      // Translate both proxy methods to upstream GET so login and post-login data load use compatible entry points.
+      const targetUrl = new URL(gasUrl);
+      targetUrl.searchParams.set('action', 'load');
+      if (payload.token) targetUrl.searchParams.set('token', payload.token);
+      if (payload.apikey) targetUrl.searchParams.set('apikey', payload.apikey);
+
+      gasResponse = await fetch(targetUrl.toString(), {
+        method: 'GET',
+        headers: { 'Accept': 'application/json' },
+        redirect: 'follow',
+        signal: controller.signal
+      });
+    } else {
+      const forwardPayload = { ...payload };
+      delete forwardPayload.troopId;
+      delete forwardPayload.troopKey;
+      delete forwardPayload.troop;
+
+      gasResponse = await fetch(gasUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify(forwardPayload),
+        redirect: 'follow',
+        signal: controller.signal
+      });
+    }
+
+    clearTimeout(timeoutId);
+
+    const rawText = await gasResponse.text();
+    let jsonResult = null;
+
+    try {
+      jsonResult = JSON.parse(rawText);
+    } catch (parseErr) {
+      console.error(`[PROXY] Upstream non-JSON troop=${troopId} (norm=${normalizeToPadded4(troopId)}), action=${action}, status=${gasResponse.status}`);
+      const isSheetMissing = /Exception.*sheet/i.test(rawText) || /找不到/.test(rawText) || /工作表/.test(rawText);
+      return res.status(502).json({
+        success: false,
+        error: isSheetMissing
+          ? `後端 Google Sheet 設定異常：${troopId} 的 Spreadsheet 可能缺少必要工作表，請在 Apps Script 執行 initializeSheets() 重建。原始錯誤：${rawText.substring(0,150)}`
+          : '後端服務響應異常 (GAS Upstream Error) - 請檢查 Apps Script 是否正確部署為「任何人可存取」且 URL 為 /exec 結尾',
+        details: rawText.length > 300 ? rawText.substring(0, 300) + '...' : rawText,
+        troubleshooting: {
+          troopIdRequested: troopId,
+          troopIdNormalized: normalizeToPadded4(troopId),
+          gasUrl: gasUrl.substring(0, 80) + '...',
+          hint: '常見原因：1) Apps Script 未重新部署「新版本」 2) 未執行 initializeSheets() 3) Google 帳戶授權過期 4) Spreadsheet 被刪除'
+        }
+      });
+    }
+
+    const duration = Date.now() - startTime;
+    console.log(`[PROXY] troop=${troopId} (norm=${normalizeToPadded4(troopId)}) action=${action} status=${gasResponse.status} duration=${duration}ms success=${jsonResult?.success !== false}`);
+
+    if (jsonResult && jsonResult.success === false && jsonResult.error) {
+      const errLower = String(jsonResult.error).toLowerCase();
+      if (errLower.includes('sheet') || errLower.includes('工作表') || errLower.includes('找不到')) {
+        jsonResult.troubleshooting = {
+          hint: `此錯誤通常表示 Google Sheet 缺少工作表或 ${troopId} 設定異常。請執行 initializeSheets()，並確認 TROOP_${normalizeToPadded4(troopId)}_BACKEND 指向正確的 Spreadsheet。`,
+          troopId: troopId,
+          normalized: normalizeToPadded4(troopId)
+        };
+      }
+    }
+
+    return res.status(200).json(jsonResult);
+
   } catch (err) {
+    const duration = Date.now() - startTime;
     if (err.name === 'AbortError') {
-      console.error(`[proxy] Timeout troop=${resolvedId}`);
-      return res.status(504).json({ success: false, error: 'Upstream timeout - please retry', code: 'TIMEOUT' });
+      console.error(`[PROXY] Timeout calling GAS after ${duration}ms`);
+      return res.status(504).json({ success: false, error: '後端服務連線逾時 (GAS Request Timeout) - 請檢查 Google Apps Script 是否回應過慢或配額耗盡' });
     }
-    console.error(`[proxy] Upstream fetch error troop=${resolvedId} err=${err.message}`);
-    return res.status(502).json({ success: false, error: 'Upstream connection failed', details: err.message.slice(0,200) });
+    console.error(`[PROXY] Exception:`, err.message);
+    return res.status(500).json({ success: false, error: `代理伺服器錯誤: ${err.message}` });
   }
-}
-
-module.exports = handler;
+};
