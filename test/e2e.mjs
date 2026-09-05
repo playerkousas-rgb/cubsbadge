@@ -5,6 +5,12 @@
 //   【10e】領袖免 YMIS 用電郵登入（自動分派 L 編號、電郵登入、批量免 YMIS）
 //   【10f】權限收緊 + 批量開戶
 //   【10g】預設密碼 1234 + 首次登入強制改密
+// v5.3.2 新增：
+//   【11a】YMIS／Email 全表唯一（含已停用帳號不可重用）
+//   【11b】用戶管理不漏成員（status 空白＝active、純成員合併列出、include_inactive）
+//   【11c】領袖設定密碼（自訂 new_password、權限檢查、純成員開通、重複列寫對列）
+//   【11d】重新啟用已停用帳號（補回成員名單、密碼重設、團長鎖）
+//   【11e】修改成員資料／刪除成員（同步兩表、刪後 YMIS 仍不可重用）
 // 執行：npm run test:e2e   （或 node test/e2e.mjs）
 import { buildBackend, sha256Hex } from './mock-gas.mjs';
 import assert from 'assert';
@@ -153,6 +159,200 @@ function seedUser(sandbox, o) {
   // 登入回傳 force_change_password
   const login = jparse(b.handleLogin('1000000001', 'abcd'));
   check('改密後登入不再強制改密', () => { assert.equal(login.success, true); assert.equal(login.force_change_password, false); });
+}
+
+// ---------- 【11a】v5.3.2：YMIS／Email 全表唯一（含已停用帳號） ----------
+{
+  const b = buildBackend();
+  seedUser(b, { ymis: '1111111111', name: '管理員', email: 'admin@example.org', role: 'admin', pwd: 'pw', force: false });
+  const mk = b.createUserRecord({ ymis: '1234560001', name: '陳小美', email: 'mei@example.org', role: 'member', password: '1234' }, ADMIN);
+  check('開戶成功', () => assert.equal(mk.success, true));
+  // 模擬停用（status → inactive）
+  const rows = b.__ss.sheets.Users.rows;
+  rows.find(r => String(r[0]) === '1234560001')[11] = 'inactive';
+  const dup1 = b.createUserRecord({ ymis: '1234560001', name: '陳小美（新）', email: 'other@example.org', role: 'member', password: '1234' }, ADMIN);
+  check('已停用帳號的 YMIS 不可再開新帳號（提示重新啟用）', () => {
+    assert.equal(dup1.success, false);
+    assert.ok(dup1.error.includes('重新啟用'));
+    assert.ok(dup1.error.includes('YMIS'));
+  });
+  const dup2 = b.createUserRecord({ ymis: '1234560099', name: '另一位', email: 'mei@example.org', role: 'member', password: '1234' }, ADMIN);
+  check('已停用帳號的 Email 不可再開新帳號', () => {
+    assert.equal(dup2.success, false);
+    assert.ok(dup2.error.includes('Email'));
+  });
+  check('Users 表不會出現重複 YMIS 列', () => assert.equal(rows.filter(r => String(r[0]) === '1234560001').length, 1));
+  // 申請同 YMIS／Email 亦被拒
+  const app1 = jparse(b.handleApply('1234560001', '陳小美', 'x@example.org', 'member', 'cub'));
+  const app2 = jparse(b.handleApply('1234560098', '陳小美', 'mei@example.org', 'member', 'cub'));
+  check('apply 用已停用帳號的 YMIS 被拒', () => { assert.equal(app1.success, false); assert.ok(app1.error.includes('YMIS')); });
+  check('apply 用已停用帳號的 Email 被拒', () => { assert.equal(app2.success, false); assert.ok(app2.error.includes('Email')); });
+  // 批量開戶同批重複 → 第二列被拒
+  const bulk = jparse(b.handleBulkAddUsers([
+    { ymis: '1234560077', name: '甲', role: 'member' },
+    { ymis: '1234560077', name: '甲重複', role: 'member' },
+  ], ADMIN));
+  check('批量同批重複 YMIS：1 成功 1 失敗', () => {
+    assert.equal(bulk.ok, 1); assert.equal(bulk.skipped, 1);
+  });
+  // addMember 重複被拒
+  const am = jparse(b.handleAddMember('1234560077', '甲', '', 'member'));
+  check('addMember 重複 YMIS 被拒', () => { assert.equal(am.success, false); assert.ok(am.error.includes('不可重複')); });
+  // 純成員已在成員名單 → addUser 開通帳號成功，成員名單不會重複加入
+  jparse(b.handleAddMember('1234560088', '乙純成員', '紅隊', 'member'));
+  const upgrade = b.createUserRecord({ ymis: '1234560088', name: '乙純成員', role: 'member', password: '1234' }, ADMIN);
+  check('純成員YMIS開通帳號成功（不重複加名單）', () => {
+    assert.equal(upgrade.success, true);
+    const cnt = b.__ss.sheets['成員名單'].rows.filter(r => String(r[0]) === '1234560088').length;
+    assert.equal(cnt, 1);
+  });
+  const upLogin = jparse(b.handleLogin('1234560088', '1234'));
+  check('純成員開通後可登入', () => assert.equal(upLogin.success, true));
+}
+
+// ---------- 【11b】v5.3.2：用戶管理不漏成員 ----------
+{
+  const b = buildBackend();
+  seedUser(b, { ymis: '1111111111', name: '管理員', email: 'admin@example.org', role: 'admin', pwd: 'pw', force: false });
+  // status 空白（舊資料）
+  const rows = b.__ss.sheets.Users.rows;
+  rows.push(['1234560002', '王小迪', '', 'member', sha256Hex('1234'), 'b4', false, 'x', '', '', '', '', '', '', '', '']);
+  // 純成員（只在成員名單）
+  b.__ss.sheets['成員名單'].rows.push(['1234560003', '李純成員', '', '', '', '紅隊']);
+  // 已停用帳號
+  seedUser(b, { ymis: '1234560004', name: '舊人', email: 'old@example.org', role: 'member', pwd: 'x', status: 'inactive' });
+  const def = b.getAllUsers();
+  check('status 空白的成員在 getAllUsers 可見', () => assert.ok(def.some(u => u.ymis === '1234560002')));
+  check('純成員合併列出（member_only 標記）', () => {
+    const u = def.find(x => x.ymis === '1234560003');
+    assert.ok(u); assert.equal(u.member_only, true); assert.equal(u.password_set, false); assert.equal(u.squad, '紅隊');
+  });
+  check('預設不列出已停用帳號（舊客戶端相容）', () => assert.ok(!def.some(u => u.ymis === '1234560004')));
+  const inc = b.getAllUsers(true);
+  check('include_inactive=true 列出已停用帳號', () => {
+    const u = inc.find(x => x.ymis === '1234560004');
+    assert.ok(u); assert.equal(u.status, 'inactive');
+  });
+  // 空白 status 的成員可改角色／停用（以前完全不能操作）
+  const up = jparse(b.handleUpdateUserRole('1234560002', 'member', true, '1111111111'));
+  check('空白 status 成員可改權限', () => assert.equal(up.success, true));
+  const tok = b.createToken('1111111111');
+  const de = jparse(b.handleDeactivateUser({ target_ymis: '1234560002', token: tok }));
+  check('空白 status 成員可停用', () => assert.equal(de.success, true));
+}
+
+// ---------- 【11c】v5.3.2：領袖設定成員密碼 ----------
+{
+  const b = buildBackend();
+  seedUser(b, { ymis: '1111111111', name: '管理員', email: 'admin@example.org', role: 'admin', pwd: 'pw', force: false });
+  seedUser(b, { ymis: '1234560001', name: '陳小美', email: 'mei@example.org', role: 'member', pwd: 'old', force: false });
+  const admin = jparse(b.handleLogin('1111111111', 'pw'));
+  const tok = admin.token;
+  // 自訂新密碼
+  const r1 = jparse(b.handleResetPassword('1234560001', admin.user, 'mei2026'));
+  check('領袖可直接設定自訂新密碼', () => { assert.equal(r1.success, true); assert.equal(r1.temp_password, 'mei2026'); });
+  const l1 = jparse(b.handleLogin('1234560001', 'mei2026'));
+  check('成員可用領袖設定的新密碼登入（強制改密）', () => {
+    assert.equal(l1.success, true); assert.equal(l1.force_change_password, true);
+  });
+  // 留空 → 預設 1234
+  const r2 = jparse(b.handleResetPassword('1234560001', admin.user, ''));
+  check('留空＝預設 1234', () => { assert.equal(r2.success, true); assert.equal(r2.temp_password, '1234'); });
+  // 太短被拒
+  const r3 = jparse(b.handleResetPassword('1234560001', admin.user, 'abc'));
+  check('新密碼少於 4 位被拒', () => { assert.equal(r3.success, false); assert.ok(r3.error.includes('4')); });
+  // 權限：支部領袖不可為 admin 重設
+  seedUser(b, { ymis: 'L0009', name: '支部領袖', email: 'bl@example.org', role: 'branch_leader', pwd: 'bl', force: false });
+  const bl = jparse(b.handleLogin('bl@example.org', 'bl'));
+  const r4 = jparse(b.handleResetPassword('1111111111', bl.user, '1234'));
+  check('支部領袖不可為 admin 設定密碼（權限收緊）', () => { assert.equal(r4.success, false); assert.ok(r4.error.includes('權限')); });
+  const r4b = jparse(b.handleResetPassword('1234560001', bl.user, 'abcd'));
+  check('支部領袖可為 member 設定密碼', () => assert.equal(r4b.success, true));
+  // 純成員 → 設定密碼即場開通帳號
+  b.__ss.sheets['成員名單'].rows.push(['1234560005', '李純成員', '', '', 'lee@example.org', '']);
+  const r5 = jparse(b.handleResetPassword('1234560005', admin.user, 'open2026'));
+  check('純成員設定密碼＝即場開通帳號', () => { assert.equal(r5.success, true); assert.equal(r5.temp_password, 'open2026'); });
+  const l5 = jparse(b.handleLogin('1234560005', 'open2026'));
+  check('開通後可用 YMIS＋新密碼登入', () => { assert.equal(l5.success, true); assert.equal(l5.user.name, '李純成員'); });
+  // 舊資料重複列（inactive 在前、active 在後）→ 只寫 active 列
+  seedUser(b, { ymis: '1234560006', name: '重複列舊', email: 'dup@example.org', role: 'member', pwd: '9999', status: 'inactive', force: false });
+  seedUser(b, { ymis: '1234560006', name: '重複列新', email: 'dup@example.org', role: 'member', pwd: '8888', force: false });
+  const r6 = jparse(b.handleResetPassword('1234560006', admin.user, ''));
+  check('重複列場景重設成功', () => assert.equal(r6.success, true));
+  const dupRows = b.__ss.sheets.Users.rows.filter(r => String(r[0]) === '1234560006');
+  const hash1234 = sha256Hex('1234');
+  check('密碼寫入 active 列（不是 inactive 列）', () => {
+    const inactiveRow = dupRows.find(r => r[11] === 'inactive');
+    const activeRow = dupRows.find(r => r[11] === 'active');
+    assert.equal(activeRow[4], hash1234);
+    assert.notEqual(inactiveRow[4], hash1234);
+  });
+  // 已停用帳號 → 要求先重新啟用
+  seedUser(b, { ymis: '1234560007', name: '停用者', email: 'off@example.org', role: 'member', pwd: 'x', status: 'inactive' });
+  const r8 = jparse(b.handleResetPassword('1234560007', admin.user, 'abcd'));
+  check('已停用帳號不可直接設密（須先重新啟用）', () => { assert.equal(r8.success, false); assert.ok(r8.error.includes('重新啟用')); });
+}
+
+// ---------- 【11d】v5.3.2：重新啟用已停用帳號 ----------
+{
+  const b = buildBackend();
+  seedUser(b, { ymis: '1111111111', name: '管理員', email: 'admin@example.org', role: 'admin', pwd: 'pw', force: false });
+  seedUser(b, { ymis: '1234560001', name: '陳小美', email: 'mei@example.org', role: 'member', pwd: '1234', status: 'inactive' });
+  const tok = b.createToken('1111111111');
+  // 停用時成員名單已被移除 → 重新啟用會補回
+  const re1 = jparse(b.handleReactivateUser({ target_ymis: '1234560001', token: tok }));
+  check('重新啟用成功並回傳臨時密碼 1234', () => {
+    assert.equal(re1.success, true); assert.equal(re1.temp_password, '1234');
+  });
+  check('成員名單已補回', () => assert.ok(b.__ss.sheets['成員名單'].rows.some(r => String(r[0]) === '1234560001')));
+  const l1 = jparse(b.handleLogin('1234560001', '1234'));
+  check('重新啟用後可用 1234 登入（強制改密）', () => {
+    assert.equal(l1.success, true); assert.equal(l1.force_change_password, true);
+  });
+  const re2 = jparse(b.handleReactivateUser({ target_ymis: '1234560001', token: tok }));
+  check('已是 active 再啟用 → 拒絕', () => { assert.equal(re2.success, false); });
+  // 團長唯一鎖：已有一位 active 團長時，不可啟用第二位（inactive 團長）
+  seedUser(b, { ymis: 'L0100', name: '舊團長', email: 'oldgsl@example.org', role: 'group_leader', pwd: 'x', status: 'inactive' });
+  const rGsl = b.createUserRecord({ name: '新團長', email: 'newgsl@example.org', role: 'group_leader', password: '1234', can_tick: true }, ADMIN);
+  assert.equal(rGsl.success, true);
+  const re3 = jparse(b.handleReactivateUser({ target_ymis: 'L0100', token: tok }));
+  check('重新啟用第二位團長被鎖（顯示現任姓名）', () => {
+    assert.equal(re3.success, false); assert.ok(re3.error.includes('團長只能有一位')); assert.ok(re3.error.includes('新團長'));
+  });
+}
+
+// ---------- 【11e】v5.3.2：修改成員資料／刪除成員 ----------
+{
+  const b = buildBackend();
+  seedUser(b, { ymis: '1111111111', name: '管理員', email: 'admin@example.org', role: 'admin', pwd: 'pw', force: false });
+  const mk = b.createUserRecord({ ymis: '1234560001', name: '陳小美', email: 'mei@example.org', role: 'member', password: '1234' }, ADMIN);
+  assert.equal(mk.success, true);
+  const tok = b.createToken('1111111111');
+  const ed = jparse(b.handleUpdateMemberEntry({ target_ymis: '1234560001', name: '陳小美（改名）', squad: '藍隊', token: tok }));
+  check('修改姓名／小隊成功', () => assert.equal(ed.success, true));
+  const users = b.getAllUsers();
+  const u = users.find(x => x.ymis === '1234560001');
+  check('Users 及回傳清單已同步新名字／小隊', () => { assert.equal(u.name, '陳小美（改名）'); assert.equal(u.squad, '藍隊'); });
+  check('成員名單亦已同步', () => {
+    const m = b.__ss.sheets['成員名單'].rows.find(r => String(r[0]) === '1234560001');
+    assert.equal(m[1], '陳小美（改名）');
+  });
+  // 刪除成員（有帳號 → 一併停用）
+  const del = jparse(b.handleDeleteMemberEntry({ target_ymis: '1234560001', token: tok }));
+  check('刪除成員成功', () => assert.equal(del.success, true));
+  check('已移出成員名單', () => assert.ok(!b.__ss.sheets['成員名單'].rows.some(r => String(r[0]) === '1234560001')));
+  const rowAfter = b.__ss.sheets.Users.rows.find(r => String(r[0]) === '1234560001');
+  check('帳號已停用（Users 列保留作紀錄）', () => assert.equal(rowAfter[11], 'inactive'));
+  const reuse = b.createUserRecord({ ymis: '1234560001', name: '新人用同編號', role: 'member', password: '1234' }, ADMIN);
+  check('刪除後同一 YMIS 仍不可開新帳號（須重新啟用）', () => { assert.equal(reuse.success, false); assert.ok(reuse.error.includes('重新啟用')); });
+  // 純成員（無帳號）刪除 → 只移成員名單
+  b.__ss.sheets['成員名單'].rows.push(['1234560009', '純成員乙', '', '', '', '']);
+  const del2 = jparse(b.handleDeleteMemberEntry({ target_ymis: '1234560009', token: tok }));
+  check('純成員刪除成功', () => assert.equal(del2.success, true));
+  check('純成員刪除後可在同 YMIS 重新加入（無帳號紀錄）', () => {
+    const again = jparse(b.handleAddMember('1234560009', '純成員乙（回歸）', '', 'member'));
+    assert.equal(again.success, true);
+  });
 }
 
 // ---------- 彙總 ----------
