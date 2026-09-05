@@ -387,7 +387,7 @@ function doPost(e){
     const action=body.action;
     if(action==='login') return handleLogin(body.login_id,body.password);
     if(action==='logout'){ destroyToken(body.token); return jsonResponse({success:true}); }
-    if(action==='apply') return handleApply(body.ymis,body.name,body.email,body.requested_role,body.branch);
+    if(action==='apply') return handleApply(body.ymis,body.name,body.email,body.requested_role||'member',body.branch);
     if(action==='save' || action==='addMember' || action==='addUser' || action==='saveOtherBadge'){
       const reqKey=body.apikey;
       if(reqKey && reqKey!==getApiKey()) return jsonResponse({success:false,error:'Invalid API Key'});
@@ -548,8 +548,12 @@ function handleChangePassword(ymis,oldP,newP){
   }
   return jsonResponse({success:false,error:'原密碼錯誤'});
 }
+const APPLY_ROLES = ['member','branch_leader']; // 可自助申請的角色（旅長／管理員須由現任團長在用戶管理開立）
 function handleApply(ymis,name,email,role,branch){
+  role=String(role||'member'); email=String(email||'').trim(); ymis=String(ymis||'').trim();
+  if(APPLY_ROLES.indexOf(role)<0) return jsonResponse({success:false,error:'無效的申請角色'});
   if(!name) return jsonResponse({success:false,error:'請填寫姓名'});
+  if(email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return jsonResponse({success:false,error:'Email 格式不正確'});
   if(role==='member' && (!ymis||ymis.length!==10)) return jsonResponse({success:false,error:'成員需 10位 YMIS'});
   if(role!=='member' && !email) return jsonResponse({success:false,error:'領袖需 Email'});
   if(isSuperAdminReserved(ymis,email)) return jsonResponse({success:false,error:'此帳號已被保留，請使用其他帳號'});
