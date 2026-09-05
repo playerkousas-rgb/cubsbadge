@@ -1,4 +1,4 @@
 ymis,name,email,squad,squad_role,role,can_tick,password,note
 1234560001,陳大文,chan@example.org,紅隊,member,member,false,,新團員
 1234560002,黃小英,wong@example.org,藍隊,member,member,false,,轉隊
-1234560003,李領袖,leader@example.org,,,branch_leader,true,Cub123456,團長帳號-首次登入會要求改密
+,李領袖,leader@example.org,,,branch_leader,true,1234,領袖免填YMIS用電郵登入（初始密碼1234）

@@ -49,6 +49,11 @@ function isSuperAdminReserved(ymis,email){
 const ADMIN_NAME = '管理員';
 const ADMIN_EMAIL = 'admin@example.com';
 const ADMIN_PASS = 'changeme';
+// v5.3.1（對齊 SCOUTBADGE／VSBADGE）：申請批核後初始臨時密碼統一預設 1234；
+// 首次登入強制改密（最少 MIN_PASSWORD_LEN 位）後才可使用。
+const MIN_PASSWORD_LEN = 4;
+const MAX_PASSWORD_LEN = 128;
+const DEFAULT_TEMP_PASSWORD = '1234';
 
 // ===== 工具 =====
 function getSheet() { return SpreadsheetApp.getActiveSpreadsheet(); }
@@ -225,12 +230,33 @@ function getRoleLevel(r){ return ROLE_HIERARCHY[r]||0; }
 function canManageRole(m,t){ return (CAN_MANAGE_ROLES[m]||[]).indexOf(t)>=0; }
 function canManageUser(manager,targetRole){ return manager && (manager.role==='super_admin' || canManageRole(manager.role,targetRole)); }
 // v5.3.0：領袖免 YMIS（用電郵登入）—— 為領袖帳戶自動編配內部唯一 L 編號（只做 Users 表鍵值，不會向領袖展示為 YMIS）
-function generateLeaderId(){
-  for(let i=0;i<20;i++){
-    const id='L'+Date.now().toString().substring(7)+Math.floor(Math.random()*90+10);
-    if(!getUser(id)) return id;
+// v5.3.1：改為順序編配（L0001、L0002…），掃描 Users 與 Applications 取最大編號 +1，避免重覆／跳號。
+function generateLeaderId(){ return getNextLeaderId(); }
+function getNextLeaderId(){
+  let maxNum=0;
+  const uSheet=getSheet().getSheetByName('Users');
+  if(uSheet){
+    const data=uSheet.getDataRange().getValues();
+    for(let i=1;i<data.length;i++){
+      const y=String(data[i][0]||'').trim();
+      const m=y.match(/^L(\d+)$/i);
+      if(m){ const n=parseInt(m[1],10); if(n>maxNum) maxNum=n; }
+    }
   }
-  return 'L'+Date.now().toString()+Math.floor(Math.random()*900+100);
+  const aSheet=getSheet().getSheetByName('Applications');
+  if(aSheet){
+    const data=aSheet.getDataRange().getValues();
+    for(let i=1;i<data.length;i++){
+      const y=String(data[i][1]||'').trim();
+      const m=y.match(/^L(\d+)$/i);
+      if(m){ const n=parseInt(m[1],10); if(n>maxNum) maxNum=n; }
+    }
+  }
+  return 'L'+String(maxNum+1).padStart(4,'0');
+}
+// v5.3.1：團長鎖死一位的統一提示（顯示現任團長姓名，不外洩內部 L 編號）
+function gslLockMsg(name){
+  return '團長只能有一位，全團已有現任團長（'+(name||'現任團長')+'）。如需更換，請先將現任團長轉為其他角色。';
 }
 // v5.3.0：團長全團只可有一位 —— 取現任在職團長（可排除指定 YMIS；換人流程：先將現任轉為其他角色，再升新人）
 function findActiveGroupLeader(excludeYmis){
@@ -244,12 +270,15 @@ function findActiveGroupLeader(excludeYmis){
   }
   return null;
 }
+// v5.3.1：檢測全團是否有狀態為 active 的團長 —— 無指定排除（等同現任團長查詢）
+function getActiveGroupLeader(){ return findActiveGroupLeader(''); }
 
 // v5.2.1（對齊 VSBADGE v8.2）：公開申請入口只接受 member / branch_leader（童軍無執委）
 // 團長／管理員必須由現任管理層在「用戶管理」直接開立，不可自行申請。
 const VALID_ROLES = ['admin','group_leader','branch_leader','member'];
 const APPLY_ROLES = ['member','branch_leader'];
-function generateTemporaryPassword(){ return 'Scout'+Math.floor(100000+Math.random()*900000); }
+// v5.3.1：申請批核後初始臨時密碼統一預設 1234（首次登入強制更改）。
+function generateTemporaryPassword(){ return DEFAULT_TEMP_PASSWORD; }
 
 // ===== 初始化 =====
 function initializeSheets() {
@@ -500,7 +529,7 @@ function doPost(e){
     if(action==='apply') return handleApply(body.ymis,body.name,body.email,body.requested_role||'member',body.branch);
 
     // save & addMember 需要 apikey (v4 向下兼容：若無 apikey 但有有效 token 也允許)
-    if(action==='save' || action==='addMember' || action==='addUser' || action==='saveOtherBadge'){
+    if(action==='save' || action==='addMember' || action==='addUser' || action==='bulkAddUsers' || action==='saveOtherBadge'){
       const reqKey=body.apikey;
       if(reqKey && reqKey!==getApiKey()) return jsonResponse({success:false,error:'Invalid API Key'});
       // 若無 apikey，嘗試 token 驗證作為後備
@@ -511,6 +540,7 @@ function doPost(e){
       if(action==='save') return handleSave(body.changes, body.confirmer||'');
       if(action==='addMember'){ let my=body.token?validateToken(body.token):null; let mgr=my?getUser(my):null; if(!mgr && body.apikey && body.apikey===getApiKey()) mgr={role:'admin'}; if(!mgr || getRoleLevel(mgr.role)<40) return jsonResponse({success:false,error:'只有領袖可以新增成員'}); return handleAddMember(body.ymis,body.name,body.squad||'',body.squad_role||'member'); }
       if(action==='addUser'){ let my=body.token?validateToken(body.token):null; let mgr=my?getUser(my):null; if(!mgr && body.apikey && body.apikey===getApiKey()) mgr={role:'admin'}; if(!mgr || getRoleLevel(mgr.role)<40) return jsonResponse({success:false,error:'只有領袖可以新增帳號'}); return handleAddUser(body,mgr); }
+      if(action==='bulkAddUsers'){ let my=body.token?validateToken(body.token):null; let mgr=my?getUser(my):null; if(!mgr && body.apikey && body.apikey===getApiKey()) mgr={role:'admin'}; if(!mgr || getRoleLevel(mgr.role)<40) return jsonResponse({success:false,error:'只有領袖可以批量開戶'}); return handleBulkAddUsers(body.users||[],mgr); }
       if(action==='saveOtherBadge') return handleSaveOtherBadge(body.records, body.apikey);
     }
     // member request - needs token but also allow apikey for member self
@@ -658,15 +688,16 @@ function handleLogin(loginId,password){
 function handleResetPassword(targetYmis,managerYmis){
   // v5.2：超管 sheep 不在 Users 表，不能被重設密碼 / sheep is backend-only: password reset blocked.
   if(isSuperAdminId(targetYmis)) return jsonResponse({success:false,error:'此為系統保留帳號，不能重設密碼'});
-  const sh=getSheet().getSheetByName('Users'); const data=sh.getDataRange().getValues(); for(let i=1;i<data.length;i++){ if(String(data[i][0])===String(targetYmis)){ const temp='Scout'+Math.floor(100000+Math.random()*900000); sh.getRange(i+1,5).setValue(hashPassword(temp)); if(sh.getLastColumn()>=16) sh.getRange(i+1,16).setValue(true); writeAudit(managerYmis,'reset_password',targetYmis,'重設為一次性密碼'); return jsonResponse({success:true,temp_password:temp}); } } return jsonResponse({success:false,error:'找不到成員'}); }
+  const sh=getSheet().getSheetByName('Users'); const data=sh.getDataRange().getValues(); for(let i=1;i<data.length;i++){ if(String(data[i][0])===String(targetYmis)){ const temp=DEFAULT_TEMP_PASSWORD; sh.getRange(i+1,5).setValue(hashPassword(temp)); if(sh.getLastColumn()>=16) sh.getRange(i+1,16).setValue(true); writeAudit(managerYmis,'reset_password',targetYmis,'重設為一次性密碼（預設1234）'); return jsonResponse({success:true,temp_password:temp}); } } return jsonResponse({success:false,error:'找不到成員'}); }
 function writeAudit(actor,action,target,detail){ const sh=getSheet().getSheetByName('操作紀錄'); if(sh) sh.appendRow([now(),actor,action,target,detail||'']); }
 function handleAddServiceRecord(r,actor){ const sh=getSheet().getSheetByName('服務紀錄'); if(!sh)return jsonResponse({success:false,error:'Sheet not found'}); const id='SRV_'+Date.now(); sh.appendRow([id,r.ymis,r.name||'',r.activity||'',r.date||'',Number(r.hours||0),r.place||'',r.detail||'',actor,'approved',r.note||'']); writeAudit(actor,'add_service',r.ymis,r.activity||''); return jsonResponse({success:true,record_id:id}); }
 function handleGetServiceRecords(ymis){ const sh=getSheet().getSheetByName('服務紀錄'); const out=[]; if(sh){const d=sh.getDataRange().getValues();for(let i=1;i<d.length;i++)if(String(d[i][1])===String(ymis))out.push({id:d[i][0],activity:d[i][3],date:formatDate(d[i][4]),hours:d[i][5],place:d[i][6],detail:d[i][7],status:d[i][9],note:d[i][10]});} return jsonResponse({success:true,records:out,totalHours:out.reduce((a,x)=>a+Number(x.hours||0),0)}); }
 function handleGetApprovalHistory(){ const out=[]; ['Applications','待批完成'].forEach(n=>{const sh=getSheet().getSheetByName(n);if(!sh)return;const d=sh.getDataRange().getValues();for(let i=1;i<d.length;i++){if(n==='Applications' && d[i][6] && d[i][6].toString()!=='pending')out.push({type:'帳戶申請',id:d[i][0],ymis:d[i][1],name:d[i][2],status:d[i][6],reviewer:d[i][8],date:d[i][9]});if(n==='待批完成' && d[i][7] && d[i][7].toString()!=='pending')out.push({type:'進度申請',id:d[i][0],ymis:d[i][1],name:d[i][2],status:d[i][7],reviewer:d[i][9],date:d[i][10],item:d[i][4]});}});return jsonResponse({success:true,records:out}); }
 function handleGetAuditLog(){ const sh=getSheet().getSheetByName('操作紀錄'); const out=[]; if(sh){const d=sh.getDataRange().getValues();for(let i=Math.max(1,d.length-200);i<d.length;i++)out.push(d[i]);} return jsonResponse({success:true,records:out}); }
 function handleChangePassword(ymis,oldP,newP){
-  if(newP.length<6) return jsonResponse({success:false,error:'新密碼至少6位'});
-  if(newP.length>32) return jsonResponse({success:false,error:'新密碼不可超過32位'});
+  // v5.3.1：首次登入／重設後強制改密，新密碼最少 MIN_PASSWORD_LEN(4) 位即可。
+  if(newP.length<MIN_PASSWORD_LEN) return jsonResponse({success:false,error:'新密碼至少'+MIN_PASSWORD_LEN+'位'});
+  if(newP.length>MAX_PASSWORD_LEN) return jsonResponse({success:false,error:'新密碼不可超過'+MAX_PASSWORD_LEN+'位'});
   if(newP===String(oldP||'')) return jsonResponse({success:false,error:'新密碼不可與原密碼相同'});
   // v5.2：超管 sheep 為後端虛擬帳號，密碼存於 Script Properties（不會寫入 Users 工作表）。
   // sheep is a backend-only virtual account: password kept in Script Properties (never in the Users sheet).
@@ -795,9 +826,10 @@ function handleUpdateUserRole(targetYmis,newRole,canTick,managerYmis, allowedBad
   // super_admin 可以改任何人，admin 可以改團長/支部領袖/成員，團長可改支部領袖/成員，支部領袖可改成員
   if(manager.role!=='super_admin' && !canManageRole(manager.role,newRole) && manager.role!=='admin') return jsonResponse({success:false,error:'權限不足，你的等級不可設定此角色'});
   // v5.3.0：團長全團只可有一位（換人流程：先將現任轉為其他角色，再升新人）
+  // v5.3.1：拒絕時回傳現任團長姓名（gslLockMsg）；更新同一人時以 exclude 自己避免自鎖
   if(newRole==='group_leader'){
     const cur=findActiveGroupLeader(targetYmis);
-    if(cur) return jsonResponse({success:false,error:'團長只能有一位（現任：'+cur.name+' '+cur.ymis+'），如需更換請先將現任團長轉為其他角色'});
+    if(cur) return jsonResponse({success:false,error:gslLockMsg(cur.name)});
   }
   const sheet=getSheet().getSheetByName('Users'); const data=sheet.getDataRange().getValues();
   for(let i=1;i<data.length;i++){
@@ -913,7 +945,9 @@ function handleAddMember(ymis,name,squad,squadRole){
   return jsonResponse({success:true});
 }
 
-function handleAddUser(body,mgr){
+// v5.3.1：開單一帳戶的共用核心邏輯（handleAddUser 與 handleBulkAddUsers 共用，保證行為一致）。
+// 回傳純物件 {success,error,ymis,message}；success=false 代表該列被拒（不回滾、不寫入）。
+function createUserRecord(body,mgr){
   let ymis=(body.ymis||'').toString().trim();
   const name=(body.name||'').toString().trim();
   const role=(body.role||'member').toString().trim();
@@ -924,27 +958,28 @@ function handleAddUser(body,mgr){
   const canTick=body.can_tick===true||body.can_tick==='true'||body.can_tick==='TRUE';
   // v5.3.0：角色嚴格驗證＋權限收緊 —— 開戶者只可開立自己等級可管理的角色
   // （sheep 經 getUser 取回 role==='super_admin'，canManageUser 一律通過，行為不變）
-  if(VALID_ROLES.indexOf(role)<0) return jsonResponse({success:false,error:'無效角色：'+role});
-  if(!canManageUser(mgr,role)) return jsonResponse({success:false,error:'權限不足，你的等級不可開立此角色'});
+  if(VALID_ROLES.indexOf(role)<0) return {success:false,error:'無效角色：'+role};
+  if(!canManageUser(mgr,role)) return {success:false,error:'權限不足，你的等級不可開立此角色'};
   // v5.3.0：領袖免 YMIS（用電郵登入）—— 領袖留空 YMIS 且有 Email 即自動編配內部 L 編號
   if(!ymis && role!=='member'){
-    if(!email) return jsonResponse({success:false,error:'領袖開戶必須填寫 Email（用作登入帳號）'});
+    if(!email) return {success:false,error:'領袖開戶必須填寫 Email（用作登入帳號）'};
     ymis=generateLeaderId();
   }
-  if(!/^(\d{10}|L\d+)$/.test(ymis)) return jsonResponse({success:false,error:'YMIS 須為 10 位數字（領袖可留空，會自動編配）'});
-  if(!name) return jsonResponse({success:false,error:'請填寫姓名'});
-  if(password && !role) return jsonResponse({success:false,error:'開立帳號需指定 role'});
-  if(isSuperAdminReserved(ymis,body.email)) return jsonResponse({success:false,error:'此帳號已被保留，請使用其他帳號'});
-  if(getUser(ymis)) return jsonResponse({success:false,error:'YMIS 已註冊'});
-  if(email && getUserByEmail(email)) return jsonResponse({success:false,error:'Email 已註冊'});
+  if(!/^(\d{10}|L\d+)$/.test(ymis)) return {success:false,error:'YMIS 須為 10 位數字（領袖可留空，會自動編配）'};
+  if(!name) return {success:false,error:'請填寫姓名'};
+  if(password && !role) return {success:false,error:'開立帳號需指定 role'};
+  if(isSuperAdminReserved(ymis,body.email)) return {success:false,error:'此帳號已被保留，請使用其他帳號'};
+  if(getUser(ymis)) return {success:false,error:'YMIS 已註冊'};
+  if(email && getUserByEmail(email)) return {success:false,error:'Email 已註冊'};
   // v5.3.0：團長全團只可有一位
+  // v5.3.1：拒絕時回傳現任團長姓名（gslLockMsg，不外洩內部 L 編號）；同一批中的多列團長亦依序被鎖
   if(role==='group_leader'){
-    const cur=findActiveGroupLeader('');
-    if(cur) return jsonResponse({success:false,error:'團長只能有一位（現任：'+cur.name+'），如需更換請先將現任團長轉為其他角色'});
+    const cur=getActiveGroupLeader();
+    if(cur) return {success:false,error:gslLockMsg(cur.name)};
   }
   const nowStr=now();
   const uSheet=getSheet().getSheetByName('Users');
-  if(!uSheet) return jsonResponse({success:false,error:'找不到 Users 工作表'});
+  if(!uSheet) return {success:false,error:'找不到 Users 工作表'};
   const row=new Array(uSheet.getLastColumn()).fill('');
   const headers=uSheet.getRange(1,1,1,uSheet.getLastColumn()).getValues()[0].map(h=>String(h).trim());
   function set(n,v){ const c=headers.indexOf(n); if(c>=0) row[c]=v; }
@@ -958,7 +993,27 @@ function handleAddUser(body,mgr){
   let mSheet=getSheet().getSheetByName('成員名單');
   if(!mSheet){ mSheet=getSheet().insertSheet('成員名單'); mSheet.appendRow(['YMIS','姓名','加入日期','支部','聯絡','小隊']); }
   mSheet.appendRow([ymis,name,new Date(),'','',squad]);
-  return jsonResponse({success:true,message:'帳號已建立'+(password?'（請提醒首次登入修改密碼）':'（成員，未設密碼）')});
+  writeAudit(mgr?String(mgr.ymis||'admin'):'admin','add_user',ymis,name+' ('+role+')');
+  return {success:true,ymis:ymis,message:'帳號已建立'+(password?'（請提醒首次登入修改密碼）':'（成員，未設密碼）')};
+}
+function handleAddUser(body,mgr){ return jsonResponse(createUserRecord(body,mgr)); }
+// v5.3.1：批量開戶（CSV／JSON 匯入）。逐列呼叫 createUserRecord：
+//   - 領袖列留空 ymis 自動編配內部 L 編號（用電郵登入）
+//   - 若已有活躍團長，重複開立 group_leader 的列會被拒絕並回傳現任團長姓名
+//   - branch_leader 只能開立 member（權限收緊，於 createUserRecord 內執行）
+// 回傳 per-row 結果（success 總數 / skipped 總數），前端可即時標紅失敗列。
+function handleBulkAddUsers(users,mgr){
+  if(!Array.isArray(users)||users.length===0) return jsonResponse({success:false,error:'沒有可匯入的用戶資料'});
+  if(users.length>500) return jsonResponse({success:false,error:'一次最多 500 列，請分批匯入'});
+  const results=[];
+  let ok=0;
+  users.forEach(function(u){
+    u=u||{};
+    const r=createUserRecord({ymis:u.ymis,name:u.name,email:u.email,role:u.role||'member',squad:u.squad,squad_role:u.squad_role,can_tick:u.can_tick,password:u.password},mgr);
+    if(r.success) ok++;
+    results.push({success:!!r.success,ymis:r.ymis||String(u.ymis||''),name:String(u.name||''),error:r.success?'':r.error,message:r.success?r.message:''});
+  });
+  return jsonResponse({success:true,ok:ok,skipped:results.length-ok,results:results,message:'批量開戶完成：'+ok+' 成功，'+(results.length-ok)+' 失敗'});
 }
 // 待批完成
 function handleDeactivateUser(body){

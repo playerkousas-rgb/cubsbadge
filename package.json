@@ -4,6 +4,7 @@
     "node": ">=18"
   },
   "scripts": {
-    "test": "node test/ymis_parse.test.js"
+    "test": "node test/ymis_parse.test.js",
+    "test:e2e": "node test/e2e.mjs"
   }
 }
