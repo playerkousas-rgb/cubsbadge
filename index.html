@@ -494,7 +494,7 @@ html[lang="en"] body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","No
 <div id="addMemberModal" class="modal"><div class="modal-content" style="max-width:480px">
   <h3 data-i18n="addm_title">➕ 新增成員 / 帳號</h3>
   <div style="font-size:11px;color:var(--text-light);background:var(--bg);padding:8px;border-radius:8px;margin-bottom:10px" data-i18n="addm_hint">💡 只填 YMIS+姓名=純成員；填埋密碼=可登入帳號（家長/成員自己睇）。</div>
-  <div class="form-group"><label>YMIS（10位數字）*</label><input type="text" id="am_ymis" inputmode="numeric" maxlength="10" placeholder="例如 1234567890"></div>
+  <div class="form-group"><label id="amYmisLabel">YMIS（成員必填；領袖可留空）</label><input type="text" id="am_ymis" inputmode="numeric" maxlength="10" placeholder="成員：1234567890；領袖可留空"></div>
   <div class="form-group"><label data-i18n="addm_name">姓名 *</label><input type="text" id="am_name" maxlength="40" placeholder="幼童軍姓名"></div>
   <div class="form-row"><div class="form-group"><label data-i18n="addm_squad">小隊（可留空）</label><input type="text" id="am_squad" maxlength="20" placeholder="例如 紅隊"></div><div class="form-group"><label data-i18n="addm_role">角色</label><select id="am_role"><option value="member" data-i18n="role_member">幼童軍成員</option><option value="branch_leader" data-i18n="role_branch">幼童軍團長</option><option value="group_leader" data-i18n="role_group">旅長</option><option value="admin" data-i18n="role_admin">管理員</option></select></div></div>
   <div class="form-group"><label>Email（領袖登入/可選）</label><input type="email" id="am_email" maxlength="80" placeholder="your@email.com"></div>
@@ -532,7 +532,7 @@ html[lang="en"] body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","No
   <h3 data-i18n="apply_title">📝 申請帳戶（成員／領袖）</h3>
   <p style="font-size:11px;color:var(--text-light)" data-i18n="apply_desc">提交後由團長／領袖在「審批中心」審批，批准後會建立帳戶。幼童軍年紀小，家長=成員帳號，只看進度；領袖帳戶批准後擁有勾選及審批權限。</p>
   <div class="form-group"><label data-i18n="apply_role">申請身份 *</label><select id="applyRole" onchange="syncApplyRole()"><option value="member" data-i18n="apply_role_member">家長／成員（幼童軍）</option><option value="branch_leader" data-i18n="apply_role_leader">領袖（幼童軍團長／領袖）</option></select><div style="font-size:10px;color:var(--text-light);margin-top:3px" data-i18n="apply_role_hint">成員及領袖都可自行申請；旅長／管理員角色須由現任團長在「用戶管理」直接開立。</div></div>
-  <div class="form-group"><label>YMIS（10位數字）*</label><input type="text" id="applyYmis" maxlength="10" inputmode="numeric" placeholder="1234567890"></div>
+  <div class="form-group" id="applyYmisGroup"><label>YMIS（成員必填；領袖不需要）</label><input type="text" id="applyYmis" maxlength="10" inputmode="numeric" placeholder="成員：1234567890"></div>
   <div class="form-group"><label data-i18n="apply_name">姓名 *</label><input type="text" id="applyName" maxlength="40"></div>
   <div class="form-group"><label data-i18n="apply_squad">小隊（可留空）</label><input type="text" id="applySquad" maxlength="20"></div>
   <div class="form-group"><label>Email <span id="applyEmailOpt" data-i18n="apply_email_opt">（可留空）</span><span id="applyEmailReq" style="color:var(--red);display:none" data-i18n="apply_email_req">* 領袖必填（用作登入）</span></label><input type="email" id="applyEmail" maxlength="80"></div>
@@ -2152,7 +2152,8 @@ async function loadUsers(){
         frontControlHtml=`<div class="info-section" style="border-left-color:var(--maroon);background:var(--maroon-light);padding:12px"><h3 style="font-size:14px;color:#8B5A00">🛠️ ${inEn()?'Frontend Account Control':'全前端帳號控制'}</h3><p style="font-size:11px;color:var(--text-light)">${inEn()?'Bulk onboard without entering Google Sheet: YMIS PDF / Excel / CSV / JSON or single add. With password=login account (force change), YMIS+name only=member only. Reset PW, deactivate here.':'開學季一次過開戶唔使再入 Google Sheet：批量開戶（YMIS 報表 PDF / Excel / CSV / JSON）或單個新增。有填密碼=可登入帳號（首次登入強制改密），只填 YMIS+姓名=純成員無法登入。重設密碼、停用帳號亦在此完成。'}</p><div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px"><button class="btn btn-sm btn-warning" onclick="openBulkOnboardModal()">${t('users_bulk_btn')}</button><button class="btn btn-sm btn-primary" onclick="openAddMemberModal()">${t('users_add_btn')}</button><button class="btn btn-sm btn-outline" onclick="loadApprovalHistory()">${t('users_history_btn')}</button><button class="btn btn-sm btn-outline" onclick="loadAuditHistory()">${t('users_audit_btn')}</button></div></div>`;
       }
       let h=roleExplain+frontControlHtml+systemSettingHtml+mockTool+`<div class="filter-bar"><input type="text" id="userSearch" placeholder="${t('users_search_ph')}" oninput="filterUsers()" style="flex:1"></div><div id="userList">`;
-      h+=d.users.map(u=>`<div class="user-item" data-search="${(u.name+u.ymis+u.email+(u.squad||'')).toLowerCase()}"><div class="user-item-info"><b>${escapeHtmlText(u.name)}</b> ${u.ymis?`(${escapeHtmlText(u.ymis)})`:''} ${u.email?` - ${escapeHtmlText(u.email)}`:''}<span class="role-badge role-${u.role}">${escapeHtmlText(getRoleName(u.role))}</span> ${u.squad?`<span class="squad-badge">👥 ${escapeHtmlText(u.squad)}</span>`:''} ${u.can_tick?`<span style="background:var(--green-light);color:var(--green);padding:1px 6px;border-radius:999px;font-size:9px">${t('can_tick_chip')}</span>`:''}<br><small style="font-size:10px;color:var(--text-light)">${t('perms_label')}${escapeHtmlText(u.allowed_badges|| (u.role==='member'?t('perms_none'):t('perms_all')))}</small></div><div class="user-item-actions">`+ (['admin','group_leader','branch_leader','super_admin'].includes(currentUser.role)&&u.ymis!==currentUser.ymis?`<select onchange="updateUserRole('${u.ymis}',this.value)"><option value="member" ${u.role==='member'?'selected':''}>${t('role_opt_member')}</option><option value="branch_leader" ${u.role==='branch_leader'?'selected':''}>${t('role_opt_branch')}</option><option value="group_leader" ${u.role==='group_leader'?'selected':''}>${t('role_opt_group')}</option><option value="admin" ${u.role==='admin'?'selected':''}>${t('role_opt_admin')}</option></select><button class="btn btn-sm ${u.can_tick?'btn-danger':'btn-success'}" onclick="toggleCanTick('${u.ymis}',${!u.can_tick})">${u.can_tick?t('tick_revoke'):t('tick_grant')}</button><button class="btn btn-sm btn-warning" onclick="openPermissionModal('${u.ymis}','${escapeAttr(u.name)}','${u.role}','${escapeAttr(u.allowed_badges||'')}')">${t('perm_btn')}</button><button class="btn btn-sm btn-blue" onclick="resetMemberPassword('${u.ymis}','${escapeAttr(u.name)}')">${t('reset_pw_btn')}</button><button class="btn btn-sm btn-danger" onclick="deactivateUser('${u.ymis}','${escapeAttr(u.name)}')">${t('deactivate_btn')}</button>`:'' )+`</div></div>`).join('');
+      const gslHolder=(d.users||[]).find(u=>u.role==='group_leader')||null; const gslCount=(d.users||[]).filter(u=>u.role==='group_leader').length;
+      h+=d.users.map(u=>`<div class="user-item" data-search="${(u.name+u.ymis+u.email+(u.squad||'')).toLowerCase()}"><div class="user-item-info"><b>${escapeHtmlText(u.name)}</b> ${u.role==='member'&&u.ymis?`(${escapeHtmlText(u.ymis)})`:''} ${u.email?` - ${escapeHtmlText(u.email)}`:''}<span class="role-badge role-${u.role}">${escapeHtmlText(getRoleName(u.role))}</span> ${u.squad?`<span class="squad-badge">👥 ${escapeHtmlText(u.squad)}</span>`:''} ${u.can_tick?`<span style="background:var(--green-light);color:var(--green);padding:1px 6px;border-radius:999px;font-size:9px">${t('can_tick_chip')}</span>`:''}<br><small style="font-size:10px;color:var(--text-light)">${t('perms_label')}${escapeHtmlText(u.allowed_badges|| (u.role==='member'?t('perms_none'):t('perms_all')))}</small></div><div class="user-item-actions">`+ (['admin','group_leader','branch_leader','super_admin'].includes(currentUser.role)&&u.ymis!==currentUser.ymis?`<select onchange="updateUserRole('${u.ymis}',this.value,'${u.role}',${!!(gslHolder&&gslHolder.ymis!==u.ymis)},${u.role==='group_leader'&&gslCount<2})"><option value="member" ${u.role==='member'?'selected':''}>${t('role_opt_member')}</option><option value="branch_leader" ${u.role==='branch_leader'?'selected':''}>${t('role_opt_branch')}</option><option value="group_leader" ${u.role==='group_leader'?'selected':''}>${t('role_opt_group')}</option><option value="admin" ${u.role==='admin'?'selected':''}>${t('role_opt_admin')}</option></select><button class="btn btn-sm ${u.can_tick?'btn-danger':'btn-success'}" onclick="toggleCanTick('${u.ymis}',${!u.can_tick})">${u.can_tick?t('tick_revoke'):t('tick_grant')}</button><button class="btn btn-sm btn-warning" onclick="openPermissionModal('${u.ymis}','${escapeAttr(u.name)}','${u.role}','${escapeAttr(u.allowed_badges||'')}')">${t('perm_btn')}</button><button class="btn btn-sm btn-blue" onclick="resetMemberPassword('${u.ymis}','${escapeAttr(u.name)}')">${t('reset_pw_btn')}</button><button class="btn btn-sm btn-danger" onclick="deactivateUser('${u.ymis}','${escapeAttr(u.name)}')">${t('deactivate_btn')}</button>`:'' )+`</div></div>`).join('');
       h+='</div>'; c.innerHTML=h;
     }else c.innerHTML=`<p style="color:var(--red)">${t('load_fail')}：${escapeHtmlText(d.error||'')}</p>`;
   }catch(e){ c.innerHTML=`<p style="color:var(--red)">${t('error_colon')}${escapeHtmlText(e.message)}</p>`; }
@@ -2242,7 +2243,15 @@ async function loadMockMembers(){
   }catch(e){ console.error(e); if(status) status.textContent='❌ '+t('load_fail')+'：'+e.message; showToast(t('mock_load_fail'),'error'); }
 }
 function clearMockMembers(){ localStorage.removeItem(LS.cacheProgress(currentTroopId)); loadItemsAndProgress(); const status=document.getElementById('mockStatus'); if(status) status.textContent=t('mock_cleared'); showToast(t('mock_cleared_toast'),'warning'); }
-async function updateUserRole(tid,nr){ try{ const d=await apiRequest({action:'updateUserRole',token:currentToken,target_ymis:tid,new_role:nr,can_tick:true},{method:'POST',allowFail:true}); if(d.success){ showToast(t('role_updated'),'success'); loadUsers(); } else showToast(d.error||t('upd_fail'),'error'); }catch(e){ showToast(t('error_colon')+e.message,'error'); } }
+async function updateUserRole(tid,nr,curRole,hasOtherGsl,isSoleGsl){
+  if(nr==='group_leader'&&curRole!=='group_leader'&&hasOtherGsl){ showToast(t('gsl_only_one'),'error'); loadUsers(); return; }
+  if(curRole==='group_leader'&&nr!=='group_leader'&&isSoleGsl&&!confirm(t('gsl_demote_warn'))){ loadUsers(); return; }
+  try{
+    const d=await apiRequest('updateUserRole', { target_ymis: tid, new_role: nr, can_tick: true });
+    if(d.success){ showToast(t('role_updated'),'success'); } else showToast(d.error||t('upd_fail'),'error');
+    loadUsers();
+  }catch(e){ showToast(t('error_colon')+e.message,'error'); loadUsers(); }
+}
 async function toggleCanTick(tid,ct){ try{ const d=await apiRequest({action:'updateUserRole',token:currentToken,target_ymis:tid,new_role:'member',can_tick:ct},{method:'POST',allowFail:true}); showToast(ct?t('tick_granted'):t('tick_revoked'),d.success?'success':'error'); loadUsers(); }catch(e){ showToast(t('error_colon')+e.message,'error'); } }
 async function reviewApp(id,dec){
   if(!confirm(tf('review_confirm',dec==='approved'?t('approved_done'):t('rejected_done')))) return;
@@ -2379,7 +2388,7 @@ function openAddMemberModal(){ if(bulkGuard()) return; ['am_ymis','am_name','am_
 async function submitAddMember(){
   if(bulkGuard()) return;
   const ymis=document.getElementById('am_ymis').value.trim(); const name=document.getElementById('am_name').value.trim(); const email=document.getElementById('am_email').value.trim(); const role=document.getElementById('am_role').value; const squad=document.getElementById('am_squad').value.trim(); const pw=document.getElementById('am_password').value; const canTick=document.getElementById('am_can_tick').checked;
-  if(!/^\d{10}$/.test(ymis)){ showToast(inEn()?'YMIS must be 10 digits':'YMIS 須為 10 位數字','error'); return; }
+  if(role==='member'&&!/^\d{10}$/.test(ymis)){ showToast(inEn()?'YMIS must be 10 digits':'YMIS 須為 10 位數字','error'); return; }
   if(!name){ showToast(inEn()?'Name required':'請填寫姓名','error'); return; }
   const btn=document.getElementById('btnAddMemberSubmit'); btn.disabled=true; btn.textContent=inEn()?'Creating...':'建立中...';
   try{
@@ -2424,13 +2433,14 @@ function syncApplyRole(){
   if(req) req.style.display=(role==='member')?'none':'inline';
   if(opt) opt.style.display=(role==='member')?'inline':'none';
   if(squad&&squad.closest('.form-group')) squad.closest('.form-group').style.display=(role==='member')?'':'none';
+  const yg=document.getElementById('applyYmisGroup'); if(yg) yg.style.display=(role==='member')?'':'none';
 }
 function showAccountApplyModal(){ document.getElementById('applyYmis').value=''; document.getElementById('applyName').value=''; document.getElementById('applySquad').value=''; document.getElementById('applyEmail').value=''; const r=document.getElementById('applyRole'); if(r) r.value='member'; document.getElementById('applyMsg').className='login-msg'; document.getElementById('accountApplyModal').classList.add('active'); applyStaticI18n(); syncApplyRole(); }
 async function submitAccountApply(){
   const ymis=document.getElementById('applyYmis').value.trim(); const name=document.getElementById('applyName').value.trim(); const squad=document.getElementById('applySquad').value.trim(); const email=document.getElementById('applyEmail').value.trim();
   const role=document.getElementById('applyRole')?.value||'member';
   const msg=document.getElementById('applyMsg');
-  if(!/^\d{10}$/.test(ymis)||!name){ msg.textContent=t('apply_invalid'); msg.className='login-msg error'; return; }
+  if((role==='member'&&!/^\d{10}$/.test(ymis))||!name){ msg.textContent=t('apply_invalid'); msg.className='login-msg error'; return; }
   if(role!=='member' && !email){ msg.textContent=t('apply_need_mail'); msg.className='login-msg error'; return; }
   const btn=document.querySelector('#accountApplyModal .btn-primary'); if(btn){ btn.disabled=true; btn.textContent=t('contact_submitting'); }
   try{
