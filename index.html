@@ -371,7 +371,7 @@ html[lang="en"] body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","No
 <div id="loginPage" style="display:none">
   <div class="app-header-common" style="padding:14px">
     <button class="lang-toggle-btn" onclick="setLang(currentLang==='en'?'zh':'en')">🌐 English</button>
-    <div class="logo-row" style="margin-bottom:0"><div class="logo-svg-wrap"><img src="assets/cub-logo-256.png" alt="Logo"></div><div><h1 style="font-size:18px" data-i18n="login_page_h1">幼童軍進度追蹤 v5.2</h1></div></div>
+    <div class="logo-row" style="margin-bottom:0"><div class="logo-svg-wrap"><img src="assets/cub-logo-256.png" alt="Logo"></div><div><h1 style="font-size:18px" data-i18n="login_page_h1">幼童軍進度追蹤 v7.3</h1><div style="font-size:10px;color:#666">離線可用 • <button id="pwaInstallBtn2" style="display:none;background:#FF6F00;color:#fff;border:none;padding:2px 8px;border-radius:999px;font-size:10px;font-weight:700;cursor:pointer">📲 安裝</button></div></div></div>
   </div>
   <div class="container">
     <div class="login-container">
@@ -2437,7 +2437,7 @@ function renderInfoTab(){
   const libM = CUB_MANUALS.filter(m=>m.group==='lib');
   let html = `
   <div style="background:linear-gradient(135deg,#FF6F00 0%,#FF9800 100%);border-radius:14px;padding:14px;color:#fff;margin-bottom:12px">
-    <h2 style="font-size:16px;font-weight:900">📚 幼童軍團手冊 <span style="background:rgba(0,0,0,0.15);padding:2px 8px;border-radius:999px;font-size:10px">v6.4 口語精簡版</span></h2>
+    <h2 style="font-size:16px;font-weight:900;display:flex;align-items:center;gap:8px;flex-wrap:wrap">📚 幼童軍團手冊 <span style="background:rgba(0,0,0,0.15);padding:2px 8px;border-radius:999px;font-size:10px">v7.3 離線版</span> <button id="pwaInstallBtn" style="display:none;background:#fff;color:#FF6F00;border:none;padding:4px 12px;border-radius:999px;font-size:11px;font-weight:800;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,0.2)">📲 安裝到桌面</button></h2>
     <p style="font-size:11px;opacity:0.9;margin-top:4px;line-height:1.5">上方新領袖必學5格，平時要用但唔識｜下方老手素材庫，要咩搵咩</p>
   </div>
   <div style="background:#fff;border:1px solid #FFCC80;border-radius:12px;padding:10px;margin-bottom:10px">
@@ -2936,6 +2936,49 @@ async function submitAccountApply(){
   }catch(e){ msg.textContent=e.message; msg.className='login-msg error'; }
   finally{ if(btn){ btn.disabled=false; btn.textContent=t('submit'); } }
 }
+
+// PWA Install Button - COPYRIGHT 2026 Scout System
+let deferredPrompt=null;
+const installBtn=document.getElementById('pwaInstallBtn');
+const installBtn2=document.getElementById('pwaInstallBtn2');
+const allInstallBtns=[installBtn, installBtn2].filter(Boolean);
+window.addEventListener('beforeinstallprompt', (e)=>{
+  e.preventDefault();
+  deferredPrompt=e;
+  console.log('[PWA] beforeinstallprompt fired');
+  allInstallBtns.forEach(btn=>{ btn.style.display='inline-flex'; });
+  if(installBtn){
+    installBtn.textContent='📲 安裝到桌面 - 離線都睇到';
+  }
+});
+allInstallBtns.forEach(btn=>{
+  btn.addEventListener('click', async ()=>{
+    if(!deferredPrompt){
+      // iOS fallback
+      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+      if(isIOS){
+        alert('iPhone安裝：按分享按鈕 → 加入主畫面 / Add to Home Screen\n\nInstall on iPhone: Tap Share → Add to Home Screen');
+      }else{
+        alert('瀏覽器網址列右邊按「安裝」圖示即可 / Click Install icon in address bar');
+      }
+      return;
+    }
+    deferredPrompt.prompt();
+    const {outcome}=await deferredPrompt.userChoice;
+    console.log('[PWA] User choice', outcome);
+    if(outcome==='accepted'){
+      allInstallBtns.forEach(b=>b.style.display='none');
+      showToast('已安裝到桌面，離線都睇到','success');
+    }
+    deferredPrompt=null;
+  });
+});
+window.addEventListener('appinstalled', ()=>{
+  console.log('[PWA] App installed');
+  allInstallBtns.forEach(b=>b.style.display='none');
+  deferredPrompt=null;
+  showToast('已安裝！桌面有橙色ICON','success');
+});
 
 // Offline banner
 function updateOnlineStatus(){
