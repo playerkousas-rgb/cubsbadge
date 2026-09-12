@@ -1,0 +1,55 @@
+{
+  "name": "幼童軍進度追蹤系統",
+  "short_name": "幼童軍",
+  "description": "幼童軍團手冊 v7.1 - 新領袖5步曲 + 老手素材庫，口語精簡圖文並茂，橙色代表",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#FFF3E0",
+  "theme_color": "#FF6F00",
+  "lang": "zh-Hant",
+  "icons": [
+    {
+      "src": "assets/favicon-32.png",
+      "sizes": "32x32",
+      "type": "image/png"
+    },
+    {
+      "src": "assets/apple-touch-icon.png",
+      "sizes": "180x180",
+      "type": "image/png"
+    },
+    {
+      "src": "assets/logo-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "assets/logo-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "assets/cub-logo-256.png",
+      "sizes": "256x256",
+      "type": "image/png"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "集會目錄",
+      "short_name": "目錄",
+      "description": "揀題目跟住做",
+      "url": "./#info",
+      "icons": [{ "src": "assets/logo-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "遊戲大全",
+      "short_name": "遊戲",
+      "description": "10+即用遊戲",
+      "url": "./#games",
+      "icons": [{ "src": "assets/logo-192.png", "sizes": "192x192" }]
+    }
+  ]
+}

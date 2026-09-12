@@ -3,12 +3,21 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<meta name="theme-color" content="#FFC107">
-<title>幼童軍進度追蹤系統 v5.2 - 中英對照</title>
+<meta name="theme-color" content="#FF6F00">
+<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png">
+<link rel="apple-touch-icon" sizes="180x180" href="assets/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="192x192" href="assets/logo-192.png">
+<link rel="icon" type="image/png" sizes="512x512" href="assets/logo-512.png">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="幼童軍進度">
+<meta name="description" content="幼童軍團手冊 v7.1 - 上5新領袖必學+下5老手素材庫，口語精簡圖文並茂，橙色代表，COPYRIGHT 2026 Scout System">
+<title>幼童軍進度追蹤系統 v7.1 - 中英對照</title>
 <style>
 :root{
-  --maroon:#FFC107;--maroon-dark:#FF8F00;--maroon-light:#FFF8E1;
-  --gold:#FFD700;--gold-dark:#FFC107;
+  --maroon:#FF6F00;--maroon-dark:#E65100;--maroon-light:#FFF3E0;
+  --gold:#FF9800;--gold-dark:#FF6F00;
   --blue:#1565C0;--blue-light:#E3F2FD;
   --green:#198754;--green-light:#D1E7DD;
   --orange:#FD7E14;--red:#DC3545;
@@ -17,11 +26,11 @@
 }
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 body{font-family:-apple-system,BlinkMacSystemFont,"Noto Sans TC","PingFang HK","Microsoft JhengHei",sans-serif;background:var(--bg);color:var(--text);line-height:1.7;font-size:16px;overscroll-behavior:none}
-a{color:#8B5A00;text-decoration:none}a:hover{text-decoration:underline}
-.link-btn{background:none;border:none;color:#8B5A00;font-size:12px;padding:0;margin-top:3px;cursor:pointer;text-decoration:underline;font-family:inherit}
+a{color:#BF360C;text-decoration:none}a:hover{text-decoration:underline}
+.link-btn{background:none;border:none;color:#BF360C;font-size:12px;padding:0;margin-top:3px;cursor:pointer;text-decoration:underline;font-family:inherit}
 .syllabus-launch{display:flex;align-items:center;gap:10px;width:100%;text-align:left;padding:10px;border:1px solid var(--border);border-radius:8px;background:#fff;cursor:pointer;font-family:inherit;transition:.2s;color:var(--text)}
 .syllabus-launch:hover{border-color:var(--maroon);background:var(--maroon-light)}
-.syllabus-inline{display:block;margin-top:7px;background:#FFFDF4;border:1px solid #FFE69C;border-left:3px solid var(--maroon);border-radius:8px;padding:8px 10px;font-size:12.5px;color:#334155;line-height:1.7;word-break:break-word}
+.syllabus-inline{display:block;margin-top:7px;background:#FFF3E0;border:1px solid #FFCC80;border-left:3px solid var(--maroon);border-radius:8px;padding:8px 10px;font-size:12.5px;color:#334155;line-height:1.7;word-break:break-word}
 .syllabus-direct-note{display:inline-block;background:var(--green-light);color:var(--green);padding:3px 8px;border-radius:999px;font-size:11px;margin:4px 6px 4px 0}
 .app-header-common{background:var(--maroon);color:#000;padding:18px 16px;text-align:center;border-bottom:4px solid var(--gold);position:relative;overflow:hidden}
 .app-header-common::before{content:'';position:absolute;top:0;left:0;right:0;bottom:0;background:radial-gradient(circle at 30% 20%, rgba(255,255,255,0.4) 0%, transparent 50%);pointer-events:none}
@@ -38,7 +47,7 @@ a{color:#8B5A00;text-decoration:none}a:hover{text-decoration:underline}
 html[lang="en"] body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans",sans-serif}
 .container{max-width:1200px;margin:0 auto;padding:16px}
 .welcome-nav{display:flex;gap:8px;justify-content:center;margin:16px 0;flex-wrap:wrap}
-.welcome-nav button{padding:10px 18px;border:2px solid var(--maroon);border-radius:999px;background:var(--card);color:#8B5A00;font-size:13px;font-weight:600;cursor:pointer;transition:all .25s;box-shadow:var(--shadow)}
+.welcome-nav button{padding:10px 18px;border:2px solid var(--maroon);border-radius:999px;background:var(--card);color:#BF360C;font-size:13px;font-weight:600;cursor:pointer;transition:all .25s;box-shadow:var(--shadow)}
 .welcome-nav button.active{background:var(--maroon);color:#000;transform:translateY(-1px);box-shadow:var(--shadow-hover)}
 .welcome-nav button:hover{transform:translateY(-1px)}
 .welcome-section{display:none;animation:fadeIn .3s ease}.welcome-section.active{display:block}
@@ -46,31 +55,31 @@ html[lang="en"] body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","No
 .level-structure{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:20px}
 .level-box{background:var(--card);border:2px solid var(--border);border-radius:10px;padding:12px;text-align:center;transition:.2s}
 .level-box:hover{border-color:var(--maroon);transform:translateY(-2px)}
-.level-box .level-num{font-size:22px;font-weight:800;color:#8B5A00}
+.level-box .level-num{font-size:22px;font-weight:800;color:#BF360C}
 .level-box .level-name{font-size:12px;font-weight:700;margin:2px 0}
 .level-box .level-desc{font-size:10px;color:var(--text-light)}
 .info-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px;margin-bottom:20px}
 .info-card{background:var(--card);border-radius:var(--radius);padding:18px;box-shadow:var(--shadow);border-left:4px solid var(--maroon);transition:.2s}
 .info-card:hover{box-shadow:var(--shadow-hover)}
-.info-card h3{color:#8B5A00;font-size:15px;margin-bottom:8px}
+.info-card h3{color:#BF360C;font-size:15px;margin-bottom:8px}
 .info-card p,.info-card li{color:var(--text-light);font-size:12.5px;line-height:1.7}
 .info-card ul{list-style:none}
 .info-card li{padding:3px 0 3px 20px;position:relative}
-.info-card li::before{content:"✓";position:absolute;left:0;color:#8B5A00;font-weight:800}
+.info-card li::before{content:"✓";position:absolute;left:0;color:#BF360C;font-weight:800}
 .troop-section{background:var(--card);border-radius:var(--radius);padding:18px;margin-bottom:20px;box-shadow:var(--shadow)}
 .troop-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px;margin-top:12px}
 .troop-card{background:var(--bg);border:2px solid var(--border);border-radius:10px;padding:14px;text-align:center;cursor:pointer;transition:.25s;position:relative;overflow:hidden}
 .troop-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--maroon);transform:scaleX(0);transition:.25s}
 .troop-card:hover{border-color:var(--maroon);background:var(--maroon-light);transform:translateY(-2px);box-shadow:var(--shadow)}
 .troop-card:hover::before{transform:scaleX(1)}
-.troop-card .troop-id{font-size:20px;font-weight:800;color:#8B5A00}
+.troop-card .troop-id{font-size:20px;font-weight:800;color:#BF360C}
 .troop-card .troop-name{font-size:11px;color:var(--text-light);margin-top:4px}
 .login-container{max-width:420px;margin:28px auto;padding:28px;background:var(--card);border-radius:16px;box-shadow:0 8px 32px rgba(0,0,0,0.12);border:1px solid var(--border)}
-.login-container h2{color:#8B5A00;text-align:center;margin-bottom:14px;font-size:20px}
-.troop-info-box{text-align:center;padding:12px;background:var(--maroon-light);border-radius:8px;margin-bottom:14px;font-size:13px;color:#8B5A00;font-weight:600;border:1px dashed var(--maroon)}
+.login-container h2{color:#BF360C;text-align:center;margin-bottom:14px;font-size:20px}
+.troop-info-box{text-align:center;padding:12px;background:var(--maroon-light);border-radius:8px;margin-bottom:14px;font-size:13px;color:#BF360C;font-weight:600;border:1px dashed var(--maroon)}
 .login-type-tabs{display:flex;gap:8px;margin-bottom:14px}
 .login-type-tab{flex:1;padding:10px;border:2px solid var(--border);border-radius:10px;background:var(--bg);cursor:pointer;text-align:center;font-size:12px;font-weight:600;color:var(--text-light);transition:.2s}
-.login-type-tab.active{border-color:var(--maroon);background:var(--maroon-light);color:#8B5A00;box-shadow:0 2px 8px rgba(255,193,7,0.25)}
+.login-type-tab.active{border-color:var(--maroon);background:var(--maroon-light);color:#BF360C;box-shadow:0 2px 8px rgba(255,193,7,0.25)}
 .login-msg{padding:10px;border-radius:8px;margin-bottom:12px;font-size:12px;display:none;text-align:center}
 .login-msg.error{display:block;background:#FFF5F5;color:var(--red);border:1px solid #F5C6CB}
 .login-msg.success{display:block;background:#F0FFF4;color:var(--green);border:1px solid #C3E6CB}
@@ -89,7 +98,7 @@ html[lang="en"] body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","No
 .btn-danger{background:var(--red);color:#fff}
 .btn-sm{padding:5px 10px;font-size:11px;border-radius:6px}
 .btn:disabled{background:#ccc;cursor:not-allowed;transform:none}
-.btn-outline{border:2px solid var(--maroon);background:transparent;color:#8B5A00}.btn-outline:hover{background:var(--maroon);color:#000}
+.btn-outline{border:2px solid var(--maroon);background:transparent;color:#BF360C}.btn-outline:hover{background:var(--maroon);color:#000}
 .main-app-header{background:var(--maroon);color:#000;padding:10px 16px;display:flex;justify-content:space-between;align-items:center;border-bottom:3px solid var(--gold);flex-wrap:wrap;gap:8px;position:sticky;top:0;z-index:100}
 .main-app-header .left{display:flex;align-items:center;gap:10px}
 .main-app-header .logo-mini{width:34px;height:34px;background:rgba(255,255,255,0.5);border-radius:8px;display:flex;align-items:center;justify-content:center}
@@ -100,7 +109,7 @@ html[lang="en"] body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","No
 .nav-tabs::-webkit-scrollbar{display:none}
 .nav-tab{flex:0 0 auto;min-width:100px;padding:14px 16px;text-align:center;cursor:pointer;border:none;background:none;font-size:13.5px;font-weight:600;color:var(--text-light);border-bottom:3px solid transparent;transition:.2s;white-space:nowrap}
 .nav-tab:hover{background:var(--bg);color:var(--text)}
-.nav-tab.active{color:#8B5A00;border-bottom-color:var(--maroon);background:var(--maroon-light)}
+.nav-tab.active{color:#BF360C;border-bottom-color:var(--maroon);background:var(--maroon-light)}
 .tab-content{display:none;padding:18px}.tab-content.active{display:block;animation:fadeIn .25s ease}
 .badge-card{background:var(--card);border-radius:var(--radius);margin-bottom:14px;box-shadow:var(--shadow);overflow:hidden;border:1px solid var(--border)}
 .badge-header{padding:14px 16px;background:linear-gradient(135deg,var(--maroon) 0%, var(--maroon-dark) 100%);color:#000;cursor:pointer;display:flex;justify-content:space-between;align-items:center;user-select:none}
@@ -109,8 +118,8 @@ html[lang="en"] body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","No
 .badge-body{padding:0;display:none}.badge-body.expanded{display:block}
 .segment{border-bottom:1px solid var(--border)}.segment:last-child{border-bottom:none}
 .segment-header{padding:10px 16px;background:#FFFEF5;cursor:pointer;display:flex;justify-content:space-between;align-items:center;border-left:3px solid var(--maroon);transition:.15s}
-.segment-header:hover{background:#FFF8E1}
-.segment-header h4{font-size:13px;color:#8B5A00;font-weight:700}
+.segment-header:hover{background:#FFF3E0}
+.segment-header h4{font-size:13px;color:#BF360C;font-weight:700}
 .items-container{padding:6px 16px;display:none;background:#fff}.items-container.expanded{display:block}
 .item-row{display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid #F5F5F5}.item-row:last-child{border-bottom:none}
 .item-row.checked{background:#F0FFF4;border-radius:6px;padding:8px 8px;margin:2px -8px}
@@ -130,14 +139,14 @@ html[lang="en"] body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","No
 .progress-bar-inner{height:100%;background:linear-gradient(90deg,var(--green),#20C997);border-radius:999px;transition:width .6s ease}
 .save-bar{position:fixed;bottom:0;left:0;right:0;background:var(--card);border-top:3px solid var(--maroon);padding:12px 16px;display:flex;justify-content:space-between;align-items:center;box-shadow:0 -4px 20px rgba(0,0,0,0.12);transform:translateY(110%);transition:transform .35s cubic-bezier(0.34,1.56,0.64,1);z-index:999}
 .save-bar.visible{transform:translateY(0)}
-.save-bar .left{font-size:13px;font-weight:600;color:#8B5A00;display:flex;align-items:center;gap:8px}
+.save-bar .left{font-size:13px;font-weight:600;color:#BF360C;display:flex;align-items:center;gap:8px}
 .dot{width:8px;height:8px;background:var(--red);border-radius:50%;animation:pulse 1.5s infinite}
 @keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.6;transform:scale(1.2)}}
 .modal{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.55);z-index:2000;align-items:center;justify-content:center;padding:16px;backdrop-filter:blur(4px)}
 .modal.active{display:flex;animation:fadeIn .2s ease}
 .modal-content{background:var(--card);border-radius:16px;padding:20px;max-width:560px;width:100%;max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,0.25);animation:modalPop .25s cubic-bezier(0.34,1.56,0.64,1)}
 @keyframes modalPop{from{opacity:0;transform:scale(.9) translateY(20px)}to{opacity:1;transform:scale(1) translateY(0)}}
-.modal-content h3{color:#8B5A00;font-size:16px;margin-bottom:14px;text-align:center}
+.modal-content h3{color:#BF360C;font-size:16px;margin-bottom:14px;text-align:center}
 .modal-actions{display:flex;gap:8px;margin-top:16px}.modal-actions .btn{flex:1}
 .saving-overlay{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(255,255,255,0.95);z-index:3000;flex-direction:column;align-items:center;justify-content:center;gap:16px}
 .saving-overlay.active{display:flex}
@@ -151,11 +160,11 @@ html[lang="en"] body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","No
 .filter-bar .btn{padding:7px 12px}
 .overview-wrapper{overflow-x:auto;-webkit-overflow-scrolling:touch;border-radius:8px;border:1px solid var(--border);background:#fff}
 .overview-table{border-collapse:collapse;width:auto;font-size:11px;min-width:100%}
-.overview-table th{padding:8px 6px;background:#8B5A00;color:#fff;position:sticky;top:0;white-space:nowrap;z-index:2;font-weight:600}
+.overview-table th{padding:8px 6px;background:#BF360C;color:#fff;position:sticky;top:0;white-space:nowrap;z-index:2;font-weight:600}
 .overview-table th:first-child{left:0;z-index:3}
 .overview-table td{padding:6px;border-bottom:1px solid var(--border);text-align:center;white-space:nowrap}
 .overview-table td:first-child{position:sticky;left:0;background:var(--card);text-align:left;font-weight:600;z-index:1;min-width:80px}
-.overview-table tr:hover td{background:#FFF8E1}
+.overview-table tr:hover td{background:#FFF3E0}
 .stat-card{background:var(--card);border-radius:10px;padding:12px;margin-bottom:10px;box-shadow:var(--shadow);border:1px solid var(--border)}
 .stat-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
 .stat-title{font-size:13px;font-weight:600;flex:1}
@@ -171,13 +180,13 @@ html[lang="en"] body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","No
 .print-table th{background:#F0F0F0}
 @media print{body *{visibility:hidden}.print-area, .print-area *{visibility:visible}.print-area{position:absolute;left:0;top:0;width:100%;box-shadow:none;border:none}.no-print{display:none!important}}
 .info-section{background:var(--card);border-radius:10px;padding:16px;margin-bottom:14px;box-shadow:var(--shadow);border:1px solid var(--border)}
-.info-section h3{color:#8B5A00;font-size:15px;margin-bottom:10px;display:flex;align-items:center;gap:8px;border-bottom:2px solid var(--maroon-light);padding-bottom:8px}
+.info-section h3{color:#BF360C;font-size:15px;margin-bottom:10px;display:flex;align-items:center;gap:8px;border-bottom:2px solid var(--maroon-light);padding-bottom:8px}
 .link-card{display:flex;align-items:center;gap:10px;padding:10px;border:1px solid var(--border);border-radius:8px;margin-bottom:8px;transition:.2s;background:#fff}
 .link-card:hover{border-color:var(--maroon);background:var(--maroon-light)}
 .link-icon{width:36px;height:36px;background:var(--blue-light);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
 .link-text{flex:1}.link-text .title{font-size:13px;font-weight:600}.link-text .url{font-size:11px;color:var(--text-light);word-break:break-all}
 .role-badge{display:inline-block;padding:2px 8px;border-radius:999px;font-size:10px;font-weight:700;margin-left:6px;vertical-align:middle}
-.role-admin{background:#8B0000;color:#fff}.role-group_leader{background:#D63384;color:#fff}.role-branch_leader{background:#198754;color:#fff}.role-member{background:#6C757D;color:#fff}.role-super_admin{background:#000;color:var(--gold)}
+.role-admin{background:#BF360C;color:#fff}.role-group_leader{background:#D63384;color:#fff}.role-branch_leader{background:#198754;color:#fff}.role-member{background:#6C757D;color:#fff}.role-super_admin{background:#000;color:var(--gold)}
 .user-item{background:var(--bg);border-radius:10px;padding:12px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;border:1px solid var(--border)}
 .user-item-info{flex:1;min-width:180px}.user-item-actions{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
 .app-item{background:var(--bg);border-radius:10px;padding:12px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;border:1px solid var(--border);gap:10px}
@@ -186,7 +195,7 @@ html[lang="en"] body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","No
 .bulk-progress{background:#FAFAFA;border:1px solid var(--border);border-radius:8px;padding:8px;max-height:160px;overflow-y:auto;font-size:11px;margin-top:10px;display:none}
 .bulk-progress .ok{color:var(--green)}.bulk-progress .fail{color:var(--red)}
 .history-item{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:8px 10px;margin-bottom:6px;font-size:12px;line-height:1.6}
-.temp-pw-box{font-size:26px;font-weight:800;letter-spacing:3px;text-align:center;background:var(--bg);border:2px dashed var(--maroon);border-radius:10px;padding:14px;margin:10px 0;color:#8B5A00;user-select:all}
+.temp-pw-box{font-size:26px;font-weight:800;letter-spacing:3px;text-align:center;background:var(--bg);border:2px dashed var(--maroon);border-radius:10px;padding:14px;margin:10px 0;color:#BF360C;user-select:all}
 .tutorial{background:var(--card);border-radius:10px;padding:18px;margin-bottom:16px;box-shadow:var(--shadow)}
 .steps{margin-top:12px}.step{display:flex;gap:12px;margin-bottom:12px;padding:12px;background:var(--bg);border-radius:10px;border-left:4px solid var(--maroon)}
 .step-number{width:32px;height:32px;background:var(--maroon);color:#000;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;flex-shrink:0}
@@ -241,9 +250,27 @@ html[lang="en"] body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","No
   .tab-content{padding:10px}
   .user-item-actions{grid-template-columns:1fr}
 }
+
+/* v6.0 Cub Manual Orange Theme Extras */
+.cub-manual-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px}
+.cub-manual-card{background:#fff;border-radius:14px;padding:14px;cursor:pointer;transition:all .25s;border:1px solid var(--border);box-shadow:var(--shadow)}
+.cub-manual-card:hover{transform:translateY(-3px);box-shadow:var(--shadow-hover)}
+.cub-detail-header{position:sticky;top:0;z-index:10;background:#fff;border-bottom:2px solid var(--maroon);padding:10px 14px;display:flex;align-items:center;gap:10px}
+.cub-subtabs{display:flex;gap:6px;overflow-x:auto;padding:8px 0;scrollbar-width:none}
+.cub-subtabs::-webkit-scrollbar{display:none}
+.cub-subtabs button{white-space:nowrap}
+.jungle-chapter-pill{padding:6px 12px;border-radius:999px;font-size:12px;cursor:pointer;border:1px solid var(--border);background:#fff;transition:.2s}
+.jungle-chapter-pill.active{background:var(--maroon);color:#fff;border-color:var(--maroon)}
+.instant-card{background:#fff;border:1px solid var(--border);border-radius:12px;padding:12px;border-left:4px solid var(--maroon)}
+.tts-playing{animation:pulse 1.5s infinite}
+@media(max-width:768px){
+  .cub-manual-grid{grid-template-columns:repeat(2,1fr);gap:8px}
+}
+
 </style>
 </head>
 <body>
+<div id="offlineBanner" style="display:none;position:fixed;top:0;left:0;right:0;background:#FF6F00;color:#fff;text-align:center;padding:6px 10px;font-size:12px;z-index:9999">📴 離線模式 - 顯示快取內容 / Offline - showing cached</div>
 <!-- Home -->
 <div id="homePage">
   <div class="app-header-common">
@@ -267,7 +294,7 @@ html[lang="en"] body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","No
       <div style="background:var(--card);border-radius:12px;padding:14px;margin-bottom:14px;box-shadow:var(--shadow)">
         <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
           <div style="width:32px;height:32px;background:var(--maroon);color:#000;border-radius:8px;display:flex;align-items:center;justify-content:center;font-weight:700">L</div>
-          <h2 style="font-size:16px;color:#8B5A00" data-i18n="home_badges_title">幼童軍進度獎章 • 中英對照</h2>
+          <h2 style="font-size:16px;color:#BF360C" data-i18n="home_badges_title">幼童軍進度獎章 • 中英對照</h2>
         </div>
         <div class="level-structure">
           <div class="level-box"><div class="level-num">L1</div><div class="level-name" data-i18n="lv1">會員章</div><div class="level-desc" data-i18n="lv1d">3個月內•保護兒童必修</div></div>
@@ -280,7 +307,7 @@ html[lang="en"] body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","No
       </div>
       <div class="troop-section">
         <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
-          <h2 style="font-size:16px;color:#8B5A00" data-i18n="home_pick_troop">📍 請選擇您的旅團</h2>
+          <h2 style="font-size:16px;color:#BF360C" data-i18n="home_pick_troop">📍 請選擇您的旅團</h2>
           <div style="display:flex;gap:6px">
             <button class="btn btn-sm btn-outline" onclick="loadTroops()" data-i18n="home_reload">🔄 重新載入</button>
             <button class="btn btn-sm btn-warning" onclick="enterDemoMode('leader')" data-i18n="home_demo_l">👀 示範：領袖</button>
@@ -294,7 +321,7 @@ html[lang="en"] body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","No
       </div>
     </div>
     <div id="welcome-setup" class="welcome-section">
-      <h2 style="font-size:18px;color:#8B5A00;margin-bottom:12px" data-i18n="setup_h2">📋 新旅團部署指南 (10分鐘) - 超管隱藏版</h2>
+      <h2 style="font-size:18px;color:#BF360C;margin-bottom:12px" data-i18n="setup_h2">📋 新旅團部署指南 (10分鐘) - 超管隱藏版</h2>
       <div class="info-card" style="background:var(--blue-light);border-color:var(--blue);margin-bottom:12px" data-i18n-html="setup_portal_card">
         <h3 style="color:var(--blue)">🌟 主系統平台是什麼？</h3>
         <p style="font-size:12px">本系統可獨立用，亦可接入 <b>scoutsystem-2.0 主系統平台</b>：Dashboard、考勤、財務、活動報名，單一登入。</p>
@@ -315,7 +342,7 @@ html[lang="en"] body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","No
       <div class="info-card" style="border-color:var(--blue);background:var(--blue-light)"><h3 style="color:var(--blue)" data-i18n="setup_submit_h">📧 完成後提交</h3><p style="font-size:11px" data-i18n="setup_submit_p">獨立用：交 cubbadge 管理員<br>接入主系統：同時交主系統管理員</p><button class="btn btn-blue" onclick="showContactModal()" style="width:100%" data-i18n="submit_contact">📧 提交旅團接入申請</button></div>
     </div>
     <div id="welcome-guide" class="welcome-section">
-      <h2 style="font-size:18px;color:#8B5A00;margin-bottom:12px" data-i18n="guide_h2">📖 使用教學 - 幼童軍專用</h2>
+      <h2 style="font-size:18px;color:#BF360C;margin-bottom:12px" data-i18n="guide_h2">📖 使用教學 - 幼童軍專用</h2>
       <div class="tutorial">
         <div class="steps">
           <div class="step"><div class="step-number">1</div><div class="step-content"><h4 data-i18n="g1h">選擇旅團</h4><p data-i18n="g1p">首頁點旅團卡片</p></div></div>
@@ -557,11 +584,11 @@ html[lang="en"] body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","No
   <div class="modal-actions"><button class="btn btn-secondary" onclick="closeModal('accountApplyModal')" data-i18n="cancel">取消</button><button class="btn btn-primary" onclick="submitAccountApply()" data-i18n="submit">提交申請</button></div>
 </div></div>
 
-<div id="savingOverlay" class="saving-overlay"><div class="spinner"></div><h3 id="savingText" style="color:#8B5A00;font-size:16px">正在寫入雲端...</h3><p id="savingSub" style="font-size:12px;color:var(--text-light)">請稍候，切勿關閉頁面</p><div style="width:200px;height:6px;background:var(--border);border-radius:999px;overflow:hidden"><div id="savingProgress" style="height:100%;width:0%;background:var(--maroon);transition:width .3s"></div></div></div>
+<div id="savingOverlay" class="saving-overlay"><div class="spinner"></div><h3 id="savingText" style="color:#BF360C;font-size:16px">正在寫入雲端...</h3><p id="savingSub" style="font-size:12px;color:var(--text-light)">請稍候，切勿關閉頁面</p><div style="width:200px;height:6px;background:var(--border);border-radius:999px;overflow:hidden"><div id="savingProgress" style="height:100%;width:0%;background:var(--maroon);transition:width .3s"></div></div></div>
 <div id="toast" class="toast"></div>
 
 <footer style="text-align:center;padding:20px 16px;margin-top:20px;border-top:2px solid var(--border);font-size:12px;color:var(--text-light);background:var(--card)">
-  <div data-i18n="footer_line1">COPYRIGHT 2026 Scout System • 幼童軍進度追蹤系統 v5.2</div>
+  <div data-i18n="footer_line1">COPYRIGHT 2026 Scout System • 幼童軍進度追蹤系統 v7.1 • 圖文手冊口語精簡版</div>
   <div style="margin-top:4px;font-size:11px" data-i18n="footer_line2">基於 2025年8月《幼童軍訓練綱要擬定簡易版》 | 支援離線暫存•批量寫入•活動履歷（家長申報領袖審批）•中英對照•保護兒童 Safe from Harm</div>
   <div style="margin-top:4px;font-size:10px" data-i18n-html="footer_line3">Developed for 82 Troop • <a href="https://www.scout.org.hk" target="_blank">香港童軍總會</a> • <a href="/api/health?troopId=0082" target="_blank">健康檢查</a></div>
 </footer>
@@ -602,7 +629,7 @@ zh:{
   cpw_title:'🔑 請設定新密碼',cpw_desc:'首次登入或密碼已被領袖重設，請先設定自己的新密碼（至少4位）。',cpw_new:'新密碼（至少4位）*',cpw_new2:'確認新密碼 *',cpw_logout:'先登出',cpw_save:'💾 設定並進入',
   temp_title:'🔑 密碼已重設',temp_desc:'請將以下<b>一次性密碼</b>交給成員，首次登入系統會要求佢設定新密碼：',temp_warn:'⚠️ 只顯示一次，關閉後無法再查看。長按可複製。',temp_copy:'📋 複製',temp_done:'完成',
   apply_title:'📝 申請帳戶（成員／領袖）',apply_desc:'提交後由團長／領袖在「審批中心」審批，批准後會建立帳戶。幼童軍年紀小，家長=成員帳號，只看進度；領袖帳戶批准後擁有勾選及審批權限。',apply_role:'申請身份 *',apply_role_member:'家長／成員（幼童軍）',apply_role_leader:'領袖（幼童軍團長／領袖）',apply_role_hint:'成員及領袖都可自行申請；旅長／管理員角色須由現任團長在「用戶管理」直接開立。',apply_email_opt:'（可留空）',apply_email_req:'* 領袖必填（用作登入）',apply_need_mail:'領袖申請必須填寫 Email',apply_name:'姓名 *',apply_squad:'小隊（可留空）',
-  footer_line1:'COPYRIGHT 2026 Scout System • 幼童軍進度追蹤系統 v5.2',footer_line2:'基於 2025年8月《幼童軍訓練綱要擬定簡易版》 | 支援離線暫存•批量寫入•活動履歷（家長申報領袖審批）•中英對照•保護兒童 Safe from Harm',footer_line3:'Developed for 82 Troop • <a href="https://www.scout.org.hk" target="_blank">香港童軍總會</a> • <a href="/api/health?troopId=0082" target="_blank">健康檢查</a>',
+  footer_line1:'COPYRIGHT 2026 Scout System • 幼童軍進度追蹤系統 v7.1',footer_line2:'基於 2025年8月《幼童軍訓練綱要擬定簡易版》 | 支援離線暫存•批量寫入•活動履歷（家長申報領袖審批）•中英對照•保護兒童 Safe from Harm',footer_line3:'Developed for 82 Troop • <a href="https://www.scout.org.hk" target="_blank">香港童軍總會</a> • <a href="/api/health?troopId=0082" target="_blank">健康檢查</a>',
   // dynamic
   troop_builtin:'(內置)',view_member:'檢視成員：',choose_member:'-- 選擇成員 --',view_self:'看自己',current_colon:'目前：',self_chip:'自己',completion:'完成度',
   member_view_only:'ℹ️ 幼童軍年紀小，所有進度由領袖負責更新。你只能查看自己的進度。',view_only_other:'只能查看他人進度，不能編輯',
@@ -674,7 +701,7 @@ en:{
   guide_h2:'📖 Guide - Cub Specific',g1h:'Pick Troop',g1p:'Tap troop card',g2h:'Login',g2p:'Members/parents: YMIS 10 digits + password; Leaders: Email + password. Force change on first login.',g3h:'Parents/Members: view progress, can claim activity logs',g3p:'Cubs young: leaders fill all progress, parents/members view only. But activity logs (service/activity/training) can be claimed by parents/members → leader approves.',g4h:'Leaders: tick + date',g4p:'Leaders tick directly, auto today date, editable. Cached in browser, confirm to write to cloud.',g5h:'Other features',g5p:'Troop overview batch, by-item stats, PT/68 Golden Bauhinia forms, bilingual.',
   guide_roles_h3:'👥 Roles',guide_member_card:'<b>👤 Parent/Member</b><ul style="font-size:11px;margin:6px 0 0 16px"><li>View own progress only (no tick)</li><li>Can claim activity logs (service/activity/training)</li><li>Can cancel pending claims</li><li>Approved records can request edit (leader re-approves)</li></ul>',guide_leader_card:'<b>👨‍💼 Leader</b><ul style="font-size:11px;margin:6px 0 0 16px"><li>All functions</li><li>My progress: any member</li><li>Troop overview batch tick</li><li>Approval centre: users + log claims</li><li>Activity logs direct add/edit/delete + batch</li><li>User management, bulk onboard YMIS PDF</li></ul>',
   guide_onboard_h3:'🆕 Account apply / Bulk onboard',guide_onboard_intro:'Individual: login page → Apply for an account → choose member or leader → GSL / leader approves.<br>Bulk: User Management → Bulk onboard → upload YMIS custom report PDF (auto reads ID/name/email) → preview → onboard.',
-  login_page_h1:'Cub Progress Tracker v5.2',login_h2:'🔐 Login',login_member_tab:'👤 Parent/Member<br><small>YMIS 10 digits</small>',login_leader_tab:'👨‍💼 Leader<br><small>Email</small>',login_pw_label:'Password',login_pw_ph:'Enter password',login_btn:'Sign In',login_apply:'🆕 Apply for an account (member / leader)',login_join:'Troop join',login_back:'← Back to home',
+  login_page_h1:'Cub Progress Tracker v7.1',login_h2:'🔐 Login',login_member_tab:'👤 Parent/Member<br><small>YMIS 10 digits</small>',login_leader_tab:'👨‍💼 Leader<br><small>Email</small>',login_pw_label:'Password',login_pw_ph:'Enter password',login_btn:'Sign In',login_apply:'🆕 Apply for an account (member / leader)',login_join:'Troop join',login_back:'← Back to home',
   nav_progress:'📊 My Progress',nav_overview:'👥 Troop Overview',nav_requests:'✅ Approvals',nav_logs:'📅 Activity Logs',nav_forms:'🏅 Golden Bauhinia',nav_help:'❓ Guide',nav_info:'📚 Library',nav_users:'👥 User Management',logout:'Logout',
   pending_hint:'Cached in browser',savebar_discard:'Discard',savebar_confirm:'✅ Confirm write to cloud',
   cm_title:'📧 Submit troop join request',cm_tid:'Troop ID *',cm_tname:'Troop name',cm_url:'Apps Script URL (…/exec) *',cm_key:'API Key *',cm_note:'Contact Email / Note',cancel:'Cancel',submit:'Submit',close:'Close',save:'💾 Save',refresh:'🔄 Refresh',
@@ -691,7 +718,7 @@ en:{
   cpw_title:'🔑 Set new password',cpw_desc:'First login or password reset, please set a new password (min 4).',cpw_new:'New password (min 4) *',cpw_new2:'Confirm new password *',cpw_logout:'Logout first',cpw_save:'💾 Set and enter',
   temp_title:'🔑 Password reset',temp_desc:'Please give <b>one-time password</b> to member, first login will force change:',temp_warn:'⚠️ Shown once only. Long-press to copy.',temp_copy:'📋 Copy',temp_done:'Done',
   apply_title:'📝 Apply for an account (member / leader)',apply_desc:'Submitted to the GSL / leaders for approval under Approvals. Cubs are young: parent = member account, view-only progress; leader accounts get ticking and approval rights once approved.',apply_role:'Apply as *',apply_role_member:'Parent / Member (Cub Scout)',apply_role_leader:'Leader (Cub Scout Leader)',apply_role_hint:'Members and leaders may self-apply. GSL / admin accounts must be created by the current leader under Users.',apply_email_opt:'(optional)',apply_email_req:'* required for leaders (used to sign in)',apply_need_mail:'Leader applications require an email',apply_name:'Name *',apply_squad:'Six (optional)',
-  footer_line1:'COPYRIGHT 2026 Scout System • Cub Progress Tracker v5.2',footer_line2:'Based on 2025-08 Cub Scout Training Scheme | Offline cache•Batch write•Activity logs (parent claim leader approve)•Bilingual•Safe from Harm',footer_line3:'Developed for 82 Troop • <a href="https://www.scout.org.hk" target="_blank">Scout Association of Hong Kong</a> • <a href="/api/health?troopId=0082" target="_blank">Health Check</a>',
+  footer_line1:'COPYRIGHT 2026 Scout System • Cub Progress Tracker v7.1',footer_line2:'Based on 2025-08 Cub Scout Training Scheme | Offline cache•Batch write•Activity logs (parent claim leader approve)•Bilingual•Safe from Harm',footer_line3:'Developed for 82 Troop • <a href="https://www.scout.org.hk" target="_blank">Scout Association of Hong Kong</a> • <a href="/api/health?troopId=0082" target="_blank">Health Check</a>',
   troop_builtin:'(built-in)',view_member:'View member:',choose_member:'-- Select member --',view_self:'View self',current_colon:'Now:',self_chip:'Me',completion:'Completion',
   member_view_only:'ℹ️ Cubs are young: leaders update all progress. You can only view your own progress.',view_only_other:'Viewing others - read only',
   other_badges_title:'⭐ Activity Badges & Awards',other_badges_sub:'- Cub activity badges (Cyclist/Swimmer/Adventure etc.) merged in progress',other_badges_hint:'💡 Includes First Aid etc., synced with other badges, leaders can tick, members read-only.',
@@ -1298,7 +1325,7 @@ document.addEventListener('DOMContentLoaded', ()=>{
 });
 
 /* Progress Tab */
-function renderProgressTab(){
+function renderProgressTab(){ cubInjectBackBar('tab-progress','📊 我的進度');
   const container=document.getElementById('tab-progress');
   if(!itemsData){ container.innerHTML=`<p>${t('not_loaded')}</p>`; return; }
   const isLeader=canUserTickRole(currentUser.role);
@@ -1560,7 +1587,7 @@ async function submitMemberRequest(){
 }
 
 /* Overview Tab */
-function renderOverviewTab(){
+function renderOverviewTab(){ cubInjectBackBar('tab-overview','👥 全團總覽');
   const c=document.getElementById('tab-overview');
   if(!itemsData){ c.innerHTML=`<p>${t('loading')}</p>`; return; }
   const badgeOptions=itemsData.badges.map(b=>`<option value="${b.id}">${b.icon} ${escapeHtmlText(bName(b))}</option>`).join('');
@@ -1597,7 +1624,7 @@ function renderByItemListInner(){
       });
       let filtered=segItems; if(search) filtered=segItems.filter(it=>it.name.toLowerCase().includes(search)||it.id.toLowerCase().includes(search)||(it.canon||'').toLowerCase().includes(search));
       if(filtered.length===0) return;
-      badgeHtml+=`<div style="margin-bottom:14px"><div style="font-weight:700;font-size:13px;margin-bottom:6px;color:#8B5A00">${escapeHtmlText(seg.name)}</div>`;
+      badgeHtml+=`<div style="margin-bottom:14px"><div style="font-weight:700;font-size:13px;margin-bottom:6px;color:#BF360C">${escapeHtmlText(seg.name)}</div>`;
       filtered.forEach(it=>{
         const total=members.length||1; const doneCount=members.filter(m=>progressFlat[m.ymis]&&progressFlat[m.ymis][it.id]).length; const pct=Math.round(doneCount/total*100);
         badgeHtml+=`<div class="stat-card"><div class="stat-header"><div class="stat-title" style="font-size:13px">${escapeHtmlText(it.name)} <small style="color:var(--text-light)">(${it.id})</small></div><div class="stat-pct">${doneCount}/${members.length} (${pct}%)</div></div><div class="progress-bar-outer"><div class="progress-bar-inner" style="width:${pct}%"></div></div></div>`;
@@ -1711,7 +1738,7 @@ function updateRequestsBadge(){
   // also count user apps? We'll update in renderRequestsTab
   if(badge){ if(total>0){ badge.textContent=total; badge.style.display='inline-block'; } else badge.style.display='none'; }
 }
-async function renderRequestsTab(){
+async function renderRequestsTab(){ cubInjectBackBar('tab-requests','✅ 審批中心');
   const c=document.getElementById('tab-requests');
   c.innerHTML=`<div style="text-align:center;padding:20px"><div class="spinner" style="margin:0 auto 8px"></div>${t('loading')}</div>`;
   let badgeRequests=[]; let userApplications=[]; let logReqList=[];
@@ -1746,7 +1773,7 @@ async function renderRequestsTab(){
     ${isManage?`<button class="btn btn-sm btn-secondary" onclick="showApprovalSubTab('user')">${tf('req_tab_user',totalUser)}</button>`:''}
     <button class="btn btn-sm btn-secondary" onclick="renderRequestsTab()">${t('refresh')}</button>
   </div>`;
-  html+=`<div id="approvalBadgeView"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><h3 style="font-size:14px;color:#8B5A00">${t('req_badge_section')}</h3>${isLeader?`<button class="btn btn-sm btn-success" onclick="batchApprove()">${t('req_approve_checked')}</button>`:''}</div>`;
+  html+=`<div id="approvalBadgeView"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><h3 style="font-size:14px;color:#BF360C">${t('req_badge_section')}</h3>${isLeader?`<button class="btn btn-sm btn-success" onclick="batchApprove()">${t('req_approve_checked')}</button>`:''}</div>`;
   if(totalBadge===0) html+=`<p style="color:var(--text-light);font-size:12px;padding:10px;background:var(--bg);border-radius:8px">${t('req_badge_none')}</p>`;
   else html+=badgeRequests.map(req=>{
     const isLocal=req.status==='local_draft'; const itemDisp=displayNameForId(req.item_id, req.item_name||req.item_id);
@@ -1760,7 +1787,7 @@ async function renderRequestsTab(){
   }).join('');
   html+=`</div>`;
   if(showLogTab){
-    html+=`<div id="approvalLogView" style="display:none;margin-top:16px"><h3 style="font-size:14px;color:#8B5A00;margin-bottom:8px">${t('req_log_section')}</h3>`;
+    html+=`<div id="approvalLogView" style="display:none;margin-top:16px"><h3 style="font-size:14px;color:#BF360C;margin-bottom:8px">${t('req_log_section')}</h3>`;
     if(totalLog===0) html+=`<p style="color:var(--text-light);font-size:12px;padding:10px;background:var(--bg);border-radius:8px">${t('req_log_none')}</p>`;
     else html+=logReqList.map(r=>{
       const orig=r.kind==='edit'?logRecords.find(x=>x.record_id===r.target_record_id):null;
@@ -1848,13 +1875,13 @@ function handleOtherBadgeCert(badgeId, name, targetYmis, certVal){ if(!otherBadg
 const LOG_TYPES_CONFIG={
   service:{icon:'🤝',label:'服務紀錄',label_en:'Service',color:'var(--green)',roleHints:['服務員','統籌','站崗','工作人員','領隊'],roleHints_en:['Helper','Coordinator','Staff'],showHours:true,showCert:false},
   activity:{icon:'🏕️',label:'活動紀錄',label_en:'Activity',color:'var(--blue)',roleHints:['參加者','籌委','領隊','工作人員'],roleHints_en:['Participant','Organizer'],showHours:false,showCert:false},
-  training:{icon:'🎓',label:'訓練班紀錄',label_en:'Training',color:'#8B5A00',roleHints:['學員'],roleHints_en:['Trainee'],showHours:false,showCert:true}
+  training:{icon:'🎓',label:'訓練班紀錄',label_en:'Training',color:'#BF360C',roleHints:['學員'],roleHints_en:['Trainee'],showHours:false,showCert:true}
 };
 function logTypeLabel(t){ const cfg=LOG_TYPES_CONFIG[t]||LOG_TYPES_CONFIG.activity; return inEn()?(cfg.label_en||cfg.label):cfg.label; }
 function logTypeIcon(t){ return (LOG_TYPES_CONFIG[t]||LOG_TYPES_CONFIG.activity).icon; }
 function logTypeHints(tp){ const cfg=LOG_TYPES_CONFIG[tp]||LOG_TYPES_CONFIG.activity; return inEn()?(cfg.roleHints_en||cfg.roleHints):cfg.roleHints; }
 
-function renderLogsTab(){
+function renderLogsTab(){ cubInjectBackBar('tab-logs','📅 活動履歷');
   const c=document.getElementById('tab-logs');
   const isLeader=canUserTickRole(currentUser.role);
   const canClaim=(logRequestsSupported||currentTroopId==='DEMO') && (isMember()||isLeader); // CUB: parents/members can claim, leaders also can claim but also direct
@@ -2029,7 +2056,7 @@ async function deleteLogRecord(recordId){
 }
 
 /* Forms Tab */
-function renderFormsTab(){
+function renderFormsTab(){ cubInjectBackBar('tab-forms','🏅 金紫荊申請');
   const c=document.getElementById('tab-forms');
   const isLeader=canUserTickRole(currentUser.role);
   const targetYmis=isLeader?(selectedProgressYmis||currentUser.ymis):currentUser.ymis;
@@ -2067,14 +2094,14 @@ function generatePrintableForm(type){
     const total=isProgress?awardIds.length:1;
     const completedDate=isProgress?getDoneDate(awardIds):(otherBadgesMap[targetYmis]?.[award.id]?.date||'');
     const status=isProgress?`${inEn()?'Record':'系統紀錄'}：${completed}/${total}`:(completedDate?(inEn()?'Record: Completed':'系統紀錄：已登記完成'):(inEn()?'Record: Not yet':'系統紀錄：尚未登記完成'));
-    html=`<div class="print-area" id="officialForm" style="max-width:900px;margin:auto;border:12px double #8B5A00;padding:34px 42px;min-height:520px;background:#FFFEF5;text-align:center">
-      <div style="font-size:16px;letter-spacing:4px;color:#8B5A00;font-weight:700">${escapeHtmlText(currentTroopName)}</div>
+    html=`<div class="print-area" id="officialForm" style="max-width:900px;margin:auto;border:12px double #BF360C;padding:34px 42px;min-height:520px;background:#FFFEF5;text-align:center">
+      <div style="font-size:16px;letter-spacing:4px;color:#BF360C;font-weight:700">${escapeHtmlText(currentTroopName)}</div>
       <div style="font-size:34px;font-weight:800;margin:20px 0 6px;color:#6e0000">${escapeHtmlText(bName(award))} - ${t('cert_title')}</div>
       <div style="font-size:13px;letter-spacing:2px;color:#805d16">${t('cert_en')}</div>
       <div style="margin:34px 0 16px;font-size:16px">${inEn()?'This certificate is awarded to':'謹此嘉許'}</div>
-      <div style="font-size:32px;font-weight:800;border-bottom:2px solid #8B5A00;display:inline-block;min-width:300px;padding:0 22px 8px">${escapeHtmlText(member.name)}</div>
+      <div style="font-size:32px;font-weight:800;border-bottom:2px solid #BF360C;display:inline-block;min-width:300px;padding:0 22px 8px">${escapeHtmlText(member.name)}</div>
       <div style="font-size:12px;margin-top:8px">YMIS：${escapeHtmlText(member.ymis)}</div>
-      <div style="font-size:16px;line-height:2;margin:28px auto;max-width:650px">${inEn()?'Has completed':'已完成'}<br><b style="font-size:24px;color:#8B5A00">${escapeHtmlText(bName(award))}</b><br>${inEn()?'This certificate is presented in recognition.':'特頒此證，以資嘉許。'}</div>
+      <div style="font-size:16px;line-height:2;margin:28px auto;max-width:650px">${inEn()?'Has completed':'已完成'}<br><b style="font-size:24px;color:#BF360C">${escapeHtmlText(bName(award))}</b><br>${inEn()?'This certificate is presented in recognition.':'特頒此證，以資嘉許。'}</div>
       <div style="font-size:10px;color:#666;margin-bottom:22px">${escapeHtmlText(status)}</div>
       <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:30px;text-align:center;font-size:12px;margin-top:35px"><div>${inEn()?'Issue date':'簽發日期'}<br><input type="date" value="${completedDate||today}" style="border:0;border-bottom:1px solid #333;text-align:center;width:130px"></div><div>${inEn()?'CSL/GSL Signature':'幼童軍團長／旅長簽署'}<br><br>________________</div><div>${inEn()?'Cert No.':'證書編號'}<br><input placeholder="e.g. 082-CUB-001" style="border:0;border-bottom:1px solid #333;text-align:center;width:140px"></div></div>
       <div class="no-print" style="margin-top:18px"><button class="btn btn-primary" onclick="window.print()">🖨️ ${inEn()?'Print certificate':'列印證書'}</button></div>
@@ -2112,7 +2139,7 @@ leader:`<h2>👨‍💼 Leader Guide</h2><blockquote>You have all permissions - 
 }
 };
 function getGuideHtml(key){ const langObj=EMBEDDED_GUIDES[currentLang]||EMBEDDED_GUIDES.zh; return langObj[key]||langObj.member; }
-async function renderHelpTab(){
+async function renderHelpTab(){ cubInjectBackBar('tab-help','❓ 教學');
   const c=document.getElementById('tab-help'); if(!c) return;
   const role=currentUser?.role||'member'; const roleName=getRoleName(role);
   let key='member'; if(['branch_leader','group_leader','admin','super_admin'].includes(role)) key='leader';
@@ -2121,35 +2148,349 @@ async function renderHelpTab(){
 }
 function switchHelpRole(r){ const key=(r==='leader'?'leader':'member'); const el=document.getElementById('helpContent'); if(el) el.innerHTML=`<div style="font-size:14px;line-height:1.8">${getGuideHtml(key)}</div>`; document.querySelectorAll('#tab-help [data-help-role]').forEach(b=>{ b.className='btn btn-sm '+(b.getAttribute('data-help-role')===key?'btn-primary':'btn-secondary'); }); }
 
-/* Info Tab */
-function renderInfoTab(){
-  const c=document.getElementById('tab-info'); if(!c) return;
-  if(!itemsData){ c.innerHTML=t('loading'); return; }
-  const tpTitle=tpVal('title')||itemsData.trainingPlan?.title||'幼童軍訓練計劃';
-  const tpPurpose=tpVal('purpose')||itemsData.trainingPlan?.purpose||'';
-  const tpMethod=tpVal('method')||itemsData.trainingPlan?.method||[];
-  const tpExpected=tpVal('expected')||itemsData.trainingPlan?.expected||[];
-  const tpFlow=tpVal('progressFlow')||itemsData.trainingPlan?.progressFlow||'';
-  const tpAssess=tpVal('assessmentPrinciples')||itemsData.trainingPlan?.assessmentPrinciples||'';
-  const tpLinks=itemsData.trainingPlan?.links||[];
-  const sfhTitle=sfhVal('title')||itemsData.safeFromHarm?.title||'保護童軍成員免受傷害';
-  const sfhPolicy=sfhVal('policy')||itemsData.safeFromHarm?.policy||'';
-  const sfhLearning=sfhVal('learning')||itemsData.safeFromHarm?.learning||[];
-  const sfhPrev=sfhVal('prevention')||itemsData.safeFromHarm?.prevention||[];
-  const sfhHand=sfhVal('handling')||itemsData.safeFromHarm?.handling||[];
-  const sfhHot=sfhVal('hotlines')||itemsData.safeFromHarm?.hotlines||[];
-  let html=`<div class="info-section" style="border-left-color:var(--blue);background:var(--blue-light)"><h3>${t('info_roles_title')}</h3><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px;margin-top:8px"><div style="background:#fff;border-radius:8px;padding:12px;border:1px solid var(--border)"><h4 style="color:var(--green);font-size:14px">${t('info_member_can')}</h4><ul style="font-size:12px;line-height:1.8;padding-left:16px;color:var(--text-light);margin-top:6px">${t('info_member_pts')}</ul></div><div style="background:#fff;border-radius:8px;padding:12px;border:1px solid var(--border)"><h4 style="color:var(--maroon);font-size:14px">${t('info_leader_can')}</h4><ul style="font-size:12px;line-height:1.8;padding-left:16px;color:var(--text-light);margin-top:6px">${t('info_leader_pts')}</ul></div></div></div>`;
-  html+=`<div class="info-section"><h3>🎯 ${escapeHtmlText(tpTitle)}</h3><p style="font-size:12px;line-height:1.8;margin-bottom:8px">${escapeHtmlText(tpPurpose)}</p><div style="display:grid;grid-template-columns:1fr 1fr;gap:10px"><div><b style="font-size:12px">${t('tp_method')}</b><ul style="font-size:11px;color:var(--text-light);padding-left:16px">${tpMethod.map(m=>`<li>${escapeHtmlText(m)}</li>`).join('')}</ul></div><div><b style="font-size:12px">${t('tp_expected')}</b><ul style="font-size:11px;color:var(--text-light);padding-left:16px">${tpExpected.map(e=>`<li>${escapeHtmlText(e)}</li>`).join('')}</ul></div></div><div style="margin-top:10px"><b style="font-size:12px">${t('progress_flow_label')}</b><span style="font-size:11px;background:var(--maroon-light);padding:3px 8px;border-radius:999px;margin-left:6px">${escapeHtmlText(tpFlow)}</span></div><div style="margin-top:8px;font-size:11px;color:var(--text-light)"><b>${t('assess_principles')}</b>${escapeHtmlText(tpAssess)}</div><div style="margin-top:10px"><b style="font-size:12px">${t('tp_syllabus_label')}</b><div style="display:flex;flex-direction:column;gap:6px;margin-top:6px">${tpLinks.map(l=>`<a href="${l.url}" target="_blank" class="link-card" style="padding:8px;margin:0"><div class="link-icon">🔗</div><div class="link-text"><div class="title">${escapeHtmlText(l.title)}</div><div class="url">${escapeHtmlText(l.url)}</div></div></a>`).join('')}</div></div></div>`;
-  html+=`<div class="info-section"><h3>🛡️ ${escapeHtmlText(sfhTitle)}</h3><p style="font-size:11px;background:#FFF5F5;padding:8px;border-radius:6px;border-left:3px solid var(--red)">${escapeHtmlText(sfhPolicy)}</p><div style="margin-top:10px"><b style="font-size:12px">${t('sfh_courses')}</b>${sfhLearning.map(l=>`<div class="link-card"><div class="link-icon">${l.mandatory?'⭐':'📚'}</div><div class="link-text"><div class="title">${escapeHtmlText(l.title||l.title_en||'')} ${l.mandatory?`<span style="background:var(--red);color:#fff;padding:1px 5px;border-radius:999px;font-size:9px">${t('mandatory_chip')}</span>`:''}</div><div style="font-size:11px;color:var(--text-light)">${escapeHtmlText(l.desc||'')}</div><div class="url">${escapeHtmlText(l.url||'')}</div></div><a href="${l.url}" target="_blank" class="btn btn-sm btn-primary no-print">${t('go_word')}</a></div>`).join('')}</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px"><div><b style="font-size:11px">${t('sfh_prevention')}</b><ul style="font-size:11px;color:var(--text-light);padding-left:16px">${sfhPrev.map(p=>`<li>${escapeHtmlText(p)}</li>`).join('')}</ul></div><div><b style="font-size:11px">${t('sfh_handling')}</b><ul style="font-size:11px;color:var(--text-light);padding-left:16px">${sfhHand.map(h=>`<li>${escapeHtmlText(h)}</li>`).join('')}</ul></div></div><div style="margin-top:10px"><b style="font-size:11px">${t('sfh_hotlines')}</b><div style="font-size:11px;color:var(--text-light)">${sfhHot.map(h=>`<div>• ${escapeHtmlText(h.name)}: ${escapeHtmlText(h.tel||'')} ${escapeHtmlText(h.email||'')}</div>`).join('')}</div></div></div>`;
-  html+=`<div class="info-section"><h3>${t('syl_all_inline_title')}</h3><p style="font-size:11px;color:var(--text-light);margin-bottom:8px">${t('syl_all_inline_sub')}</p>`;
-  itemsData.badges.forEach(b=>{
-    html+=`<details style="margin-bottom:8px;border:1px solid var(--border);border-radius:8px;padding:8px"><summary style="cursor:pointer;font-weight:700;color:#8B5A00">${b.icon} ${escapeHtmlText(bName(b))} - ${escapeHtmlText(bPurpose(b))}</summary><div style="font-size:11px;line-height:1.7;margin-top:8px">${escapeHtmlText(bDesc(b))}<br><b>${t('syl_req_label')}</b>${escapeHtmlText(b.requirements||b.requirement||t('syl_req_ref'))}</div>${b.segments.map(s=>`<div style="margin-top:8px"><b style="font-size:12px">${escapeHtmlText(segName(s))}</b> <small style="color:var(--text-light)">${escapeHtmlText(segDesc(s)||'') } ${s.requirement?escapeHtmlText(s.requirement):''}</small><ul style="font-size:11px;color:var(--text-light);padding-left:16px">${s.items.map(it=>`<li><b>${escapeHtmlText(itName(it))}</b>${itDetail(it)?`：${escapeHtmlText(itDetail(it).substring(0,80))}...`:''}${it.subItems?`（${it.subItems.length}選項）`:''}</li>`).join('')}</ul></div>`).join('')}</details>`;
-  });
-  html+=`</div>`;
-  html+=`<div class="info-section"><h3>${t('forms_dl_title')}</h3><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px"><a href="https://www.scout.org.hk/uploads/tc/forms/16499/PT68.pdf" target="_blank" class="link-card"><div class="link-icon">🏅</div><div class="link-text"><div class="title">PT/68 金紫荊獎章及證書申請表 (幼童軍最高榮譽)</div><div class="url">總會表格下載 - 幼童軍專用</div></div></a><a href="https://www.scout.org.hk/uploads/tc/forms/16498/%E9%87%91%E7%B4%AB%E8%8D%8A%E7%8D%8E%E7%AB%A0%E8%80%83%E9%A9%97%E7%B4%80%E9%8C%84%E5%86%8A.pdf" target="_blank" class="link-card"><div class="link-icon">📓</div><div class="link-text"><div class="title">金紫荊獎章考驗紀錄冊 24頁</div><div class="url">露營/遠足/先鋒/烹飪/黑夜歷程/攀登/繩網/活動徽章/領導/服務</div></div></a><a href="https://prog.scouting.org.hk/cub/" target="_blank" class="link-card"><div class="link-icon">🐾</div><div class="link-text"><div class="title">幼童軍支部官網 - 訓練綱要2025年8月擬定簡易版</div><div class="url">幼童軍專用</div></div></a></div><div style="margin-top:10px;font-size:11px;line-height:1.6;background:var(--bg);padding:10px;border-radius:8px"><b>佩戴重點（2024新指引）：</b><br>• 和平使者章佩戴左胸袋中央，取代會員章<br>• 急救章統一左袖上方AYP下方<br>• 拯溺布章佩戴左袖上方中央<br>• 世界童軍獎章最多右袖平行4枚<br>• 金紫荊獎章為幼童軍最高榮譽，10.5-12歲完成</div></div>`;
-  c.innerHTML=html;
+
+/* Info Tab - v6.1 refined - 8-button instant-use, orange theme, robust TTS */
+let cubManualState = {view:'grid', detail:null, sub:'', jungleChapter:0, gameFilter:{people:'all',time:'all'}};
+
+
+
+const CUB_MANUALS = [
+  // 上方：新領袖5格 - 官方套包 / 目錄 / 手冊定位 / 制服 / 儀式
+  {id:'official', img:'assets/manual/official.avif', icon:'📦', title:'官方集會套包', desc:'官方資源庫', color:'#FF6F00', colorLight:'#FFF3E0', hint:'官方', group:'new'},
+  {id:'catalog', img:'assets/manual/catalog.avif', icon:'📅', title:'集會目錄', desc:'實戰目錄·揀即做', color:'#EF6C00', colorLight:'#FFF3E0', hint:'揀即做', group:'new'},
+  {id:'handbook', img:'assets/manual/handbook.avif', icon:'🐾', title:'手冊定位', desc:'是誰·領袖·小隊·誓詞規律', color:'#F57C00', colorLight:'#FFF3E0', hint:'4合1', group:'new'},
+  {id:'uniform', img:'', icon:'👕', title:'制服與徽章', desc:'點著·徽章位·保養', color:'#5D4037', colorLight:'#EFEBE9', hint:'新領袖必學', group:'new'},
+  {id:'ceremony', img:'assets/manual/ceremony.avif', icon:'🎪', title:'儀式禮儀', desc:'旗禮·宣誓·敬禮·團呼', color:'#4E342E', colorLight:'#EFEBE9', hint:'步驟清', group:'new'},
+  // 下方：老手素材庫
+  {id:'jungle', img:'', icon:'📖', title:'森林故事', desc:'6章·粵語播放·帶領筆記', color:'#2E7D32', colorLight:'#E8F5E9', hint:'6章即用', group:'lib'},
+  {id:'games', img:'assets/manual/games.avif', icon:'🎯', title:'遊戲大全', desc:'10+即用卡·篩選', color:'#6A1B9A', colorLight:'#F3E5F5', hint:'即用', group:'lib'},
+  {id:'craft', img:'assets/manual/craft.avif', icon:'✂️', title:'手工與技能', desc:'繩結·追蹤·烹飪·急救', color:'#00838F', colorLight:'#E0F7FA', hint:'要手工搵手工', group:'lib'},
+  {id:'songs', img:'assets/manual/songs.avif', icon:'🎵', title:'歌·口號', desc:'團呼·歌曲·歡呼', color:'#1565C0', colorLight:'#E3F2FD', hint:'氣氛', group:'lib'},
+  {id:'safety', img:'assets/manual/safety.avif', icon:'🛡️', title:'安全·獎章速查', desc:'Safe from Harm·L1-L5速查', color:'#C62828', colorLight:'#FFEBEE', hint:'必修', group:'lib'},
+];
+
+const JUNGLE_CHAPTERS = [
+  {id:'mowgli', title:'毛克利入狼群', en:'Mowgli Joins', icon:'🐺', color:'#795548',
+   story:"從前，印度叢林裡有一個小男孩叫毛克利，被老虎希爾汗追趕，逃進了狼群。狼爸爸和狼媽媽收養了他。\n\n狼群領袖阿基拉召開岩洞會議，大家討論要不要接納這個「人崽」。巴希拉（黑豹）用一頭牛作為代價，巴魯（棕熊）願意教他叢林法律，毛克利終於被接納成為狼群的一員。\n\n意義：每個新加入幼童軍的成員，都像毛克利一樣，需要被接納、被教導、被保護。",
+   leaderNote:"帶領技巧：用提問方式講故事\n• 「如果你係毛克利，突然去到狼群，你會驚唔驚？」\n• 讓小隊圍圈坐，領袖坐中間講\n• 講到巴魯出現時，扮熊的動作\n• 重點：接納與歸屬感 - 新成員需要時間認識小隊",
+   value:'歸屬感、接納、勇氣', activity:'遊戲：盲公摸人 - 體驗在陌生環境需要信任同伴'},
+  {id:'baloo', title:'巴魯教導叢林法律', en:'Baloo Teaches', icon:'🐻', color:'#5D4037',
+   story:"巴魯是棕熊，是幼狼的老師，教導叢林法律。叢林法律是狼群的生活規律，就像我們的幼童軍規律。\n\n巴魯教毛克利：「叢林法律像藤蔓一樣，繞住所有東西...」他很有耐性，一遍又一遍教導，即使毛克利有時調皮不專心。\n\n巴魯代表領袖 - 有耐性、有愛心、用行動示範規律。",
+   leaderNote:"帶領重點：\n• 將「叢林法律」連結到「幼童軍規律」\n• 問：「巴魯點解要咁有耐性？」\n• 讓成員分享：有邊個好似巴魯咁教你嘢？\n• 可配合規律背誦遊戲",
+   value:'規律、耐性、教導', activity:'活動：規律接龍 - 每人講一條規律點樣做'},
+  {id:'bagheera', title:'巴希拉的智慧', en:'Bagheera Wise', icon:'🐆', color:'#212121',
+   story:"巴希拉是黑豹，曾經被人捉過，頸上仍有鎖鏈痕跡，所以佢特別明白自由的可貴，也特別明白人類的世界。\n\n佢聰明、冷靜、身手敏捷。當毛克利被猴子捉走時，係巴希拉同巴魯一齊去救佢。\n\n巴希拉教識毛克利：「要了解敵人，先要了解自己。」佢用智慧而唔係蠻力解決問題。",
+   leaderNote:"帶領技巧：\n• 強調智慧 > 力量\n• 問：「你有冇試過用諗辦法解決難題，而唔係發脾氣？」\n• 連結到解難徽章\n• 可做小偵探遊戲",
+   value:'智慧、冷靜、觀察', activity:'遊戲：觀察遊戲 - 枱面10樣物件，睇30秒後遮住，講出有咩'},
+  {id:'kaa', title:'蟒蛇卡奧', en:'Kaa Python', icon:'🐍', color:'#33691E',
+   story:"卡奧係一條好長好長的蟒蛇，已經100歲，係叢林入面最有經驗的動物之一。佢雖然令人有啲驚，但其實好願意幫助朋友。\n\n當猴子將毛克利用尾巴吊起時，卡奧用佢強大的力量，用「飢餓之舞」令猴子暈眩，救出毛克利。\n\n卡奧話俾我地知：外表令人驚，但內心可以好善良。唔好以貌取人。",
+   leaderNote:"帶領注意：\n• 有啲小朋友驚蛇，要先處理情緒\n• 重點：唔好以貌取人\n• 連結到「幫助他人」- 即使自己唔起眼都可以幫人\n• 手工藝：用繩做蛇",
+   value:'不以貌取人、潛能、互助', activity:'手工：用毛冷線做友誼手繩送俾人'},
+  {id:'akela', title:'領袖阿基拉', en:'Akela Leader', icon:'🐺‍🦺', color:'#3E2723',
+   story:"阿基拉係狼群的領袖，係一隻經驗豐富的大狼。佢帶領狼群時，唔係用惡，而係用智慧同公平。\n\n當狼群中有人質疑佢年老時，毛克利用火保護佢。阿基拉後來話：「我已經帶領過你們，而家係時候讓年輕的去帶領。」\n\n阿基拉代表好的領袖：公平、聆聽、適時放手讓年輕人嘗試。",
+   leaderNote:"領袖定位清晰講解（回應：帶領定位不清晰）：\n• 團長 = 阿基拉：唔係老闆，係帶領者\n• 4大角色：\n  1. 設計體驗的人（設計好玩又有意義的集會）\n  2. 安全守護的人（Safe from Harm）\n  3. 價值引導的人（用故事帶出規律）\n  4. 放手讓佢試的人（小隊制度，隊長帶領）\n• 唔係：唔係老師罰企、唔係保姆幫佢做晒、唔係老闆指指點點",
+   value:'領導、公平、傳承', activity:'小隊制度體驗：隊長帶領小隊完成任務，領袖只觀察不介入'},
+  {id:'council', title:'岩洞大會', en:'Council Rock', icon:'🪨', color:'#455A64',
+   story:"每當有重要事情，狼群就會去到岩洞大會聚集。阿基拉企係大石上，大家圍住坐，輪流講嘢，互相聆聽。\n\n幼童軍的團集會就好似岩洞大會：大家集合、分享、學習、歡笑。團呼「Wee...」就係集合號令。\n\n集會唔係上堂，係一齊經歷、試驗、成長。",
+   leaderNote:"連結到集會帶領：\n• 集會=岩洞大會，要有儀式感但唔好太嚴肅\n• 團呼要響亮、齊\n• 分享圈：每次集會尾段圍圈分享今日學到咩\n• 即用：今日就可以試「分享圈」",
+   value:'團隊、分享、儀式感', activity:'即用流程：下次集會試 60分鐘範本（見集會帶領卡）'},
+];
+
+const CUB_GAMES = [
+  {id:'g1', img:'assets/manual/games/g1-tracking.avif', name:'森林大追蹤', people:'6-20', time:'10分', props:'紙條', type:'追蹤', desc:'用追蹤符號帶路，小隊跟隨找寶藏', how:'領袖預先用粉筆畫符號，小隊跟符號走，最快找到「寶藏」（糖果）的小隊勝', variation:'夜間用電筒照符號'},
+  {id:'g2', img:'assets/manual/games/g2-message.avif', name:'巴魯傳口訊', people:'8-30', time:'5分', props:'無', type:'傳訊', desc:'鍛鍊聆聽與傳達', how:'圍圈，第一人細聲講一句話傳落去，最尾講出黎睇下變成點', variation:'可用動作傳'},
+  {id:'g3', img:'assets/manual/games/g3-trust.avif', name:'阿基拉選狼', people:'10-24', time:'8分', props:'眼罩', type:'信任', desc:'信任遊戲，培養小隊默契', how:'一人蒙眼，其他人用聲音引導佢行過障礙', variation:'加障礙物'},
+  {id:'g4', img:'assets/manual/games/g4-packcall.avif', name:'團呼接力', people:'全團', time:'3分', props:'無', type:'團呼', desc:'練習團呼反應', how:'領袖叫「Pack！」大家要即刻答「Pack！」並做手號，最慢要表演', variation:'加入不同口號'},
+  {id:'g5', img:'assets/manual/games/g5-lawcards.avif', name:'叢林法律卡', people:'6-18', time:'12分', props:'卡牌', type:'學習', desc:'熟習規律', how:'每張卡一條規律+情境，要配對正確做法', variation:'讓小隊自己出情境題'},
+  {id:'g6', img:'assets/manual/games/g6-river.avif', name:'毛克利過河', people:'8-20', time:'15分', props:'報紙', type:'合作', desc:'團隊合作過河', how:'每隊兩張報紙，輪流放報紙踩過去，跌落「河」要重來', variation:'報紙越嚟越細'},
+  {id:'g7', img:'assets/manual/games/g7-smell.avif', name:'氣味偵探', people:'6-12', time:'10分', props:'香料', type:'感官', desc:'鍛鍊嗅覺觀察', how:'蒙眼聞氣味估係咩（檸檬、咖啡、香皂等）', variation:'可試味覺'},
+  {id:'g8', img:'assets/manual/games/g8-kim.avif', name:'金氏遊戲', people:'6-30', time:'8分', props:'雜物10件', type:'記憶', desc:'觀察記憶', how:'枱面10件物件睇30秒，遮住寫出幾多得幾多', variation:'可改聲音金氏'},
+  {id:'g9', img:'assets/manual/games/g9-campfire-story.avif', name:'營火火花', people:'8-24', time:'10分', props:'無', type:'合作', desc:'圍圈傳故事', how:'一人講一句，輪流接龍講森林故事', variation:'加入動作'},
+  {id:'g10', img:'assets/manual/games/g10-safety-quiz.avif', name:'守則大考驗', people:'6-20', time:'8分', props:'題目卡', type:'學習', desc:'Safe from Harm情境判斷', how:'出情境題，小隊舉牌判斷啱唔啱', variation:'可做角色扮演'},
+];
+
+const CUB_CRAFTS = [
+  {id:'c1', img:'assets/manual/crafts/c1-knots.avif', name:'平結·八字結·接繩結', people:'6-18', time:'15分', props:'童軍繩', type:'繩結', desc:'L2-L3必學3個基本結', how:'平結：綁物；八字結：防散；接繩結：駁繩。用「毛克利被藤纏住」情境教', variation:'進階：稱人結、營繩結'},
+  {id:'c2', img:'assets/manual/crafts/c2-tracking.avif', name:'追蹤符號', people:'6-24', time:'20分', props:'粉筆·紙', type:'追蹤', desc:'戶外必備', how:'教10個常用符號：此路去、前去、轉左、危險、水源等，小隊畫地圖交換尋寶', variation:'夜行追蹤'},
+  {id:'c3', img:'assets/manual/crafts/c3-map.avif', name:'地圖與指南針', people:'8-20', time:'25分', props:'地圖·指南針', type:'定向', desc:'L3-L4歷奇', how:'認地圖圖例、指南針8方位、小隊校園定向', variation:'用手機地圖對比'},
+  {id:'c4', img:'assets/manual/crafts/c4-sandwich.avif', name:'野外烹飪：三文治', people:'6-12', time:'30分', props:'麵包·材料', type:'烹飪', desc:'安全用刀', how:'小隊分工洗切夾，領袖示範安全用刀，分享食物', variation:'水果沙律、能量棒'},
+  {id:'c5', img:'assets/manual/crafts/c5-bracelet.avif', name:'友誼手繩', people:'6-20', time:'20分', props:'毛冷線', type:'手工', desc:'送俾人', how:'學平織，3色編，每人做一條送俾其他小隊成員', variation:'加入串珠'},
+  {id:'c6', img:'assets/manual/crafts/c6-paper.avif', name:'再生紙', people:'8-16', time:'30分', props:'廢紙·水·框', type:'環保', desc:'環保徽章', how:'碎紙浸水打漿，抄紙曬乾，寫心意卡', variation:'加花瓣做手工紙'},
+  {id:'c7', img:'assets/manual/crafts/c7-firstaid.avif', name:'急救：擦傷包紮', people:'6-18', time:'15分', props:'急救包', type:'急救', desc:'L1-L2必備', how:'洗傷口、貼膠布、三角巾手臂吊帶，小隊角色扮演', variation:'中暑、流鼻血處理'},
+  {id:'c8', img:'assets/manual/crafts/c8-weather.avif', name:'天氣觀察', people:'全團', time:'10分', props:'無', type:'觀察', desc:'戶外活動前', how:'睇雲識天氣、風向、溫度計，小隊報告', variation:'做天氣日記'},
+];
+
+function ttsSpeakChapter(idx){
+  const ch = JUNGLE_CHAPTERS[idx];
+  if(!ch) return;
+  ttsSpeak(ch.story + "。 帶領筆記：" + ch.leaderNote);
+}
+function ttsSpeak(text, lang='zh-HK'){
+  if(!('speechSynthesis' in window)){ showToast('此瀏覽器不支援語音','warning'); return; }
+  window.speechSynthesis.cancel();
+  const utter = new SpeechSynthesisUtterance(text.replace(/\n/g,' '));
+  utter.lang = lang;
+  utter.rate = 0.92;
+  utter.pitch = 1.05;
+  const voices = window.speechSynthesis.getVoices();
+  const hkVoice = voices.find(v=>v.lang==='zh-HK') || voices.find(v=>v.lang.includes('zh-HK')||v.lang.includes('yue')||v.name.includes('Cantonese')) || voices.find(v=>v.lang.startsWith('zh')) || null;
+  if(hkVoice) utter.voice = hkVoice;
+  utter.onstart = ()=>{ showToast('🔊 正在播放：'+(JUNGLE_CHAPTERS[cubManualState.jungleChapter]?.title||''),'success'); };
+  utter.onend = ()=>{ showToast('播放完畢','success'); };
+  utter.onerror = (e)=>{ console.warn(e); showToast('語音播放失敗，請重試','error'); };
+  window.speechSynthesis.speak(utter);
+}
+function ttsStop(){ if('speechSynthesis' in window) window.speechSynthesis.cancel(); }
+if('speechSynthesis' in window){
+  window.speechSynthesis.onvoiceschanged = ()=>{ window.speechSynthesis.getVoices(); };
 }
 
+
+function renderInfoTab(){
+  const c=document.getElementById('tab-info'); if(!c) return;
+  if(!itemsData){ c.innerHTML=`<div style="text-align:center;padding:30px"><div class="spinner" style="margin:auto"></div><p>${t('loading')}</p></div>`; return; }
+  if(cubManualState.view==='detail'){
+    const manual = CUB_MANUALS.find(m=>m.id===cubManualState.detail);
+    if(!manual){ cubManualState.view='grid'; return renderInfoTab(); }
+    let html = `
+    <div class="cub-detail-header" style="border-bottom-color:${manual.color}">
+      <button class="btn btn-sm" style="background:${manual.color};color:#fff;border:none" onclick="cubManualState.view='grid';renderInfoTab();window.scrollTo({top:0,behavior:'smooth'})">← 返回手冊</button>
+      <div style="width:36px;height:36px;background:${manual.colorLight};border:1px solid ${manual.color};border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px">${manual.icon}</div>
+      <div><div style="font-weight:800;color:${manual.color};font-size:15px">${manual.title}</div><div style="font-size:11px;color:#666">${manual.desc}</div></div>
+      <div style="margin-left:auto;display:flex;gap:6px">
+        <button class="btn btn-sm btn-outline" onclick="ttsStop()">🔇 停止</button>
+        <button class="btn btn-sm btn-outline" onclick="window.scrollTo({top:0,behavior:'smooth'})">⬆️ 頂</button>
+      </div>
+    </div>
+    <div style="padding:12px">`;
+
+    if(manual.id==='official'){
+      const links = (itemsData.trainingPlan?.links||[]).concat([{title:'幼童軍支部官網',url:'https://prog.scouting.org.hk/cub/'},{title:'童軍總會 - 幼童軍',url:'https://www.scout.org.hk/tc/cub-scout/'},{title:'Safe from Harm',url:'https://sfh.scout.org.hk'}]);
+      html+=`<div class="info-section"><h3>📦 官方資源</h3><p style="font-size:12px;color:#666">官方最新綱要、套包PDF、課程連結，新領袖先睇呢度知要求。</p></div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:10px">`+links.map(l=>`<div style="background:#fff;border:1px solid var(--border);border-radius:10px;padding:12px"><b style="font-size:12px">${l.title}</b><div style="font-size:11px;color:#888;word-break:break-all;margin-top:4px">${l.url}</div><a href="${l.url}" target="_blank" class="btn btn-sm btn-primary" style="margin-top:8px;background:${manual.color};color:#fff">開 →</a></div>`).join('')+`</div>`;
+    }else if(manual.id==='catalog'){
+      const catalog = [
+        {m:'9月', t:'歡迎入狼群', b:'會員章', mat:'隊色紙·眼罩', go:'jungle', tip:'用盲公摸人+第一章故事'},
+        {m:'10月', t:'追蹤尋寶', b:'追蹤', mat:'粉筆·地圖', go:'craft', tip:'校園畫符號搵糖'},
+        {m:'11月', t:'繩結3兄弟', b:'繩結', mat:'童軍繩', go:'craft', tip:'平結八字結接繩結'},
+        {m:'12月', t:'友誼手繩', b:'手工', mat:'毛冷線', go:'craft', tip:'做完送俾人'},
+        {m:'1月', t:'金氏遊戲', b:'觀察', mat:'雜物10件', go:'games', tip:'睇30秒寫幾多得幾多'},
+        {m:'2月', t:'急救包紮', b:'急救', mat:'急救包', go:'safety', tip:'洗傷口貼膠布'},
+        {m:'3月', t:'天氣+再生紙', b:'環保', mat:'廢紙水', go:'craft', tip:'碎紙整新紙'},
+        {m:'4月', t:'過河合作', b:'團隊', mat:'報紙', go:'games', tip:'兩張報紙過河'},
+        {m:'5月', t:'巴魯教規律', b:'規律', mat:'無', go:'jungle', tip:'講第二章'},
+        {m:'6月', t:'營火分享', b:'總結', mat:'無', go:'songs', tip:'圍圈分享+頒章'},
+      ];
+      html+=`<div class="info-section"><h3>📅 集會目錄 - 揀題目跟住做</h3><p style="font-size:11px;color:#666">唔使諗，揀月份→睇物資→按流程做，60分鐘搞掂。</p></div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:8px">`+catalog.map(it=>`
+        <div style="background:#fff;border:1px solid var(--border);border-radius:10px;padding:10px;border-left:3px solid ${manual.color}">
+          <div style="display:flex;justify-content:space-between;align-items:center"><b style="font-size:12px">${it.m} ${it.t}</b><span style="font-size:10px;background:${manual.colorLight};padding:2px 6px;border-radius:999px">${it.b}</span></div>
+          <div style="font-size:11px;color:#666;margin-top:4px">🎒 ${it.mat} · 💡 ${it.tip}</div>
+          <button class="btn btn-sm btn-outline" style="margin-top:6px" onclick="cubManualState.detail='${it.go}';renderInfoTab()">去素材 →</button>
+        </div>
+      `).join('')+`</div>
+      <div style="margin-top:10px;display:grid;grid-template-columns:100px 1fr;gap:8px;align-items:center;background:#FFF3E0;padding:8px;border-radius:8px"><img src="assets/manual/details/sharing-circle.avif" style="width:100%;height:60px;object-fit:contain" onerror="this.style.display='none'"><div style="font-size:11px">60分鐘流程：0-5集合點名團呼｜5-15熱身遊戲｜15-35主題｜35-50小隊做｜50-60分享圈解散<br>💡 分享圈係精髓，每人一句今日學到咩</div></div>`;
+    }else if(manual.id==='handbook'){
+      const subs = [{id:'who',label:'係誰'},{id:'leader',label:'領袖係咩'},{id:'six',label:'小隊點玩'},{id:'sixer',label:'教隊長★'},{id:'law',label:'誓詞規律'}];
+      const cur = cubManualState.sub||'who';
+      html+=`<div class="cub-subtabs">`+subs.map(s=>`<button class="btn btn-sm ${cur===s.id?'btn-primary':'btn-outline'}" style="${cur===s.id?`background:${manual.color};border-color:${manual.color};color:#fff`:''}" onclick="cubManualState.sub='${s.id}';renderInfoTab()">${s.label}</button>`).join('')+`</div>`;
+      if(cur==='who'){
+        html+=`<div class="info-section"><h3>🐾 幼童軍係咩？</h3>
+        <p style="font-size:13px;line-height:1.7">8-12歲細路，橙色代表，好奇、好動、鍾意玩。唔係縮細版童軍，係用《森林故事》包住，遊戲入面學做人。</p>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px;font-size:12px">
+          <div style="background:${manual.colorLight};padding:10px;border-radius:8px">🎮 <b>點教？</b><br>做中學，唔係聽中學。遊戲＞上堂</div>
+          <div style="background:#E8F5E9;padding:10px;border-radius:8px">👥 <b>點分？</b><br>6人一小隊，有隊長，隊長帶頭</div>
+        </div>
+        </div>`;
+      }else if(cur==='leader'){
+        html+=`<div class="info-section"><h3>🧭 領袖係咩？阿基拉咁帶</h3>
+        <div style="margin-bottom:8px;border-radius:8px;overflow:hidden;max-height:160px"><img src="assets/manual/details/leader-roles.avif" style="width:100%;height:auto;object-fit:cover" onerror="this.parentElement.style.display='none'"></div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:8px;margin-top:8px;font-size:12px">
+          <div style="background:#fff;border:1px solid var(--border);padding:10px;border-radius:8px"><b>🎨 設計體驗</b><br>諗好玩又有意思嘅集會，唔係照書讀</div>
+          <div style="background:#fff;border:1px solid var(--border);padding:10px;border-radius:8px"><b>🛡️ 睇住安全</b><br>兩人同行，點名，睇場地</div>
+          <div style="background:#fff;border:1px solid var(--border);padding:10px;border-radius:8px"><b>💡 帶出價值</b><br>用故事問「如果你係毛克利會點？」唔係罰</div>
+          <div style="background:#fff;border:1px solid var(--border);padding:10px;border-radius:8px"><b>🤲 放手俾佢試</b><br>隊長做，慢都係學，企埋一邊睇</div>
+        </div>
+        <div style="margin-top:10px;background:#FFF3E0;padding:8px;border-radius:8px;font-size:11px"><b>唔係：</b>老師罰企、保姆幫做晒、老闆指點。<br><b>係：</b>陪佢玩、陪佢試、陪佢大。</div>
+        </div>`;
+      }else if(cur==='six'){
+        html+=`<div class="info-section"><h3>👥 小隊點玩？</h3><p style="font-size:12px">6人一隊，有隊長副隊長，隊色隊呼隊角落。</p>
+        <div style="margin:8px 0;border-radius:8px;overflow:hidden;max-height:140px"><img src="assets/manual/details/six-colors.avif" style="width:100%;height:auto;object-fit:cover" onerror="this.parentElement.style.display='none'"></div>
+        <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:6px;margin-top:8px;text-align:center;font-size:11px">
+          <div style="border:1px solid var(--border);border-radius:8px;padding:6px">🔴<br>紅<br>熱情</div>
+          <div style="border:1px solid var(--border);border-radius:8px;padding:6px">🔵<br>藍<br>冷靜</div>
+          <div style="border:1px solid var(--border);border-radius:8px;padding:6px">🟡<br>黃<br>開朗</div>
+          <div style="border:1px solid var(--border);border-radius:8px;padding:6px">🟢<br>綠<br>自然</div>
+          <div style="border:1px solid var(--border);border-radius:8px;padding:6px">🟤<br>棕<br>穩重</div>
+          <div style="border:1px solid var(--border);border-radius:8px;padding:6px">⚪<br>白<br>互助</div>
+        </div>
+        <p style="font-size:11px;margin-top:8px;background:#E3F2FD;padding:6px;border-radius:6px">💡 每隊有固定角落放旗同作品，歸屬感大啲。</p>
+        </div>`;
+      }else if(cur==='sixer'){
+        html+=`<div class="info-section" style="background:#E8F5E9"><h3>⭐ 點教隊長？（新領袖最唔識）</h3>
+        <div style="margin-bottom:8px;border-radius:8px;overflow:hidden;max-height:140px"><img src="assets/manual/details/sixer-training.avif" style="width:100%;height:auto;object-fit:cover" onerror="this.parentElement.style.display='none'"></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px;font-size:12px">
+          <div style="background:#fff;padding:10px;border-radius:8px"><b>會前10分鐘開隊長會</b><br>圍圈講今日做咩，派物資，俾佢問</div>
+          <div style="background:#fff;padding:10px;border-radius:8px"><b>隊長做咩？</b><br>點名、帶遊戲、收拾、關心隊員，唔係鬧人</div>
+          <div style="background:#fff;padding:10px;border-radius:8px"><b>點放手？</b><br>企埋一邊睇，慢都唔搶做，完咗先讚+提一點</div>
+          <div style="background:#fff;padding:10px;border-radius:8px"><b>練咩遊戲？</b><br>阿基拉選狼、過河、教打結</div>
+        </div>
+        </div>`;
+      }else{
+        html+=`<div class="info-section"><h3>🤝 誓詞規律，點教唔係背</h3>
+        <div style="margin-bottom:8px;border-radius:8px;overflow:hidden;max-height:120px"><img src="assets/manual/details/oath.avif" style="width:100%;height:auto;object-fit:contain" onerror="this.parentElement.style.display='none'"></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+          <div style="border:2px solid ${manual.color};border-radius:10px;padding:10px"><b>誓詞</b><p style="font-size:12px;background:${manual.colorLight};padding:8px;border-radius:6px;margin-top:6px;text-align:center;line-height:1.6">我願盡所能，對神明對國家盡責任，對別人要幫助，對規律必遵行。</p><button class="btn btn-sm" style="background:${manual.color};color:#fff;width:100%;margin-top:6px" onclick="ttsSpeak('我願盡所能，對神明、對國家盡責任，對別人要幫助，對規律必遵行。')">🔊 播</button></div>
+          <div style="border:1px solid var(--border);border-radius:10px;padding:10px"><b>規律</b><ul style="font-size:12px;padding-left:16px;margin-top:6px;line-height:1.8"><li>思想顧及別人</li><li>做事忠於自己</li></ul><p style="font-size:11px;margin-top:6px">唔好叫背，問：排隊唔打尖係咪顧及別人？</p></div>
+        </div>
+        <div style="margin-top:8px;background:#E0F7FA;padding:8px;border-radius:6px;font-size:12px"><b>銘言：Do Your Best 竭盡所能</b> - 唔係做第一，係每次盡力。</div>
+        </div>`;
+      }
+    }else if(manual.id==='uniform'){
+      html+=`<div class="info-section"><h3>👕 制服點著？徽章黐邊？</h3>
+      <p style="font-size:11px;color:#666;margin-bottom:8px">⚠️ 制服因年份、海陸空、男女有差異，為免爭議，呢度唔放制服相，用文字+官方連結+你嘅制服APP作準。</p>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:12px">
+        <div style="border:1px solid var(--border);border-radius:8px;padding:10px"><b>著咩（文字版）</b><br>橙色衫+深藍褲/裙+皮帶+襪+鞋，帽集會戴。洗：反轉洗，唔漂白。</div>
+        <div style="border:1px solid var(--border);border-radius:8px;padding:10px"><b>徽章位（2024指引）</b><br>左胸袋中：會員章/和平使者章<br>左胸袋上：L1-L5進度章<br>右肩：隊色<br>右袖：活動章<br>左袖上：急救章</div>
+      </div>
+      <div style="margin:10px 0;border-radius:8px;overflow:hidden;max-height:160px"><img src="assets/manual/details/badge-positions.avif" style="width:100%;height:auto;object-fit:contain" onerror="this.parentElement.style.display='none'"></div>
+      <div style="margin-top:10px;display:grid;grid-template-columns:1fr 1fr;gap:8px">
+        <a href="https://uniform.scouting.org.hk/wp-content/uploads/2017/03/uniformhandbook_p96-106.pdf" target="_blank" style="background:#fff;border:1px solid var(--border);border-radius:8px;padding:10px;text-align:center;text-decoration:none;color:var(--text)"><b style="font-size:12px">📄 官方制服手冊PDF</b><div style="font-size:10px;color:#666">儀容與制服手冊 p96-106</div></a>
+        <a href="https://github.com/playerkousas-rgb/upgrade" target="_blank" style="background:#FFF3E0;border:1px solid #FF9800;border-radius:8px;padding:10px;text-align:center;text-decoration:none;color:#BF360C"><b style="font-size:12px">🧩 制服準備指南APP</b><div style="font-size:10px">你嘅upgrade APP，自動計要買咩</div></a>
+      </div>
+      <div style="margin-top:8px;background:#E8F5E9;padding:8px;border-radius:6px;font-size:11px">💡 建議：直接用你嘅制服APP，揀「幼童軍·男/女」→ 自動顯示要買咩、可沿用咩，有官方參考圖同來源，比我哋自己畫準。</div>
+      </div>`;
+    }else if(manual.id==='ceremony'){
+      const subs = [{id:'flag',label:'旗禮'},{id:'oath',label:'宣誓'},{id:'salute',label:'敬禮口令'},{id:'calls',label:'團呼手號'}];
+      const cur = cubManualState.sub||'flag';
+      html+=`<div class="cub-subtabs">`+subs.map(s=>`<button class="btn btn-sm ${cur===s.id?'btn-primary':'btn-outline'}" style="${cur===s.id?`background:${manual.color};border-color:${manual.color};color:#fff`:''}" onclick="cubManualState.sub='${s.id}';renderInfoTab()">${s.label}</button>`).join('')+`</div>`;
+      if(cur==='flag'){
+        html+=`<div class="info-section"><h3>🚩 旗禮 5步</h3><div style="margin-bottom:8px;border-radius:8px;overflow:hidden;max-height:140px"><img src="assets/manual/details/flag-steps.avif" style="width:100%;height:auto;object-fit:contain" onerror="this.parentElement.style.display='none'"></div><p style="font-size:12px;line-height:2">1. 立正<br>2. 旗手出旗<br>3. 向旗敬禮<br>4. 禮畢<br>5. 團呼 Pack Pack Pack<br><span style="font-size:11px;color:#666">5分鐘搞掂，唔好拖。</span></p></div>`;
+      }else if(cur==='oath'){
+        html+=`<div class="info-section"><h3>🤝 宣誓 5步</h3><p style="font-size:12px;line-height:2">1. 企旗前半禮<br>2. 問：願意守誓詞規律嗎？<br>3. 答：我願意，讀誓詞<br>4. 頒章，左手握手<br>5. 全團歡呼<br><span style="font-size:11px;color:#666">會員章完成後做，莊重點。</span></p></div>`;
+      }else if(cur==='salute'){
+        html+=`<div class="info-section"><h3>🫡 敬禮口令</h3><div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;font-size:12px"><div style="border:1px solid var(--border);padding:8px;border-radius:6px"><b>全禮</b> 食中指放額頭，見國旗長官用</div><div style="border:1px solid var(--border);padding:8px;border-radius:6px"><b>半禮</b> 放胸前，幼童軍常用</div><div style="border:1px solid var(--border);padding:8px;border-radius:6px"><b>握手禮</b> 左手握，信任</div><div style="border:1px solid var(--border);padding:8px;border-radius:6px"><b>立正/稍息/集隊/解散</b> 口令要大聲</div></div></div>`;
+      }else{
+        html+=`<div class="info-section"><h3>📣 團呼手號</h3><p style="font-size:12px">叫：Pack Pack Pack！ 答：Pack！手做狼耳放頭上。</p><button class="btn btn-sm" style="background:${manual.color};color:#fff;margin-top:8px" onclick="ttsSpeak('Pack Pack Pack!')">🔊 試聽</button></div>`;
+      }
+    }else if(manual.id==='jungle'){
+      const curIdx = cubManualState.jungleChapter||0;
+      const cur = JUNGLE_CHAPTERS[curIdx];
+      html+=`<div style="background:#E8F5E9;padding:6px 10px;border-radius:6px;margin-bottom:8px;font-size:11px;color:#2E7D32">📚 要故事搵故事，開即講</div>`;
+      html+=`<div class="cub-subtabs">`+JUNGLE_CHAPTERS.map((ch,idx)=>`<button class="btn btn-sm ${curIdx===idx?'':'btn-outline'}" style="${curIdx===idx?`background:${ch.color};color:#fff;border-color:${ch.color}`:''}" onclick="cubManualState.jungleChapter=${idx};renderInfoTab()">${ch.icon} ${ch.title}</button>`).join('')+`</div>`;
+      html+=`<div class="info-section" style="border-left:3px solid ${cur.color}"><div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px"><h3 style="color:${cur.color};font-size:14px">${cur.icon} ${cur.title}</h3><div style="display:flex;gap:6px"><button class="btn btn-sm btn-primary" style="background:${cur.color};color:#fff" onclick="ttsSpeakChapter(${curIdx})">🔊 播</button><button class="btn btn-sm btn-outline" onclick="ttsStop()">🔇 停</button></div></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:8px"><div><b style="font-size:11px">📖 故事</b><div style="font-size:12px;background:#FAFAFA;padding:8px;border-radius:6px;margin-top:4px;white-space:pre-wrap;line-height:1.6">${cur.story}</div></div><div><b style="font-size:11px">🎤 點帶</b><div style="font-size:11px;background:${manual.colorLight};padding:8px;border-radius:6px;margin-top:4px;white-space:pre-wrap;line-height:1.6">${cur.leaderNote}</div><div style="margin-top:6px"><span style="background:${cur.color};color:#fff;padding:2px 6px;border-radius:999px;font-size:10px">${cur.value}</span></div><div style="font-size:11px;margin-top:6px;background:#fff;border:1px dashed var(--border);padding:6px;border-radius:4px">${cur.activity}</div></div></div>
+      <div style="margin-top:8px;display:flex;gap:6px"><button class="btn btn-sm btn-outline" onclick="cubManualState.jungleChapter=Math.max(0,${curIdx}-1);renderInfoTab()">← 上</button><button class="btn btn-sm btn-outline" style="margin-left:auto" onclick="cubManualState.jungleChapter=Math.min(${JUNGLE_CHAPTERS.length-1},${curIdx}+1);renderInfoTab()">下 →</button></div></div>`;
+    }else if(manual.id==='games'){
+      const fP = cubManualState.gameFilter?.people||'all';
+      const fT = cubManualState.gameFilter?.time||'all';
+      let filtered = CUB_GAMES;
+      if(fP!=='all') filtered = filtered.filter(g=>g.people.includes(fP)||fP==='全團');
+      if(fT!=='all') filtered = filtered.filter(g=>g.time.includes(fT));
+      html+=`<div style="background:#F3E5F5;padding:6px 10px;border-radius:6px;margin-bottom:8px;font-size:11px;color:#6A1B9A">🎯 要遊戲搵遊戲，篩人數時間</div>`;
+      html+=`<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px"><select onchange="cubManualState.gameFilter.people=this.value;renderInfoTab()" style="padding:4px;border-radius:6px;border:1px solid var(--border);font-size:12px"><option value="all" ${fP==='all'?'selected':''}>人數全部</option><option value="6" ${fP==='6'?'selected':''}>6-10人</option><option value="10" ${fP==='10'?'selected':''}>10-20人</option><option value="全團" ${fP==='全團'?'selected':''}>全團</option></select><select onchange="cubManualState.gameFilter.time=this.value;renderInfoTab()" style="padding:4px;border-radius:6px;border:1px solid var(--border);font-size:12px"><option value="all" ${fT==='all'?'selected':''}>時間全部</option><option value="5分" ${fT==='5分'?'selected':''}>5分內</option><option value="10分" ${fT==='10分'?'selected':''}>10分</option></select><span style="font-size:11px;color:#666;align-self:center">${filtered.length}個</span><button class="btn btn-sm btn-outline" onclick="cubManualState.gameFilter={people:'all',time:'all'};renderInfoTab()">重置</button></div>`;
+      html+=`<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:8px">`+filtered.map(g=>`<div style="background:#fff;border:1px solid var(--border);border-radius:10px;overflow:hidden"><div style="height:90px;background:${manual.colorLight};display:flex;align-items:center;justify-content:center;overflow:hidden">${g.img?`<img src="${g.img}" style="width:100%;height:100%;object-fit:cover" onerror="this.style.display='none'">`:`<div style="font-size:24px">🎯</div>`}</div><div style="padding:8px"><div style="display:flex;justify-content:space-between"><b style="font-size:12px">${g.name}</b><span style="font-size:9px;background:${manual.colorLight};padding:1px 5px;border-radius:999px">${g.type}</span></div><div style="font-size:10px;color:#666;margin-top:2px">👥${g.people} ⏱️${g.time} 🎒${g.props}</div><div style="font-size:11px;margin-top:4px">${g.desc}</div><details style="margin-top:4px"><summary style="font-size:11px;color:${manual.color};cursor:pointer">玩法</summary><div style="font-size:11px;background:#FAFAFA;padding:6px;border-radius:4px;margin-top:2px">${g.how}<br><b>變：</b>${g.variation}</div></details></div></div>`).join('')+`</div>`;
+    }else if(manual.id==='craft'){
+      html+=`<div style="background:#E0F7FA;padding:6px 10px;border-radius:6px;margin-bottom:8px;font-size:11px;color:#00838F">✂️ 要手工搵手工，要技能搵技能</div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px;margin-bottom:10px">
+        <div style="background:#fff;border:1px solid var(--border);border-radius:8px;padding:6px;text-align:center"><img src="assets/manual/details/knots.avif" style="width:100%;height:80px;object-fit:contain" onerror="this.style.display='none'"><div style="font-size:10px">繩結3兄弟</div></div>
+        <div style="background:#fff;border:1px solid var(--border);border-radius:8px;padding:6px;text-align:center"><img src="assets/manual/details/tracking-symbols.avif" style="width:100%;height:80px;object-fit:contain" onerror="this.style.display='none'"><div style="font-size:10px">追蹤符號</div></div>
+        <div style="background:#fff;border:1px solid var(--border);border-radius:8px;padding:6px;text-align:center"><img src="assets/manual/details/first-aid.avif" style="width:100%;height:80px;object-fit:contain" onerror="this.style.display='none'"><div style="font-size:10px">急救包紮</div></div>
+        <div style="background:#fff;border:1px solid var(--border);border-radius:8px;padding:6px;text-align:center"><img src="assets/manual/details/map-compass.avif" style="width:100%;height:80px;object-fit:contain" onerror="this.style.display='none'"><div style="font-size:10px">地圖指南針</div></div>
+        <div style="background:#fff;border:1px solid var(--border);border-radius:8px;padding:6px;text-align:center"><img src="assets/manual/details/cooking.avif" style="width:100%;height:80px;object-fit:contain" onerror="this.style.display='none'"><div style="font-size:10px">野外烹飪</div></div>
+        <div style="background:#fff;border:1px solid var(--border);border-radius:8px;padding:6px;text-align:center"><img src="assets/manual/details/friendship-bracelet.avif" style="width:100%;height:80px;object-fit:contain" onerror="this.style.display='none'"><div style="font-size:10px">友誼手繩</div></div>
+        <div style="background:#fff;border:1px solid var(--border);border-radius:8px;padding:6px;text-align:center"><img src="assets/manual/details/recycled-paper.avif" style="width:100%;height:80px;object-fit:contain" onerror="this.style.display='none'"><div style="font-size:10px">再生紙</div></div>
+        <div style="background:#fff;border:1px solid var(--border);border-radius:8px;padding:6px;text-align:center"><img src="assets/manual/details/weather.avif" style="width:100%;height:80px;object-fit:contain" onerror="this.style.display='none'"><div style="font-size:10px">天氣觀察</div></div>
+      </div>`;
+      html+=`<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:8px">`+CUB_CRAFTS.map(g=>`<div style="background:#fff;border:1px solid var(--border);border-radius:10px;overflow:hidden"><div style="height:90px;background:${manual.colorLight};display:flex;align-items:center;justify-content:center;overflow:hidden">${g.img?`<img src="${g.img}" style="width:100%;height:100%;object-fit:cover" onerror="this.style.display='none'">`:`<div style="font-size:24px">✂️</div>`}</div><div style="padding:8px"><div style="display:flex;justify-content:space-between"><b style="font-size:12px">${g.name}</b><span style="font-size:9px;background:${manual.colorLight};padding:1px 5px;border-radius:999px">${g.type}</span></div><div style="font-size:10px;color:#666;margin-top:2px">👥${g.people} ⏱️${g.time} 🎒${g.props}</div><div style="font-size:11px;margin-top:4px">${g.desc}</div><details style="margin-top:4px"><summary style="font-size:11px;color:${manual.color};cursor:pointer">點做</summary><div style="font-size:11px;background:#FAFAFA;padding:6px;border-radius:4px;margin-top:2px">${g.how}<br><b>變：</b>${g.variation}</div></details></div></div>`).join('')+`</div>`;
+    }else if(manual.id==='songs'){
+      const subs = [{id:'calls',label:'團呼'},{id:'songs', img:'assets/manual/songs.avif',label:'歌'},{id:'cheers',label:'歡呼'}];
+      const cur = cubManualState.sub||'calls';
+      html+=`<div style="background:#E3F2FD;padding:6px 10px;border-radius:6px;margin-bottom:8px;font-size:11px;color:#1565C0">🎵 要歌搵歌，要氣氛搵氣氛</div>`;
+      html+=`<div class="cub-subtabs">`+subs.map(s=>`<button class="btn btn-sm ${cur===s.id?'btn-primary':'btn-outline'}" style="${cur===s.id?`background:${manual.color};border-color:${manual.color};color:#fff`:''}" onclick="cubManualState.sub='${s.id}';renderInfoTab()">${s.label}</button>`).join('')+`</div>`;
+      if(cur==='calls'){
+        html+=`<div class="info-section"><h3>📣 團呼</h3><p style="font-size:12px">叫 Pack Pack Pack！答 Pack！手做狼耳。</p><button class="btn btn-sm" style="background:${manual.color};color:#fff" onclick="ttsSpeak('Pack Pack Pack!')">🔊 試聽</button></div>`;
+      }else if(cur==='songs'){
+        html+=`<div class="info-section"><h3>🎵 歌</h3><p style="font-size:12px">幼童軍歌（開始）、日暮歌（結束）、感謝歌（食飯前）。唔使次次唱晒，揀一首就得。</p></div>`;
+      }else{
+        html+=`<div class="info-section"><h3>🎉 歡呼</h3><div style="margin-bottom:8px;border-radius:8px;overflow:hidden;max-height:160px"><img src="assets/manual/details/campfire-circle.avif" style="width:100%;height:auto;object-fit:cover" onerror="this.parentElement.style.display='none'"></div><p style="font-size:12px">紅隊紅紅紅！藍隊藍藍藍！全團 Do Your Best！完成任務用歡呼代替拍手。</p></div>`;
+      }
+    }else if(manual.id==='safety'){
+      const tp = itemsData.safeFromHarm||{};
+      const subs = [{id:'sfh',label:'Safe from Harm'},{id:'ram',label:'RAM★'},{id:'badges',label:'獎章速查'}];
+      const cur = cubManualState.sub||'sfh';
+      html+=`<div class="cub-subtabs">`+subs.map(s=>`<button class="btn btn-sm ${cur===s.id?'btn-primary':'btn-outline'}" style="${cur===s.id?`background:${manual.color};border-color:${manual.color};color:#fff`:''}" onclick="cubManualState.sub='${s.id}';renderInfoTab()">${s.label}</button>`).join('')+`</div>`;
+      if(cur==='sfh'){
+        html+=`<div class="info-section" style="border-left:3px solid ${manual.color}"><h3>🛡️ Safe from Harm</h3><div style="margin-bottom:8px;border-radius:8px;overflow:hidden;max-height:120px"><img src="assets/manual/details/sfh-principles.avif" style="width:100%;height:auto;object-fit:contain" onerror="this.parentElement.style.display='none'"></div><p style="font-size:11px">${tp.policy||'會員章必修'}</p><ul style="font-size:12px;line-height:1.7;margin-top:6px"><li>兩人同行，唔單獨同細路一齊</li><li>聆聽，細路唔舒服要認真聽</li><li>報告，有懷疑即報</li></ul><a href="https://sfh.scout.org.hk" target="_blank" class="btn btn-sm btn-primary" style="background:${manual.color};color:#fff;margin-top:6px">去上堂 →</a></div>`;
+      }else if(cur==='ram'){
+        html+=`<div class="info-section" style="background:#E8F5E9"><h3>📋 RAM 範本，一鍵複製</h3><div style="margin-bottom:8px;border-radius:8px;overflow:hidden;max-height:120px"><img src="assets/manual/details/ram-checklist.avif" style="width:100%;height:auto;object-fit:contain" onerror="this.parentElement.style.display='none'"></div><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:8px;margin-top:8px;font-size:11px"><div style="background:#fff;padding:10px;border-radius:8px"><b>🏕️ 行山</b><br>風險：天氣迷路扭傷<br>預防：查天氣帶地圖急救包兩人同行<br><button class="btn btn-sm btn-outline" style="margin-top:4px" onclick="navigator.clipboard.writeText('行山RAM：天氣迷路扭傷，查天氣帶地圖急救包兩人同行');showToast('已複製','success')">複製</button></div><div style="background:#fff;padding:10px;border-radius:8px"><b>🔥 烹飪</b><br>風險：燙傷刀傷過敏<br>預防：示範用刀戴手套問過敏<br><button class="btn btn-sm btn-outline" style="margin-top:4px" onclick="navigator.clipboard.writeText('烹飪RAM：燙傷刀傷過敏，示範用刀戴手套問過敏');showToast('已複製','success')">複製</button></div><div style="background:#fff;padding:10px;border-radius:8px"><b>🏊‍♂️ 水邊</b><br>風險：遇溺<br>預防：救生衣兩人同行救生員<br><button class="btn btn-sm btn-outline" style="margin-top:4px" onclick="navigator.clipboard.writeText('水邊RAM：遇溺，救生衣兩人同行救生員');showToast('已複製','success')">複製</button></div></div><p style="font-size:11px;margin-top:8px">寫RAM 3步：風險→點預防→出事點做，複製改地點就得。</p></div>`;
+      }else{
+        html+=`<div style="margin-bottom:8px;border-radius:8px;overflow:hidden;max-height:140px"><img src="assets/manual/details/badge-overview.avif" style="width:100%;height:auto;object-fit:contain" onerror="this.parentElement.style.display='none'"></div><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:8px">`; itemsData.badges.forEach(b=>{ html+=`<div style="background:#fff;border:1px solid var(--border);border-radius:10px;overflow:hidden"><div style="background:${b.color||manual.color};padding:8px"><b style="font-size:12px">${b.icon} ${b.name}</b></div><div style="padding:8px">`; if(b.segments){ b.segments.forEach(s=>{ html+=`<details style="margin-bottom:4px"><summary style="font-size:11px">${s.name} (${s.items.length})</summary><ul style="font-size:11px;padding-left:14px">`+s.items.map(it=>`<li>${it.name||it.id}</li>`).join('')+`</ul></details>`; }); } html+=`</div></div>`; }); html+=`</div><button class="btn btn-sm btn-outline" style="margin-top:8px" onclick="switchTab('progress', document.getElementById('btn-tab-progress'))">去勾選 →</button>`;
+      }
+    }
+    html+=`</div>`;
+    c.innerHTML = html;
+    window.scrollTo({top:0,behavior:'smooth'});
+    return;
+  }
+  const newM = CUB_MANUALS.filter(m=>m.group==='new');
+  const libM = CUB_MANUALS.filter(m=>m.group==='lib');
+  let html = `
+  <div style="background:linear-gradient(135deg,#FF6F00 0%,#FF9800 100%);border-radius:14px;padding:14px;color:#fff;margin-bottom:12px">
+    <h2 style="font-size:16px;font-weight:900">📚 幼童軍團手冊 <span style="background:rgba(0,0,0,0.15);padding:2px 8px;border-radius:999px;font-size:10px">v6.4 口語精簡版</span></h2>
+    <p style="font-size:11px;opacity:0.9;margin-top:4px;line-height:1.5">上方新領袖必學5格，平時要用但唔識｜下方老手素材庫，要咩搵咩</p>
+  </div>
+  <div style="background:#fff;border:1px solid #FFCC80;border-radius:12px;padding:10px;margin-bottom:10px">
+    <div style="display:flex;gap:6px;align-items:center;margin-bottom:8px"><div style="background:#FF6F00;color:#fff;padding:2px 10px;border-radius:999px;font-size:11px;font-weight:800">上方 · 新領袖必學</div><span style="font-size:10px;color:#888">跟住做就帶到</span></div>
+    <div class="cub-manual-grid">
+      ${newM.map(m=>`<div onclick="cubManualState.detail='${m.id}';cubManualState.view='detail';cubManualState.sub='';cubManualState.jungleChapter=0;renderInfoTab()" style="background:#fff;border-radius:12px;cursor:pointer;border:1px solid var(--border);overflow:hidden;box-shadow:var(--shadow);transition:.2s" class="cub-card-hover">
+      <div style="height:96px;background:${m.colorLight};position:relative;overflow:hidden;display:flex;align-items:center;justify-content:center">
+        ${m.img?`<img src="${m.img}" style="width:100%;height:100%;object-fit:cover" onerror="this.style.display='none'">`:`<div style="font-size:32px">${m.icon}</div>`}
+        <div style="position:absolute;top:6px;left:6px;background:${m.color};color:#fff;padding:2px 8px;border-radius:999px;font-size:9px;font-weight:700">${m.hint}</div>
+        <div style="position:absolute;bottom:0;left:0;right:0;height:30px;background:linear-gradient(transparent, rgba(0,0,0,0.15))"></div>
+      </div>
+      <div style="padding:10px">
+        <div style="display:flex;gap:6px;align-items:center"><div style="width:28px;height:28px;background:${m.colorLight};border:1px solid ${m.color};border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:14px">${m.icon}</div><div style="font-weight:800;font-size:12px;color:${m.color}">${m.title}</div></div>
+        <div style="font-size:10px;color:#666;margin-top:4px;line-height:1.4">${m.desc}</div>
+      </div>
+    </div>`).join('')}
+    </div>
+  </div>
+  <div style="background:#fff;border:1px solid #C8E6C9;border-radius:12px;padding:10px;margin-bottom:10px">
+    <div style="display:flex;gap:6px;align-items:center;margin-bottom:8px"><div style="background:#2E7D32;color:#fff;padding:2px 10px;border-radius:999px;font-size:11px;font-weight:800">下方 · 老手素材庫</div><span style="font-size:10px;color:#888">要咩搵咩</span></div>
+    <div class="cub-manual-grid">
+      ${libM.map(m=>`<div onclick="cubManualState.detail='${m.id}';cubManualState.view='detail';cubManualState.sub='';cubManualState.jungleChapter=0;renderInfoTab()" style="background:#fff;border-radius:12px;cursor:pointer;border:1px solid var(--border);overflow:hidden;box-shadow:var(--shadow);transition:.2s" class="cub-card-hover">
+      <div style="height:96px;background:${m.colorLight};position:relative;overflow:hidden;display:flex;align-items:center;justify-content:center">
+        ${m.img?`<img src="${m.img}" style="width:100%;height:100%;object-fit:cover" onerror="this.style.display='none'">`:`<div style="font-size:32px">${m.icon}</div>`}
+        <div style="position:absolute;top:6px;left:6px;background:${m.color};color:#fff;padding:2px 8px;border-radius:999px;font-size:9px;font-weight:700">${m.hint}</div>
+        <div style="position:absolute;bottom:0;left:0;right:0;height:30px;background:linear-gradient(transparent, rgba(0,0,0,0.15))"></div>
+      </div>
+      <div style="padding:10px">
+        <div style="display:flex;gap:6px;align-items:center"><div style="width:28px;height:28px;background:${m.colorLight};border:1px solid ${m.color};border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:14px">${m.icon}</div><div style="font-weight:800;font-size:12px;color:${m.color}">${m.title}</div></div>
+        <div style="font-size:10px;color:#666;margin-top:4px;line-height:1.4">${m.desc}</div>
+      </div>
+    </div>`).join('')}
+    </div>
+  </div>
+  `;
+  c.innerHTML = html;
+}
+
+
+function cubBackToManual(){ cubManualState.view='grid'; switchTab('info', document.getElementById('btn-tab-info')); setTimeout(()=>{ renderInfoTab(); },50); }
+function cubInjectBackBar(tabId, title){
+  setTimeout(()=>{
+    const c=document.getElementById(tabId);
+    if(!c) return;
+    if(c.querySelector('.cub-back-bar')) return;
+    const bar=document.createElement('div');
+    bar.className='cub-back-bar';
+    bar.style.cssText='display:flex;gap:8px;align-items:center;margin-bottom:10px;position:sticky;top:0;z-index:5;background:#fff;padding:6px 0;border-bottom:1px solid var(--border)';
+    bar.innerHTML=`<button class="btn btn-sm btn-outline" onclick="cubBackToManual()">← 返回手冊</button><span style="font-size:12px;color:#666">${title||''}</span><button class="btn btn-sm btn-outline" style="margin-left:auto" onclick="window.scrollTo({top:0,behavior:'smooth'})">⬆️ 回頂</button>`;
+    c.prepend(bar);
+  }, 60);
+}
+/* v5.3.2：用戶管理清單渲染 —— 帳號／純成員／已停用 三種狀態都可管理 */
 /* v5.3.2：用戶管理清單渲染 —— 帳號／純成員／已停用 三種狀態都可管理 */
 let _showInactiveUsers=false;
 function toggleInactiveUsers(cb){
@@ -2235,7 +2576,7 @@ async function deleteMemberEntryUi(ymis,name){
   }catch(e){ showToast(t('del_member_fail')+e.message,'error'); }
 }
 /* Users / Apps */
-async function loadUsers(){
+async function loadUsers(){ cubInjectBackBar('tab-users','👥 用戶管理');
   const c=document.getElementById('tab-users');
   c.innerHTML=`<div style="text-align:center;padding:20px"><div class="spinner" style="margin:0 auto 8px"></div>${t('loading')}</div>`;
   try{
@@ -2259,7 +2600,7 @@ async function loadUsers(){
       }
       let frontControlHtml='';
       if(['admin','group_leader','branch_leader','super_admin'].includes(currentUser.role)){
-        frontControlHtml=`<div class="info-section" style="border-left-color:var(--maroon);background:var(--maroon-light);padding:12px"><h3 style="font-size:14px;color:#8B5A00">🛠️ ${inEn()?'Frontend Account Control':'全前端帳號控制'}</h3><p style="font-size:11px;color:var(--text-light)">${inEn()?'Bulk onboard without entering Google Sheet: YMIS PDF / Excel / CSV / JSON or single add. With password=login account (force change), YMIS+name only=member only. Reset PW, deactivate here.':'開學季一次過開戶唔使再入 Google Sheet：批量開戶（YMIS 報表 PDF / Excel / CSV / JSON）或單個新增。有填密碼=可登入帳號（首次登入強制改密），只填 YMIS+姓名=純成員無法登入。重設密碼、停用帳號亦在此完成。'}</p><div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px"><button class="btn btn-sm btn-warning" onclick="openBulkOnboardModal()">${t('users_bulk_btn')}</button><button class="btn btn-sm btn-primary" onclick="openAddMemberModal()">${t('users_add_btn')}</button><button class="btn btn-sm btn-outline" onclick="loadApprovalHistory()">${t('users_history_btn')}</button><button class="btn btn-sm btn-outline" onclick="loadAuditHistory()">${t('users_audit_btn')}</button></div></div>`;
+        frontControlHtml=`<div class="info-section" style="border-left-color:var(--maroon);background:var(--maroon-light);padding:12px"><h3 style="font-size:14px;color:#BF360C">🛠️ ${inEn()?'Frontend Account Control':'全前端帳號控制'}</h3><p style="font-size:11px;color:var(--text-light)">${inEn()?'Bulk onboard without entering Google Sheet: YMIS PDF / Excel / CSV / JSON or single add. With password=login account (force change), YMIS+name only=member only. Reset PW, deactivate here.':'開學季一次過開戶唔使再入 Google Sheet：批量開戶（YMIS 報表 PDF / Excel / CSV / JSON）或單個新增。有填密碼=可登入帳號（首次登入強制改密），只填 YMIS+姓名=純成員無法登入。重設密碼、停用帳號亦在此完成。'}</p><div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px"><button class="btn btn-sm btn-warning" onclick="openBulkOnboardModal()">${t('users_bulk_btn')}</button><button class="btn btn-sm btn-primary" onclick="openAddMemberModal()">${t('users_add_btn')}</button><button class="btn btn-sm btn-outline" onclick="loadApprovalHistory()">${t('users_history_btn')}</button><button class="btn btn-sm btn-outline" onclick="loadAuditHistory()">${t('users_audit_btn')}</button></div></div>`;
       }
       // v5.3.2：用戶清單 —— 顯示全部可管理成員（包括純成員／無密碼帳號），並支援展開已停用帳號
       const allUsers=d.users||[];
@@ -2594,6 +2935,49 @@ async function submitAccountApply(){
     else{ msg.textContent=d.error||t('apply_invalid'); msg.className='login-msg error'; }
   }catch(e){ msg.textContent=e.message; msg.className='login-msg error'; }
   finally{ if(btn){ btn.disabled=false; btn.textContent=t('submit'); } }
+}
+
+// Offline banner
+function updateOnlineStatus(){
+  const banner=document.getElementById('offlineBanner');
+  if(!banner) return;
+  if(!navigator.onLine){
+    banner.style.display='block';
+    document.body.style.paddingTop='28px';
+  }else{
+    banner.style.display='none';
+    document.body.style.paddingTop='0';
+  }
+}
+window.addEventListener('online', updateOnlineStatus);
+window.addEventListener('offline', updateOnlineStatus);
+updateOnlineStatus();
+
+// PWA Offline Cache - COPYRIGHT 2026 Scout System
+if('serviceWorker' in navigator){
+  window.addEventListener('load', ()=>{
+    navigator.serviceWorker.register('./sw.js').then(reg=>{
+      console.log('[PWA] SW registered', reg.scope);
+      // Check for updates
+      reg.addEventListener('updatefound', ()=>{
+        const nw = reg.installing;
+        nw.addEventListener('statechange', ()=>{
+          if(nw.state==='installed' && navigator.serviceWorker.controller){
+            if(confirm('有新版本，是否立即更新？ / New version available, update now?')){
+              window.location.reload();
+            }
+          }
+        });
+      });
+    }).catch(err=>{
+      console.warn('[PWA] SW register failed', err);
+    });
+  });
+  // Listen for controller change
+  let refreshing=false;
+  navigator.serviceWorker.addEventListener('controllerchange', ()=>{
+    if(!refreshing){ refreshing=true; window.location.reload(); }
+  });
 }
 </script>
 </body>
