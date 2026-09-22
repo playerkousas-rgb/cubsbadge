@@ -2,8 +2,8 @@
 
 > ⚠️ **已被 v5.8 取代（見 `docs/CHANGE_LOG_v5.8.md`）**：
 > v5.7 寫「超管密碼 = 功能變數 `SUPER_KEY`（**GS Script Property**），去 ⚙ 專案設定 → 指令碼屬性睇／改」係**錯**嘅 ——
-> 指令碼屬性旅團睇得到，等於冇隱藏。v5.8 起 `SUPER_KEY` **只存在 APP ADMIN 嘅 Vercel 功能變數**，
-> leaf GS 冇密碼、冇 Script Property、連讀都唔會讀；超管登入改為「Vercel 驗證 + 用旅團 apikey 簽 `action=superLogin` sig」。
+> 指令碼屬性旅團睇得到，等於冇隱藏。v5.8 起 `SUPER_KEY` **只放喺 Vercel 功能變數**，
+> GS 冇密碼、冇 Script Property；超管登入改為「Vercel 比對密碼 → 送 `action=superLogin` 落 leaf」。
 
 > 更正 v5.5／v5.6 寫錯嘅兩件事：
 > 1. **功能變數唔係由旅團設定** —— 旅團只生成 API KEY，交 3 樣（編號 / 部署 URL / API KEY）；`SUPER_KEY`、`TROOP_<id>_NAME` 同全部 Vercel 功能變數由 **APP ADMIN** 設定。

@@ -1,4 +1,4 @@
-# Vercel 環境變數（功能變數）設定指南 v10.0 — 超管密碼只存在 Vercel；GS 完全冇
+# Vercel 環境變數設定指南 v10.0 — 4 個功能變數，超管密碼只放喺 Vercel
 
 > ⚠️ 更正之前 agent 寫錯嘅嘢（v10.0）：
 > 1. ❌ 之前寫「旅團跑 `initializeSheets` 會生成 **API Key + SUPER_KEY**，交 APP ADMIN」——**錯**。
@@ -6,8 +6,8 @@
 > 2. ❌ 之前寫「超管密碼 = `SUPER_KEY`，喺 GS 用 `showSuperKey()` 睇」——**錯**（等於把超管帳號放出來）。
 > 3. ❌ v5.7 寫「超管密碼 = GS Script Property `SUPER_KEY`，去 ⚙ 專案設定 → 指令碼屬性睇／改」——**一樣錯**：
 >    指令碼屬性旅團睇得到，等於冇隱藏。
->    ✅ v5.8 定版：**超管密碼只存在 APP ADMIN 嘅 Vercel 功能變數**；leaf GS 只有帳號名，
->    **冇密碼、冇雜湊、冇 Script Property、冇 fallback**；超管登入一律由 Vercel 層驗證。
+>    ✅ v5.8：**超管密碼只放喺 Vercel 功能變數**；GS 只有帳號名，冇密碼、冇 property。
+>    超管登入：APP（Vercel）比對 `SUPER_KEY` → 送 `action=superLogin` 落 leaf → 發 token。
 > 4. ❌ 之前 `Code.gs` 寫死超管密碼 `0728`（連密碼都喺程式碼）——**錯**，已完全移除。
 > 5. ✅ **正確契約：所有功能變數由 APP ADMIN（Vercel Project 維護者）一個人設定**；旅團唔設定任何功能變數。
 
@@ -39,8 +39,7 @@
 **Vercel Dashboard 操作：** Project → Settings → Environment Variables → Add
 （4 個都勾 Production, Preview, Development）→ **Redeploy**。
 
-> 🔑 `TROOP_<id>_APIKEY` 有雙重身份：① 代理注入嘅旅團 API Key；② **超管 sig 嘅簽名鑰匙**
-> （Vercel 用同一隻值簽，leaf 用自己嘅 `API_KEY` 驗簽）。所以**冇設 `_APIKEY` 嘅旅團，超管登入唔到**（其他功能照舊）。
+> 🔑 超管登入需要 `SUPER_KEY` + 該旅團 `TROOP_<id>_APIKEY`（APP 用 server 端 apikey 認自己人；前端冇 key）。
 
 ---
 
@@ -48,22 +47,18 @@
 
 ```js
 // apps-script/Code.gs（v5.8）
-const SUPER_ADMIN_LOGIN = 'sheep';            // ← leaf 只有呢一行（＋衍生內部電郵）
-// 冇 SUPER_ADMIN_PASSWORD、冇雜湊、冇 Script Property、冇 fallback。
-// 超管登入：APP（Vercel /api/super-login）比對 SUPER_KEY → 用本單位 apikey 簽短效 sig
-//           → POST action=superLogin → leaf 用自己 getApiKey() 驗簽 → 發 token。
+const SUPER_ADMIN_LOGIN = 'sheep';            // ← GS 只有呢一行。冇密碼、冇 property、冇 fallback。
 ```
 
 ```
 前端「登入」（帳號 sheep）→ /api/proxy
-   → Vercel 就地比對 SUPER_KEY（timing-safe；密碼唔會離開 Vercel）
-   → 簽 ≤10 分鐘 sig（HMAC-SHA256，鍵 = 該旅團 apikey）
-   → leaf GS：{action:'superLogin', payload, sig}   ← 冇密碼、冇 apikey
-   → leaf 驗簽通過 → 發超管 token（虛擬帳號：唔寫 Users 表、唔喺用戶管理／成員名單／操作紀錄出現）
+   → Vercel 比對 SUPER_KEY（timing-safe；密碼唔會離開 Vercel，亦唔會落 GS）
+   → 通過之後送 action=superLogin 落 leaf（apikey 由 server 注入，同其他 server-to-server 一樣）
+   → leaf 發超管 token（虛擬帳號：唔寫 Users 表、唔喺用戶管理／成員名單／操作紀錄出現）
 ```
 
-- **改超管密碼**：Vercel → Project → Settings → Environment Variables → `SUPER_KEY`（改完 **Redeploy**）。
-  系統**唔會**喺 leaf 改密碼 —— 超管喺 APP 撳「改密碼」只會收到「請去 Vercel 改」嘅提示。
+- **改超管密碼**：Vercel → Settings → Environment Variables → `SUPER_KEY` → **Redeploy**。
+  （GS 冇得改，亦冇得睇 —— 超管喺 APP 撳「改密碼」只會收到「請去 Vercel 改」嘅提示。）
 - **未設定 `SUPER_KEY` = 超管完全登入唔到**（冇任何後備密碼、冇預設值）。
 - 超管登入失敗一律回**同一句通用訊息**（`帳號或密碼錯誤`），唔會透露隱藏帳戶存在。
 - 舊部署（v5.5–v5.7）遺留喺 GS「指令碼屬性」嘅 `SUPER_KEY`：跑一次新 `initializeSheets()` **會自動清走**（`legacySuperKeyPurged:true`）。
@@ -73,10 +68,10 @@ const SUPER_ADMIN_LOGIN = 'sheep';            // ← leaf 只有呢一行（＋�
 
 ## 四、`SUPER_KEY` 喺 Vercel 端嘅用途
 
-- 超管登入閘口：`/api/proxy`（`action:'login'` + 超管帳號）→ `api/super-login.js`
+- 超管登入閘口：`/api/proxy`（`action:'login'` + 超管帳號）
   - 未設定 → 通用失敗（入口關閉，唔會變成公開登入）
   - 密碼錯 → 通用失敗（15 分鐘 20 次輕量限流）
-  - 密碼啱 → 簽 sig 轉發 leaf；密碼本身**永不轉發**
+  - 密碼啱 → 改送 `action=superLogin` 落 leaf；密碼本身**永不轉發**
 - 保護 APP 管理 API：`/api/register`（旅團註冊）必須帶 `x-super-key` header（或 body `superKey`）
   - 未設定 → `503`（管理 API 停用，唔會變成公開註冊口）
   - 驗證失敗 → `403`
@@ -88,7 +83,7 @@ const SUPER_ADMIN_LOGIN = 'sheep';            // ← leaf 只有呢一行（＋�
 ## 五、紅線（唔好放寬）
 
 - `apikey` / `SUPER_KEY` / 超管密碼**值**永不回前端、永不入 URL、永不入 QR（`/api/*` 回應只可以有 boolean「有冇設定」）
-- **leaf GS 永不持有超管密碼**：唔准寫入 Script Property，亦唔准喺 `Code.gs` 寫死
+- **GS 唔好再放超管密碼**：唔准寫 Script Property、唔准寫死喺 `Code.gs`（舊部署跑一次 `initializeSheets()` 會自動清走）
 - GS **永不顯示**超管密碼；SETUP／initializeSheets／showApiKey 彈窗只顯示旅團要交嘅 API Key
 - proxy 一律丟棄前端自帶嘅 `apikey` / `backend`（SSRF 防線），由 registry（= 功能變數）注入
 - 功能變數值唔入 GitHub（Vercel Dashboard 設定就得）
@@ -101,7 +96,7 @@ const SUPER_ADMIN_LOGIN = 'sheep';            // ← leaf 只有呢一行（＋�
 - [ ] 旅團只交咗 3 樣（編號／部署 URL／API Key）——冇 SUPER_KEY
 - [ ] Vercel 功能變數：`SUPER_KEY` + `TROOP_<id>_BACKEND` / `_APIKEY` / `_NAME`（全部由 APP ADMIN 設定）
 - [ ] 已 Redeploy
-- [ ] leaf GS：`Code.gs` 只有 `sheep` 帳號名；**指令碼屬性冇 `SUPER_KEY`**（跑 `initializeSheets()` 會清）
+- [ ] leaf GS：`Code.gs` 只有 `sheep` 帳號名；指令碼屬性冇 `SUPER_KEY`
 - [ ] 用超管 `sheep` 登入一次（密碼 = Vercel `SUPER_KEY`）
 - [ ] 用普通領袖帳號確認見唔到超管（用戶管理／成員名單／操作紀錄）
 - [ ] `/api/health` 嘅 `envContract` 4 樣 boolean + `SUPER_KEY` 都係 true
@@ -123,7 +118,7 @@ A: 去 Vercel → Project → Settings → Environment Variables 睇 `SUPER_KEY`
 A: **唔會**（v5.8 起）。舊部署如果曾經設定過，跑一次新 `initializeSheets()` 會清走；清完之後旅團點搵都冇。
 
 **Q: 超管登入失敗，話「帳號或密碼錯誤」？**
-A: 三個可能：① 密碼錯；② Vercel 未設定 `SUPER_KEY`（去 Settings 睇）；③ 該旅團未設 `TROOP_<id>_APIKEY`（超管 sig 靠佢驗簽）。睇 `/api/health?troopId=0082` 嘅 `envContract` 就知邊樣未設。
+A: 三個可能：① 密碼錯；② Vercel 未設定 `SUPER_KEY`（去 Settings 睇）；③ 該旅團未設 `TROOP_<id>_APIKEY`（APP 用佢認自己人）。睇 `/api/health?troopId=0082` 嘅 `envContract` 就知邊樣未設。
 
 **Q: 旅團部 GS 未升級（仲係 v5.7 或之前）會點？**
 A: 普通功能照用；超管登入會失敗（後端唔識 `action=superLogin`）。叫旅團覆蓋最新 `Code.gs` → 部署「新版本」→ 跑一次 `initializeSheets()`。
@@ -136,4 +131,4 @@ A: 每旅團 3 個功能變數；`SUPER_KEY` 全 APP 一個（你一個人管晒
 
 ---
 
-COPYRIGHT 2026 Scout System - Vercel Env v10.0：全部功能變數由 APP ADMIN 設定；超管 = `sheep` + **只喺 Vercel 嘅** `SUPER_KEY`（leaf GS 完全冇）
+COPYRIGHT 2026 Scout System - Vercel Env v10.0：全部功能變數由 APP ADMIN 設定；超管 = `sheep` + 只喺 Vercel 嘅 `SUPER_KEY`

@@ -55,11 +55,10 @@ TROOP_0082_APIKEY：sc_xxxxxxxx
 
 - `apps-script/Code.gs`（v5.8）**只有一個常數**：`SUPER_ADMIN_LOGIN = 'sheep'`
 - **密碼只存在 Vercel 功能變數 `SUPER_KEY`**：GS 冇密碼、冇雜湊、冇 fallback、連 Script Property 都唔會讀
-- **登入流程（唯一入口）**：
+- **登入流程（就咁簡單）**：
   1. 前端「登入」→ `/api/proxy`
-  2. Vercel 就地比對 `SUPER_KEY`（timing-safe；密碼唔會離開 Vercel，亦唔會落 GS）
-  3. 用該旅團 `TROOP_<id>_APIKEY` 簽一張 ≤10 分鐘 sig → 送 `action=superLogin` 落 leaf
-  4. leaf 用自己 `getApiKey()` 驗簽 → 發超管 token（虛擬帳號，唔寫 Users 表）
+  2. Vercel 比對 `SUPER_KEY`（密碼唔會離開 Vercel，亦唔會落 GS）
+  3. 通過就送 `action=superLogin` 落 leaf（apikey 由 server 端注入）→ leaf 發超管 token
 - 未設定 `SUPER_KEY` → 超管完全登入唔到（冇任何後備密碼）
 - **改超管密碼**：Vercel → Settings → Environment Variables → `SUPER_KEY` → Redeploy（系統唔會喺 leaf 改）
 - 超管登入失敗一律回同一句通用訊息（`帳號或密碼錯誤`），唔會透露隱藏帳戶存在
@@ -69,7 +68,7 @@ TROOP_0082_APIKEY：sc_xxxxxxxx
 ## 紅線
 
 - 旅團交嘅只有 3 樣；**唔好**叫旅團去 GS 彈出超管密碼交俾你（舊做法已作廢）
-- **唔好**喺 GS 指令碼屬性設定 `SUPER_KEY`（舊做法；旅團睇得到 = 冇隱藏）
+- **唔好**喺 GS 指令碼屬性放 `SUPER_KEY`（舊做法；旅團睇得到 = 冇隱藏）
 - 密碼／apikey／SUPER_KEY **值**：唔入 GitHub、唔回前端、唔入 URL / QR
 - `troops.json` / `data/troops.json` 已棄用（程式唔讀），設定一律喺 Vercel 功能變數
 

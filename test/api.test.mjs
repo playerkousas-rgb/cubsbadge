@@ -402,95 +402,44 @@ await check('health：envContract 回 4 樣 boolean，apikey／SUPER_KEY 值永�
 });
 
 // ============================================================
-console.log('\n=== v5.8 隱藏超管：SUPER_KEY 只存在 Vercel（leaf GS 永不持有）===');
+console.log('\n=== v5.8 隱藏超管：SUPER_KEY 只存在 Vercel，密碼永不落 GS ===');
 // ============================================================
-await check('super-login：SUPER_KEY 未設定 → 唔通，而且唔會回任何值（冇後備密碼）', async () => {
+await check('超管登入：SUPER_KEY 未設定 → 通用失敗（入口關閉，冇後備密碼）', async () => {
   clearEnv();
   process.env.TROOP_0082_BACKEND = 'https://script.google.com/macros/s/AKfycbTESTKEYXXXXXXXX/exec';
   process.env.TROOP_0082_APIKEY = 'sc_key_82';
-  const mod = freshModule('../api/super-login.js');
-  const out = await mod.handleSuperLogin({ troopId: '0082', loginId: 'sheep', password: 'anything' });
-  assert.equal(out.body.success, false);
+  const sa = freshModule('../api/_lib/superadmin.js');
+  const out = sa.verifySuperAdminLogin({ loginId: 'sheep', password: 'anything', clientKey: 't1' });
+  assert.equal(out.ok, false);
   assert.equal(out.body.error, '帳號或密碼錯誤', '要同普通登入失敗一模一樣');
   assert.ok(!JSON.stringify(out.body).includes('sc_key_82'), '唔可以洩露 apikey');
 });
 
-await check('super-login：非超管帳號完全唔行呢條路（唔會變成第二個登入口）', async () => {
+await check('超管登入：只認超管帳號；普通帳號完全唔行呢條路', async () => {
   clearEnv();
   process.env.SUPER_KEY = 'sk_admin_secret';
-  const mod = freshModule('../api/super-login.js');
-  assert.equal(mod.isSuperAdminLoginId('sheep'), true);
-  assert.equal(mod.isSuperAdminLoginId('sheep@cubbadge.local'), true);
-  assert.equal(mod.isSuperAdminLoginId('1234567890'), false);
-  assert.equal(mod.isSuperAdminLoginId('leader@example.org'), false);
-  const out = await mod.handleSuperLogin({ troopId: '0082', loginId: '1234567890', password: 'sk_admin_secret' });
-  assert.equal(out.body.success, false, '普通帳號就算打中 SUPER_KEY 都唔應該經呢條路');
+  const sa = freshModule('../api/_lib/superadmin.js');
+  assert.equal(sa.isSuperAdminLoginId('sheep'), true);
+  assert.equal(sa.isSuperAdminLoginId('sheep@cubbadge.local'), true);
+  assert.equal(sa.isSuperAdminLoginId('1234567890'), false);
+  assert.equal(sa.isSuperAdminLoginId('leader@example.org'), false);
+  const out = sa.verifySuperAdminLogin({ loginId: '1234567890', password: 'sk_admin_secret', clientKey: 't2' });
+  assert.equal(out.ok, false, '普通帳號就算打中 SUPER_KEY 都唔應該經呢條路');
 });
 
-await check('super-login：密碼錯 → 通用失敗；正確 → 用旅團 apikey 簽 sig 轉發 leaf（冇密碼落 GS）', async () => {
+await check('超管登入：密碼錯 → 通用失敗；值永不外洩', async () => {
   clearEnv();
-  const APKEY = 'sc_key_82_secret';
-  const SUPER = 'sk_admin_only_value';
-  process.env.TROOP_0082_BACKEND = 'https://script.google.com/macros/s/AKfycbTESTKEYXXXXXXXX/exec';
-  process.env.TROOP_0082_APIKEY = APKEY;
-  process.env.SUPER_KEY = SUPER;
-
-  const mod = freshModule('../api/super-login.js');
-  const bad = await mod.handleSuperLogin({ troopId: '0082', loginId: 'sheep', password: 'nope' });
-  assert.equal(bad.body.success, false);
-  assert.ok(!JSON.stringify(bad.body).includes(SUPER), 'SUPER_KEY 值洩漏咗！');
-  assert.ok(!JSON.stringify(bad.body).includes(APKEY), 'apikey 洩漏咗！');
-
-  let forwarded = null;
-  let forwardedUrl = '';
-  stubFetch([['script.google.com', async (u, o) => { forwardedUrl = u; forwarded = JSON.parse(o.body); return { body: { success: true, token: 'tok_1', user: { ymis: 'sheep', role: 'super_admin' }, via: 'app-admin-sig' } }; }]]);
-  try {
-    const ok = await mod.handleSuperLogin({ troopId: '82', loginId: 'sheep', password: SUPER });
-    assert.equal(ok.status, 200, JSON.stringify(ok.body));
-    assert.equal(ok.body.success, true);
-    assert.equal(ok.body.token, 'tok_1');
-    assert.equal(ok.body.user.role, 'super_admin');
-
-    assert.ok(forwarded, '應該轉發去 leaf GS');
-    assert.equal(forwarded.action, 'superLogin', 'GS 收嘅係 sig 登入，唔係密碼登入');
-    assert.equal(forwarded.payload.sub, 'sheep');
-    assert.equal(forwarded.payload.role, 'super_admin');
-    assert.equal(forwarded.payload.childId, '0082');
-    assert.ok(!Object.prototype.hasOwnProperty.call(forwarded, 'password'), '密碼唔可以落 leaf GS');
-    assert.ok(!Object.prototype.hasOwnProperty.call(forwarded, 'apikey'), 'apikey 唔需要落 leaf GS');
-    const rawForward = JSON.stringify(forwarded);
-    assert.ok(!rawForward.includes(SUPER), 'SUPER_KEY 唔可以出現喺轉發內容');
-    assert.ok(!rawForward.includes('nope'));
-
-    // sig 真係用「旅團 apikey」簽（leaf 用自己 key 驗）
-    const sigLib = require('../api/_lib/sig.js');
-    const v = sigLib.verifySig(APKEY, forwarded.payload, forwarded.sig);
-    assert.equal(v.ok, true, `sig 要驗得過: ${v.error}`);
-    assert.equal(v.scope.sub, 'sheep');
-    assert.equal(v.scope.role, 'super_admin');
-    assert.ok(forwarded.payload.exp - Math.floor(Date.now() / 1000) <= 30 * 60, 'exp 上限 30 分鐘');
-
-    // 回應本體唔可以帶密碼／apikey
-    const rawResp = JSON.stringify(ok.body);
-    assert.ok(!rawResp.includes(SUPER), '回應唔可以帶 SUPER_KEY');
-    assert.ok(!rawResp.includes(APKEY), '回應唔可以帶 apikey');
-  } finally { restoreFetch(); }
+  process.env.SUPER_KEY = 'sk_admin_only_value';
+  const sa = freshModule('../api/_lib/superadmin.js');
+  const bad = sa.verifySuperAdminLogin({ loginId: 'sheep', password: 'nope', clientKey: 't3' });
+  assert.equal(bad.ok, false);
+  assert.equal(bad.body.error, '帳號或密碼錯誤');
+  assert.ok(!JSON.stringify(bad.body).includes('sk_admin_only_value'), 'SUPER_KEY 值洩漏咗！');
+  const ok = sa.verifySuperAdminLogin({ loginId: 'sheep', password: 'sk_admin_only_value', clientKey: 't3' });
+  assert.equal(ok.ok, true, '正確密碼要通');
 });
 
-await check('super-login：旅團未登記 / 未設 APIKEY → 明確拒絕，唔會靜靜當成功', async () => {
-  clearEnv();
-  process.env.SUPER_KEY = 'sk_admin_x';
-  const mod = freshModule('../api/super-login.js');
-  const noTroop = await mod.handleSuperLogin({ troopId: '0082', loginId: 'sheep', password: 'sk_admin_x' });
-  assert.equal(noTroop.status, 404);
-
-  process.env.TROOP_0082_BACKEND = 'https://script.google.com/macros/s/AKfycbTESTKEYXXXXXXXX/exec';
-  const noKey = await mod.handleSuperLogin({ troopId: '0082', loginId: 'sheep', password: 'sk_admin_x' });
-  assert.equal(noKey.status, 503);
-  assert.ok(/TROOP_0082_APIKEY/.test(noKey.body.error), '要講明欠邊個功能變數');
-});
-
-await check('proxy：超管登入由 Vercel 處理（密碼永唔會轉發去 leaf GS）', async () => {
+await check('proxy：超管登入 → Vercel 比對 SUPER_KEY，之後只送 action=superLogin（冇密碼）', async () => {
   clearEnv();
   const APKEY = 'sc_key_82_secret';
   const SUPER = 'sk_admin_only_value';
@@ -498,23 +447,39 @@ await check('proxy：超管登入由 Vercel 處理（密碼永唔會轉發去 le
   process.env.TROOP_0082_APIKEY = APKEY;
   process.env.SUPER_KEY = SUPER;
   let forwarded = null;
-  stubFetch([['script.google.com', async (u, o) => { forwarded = { url: u, body: JSON.parse(o.body) }; return { body: { success: true, token: 'tok_2', user: { ymis: 'sheep', role: 'super_admin' }, via: 'app-admin-sig' } }; }]]);
+  stubFetch([['script.google.com', async (u, o) => {
+    forwarded = JSON.parse(o.body);
+    return { body: { success: true, token: 'tok_1', user: { ymis: 'sheep', role: 'super_admin' } } };
+  }]]);
   try {
     const handler = freshModule('../api/proxy.js');
-    const res = mockRes();
-    await handler(mockReq({ method: 'POST', body: { troopId: '0082', action: 'login', login_id: 'sheep', password: SUPER } }), res);
-    assert.equal(res.statusCode, 200, JSON.stringify(res.body));
-    assert.equal(res.body.success, true);
-    assert.equal(res.body.token, 'tok_2');
-    assert.ok(forwarded, '應該轉發 action=superLogin');
-    assert.equal(forwarded.body.action, 'superLogin');
-    assert.ok(!JSON.stringify(forwarded.body).includes(SUPER), '密碼唔可以到 leaf GS');
-    assert.ok(!JSON.stringify(forwarded.body).includes('"password"'), '唔可以有 password 欄位落 GS');
-    assert.ok(!JSON.stringify(res.body).includes(SUPER), '回應唔可以帶 SUPER_KEY');
+
+    // (a) 密碼錯：唔會打 leaf
+    const bad = mockRes();
+    await handler(mockReq({ method: 'POST', body: { troopId: '0082', action: 'login', login_id: 'sheep', password: 'nope' } }), bad);
+    assert.equal(bad.body.success, false);
+    assert.equal(bad.body.error, '帳號或密碼錯誤');
+    assert.equal(forwarded, null, '密碼錯唔應該打 leaf GS');
+
+    // (b) 密碼啱：轉發 action=superLogin + apikey 由 registry 注入（即係普通 server-to-server）
+    const ok = mockRes();
+    await handler(mockReq({ method: 'POST', body: { troopId: '82', action: 'login', login_id: 'sheep', password: SUPER } }), ok);
+    assert.equal(ok.statusCode, 200, JSON.stringify(ok.body));
+    assert.equal(ok.body.success, true);
+    assert.equal(ok.body.token, 'tok_1');
+
+    assert.ok(forwarded, '應該轉發去 leaf GS');
+    assert.equal(forwarded.action, 'superLogin');
+    assert.equal(forwarded.apikey, APKEY, 'apikey 由 proxy 注入（server 端）');
+    assert.ok(!Object.prototype.hasOwnProperty.call(forwarded, 'password'), '密碼唔可以落 leaf GS');
+    assert.ok(!Object.prototype.hasOwnProperty.call(forwarded, 'login_id'), '帳號唔需要落 leaf GS');
+    assert.ok(!JSON.stringify(forwarded).includes(SUPER), 'SUPER_KEY 唔可以出現喺轉發內容');
+    assert.ok(!JSON.stringify(ok.body).includes(SUPER), '回應唔可以帶 SUPER_KEY');
+    assert.ok(!JSON.stringify(ok.body).includes(APKEY), '回應唔可以帶 apikey');
   } finally { restoreFetch(); }
 });
 
-await check('proxy：普通帳號登入完全唔受影響（照舊直落 GS，唔會經 super-login）', async () => {
+await check('proxy：普通帳號登入完全唔受影響（照舊 action=login，唔會經超管閘）', async () => {
   clearEnv();
   process.env.TROOP_0082_BACKEND = 'https://script.google.com/macros/s/AKfycbTESTKEYXXXXXXXX/exec';
   process.env.TROOP_0082_APIKEY = 'sc_key_82';
@@ -528,6 +493,7 @@ await check('proxy：普通帳號登入完全唔受影響（照舊直落 GS，�
     assert.equal(res.statusCode, 200);
     assert.equal(forwarded.action, 'login', '普通帳號照舊送 action=login 落 GS');
     assert.equal(forwarded.login_id, '1234567890');
+    assert.equal(forwarded.password, 'abcd', '普通帳號密碼照舊交俾自己部 GS 驗');
     assert.equal(res.body.token, 'tok_3');
   } finally { restoreFetch(); }
 });

@@ -1,7 +1,8 @@
 // Vercel Serverless Function - Same-origin Proxy for Google Apps Script v2.2 (CubBadge aligned with ScoutBadge v5.2)
-// v5.8：超管（隱藏維護帳戶）登入由 Vercel 層比對 SUPER_KEY → 見 ./super-login.js
+// v5.8：超管（隱藏維護帳戶）密碼只喺 Vercel 比對（SUPER_KEY），之後改送 action=superLogin
+//       （apikey 由 registry 注入）—— 密碼永遠唔會轉發去 leaf GS。
 const { getTroopConfig, getRegistry, normalizeToPadded4, normalizeStripped } = require('./_lib/registry');
-const { handleSuperLogin, isSuperAdminLoginId } = require('./super-login');
+const { isSuperAdminLoginId, verifySuperAdminLogin } = require('./_lib/superadmin');
 
 /**
  * 敏感 action：一定要有 server 端 apikey 先可以轉發（BUILD.md §10 施工次序 1）。
@@ -54,27 +55,27 @@ module.exports = async function handler(req, res) {
 
     const rawTroopId = payload.troopId || payload.troopKey || payload.troop || (req.query && (req.query.troopId || req.query.u || req.query.troop)) || '0082';
     const troopId = String(rawTroopId).trim();
-    const action = payload.action || (req.query && req.query.action);
+    let action = payload.action || (req.query && req.query.action);
 
     if (!action) {
       return res.status(400).json({ success: false, error: 'Missing required parameter: action' });
     }
 
     // ── v5.8 隱藏超管：SUPER_KEY 只存在 Vercel 功能變數 ──────────────────
-    // 前端照舊送 {action:'login', login_id:'sheep', password}，但密碼只喺
-    // Vercel 比對（./super-login.js），**永遠唔會**轉發去 leaf GS：
-    // 旅團嘅 Sheet / Apps Script / Script Properties 由頭到尾都見唔到超管密碼。
-    // 認證成功後改用旅團 apikey 簽一張 10 分鐘 sig，GS 驗簽才發 token。
-    if (action === 'login' && isSuperAdminLoginId(payload.login_id)) {
+    // 前端照舊送 {action:'login', login_id:'sheep', password}，密碼只喺呢度比對，
+    // **永遠唔會**轉發去 leaf GS（旅團開 Sheet／Apps Script／指令碼屬性都見唔到）。
+    // 比對通過就改送 action=superLogin，apikey 照舊由 registry 注入。
+    const isSuperAdminRequest = payload.login_id && isSuperAdminLoginId(payload.login_id);
+    if (isSuperAdminRequest) {
       const clientKey = String((req.headers && (req.headers['x-forwarded-for'] || req.headers['x-real-ip'])) || '')
         .split(',')[0].trim() || 'anon';
-      const out = await handleSuperLogin({
-        troopId,
-        loginId: payload.login_id,
-        password: payload.password,
-        clientKey
-      });
-      return res.status(out.status).json(out.body);
+      const check = verifySuperAdminLogin({ loginId: payload.login_id, password: payload.password, clientKey });
+      if (!check.ok) return res.status(check.status).json(check.body);
+      // 通過：換成 server-to-server action，密碼即刻丟棄（唔會落 GS）
+      payload.action = 'superLogin';
+      action = 'superLogin';
+      delete payload.password;
+      delete payload.login_id;
     }
 
     const troopConfig = getTroopConfig(troopId);

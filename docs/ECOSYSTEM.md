@@ -154,7 +154,7 @@ GAS 端亦有對應嘅 `ecStatus` / `ecGetModules`（免 token,唔含敏感資�
 
 | 變數 | 用途 | 必需 |
 |---|---|---|
-| `SUPER_KEY` | APP ADMIN 設定嘅管理 key（= 維護帳戶密碼；**只存在 Vercel 功能變數，leaf GS 冇**）：① 保護 `/api/register` ② 超管登入時由 `api/super-login.js` 比對，之後用 leaf apikey 簽 sig（`action=superLogin`）俾 leaf 驗 | 管理 API／超管登入必需 |
+| `SUPER_KEY` | APP ADMIN 設定嘅管理 key（= 維護帳戶密碼；**只存在 Vercel 功能變數，leaf GS 冇**）：① 保護 `/api/register` ② 超管登入時喺 `/api/proxy` 比對，之後送 `action=superLogin` 落 leaf | 管理 API／超管登入必需 |
 | `TROOP_<id>_BACKEND` | 本 leaf `/exec` URL（後端GS 對應：部署 URL） | 是 |
 | `TROOP_<id>_APIKEY` | 本 leaf apikey（**只存 server**；後端GS 對應：Script Property `API_KEY`） | 敏感 action + sigLogin 必需 |
 | `TROOP_<id>_NAME` | 旅團名稱（後端GS 對應：Script Property `TROOP_NAME`） | 是 |

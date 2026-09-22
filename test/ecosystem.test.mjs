@@ -379,61 +379,40 @@ console.log('\n=== v5.8：超管隱藏（leaf 完全冇 SUPER_KEY）＋ APP ADMI
     assert.equal(jparse(b.handleLogin('sheep@cubbadge.local', 'sk_legacy_leftover')).success, false);
   });
 
-  check('超管登入正確路徑：APP ADMIN 層用本單位 API_KEY 簽 sig → action=superLogin → 發 token', () => {
+  check('超管登入正確路徑：APP 送 action=superLogin（apikey 由 server 注入）→ 發 token', () => {
     const b = buildBackend();
     const KEY = 'sc_unit82_apikey';
     b.PropertiesService.getScriptProperties().setProperty('API_KEY', KEY);
     b.setTroopId('0082');
-    // 呢步等於 Vercel /api/super-login 做嘅嘢：喺 Vercel 比對完 SUPER_KEY 之後簽 sig
-    const s = sigLib.signSig(KEY, { childId: '0082', sub: 'sheep', role: 'super_admin', children: [], target: 'progress', ttlSec: 600 });
-    const r = jparse(b.doPost({ postData: { contents: JSON.stringify({ action: 'superLogin', payload: s.payload, sig: s.sig }) } }));
+    // 呢步等於 Vercel /api/proxy 做嘅嘢：server 端比對完 SUPER_KEY 之後，
+    // 用注入嘅 apikey 送 action=superLogin（普通 server-to-server 呼叫）
+    const r = jparse(b.doPost({ postData: { contents: JSON.stringify({ action: 'superLogin', apikey: KEY }) } }));
     assert.equal(r.success, true, r.error);
     assert.ok(r.token, '應派發 token');
     assert.equal(r.user.ymis, 'sheep');
     assert.equal(r.user.role, 'super_admin');
-    assert.equal(r.via, 'app-admin-sig');
-    assert.equal(b.validateToken(r.token), 'sheep', 'token 要真係可以用');
-    // sig 內容／回應都唔應該有密碼
-    assert.ok(!JSON.stringify(r).includes('sk_legacy_leftover'));
+    assert.equal(r.via, 'app');
+    assert.equal(b.validateToken(r.token), 'sheep', 'token 真係可以用');
+    assert.ok(!JSON.stringify(r).includes('sk_legacy_leftover'), '回應唔應該有超管密碼');
+    assert.ok(!JSON.stringify(r).includes(KEY), '回應唔可以帶 apikey');
   });
-
-  check('超管 sig 防線：錯 key／改 role／過期／非超管 sub／跨單位 一律拒絕', () => {
+  check('超管閘門：冇 apikey／錯 apikey 一律唔發 token（前端唔可能自己叫）', () => {
     const b = buildBackend();
     const KEY = 'sc_unit82_apikey';
     b.PropertiesService.getScriptProperties().setProperty('API_KEY', KEY);
     b.setTroopId('0082');
-    const post = (payload, sig) => jparse(b.doPost({ postData: { contents: JSON.stringify({ action: 'superLogin', payload, sig }) } }));
-
-    const wrongKey = sigLib.signSig('other_unit_key', { childId: '0082', sub: 'sheep', role: 'super_admin', target: 'progress' });
-    assert.equal(post(wrongKey.payload, wrongKey.sig).success, false, '用第二個單位 key 簽唔應該通');
-
-    const good = sigLib.signSig(KEY, { childId: '0082', sub: 'sheep', role: 'super_admin', target: 'progress' });
-    assert.equal(post({ ...good.payload, role: 'admin' }, good.sig).success, false, '改 role 提權要失效');
-    assert.equal(post({ ...good.payload, sub: '9999999999' }, good.sig).success, false, '改 sub 要失效');
-
-    const otherSub = sigLib.signSig(KEY, { childId: '0082', sub: '1234567890', role: 'super_admin', target: 'progress' });
-    assert.equal(post(otherSub.payload, otherSub.sig).success, false, '只可以簽超管 sub，唔可以借路做其他帳號');
-
-    const far = Math.floor(Date.now() / 1000) + 24 * 3600;
-    const farPayload = { childId: '0082', sub: 'sheep', role: 'super_admin', children: [], target: 'progress', exp: far, jti: 'x' };
-    const farSig = b.ecHmac(KEY, b.ecCanonical(farPayload));
-    assert.equal(post(farPayload, farSig).success, false, 'exp 超過 30 分鐘要拒');
-
-    const expired = { childId: '0082', sub: 'sheep', role: 'super_admin', children: [], target: 'progress', exp: Math.floor(Date.now() / 1000) - 600, jti: 'y' };
-    assert.equal(post(expired, b.ecHmac(KEY, b.ecCanonical(expired))).success, false, '過期 sig 要拒');
-
-    const crossUnit = sigLib.signSig(KEY, { childId: '0015', sub: 'sheep', role: 'super_admin', target: 'progress' });
-    assert.equal(post(crossUnit.payload, crossUnit.sig).success, false, '跨單位 sig 要拒');
+    const post = (extra) => jparse(b.doPost({ postData: { contents: JSON.stringify({ action: 'superLogin', ...extra }) } }));
+    assert.equal(post({}).success, false, '冇 apikey 唔應該通');
+    assert.equal(post({ apikey: 'wrong_key' }).success, false, '錯 apikey 唔應該通');
+    assert.equal(post({ apikey: KEY, password: 'anything' }).success, true, 'apikey 啱就通（密碼本身就唔會落 GS）');
   });
-
   check('超管 sig 登入後台：可以睇到非超管睇唔到嘅嘢（角色真係 super_admin）', () => {
     const b = buildBackend();
     const KEY = 'sc_unit82_apikey';
     b.PropertiesService.getScriptProperties().setProperty('API_KEY', KEY);
     b.setTroopId('0082');
     b.initializeSheets();
-    const s = sigLib.signSig(KEY, { childId: '0082', sub: 'sheep', role: 'super_admin', target: 'progress' });
-    const login = jparse(b.doPost({ postData: { contents: JSON.stringify({ action: 'superLogin', payload: s.payload, sig: s.sig }) } }));
+    const login = jparse(b.doPost({ postData: { contents: JSON.stringify({ action: 'superLogin', apikey: KEY }) } }));
     const users = jparse(b.doPost({ postData: { contents: JSON.stringify({ action: 'getAllUsers', token: login.token }) } }));
     assert.equal(users.success, true, users.error);
     assert.ok(!JSON.stringify(users.users).includes('sheep'), '超管唔應該出現喺用戶清單');
@@ -490,7 +469,7 @@ console.log('\n=== v5.8：超管隱藏（leaf 完全冇 SUPER_KEY）＋ APP ADMI
     assert.ok(!JSON.stringify(r).includes(KEY), '回傳唔可以帶超管密碼');
   });
 
-  await checkAsync('端到端：Vercel /api/super-login（比對 SUPER_KEY）→ sig → leaf GS → 真 token', async () => {
+  await checkAsync('端到端：Vercel /api/proxy（比對 SUPER_KEY）→ action=superLogin → 真 leaf GS → 真 token', async () => {
     const APKEY = 'sc_unit82_real_apikey';
     const SUPER = 'sk_app_admin_secret';
     const b = buildBackend();
@@ -500,34 +479,41 @@ console.log('\n=== v5.8：超管隱藏（leaf 完全冇 SUPER_KEY）＋ APP ADMI
     process.env.TROOP_0082_APIKEY = APKEY;
     process.env.SUPER_KEY = SUPER;
 
+    let leafCalls = 0;
     const realFetch = global.fetch;
     global.fetch = async (url, opts) => {
-      // 呢個就係 leaf GS 收到嘅嘢：只可以係 action=superLogin + payload + sig（冇密碼）
+      leafCalls++;
       const callBody = JSON.parse(String(opts && opts.body));
       assert.equal(callBody.action, 'superLogin');
-      assert.ok(!Object.prototype.hasOwnProperty.call(callBody, 'password'), '密碼唔應該落到 leaf GS');
-      assert.ok(!JSON.stringify(callBody).includes(SUPER), 'SUPER_KEY 唔應該落到 leaf GS');
+      assert.equal(callBody.apikey, APKEY, 'apikey 由 proxy 注入');
+      assert.ok(!Object.prototype.hasOwnProperty.call(callBody, 'password'), '密碼唔應該落到 leaf');
+      assert.ok(!Object.prototype.hasOwnProperty.call(callBody, 'login_id'), '帳號唔需要落到 leaf');
+      assert.ok(!JSON.stringify(callBody).includes(SUPER), 'SUPER_KEY 唔應該落到 leaf');
       const out = b.doPost({ postData: { contents: String(opts && opts.body) } });
       const text = out.getContent();
       return { ok: true, status: 200, text: async () => text, json: async () => JSON.parse(text) };
     };
+    const mkRes = () => ({
+      statusCode: 200, headers: {},
+      setHeader(k, v) { this.headers[k] = v; return this; },
+      status(c) { this.statusCode = c; return this; },
+      json(d) { this.body = d; return this; }
+    });
     try {
-      delete require.cache[require.resolve('../api/super-login.js')];
-      const mod = require('../api/super-login.js');
-      const out = await mod.handleSuperLogin({ troopId: '82', loginId: 'sheep', password: SUPER });
-      assert.equal(out.body.success, true, JSON.stringify(out.body));
-      assert.equal(out.body.via, 'app-admin-sig');
-      assert.equal(out.body.user.role, 'super_admin');
-      assert.equal(b.validateToken(out.body.token), 'sheep', '真 token 要通過 leaf validateToken');
-      // 錯密碼：Vercel 就攔住，唔會打 leaf
-      let called = 0;
-      const spy = global.fetch;
-      global.fetch = async () => { called++; throw new Error('should not call'); };
-      try {
-        const bad = await mod.handleSuperLogin({ troopId: '82', loginId: 'sheep', password: 'wrong' });
-        assert.equal(bad.body.success, false);
-        assert.equal(called, 0, '密碼錯唔應該打 leaf GS');
-      } finally { global.fetch = spy; }
+      const proxy = require('../api/proxy.js');
+      const res = mkRes();
+      await proxy({ method: 'POST', query: {}, headers: {}, body: { troopId: '82', action: 'login', login_id: 'sheep', password: SUPER } }, res);
+      assert.equal(res.statusCode, 200, JSON.stringify(res.body));
+      assert.equal(res.body.success, true, JSON.stringify(res.body));
+      assert.equal(res.body.user.role, 'super_admin');
+      assert.equal(b.validateToken(res.body.token), 'sheep', '真 token 要通過 leaf validateToken');
+      assert.equal(leafCalls, 1, '成功路徑只打 leaf 一次');
+
+      const res2 = mkRes();
+      await proxy({ method: 'POST', query: {}, headers: {}, body: { troopId: '82', action: 'login', login_id: 'sheep', password: 'wrong' } }, res2);
+      assert.equal(res2.body.success, false);
+      assert.equal(res2.body.error, '帳號或密碼錯誤');
+      assert.equal(leafCalls, 1, '密碼錯唔應該再打 leaf GS');
     } finally {
       global.fetch = realFetch;
       delete process.env.TROOP_0082_BACKEND;
@@ -535,7 +521,6 @@ console.log('\n=== v5.8：超管隱藏（leaf 完全冇 SUPER_KEY）＋ APP ADMI
       delete process.env.SUPER_KEY;
     }
   });
-
   check('超管操作紀錄對非超管隱藏（帳號名都唔會出現）', () => {
     const b = buildBackend();
     b.initializeSheets();
