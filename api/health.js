@@ -31,12 +31,23 @@ module.exports = async function handler(req, res) {
     requestedTroopId: troopId,
     normalizedTroopId: normalized,
     troopFound: !!config,
-    // 功能變數契約（4樣）：只回「有冇設定」boolean，永不回值（apikey／SUPER_KEY 紅線）
+    // 功能變數契約（4樣）：只回「有冇設定」boolean，永不回值（apikey／SUPER_KEY 紅線；v5.8：SUPER_KEY 只喺 Vercel）
     envContract: {
       SUPER_KEY: superKeyConfigured(),
       [`TROOP_${normalized}_BACKEND`]: !!(config && config._env && config._env.backend),
       [`TROOP_${normalized}_APIKEY`]: !!(config && config._env && config._env.apikey),
       [`TROOP_${normalized}_NAME`]: !!(config && config._env && config._env.name)
+    },
+    // v5.8 超管（維護帳戶）契約：只回「點運作」，永不回任何值／帳號名
+    superLogin: {
+      verifiedAt: 'vercel',
+      verifies: 'SUPER_KEY（Vercel 功能變數；GS 永不持有）',
+      leafHandshake: 'POST <TROOP_BACKEND> {action:"superLogin", payload, sig} — sig = HMAC-SHA256(旅團 apikey, canonical)',
+      requiresConfigured: {
+        SUPER_KEY: superKeyConfigured(),
+        [`TROOP_${normalized}_APIKEY`]: !!(config && config._env && config._env.apikey)
+      },
+      gsHoldsSuperKey: false
     },
     config: config ? {
       name: config.name,
@@ -61,9 +72,9 @@ module.exports = async function handler(req, res) {
       steps: [
         '1. 檢查 /api/troops 是否包含 0082',
         '2. 檢查 /api/health?troopId=0082 的 troopFound 是否 true',
-        '3. 檢查 Vercel 環境變數 TROOP_0082_BACKEND / TROOP_0082_APIKEY / TROOP_0082_NAME 是否已設定（全部由 APP ADMIN 設定；另加全 APP 一個 SUPER_KEY）',
+        '3. 檢查 Vercel 環境變數 TROOP_0082_BACKEND / TROOP_0082_APIKEY / TROOP_0082_NAME 是否已設定（全部由 APP ADMIN 設定；另加全 APP 一個 SUPER_KEY）—— 維護帳戶登入需要 SUPER_KEY + 該旅團 _APIKEY（Vercel 用 apikey 簽 sig 俾 leaf 驗）',
         '4. 在 Google Apps Script 編輯器執行 diagnoseSheets() 查看缺失表',
-        '5. 執行 initializeSheets() 重建缺失工作表（只生成 API_KEY；SUPER_KEY 由 APP ADMIN 設定）',
+        '5. 執行 initializeSheets() 重建缺失工作表（只生成 API_KEY；SUPER_KEY 由 APP ADMIN 設定喺 Vercel，leaf 永不持有 —— 順手會清走舊版遺留嘅 SUPER_KEY property）',
         '6. 重新部署 Apps Script 為新版本，確保「任何人可存取」',
         '7. 檢查 Google Sheet 是否被誤刪除或只有 admin 一人'
       ]

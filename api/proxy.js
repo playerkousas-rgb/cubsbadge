@@ -1,5 +1,7 @@
-// Vercel Serverless Function - Same-origin Proxy for Google Apps Script v2.1 (CubBadge aligned with ScoutBadge v5.2)
+// Vercel Serverless Function - Same-origin Proxy for Google Apps Script v2.2 (CubBadge aligned with ScoutBadge v5.2)
+// v5.8：超管（隱藏維護帳戶）登入由 Vercel 層比對 SUPER_KEY → 見 ./super-login.js
 const { getTroopConfig, getRegistry, normalizeToPadded4, normalizeStripped } = require('./_lib/registry');
+const { handleSuperLogin, isSuperAdminLoginId } = require('./super-login');
 
 /**
  * 敏感 action：一定要有 server 端 apikey 先可以轉發（BUILD.md §10 施工次序 1）。
@@ -56,6 +58,23 @@ module.exports = async function handler(req, res) {
 
     if (!action) {
       return res.status(400).json({ success: false, error: 'Missing required parameter: action' });
+    }
+
+    // ── v5.8 隱藏超管：SUPER_KEY 只存在 Vercel 功能變數 ──────────────────
+    // 前端照舊送 {action:'login', login_id:'sheep', password}，但密碼只喺
+    // Vercel 比對（./super-login.js），**永遠唔會**轉發去 leaf GS：
+    // 旅團嘅 Sheet / Apps Script / Script Properties 由頭到尾都見唔到超管密碼。
+    // 認證成功後改用旅團 apikey 簽一張 10 分鐘 sig，GS 驗簽才發 token。
+    if (action === 'login' && isSuperAdminLoginId(payload.login_id)) {
+      const clientKey = String((req.headers && (req.headers['x-forwarded-for'] || req.headers['x-real-ip'])) || '')
+        .split(',')[0].trim() || 'anon';
+      const out = await handleSuperLogin({
+        troopId,
+        loginId: payload.login_id,
+        password: payload.password,
+        clientKey
+      });
+      return res.status(out.status).json(out.body);
     }
 
     const troopConfig = getTroopConfig(troopId);

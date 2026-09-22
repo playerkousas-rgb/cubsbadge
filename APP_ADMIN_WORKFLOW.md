@@ -1,8 +1,8 @@
-# APP ADMIN 工作流程 v9.0 — 同一個 APP 管晒所有旅團（功能變數全部由你設定）
+# APP ADMIN 工作流程 v10.0 — 同一個 APP 管晒所有旅團（功能變數全部由你設定）
 
 ## 一句講完
 
-**所有功能變數由 APP ADMIN（你）設定；旅團只交 3 樣資料（旅團編號 / 部署 URL / API Key），旅團唔會設定任何功能變數。**
+**所有功能變數由 APP ADMIN（你）設定；旅團只交 3 樣資料（旅團編號 / 部署 URL / API Key），旅團唔會設定任何功能變數，亦永遠睇唔到超管密碼。**
 
 ```
 [旅團 A] --\                                        /--> Vercel 功能變數（全部由你加）
@@ -23,9 +23,10 @@
 
 ## 旅團做（佢哋只做 3 步，唔會掂功能變數）
 
-1. 建新 Google Sheet → 擴充功能 → Apps Script → 貼 `apps-script/Code.gs` → 儲存
+1. 建新 Google Sheet → 擴充功能 → Apps Script → 貼 `apps-script/Code.gs`（v5.8）→ 儲存
 2. 執行 `initializeSheets()` → 授權
    - **只生成 API Key**（彈窗只顯示：旅團編號 / 部署 URL / API Key）
+   - 順手**清走舊版遺留喺指令碼屬性嘅 `SUPER_KEY`**（值只應該存在你嘅 Vercel）
    - 彈窗**永不顯示**超管帳號或任何密碼
 3. 部署為網頁應用程式（執行身分：我；存取：任何人）→ 交 3 樣俾你：
 
@@ -50,21 +51,28 @@ TROOP_0082_APIKEY：sc_xxxxxxxx
 
 ---
 
-## 超管帳號 `sheep`（唔會再放出來）
+## 超管帳號 `sheep`（leaf 完全冇密碼）
 
-- `apps-script/Code.gs` **只有兩行**：`SUPER_ADMIN_LOGIN = 'sheep'`、`SUPER_ADMIN_PASSWORD = 功能變數 SUPER_KEY`
-- 冇寫死密碼（`0728` 已完全移除）、冇自動生成、冇顯示功能；Vercel 同 leaf GS 用同一隻 `SUPER_KEY` 值
-- 未設定 → leaf 上超管入口完全關閉（唔會有任何後備密碼）
+- `apps-script/Code.gs`（v5.8）**只有一個常數**：`SUPER_ADMIN_LOGIN = 'sheep'`
+- **密碼只存在 Vercel 功能變數 `SUPER_KEY`**：GS 冇密碼、冇雜湊、冇 fallback、連 Script Property 都唔會讀
+- **登入流程（唯一入口）**：
+  1. 前端「登入」→ `/api/proxy`
+  2. Vercel 就地比對 `SUPER_KEY`（timing-safe；密碼唔會離開 Vercel，亦唔會落 GS）
+  3. 用該旅團 `TROOP_<id>_APIKEY` 簽一張 ≤10 分鐘 sig → 送 `action=superLogin` 落 leaf
+  4. leaf 用自己 `getApiKey()` 驗簽 → 發超管 token（虛擬帳號，唔寫 Users 表）
+- 未設定 `SUPER_KEY` → 超管完全登入唔到（冇任何後備密碼）
+- **改超管密碼**：Vercel → Settings → Environment Variables → `SUPER_KEY` → Redeploy（系統唔會喺 leaf 改）
+- 超管登入失敗一律回同一句通用訊息（`帳號或密碼錯誤`），唔會透露隱藏帳戶存在
 - 超管唔會出現喺：Users 表、用戶管理、成員名單、全團總覽、**操作紀錄**（非超管見唔到）
-- 超管「改密碼」只寫入功能變數、永不回顯；記得同步更新 Vercel `SUPER_KEY`
 - GS 彈窗（`initializeSheets()` / `showApiKey()` / `showVercelEnv()`）只顯示旅團要交嘅 3 樣，永不顯示超管密碼
 
 ## 紅線
 
 - 旅團交嘅只有 3 樣；**唔好**叫旅團去 GS 彈出超管密碼交俾你（舊做法已作廢）
+- **唔好**喺 GS 指令碼屬性設定 `SUPER_KEY`（舊做法；旅團睇得到 = 冇隱藏）
 - 密碼／apikey／SUPER_KEY **值**：唔入 GitHub、唔回前端、唔入 URL / QR
 - `troops.json` / `data/troops.json` 已棄用（程式唔讀），設定一律喺 Vercel 功能變數
 
-詳情見 `VERCEL_ENV_SETUP.md`（v9.0）。
+詳情見 `VERCEL_ENV_SETUP.md`（v10.0）與 `docs/CHANGE_LOG_v5.8.md`。
 
 COPYRIGHT 2026 Scout System

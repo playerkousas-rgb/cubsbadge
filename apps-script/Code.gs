@@ -14,13 +14,18 @@
 //     Progress claims & other badges are unchanged: after approval only leaders may edit.
 //   - handleLoad 回應新增 logRequests + logRequestsSupported
 //   - 修復 handleSaveLogRecord setValues 欄數不符（13→12）的既有 bug / fix setValues column-count bug
-// 超管 SHEEP（v5.7 收緊：帳號名 'sheep' 係程式碼唯一見到嘅嘢）／Super-admin SHEEP (v5.7 tighten):
-//   - 本檔只有兩行：SUPER_ADMIN_LOGIN = 'sheep'、SUPER_ADMIN_PASSWORD = 功能變數 SUPER_KEY。
-//     Only two things: SUPER_ADMIN_LOGIN = 'sheep' and the password = SUPER_KEY property. No hardcoded password.
-//   - 超管密碼 = 功能變數 SUPER_KEY（APP ADMIN 設定；未設定 = 完全登入唔到，冇寫死密碼、冇 fallback）。
-//     The super-admin password = the SUPER_KEY script property (set by the APP ADMIN; unset = no login).
-//   - 本檔永不生成、永不顯示、永不回傳超管密碼（showSuperKey() 已移除；showApiKey()／initializeSheets() 只顯示旅團要交嘅 API KEY）。
-//     This file never generates / prints / returns the super-admin password.
+// 超管 SHEEP（v5.8 定版：leaf 完全冇超管密碼）／Super-admin SHEEP (v5.8 — the leaf holds NO super-admin password):
+//   - 本檔只有一個常數：SUPER_ADMIN_LOGIN = 'sheep'（＋由它衍生嘅內部電郵）。冇密碼、冇雜湊、冇 fallback。
+//     The only super-admin thing in this file is the NAME ('sheep'), never a password / hash / fallback.
+//   - 超管密碼（SUPER_KEY）只存在 APP ADMIN 嘅 **Vercel 功能變數**：
+//       本檔永不讀取、永不寫入、永不顯示、永不回傳 —— 連 Script Properties 都唔會用（就算有都會清走）。
+//     The password (SUPER_KEY) lives ONLY in the APP ADMIN's Vercel env vars: never read / written / printed here.
+//   - 超管登入（唯一入口）：APP（Vercel /api/super-login）比對 SUPER_KEY → 用本單位 apikey 簽一張短效 sig
+//       落 action=superLogin；本檔用自己 getApiKey() 驗簽，驗到就發 token。密碼由頭到尾唔會到 leaf。
+//     Super-admin login: the APP (Vercel) verifies SUPER_KEY, signs a short-lived sig with THIS unit's apikey
+//       and posts action=superLogin; the leaf only verifies the signature (HMAC with its own API_KEY) → token.
+//   - 即係話：旅團開 GS 專案設定／指令碼屬性、或者改自己部 GS，都永遠睇唔到超管密碼。
+//     Troops cannot read the super-admin password from the sheet, the script or Script Properties.
 //   - Users 表／用戶管理／成員名單不會出現 sheep（getUser 虛擬帳號；getAllUsers/getMembers 排除；操作紀錄亦對非超管隱藏）。
 //     sheep never appears in the Users sheet / user management / member list (its audit rows are hidden from non-super users too).
 //   - 防護保留：sheep 不能被停用／重設密碼／改角色／申請／批量開戶佔用保留帳號
@@ -47,40 +52,48 @@
 //   5) 修復 getUser(null) 在空值上呼叫 toString 的潛在崩潰。
 //   無新工作表、無新欄位：覆蓋 Code.gs 並重新部署即可。
 // v5.5 功能變數契約（後端GS ↔ Vercel 環境變數；設定全部指向功能變數，唔再指向 JSON）：
-//   ★ 誰設定什麼（v5.7 定死）：
+//   ★ 誰設定什麼（v5.8 定死）：
 //     - 旅團（leaf 部署者）只做 3 樣：① 部署 GS ② 跑 initializeSheets() 拎 API KEY ③ 把「旅團編號 + 部署 URL + API KEY」交 APP ADMIN
 //     - APP ADMIN（Vercel Project 維護者）設定全部功能變數：SUPER_KEY + TROOP_<id>_BACKEND / _APIKEY / _NAME
-//   SUPER_KEY            ↔ 超管密碼（SUPER_ADMIN_PASSWORD = 功能變數 SUPER_KEY）：
-//                          APP ADMIN 喺 Vercel／GS Script Properties 設定；未設定 = leaf 上超管登入完全關閉。
-//                          GS 永不生成、永不顯示、永不回傳此值（要睇／要改：GS 編輯器 → 專案設定 → 指令碼屬性）。
+//   SUPER_KEY            ↔ 超管密碼（只喺 APP ADMIN 嘅 Vercel 功能變數；GS 永不讀寫）：
+//                          APP ADMIN 喺 Vercel 設定；未設定 = 超管登入完全關閉（冇後備、冇預設值）。
+//                          leaf 唔會讀、唔會寫、唔會顯示、唔會回傳此值（連 Script Properties 都唔會用）。
 //   TROOP_<id>_BACKEND   ↔ 部署 URL（/exec；由旅團提供，APP ADMIN 入 Vercel）
 //   TROOP_<id>_APIKEY    ↔ Script Property 'API_KEY'（旅團跑 initializeSheets 自動生成，交 APP ADMIN）
+//                          同時係「超管 sig」嘅驗簽鑰匙：Vercel 用同一隻值簽，leaf 用自己嘅 key 驗
 //   TROOP_<id>_NAME      ↔ 旅團名稱（APP ADMIN 喺 Vercel 設定）
-//   - 「改密碼」（超管本人）= setSuperKey(新密碼)：只寫入，永不回顯；記得同步更新 Vercel 功能變數 SUPER_KEY
+//   - 「改密碼」（超管本人）= 喺 Vercel 改 SUPER_KEY（GS 冇得改：本檔冇、亦唔應該有超管密碼）
 //   - showApiKey()／showVercelEnv()：只顯示旅團要交嘅 3 樣（編號／URL／API KEY），永不顯示超管密碼
 // v5.6 下游配套（BUILD.md §1+§2 身份錨點+入口開關+JSON含hash）：
 //   - 下游入口開關 ALLOW_LOCAL_LOGIN（上游控、下游寫）：setDownstreamAccess({allowLocal}) 只可經上游 sig 修改；doPost 本地入口受此旗控，預設 true 單用唔會誤閂
 //   - JSON 吐出 exportAll（含 hash+salt 可選）+ 直插匯入 importAll/upsertUser（保留密碼 hash 直插，transferId 冪等 + sha256 驗 + 撞號阻擋）
 //   - 密碼同步 setPw / verifyPw（分開 leaf 時支部改密同步落進度，分批 verifyPw 核對，限流 5/小時）
 //   - 未有上游時多餘、有上游時直接可用；全部新增無改動既有 action，完全向下兼容
-// v5.7 設定契約更正（誰設定什麼）+ 超管真正隱藏：
+// v5.7 設定契約更正（誰設定什麼）+ 超管隱藏第一步：
 //   - 更正 v5.5／v5.6 寫錯：功能變數**唔係由旅團設定**
 //       旅團（leaf）只做 3 樣：① 部署 GS ② 跑 initializeSheets()（只生成 API KEY）③ 交「旅團編號 + 部署 URL + API KEY」俾 APP ADMIN
 //       APP ADMIN 喺 Vercel 設定**全部**功能變數：SUPER_KEY + TROOP_<id>_BACKEND / _APIKEY / _NAME
-//   - 超管 sheep：本檔只有兩行 —— SUPER_ADMIN_LOGIN = 'sheep'；SUPER_ADMIN_PASSWORD = 功能變數 SUPER_KEY（APP ADMIN 設定）
+//   - 超管 sheep：本檔只有帳號名 —— SUPER_ADMIN_LOGIN = 'sheep'
 //       ❌ 移除：寫死密碼常數、雜湊後備 property、ensureSuperKey()（自動生成）、showSuperKey()（顯示密碼）
-//       ✅ 只保留：superKeyConfigured()（只回 boolean）
-//       ✅ 未設定 = 超管完全登入唔到；登入失敗回同一句通用訊息，唔會透露隱藏帳戶
+//       ✅ 登入失敗回同一句通用訊息，唔會透露隱藏帳戶
 //       ✅ GS 永不顯示／回傳超管密碼；initializeSheets()／showApiKey()／showVercelEnv() 只顯示旅團要交嘅 3 樣
 //       ✅ 超管操作紀錄對非超管隱藏（handleGetAuditLog(viewer)）
-//   - 全部既有 action 無改動，向下兼容（惟舊部署升級後 leaf 超管入口會關閉，屬預期）
+// v5.8 超管真正隱藏（本檔唔再持有 SUPER_KEY）：
+//   - ❌ 移除：SUPER_KEY_PROP / getSuperAdminPassword() / getSuperKey() / setSuperKey() / superPasswordMatches()
+//       同埋「密碼 = Script Property」呢條路 —— 因為旅團開「⚙ 專案設定 → 指令碼屬性」就睇到，等於冇隱藏。
+//   - ✅ 唯一入口：action=superLogin + payload + sig（HMAC-SHA256(本單位 API_KEY, canonical)），
+//       由 APP ADMIN 層（Vercel /api/super-login，喺嗰度比對 SUPER_KEY）簽發；本檔只驗簽，永不知密碼。
+//   - ✅ superKeyConfigured() 永遠回 false（leaf 冇、亦唔應該有）；initializeSheets() 會清走舊部署遺留嘅 SUPER_KEY property。
+//   - ✅ handleLogin 收到超管帳號但冇有效 sig → 回「找不到此帳號」（同普通唔存在帳號一樣，唔會洩露隱藏帳戶）
+//   - ✅ 超管「改密碼」：喺 Vercel → Settings → Environment Variables 改 SUPER_KEY（GS 永不寫入）
+//   - 全部既有 action 無改動，向下兼容（惟舊部署升級後，leaf 上「用密碼登入超管」永久關閉，屬預期）
 // ============================================================
 
 const ADMIN_YMIS = '1111111111';
 // SHEEP 是隱藏維護帳戶：程式碼只有帳號名，冇密碼
 // SHEEP is the hidden maintenance account: only the NAME lives in code, never a password.
 // - 只存在於後端（getUser 虛擬帳號），不寫入 Users 表、不出現在用戶管理／成員名單
-// - SUPER_ADMIN_PASSWORD = 功能變數 SUPER_KEY（未設定 = 登入唔到；呢度冇寫死任何密碼）
+// - 密碼（SUPER_KEY）只喺 APP ADMIN 嘅 Vercel 功能變數；本檔冇密碼可比對，只認 APP ADMIN 層嘅 sig
 const SUPER_ADMIN_LOGIN = 'sheep';
 // 內部電郵由帳號名衍生（唯一用途：保留帳號檢查／電郵登入兼容），唔涉及任何憑證
 const SUPER_ADMIN_EMAIL = SUPER_ADMIN_LOGIN + '@cubbadge.local';
@@ -124,27 +137,34 @@ function getApiKey() {
 
 // ===== 功能變數契約（後端GS ↔ Vercel 環境變數）=====
 // 後端GS 嘅 Script Properties 同 Vercel 環境變數一一對應（兩邊同一隻值）：
-//   超管密碼              ↔ SUPER_ADMIN_PASSWORD = 功能變數 SUPER_KEY（Script Property）← APP ADMIN 設定，GS 只讀，永不顯示
+//   超管密碼              ↔ SUPER_KEY（**只喺 APP ADMIN 嘅 Vercel 功能變數**；leaf 永不讀寫、永不顯示）
+//                          超管登入靠：Vercel 用本單位 apikey 簽 sig → action=superLogin → 本檔驗簽發 token
 //   TROOP_<id>_BACKEND   ↔ 部署 URL（getScriptUrl()，部署為網頁應用程式後 /exec 結尾嗰條）
 //   TROOP_<id>_APIKEY    ↔ getApiKey()     Script Property 'API_KEY'（旅團 initializeSheets 生成，交 APP ADMIN）
 //   TROOP_<id>_NAME      ↔ getTroopName()  Script Property 'TROOP_NAME'（APP ADMIN 層）
-// 一切設定指向功能變數（唔再寫死、唔再指向 JSON）。
-const SUPER_KEY_PROP = 'SUPER_KEY';
+// 一切設定指向功能變數（唔再寫死、唔再指向 JSON），而超管密碼一律唔會出現喺 leaf。
 const TROOP_NAME_PROP = 'TROOP_NAME';
 const TROOP_ID_PROP = 'TROOP_ID';
-// SUPER_ADMIN_PASSWORD = 功能變數 SUPER_KEY（唯一來源；未設定 = 登入唔到，呢度冇寫死任何密碼）
-// SUPER_ADMIN_PASSWORD = the SUPER_KEY script property (the only source; unset means no login).
-function getSuperAdminPassword() {
-  try { return PropertiesService.getScriptProperties().getProperty(SUPER_KEY_PROP) || ''; }
-  catch (e) { return ''; }
-}
-function getSuperKey() { return getSuperAdminPassword(); }   // 別名（內部沿用）
-/** 功能變數 SUPER_KEY 有冇設定（只回 boolean，永不回值）。 */
-function superKeyConfigured() { return !!getSuperAdminPassword(); }
-/** 寫入超管功能變數（只寫不讀；由超管本人「改密碼」觸發）。 */
-function setSuperKey(v) {
-  PropertiesService.getScriptProperties().setProperty(SUPER_KEY_PROP, String(v || ''));
-  return true;
+const SUPER_KEY_PROP = 'SUPER_KEY';
+// v5.8：本檔冇「超管密碼」呢個概念 —— 只認 APP ADMIN 層簽發嘅 sig（見 handleSuperLoginSig）。
+/**
+ * v5.8：leaf 永不持有 SUPER_KEY —— 永遠回 false（值只存在 APP ADMIN 嘅 Vercel 功能變數）。
+ * 保留呢個函數只為舊呼叫點／診斷顯示用：它**永遠唔會**讀取或回傳任何值。
+ */
+function superKeyConfigured() { return false; }
+/** v5.8：leaf 永不寫入 SUPER_KEY（超管改密碼請喺 Vercel 改）。回 false 表示「唔關 leaf 事」。 */
+function setSuperKey() { return false; }
+/**
+ * v5.8：清走舊部署遺留喺 Script Properties 嘅 SUPER_KEY（值只應該存在 Vercel）。
+ * 由 initializeSheets() 自動叫；清完只回 boolean，永不顯示值。
+ */
+function purgeLegacySuperKeyProperty() {
+  try {
+    const props = PropertiesService.getScriptProperties();
+    if (props.getProperty(SUPER_KEY_PROP) === null) return false;
+    props.deleteProperty(SUPER_KEY_PROP);
+    return true;
+  } catch (e) { return false; }
 }
 function getTroopId() {
   return PropertiesService.getScriptProperties().getProperty(TROOP_ID_PROP) || '';
@@ -182,15 +202,15 @@ function vercelEnvLines() {
 }
 /**
  * 顯示「旅團交俾 APP ADMIN」嘅 3 樣（編號／URL／API KEY）+ 提醒誰設定什麼。
- * 超管密碼（SUPER_KEY）永不顯示 —— 只回 boolean「有冇設定」。
+ * v5.8：超管密碼（SUPER_KEY）只喺 APP ADMIN 嘅 Vercel 功能變數 —— 本檔冇、亦永遠唔會顯示。
  */
 function showVercelEnv() {
   const lines = vercelEnvLines();
   const msg = '交俾 APP ADMIN 嘅資料（旅團只做呢 3 樣）：\n\n' + lines.join('\n') +
     '\n\n旅團提交：旅團編號 + 部署 URL + API KEY（就係上面 3 樣）。\n' +
     'APP ADMIN 喺 Vercel 設定全部功能變數：SUPER_KEY + TROOP_<編號>_BACKEND / _APIKEY / _NAME。\n\n' +
-    '⚠️ 超管功能變數 SUPER_KEY：' + (superKeyConfigured() ? '已設定（值永不顯示）' : '未設定') +
-    '；本檔永不生成、永不顯示、永不回傳超管密碼。';
+    '⚠️ 超管（維護帳戶）：本檔冇、亦永遠唔會持有超管密碼 —— 密碼只喺 APP ADMIN 嘅 Vercel 功能變數；\n' +
+    '   超管登入一律經 APP（Vercel）驗證，再用本單位 API KEY 簽 sig 落 action=superLogin。';
   const ui = SpreadsheetApp.getUi();
   if (ui) ui.alert('旅團登記資料（交 APP ADMIN）', msg, ui.ButtonSet.OK);
   Logger.log(msg);
@@ -258,7 +278,7 @@ function showApiKey() {
   if (ui) ui.alert('旅團登記資料（交 APP ADMIN）',
     'API Key：\n\n' + apiKey + '\n\n' + vercelEnvLines().join('\n') +
     '\n\n旅團只交：旅團編號 + 部署 URL + API KEY。\nAPP ADMIN 喺 Vercel 設定全部功能變數：SUPER_KEY + TROOP_<編號>_BACKEND / _APIKEY / _NAME。\n\n' +
-    '⚠️ 超管密碼（SUPER_KEY）唔會喺呢度顯示：本檔永不生成、永不顯示、永不回傳超管密碼。',
+    '⚠️ 超管（維護帳戶）密碼（SUPER_KEY）只喺 APP ADMIN 嘅 Vercel 功能變數：本檔冇、唔會讀、唔會寫、唔會顯示。',
     ui.ButtonSet.OK);
   Logger.log('API Key: ' + apiKey);
   return apiKey;
@@ -561,9 +581,12 @@ function initializeSheets() {
   }
 
   const apiKey = getApiKey();
-  // v5.7：本函數只生成 API KEY（旅團要交俾 APP ADMIN 嘅嘢）。
-  // 超管密碼／其他功能變數一律唔會喺 GS 生成或顯示 —— SUPER_KEY 由 APP ADMIN 設定（GS 專案設定 → 指令碼屬性）。
-  // v5.7: only the API KEY is generated here. SUPER_KEY (super-admin password) is set by the APP ADMIN, never here.
+  // v5.8：本函數只生成 API KEY（旅團要交俾 APP ADMIN 嘅嘢）。
+  // 超管密碼（SUPER_KEY）永不喺 leaf 出現 —— 只存在 APP ADMIN 嘅 Vercel 功能變數。
+  // 順手清走舊部署（v5.5-v5.7）遺留喺指令碼屬性嘅 SUPER_KEY，否則旅團開「專案設定」就睇得到。
+  // v5.8: only the API KEY is generated here. Any legacy SUPER_KEY script property left over from
+  // older deployments is REMOVED (its value belongs in Vercel env vars, never in the leaf).
+  const purgedLegacySuperKey = purgeLegacySuperKeyProperty();
   // v5.6 下游入口開關：未設置時預設 true（單用唔會誤閂，有上游時才由上游 sig 控制）
   try {
     const _propsDown = PropertiesService.getScriptProperties();
@@ -573,19 +596,19 @@ function initializeSheets() {
   try{
     const ui=SpreadsheetApp.getUi();
     if(ui){
-      // v5.7：初始化彈窗只顯示「旅團要交俾 APP ADMIN 嘅資料」（編號／URL／API KEY）。
-      // 彈窗永不顯示超管密碼，亦唔會生成 SUPER_KEY。
-      // v5.7: the dialog shows only what the TROOP submits to the APP ADMIN; never the super-admin password.
+      // v5.8：初始化彈窗只顯示「旅團要交俾 APP ADMIN 嘅資料」（編號／URL／API KEY）。
+      // 彈窗永不顯示超管密碼（leaf 根本冇），亦唔會生成任何超管相關值。
+      // v5.8: the dialog shows only what the TROOP submits to the APP ADMIN; the leaf never holds the password.
       if(!getTroopId()){
         try{
           const r=ui.prompt('旅團編號','功能變數命名用 TROOP_0082_BACKEND 呢種格式。\n請輸入旅團編號（例如 0082）：',ui.ButtonSet.OK_CANCEL);
           if(r.getSelectedButton()===ui.Button.OK && String(r.getResponseText()||'').trim()) setTroopId(r.getResponseText());
         }catch(e){}
       }
-      ui.alert('✅ 初始化完成！\n\nSheets：進度追蹤、成員名單、Users、Applications、Tokens、SystemConfig、待批完成、其他獎章、服務紀錄、操作紀錄、活動履歷、待批履歷\n\n👤 預設管理員 YMIS: '+ADMIN_YMIS+'（首次登入密碼：'+ADMIN_PASS+'，首次登入強制改密）\n\n📤 交俾 APP ADMIN 嘅資料（旅團只交呢 3 樣）：\n'+vercelEnvLines().join('\n')+'\n\nAPP ADMIN 會喺 Vercel 設定全部功能變數：SUPER_KEY + TROOP_<編號>_BACKEND / _APIKEY / _NAME。\n⚠️ 超管密碼（SUPER_KEY）由 APP ADMIN 設定：本檔永不生成、永不顯示、永不回傳超管密碼。\n詳情隨時再睇：showVercelEnv() / showApiKey()');
+      ui.alert('✅ 初始化完成！\n\nSheets：進度追蹤、成員名單、Users、Applications、Tokens、SystemConfig、待批完成、其他獎章、服務紀錄、操作紀錄、活動履歷、待批履歷\n\n👤 預設管理員 YMIS: '+ADMIN_YMIS+'（首次登入密碼：'+ADMIN_PASS+'，首次登入強制改密）\n\n📤 交俾 APP ADMIN 嘅資料（旅團只交呢 3 樣）：\n'+vercelEnvLines().join('\n')+'\n\nAPP ADMIN 會喺 Vercel 設定全部功能變數：SUPER_KEY + TROOP_<編號>_BACKEND / _APIKEY / _NAME。\n⚠️ 超管（維護帳戶）密碼（SUPER_KEY）只喺 APP ADMIN 嘅 Vercel 功能變數：本檔冇、唔會讀、唔會寫、唔會顯示。'+ (purgedLegacySuperKey ? '\n🗑️ 已清走舊版遺留喺指令碼屬性嘅 SUPER_KEY（值只應存在 Vercel）。' : '') +'\n詳情隨時再睇：showVercelEnv() / showApiKey()');
     }
   }catch(e){}
-  return {success:true,apiKey:apiKey,superKeyConfigured:superKeyConfigured(),scriptUrl:scriptUrl,troopId:getTroopId(),troopName:getTroopName()};
+  return {success:true,apiKey:apiKey,superKeyConfigured:superKeyConfigured(),superKeyHeldBy:'vercel-env',appAdminSigLogin:true,legacySuperKeyPurged:!!purgedLegacySuperKey,scriptUrl:scriptUrl,troopId:getTroopId(),troopName:getTroopName()};
 }
 
 // ===== 用戶查詢 =====
@@ -797,7 +820,8 @@ function doGet(e){
   }
   if(action==='health' || action==='diagnose' || action==='checkSheets'){
     const diag = diagnoseSheets();
-    return jsonResponse({success:true, action: action, diagnose: diag, apiKeyConfigured: !!getApiKey(), superKeyConfigured: !!getSuperKey(), allowLocalLogin: getAllowLocalLogin(), downstreamAccess: getAllowLocalLogin(), timestamp: now()});
+    // v5.8：leaf 永不持有 SUPER_KEY —— superKeyConfigured 永遠 false；真正嘅開關喺 Vercel（/api/health envContract）。
+    return jsonResponse({success:true, action: action, diagnose: diag, apiKeyConfigured: !!getApiKey(), superKeyConfigured: superKeyConfigured(), superKeyHeldBy: 'vercel-env', appAdminSigLogin: true, allowLocalLogin: getAllowLocalLogin(), downstreamAccess: getAllowLocalLogin(), timestamp: now()});
   }
   if(action==='getLoginMode') return jsonResponse({success:true,login_mode:'standalone', allowLocalLogin: getAllowLocalLogin()});
   // EC：接入口唯讀查詢（ecStatus 公開診斷；ecGetModules 申報本 leaf 有咩模組）
@@ -816,13 +840,14 @@ function doPost(e){
     // ===== 下游入口開關（上游控、下游寫；單用時保持開啟）=====
     // 未掛接前 ALLOW_LOCAL_LOGIN 預設 true；下游前端無此掣故唔會誤觸
     if (!getAllowLocalLogin()) {
-      // 本地入口（登入/開戶）閂咗時只接受：上游 sig、SUPER、或 server-to-server（apikey）放行
-      const isSuperLogin = (action==='login' && isSuperAdminId(body.login_id));
+      // 本地入口（登入/開戶）閂咗時只接受：上游 sig、或 server-to-server（apikey）放行
+      // v5.8：超管登入走 APP ADMIN 層 sig（action=superLogin + payload + sig），本身就帶 sig，
+      //       所以唔再需要「本地超管登入」呢個例外（leaf 冇密碼可比對，例外亦冇意義）。
       const hasSig = isSigRequest(body);
       const hasServerKey = !!(body.apikey && body.apikey===getApiKey());
-      const serverSyncActions = ['setDownstreamAccess','getDownstreamAccess','exportAll','importAll','upsertUser','setPw','verifyPw','ecSigLogin','ecStatus','ecGetModules','healthCheck','diagnoseSheets'];
+      const serverSyncActions = ['superLogin','setDownstreamAccess','getDownstreamAccess','exportAll','importAll','upsertUser','setPw','verifyPw','ecSigLogin','ecStatus','ecGetModules','healthCheck','diagnoseSheets'];
       if (action==='login' || action==='apply') {
-        if (!hasSig && !isSuperLogin) {
+        if (!hasSig) {
           return jsonResponse({success:false, error:'下游本地入口已關閉（ALLOW_LOCAL_LOGIN=false），請向上游申請經 sig 接入', code:'DOWNSTREAM_CLOSED', allowLocal:false});
         }
       } else if (serverSyncActions.indexOf(action) < 0) {
@@ -838,6 +863,13 @@ function doPost(e){
         }
       }
     }
+    // ===== v5.8：超管登入（唯一入口）=====
+    // leaf 冇、亦永遠唔應該有超管密碼，所以呢度冇「密碼比對」呢一步：
+    //   APP ADMIN 層（Vercel /api/super-login，喺嗰度比對功能變數 SUPER_KEY）
+    //   → 用本單位 apikey 簽 payload（sub=sheep, role=super_admin, exp≤30 分鐘）
+    //   → 送 action=superLogin 落嚟；本檔用自己 getApiKey() 驗簽 → 發超管 token。
+    // 密碼（SUPER_KEY）由頭到尾唔會離開 Vercel。
+    if(action==='superLogin') return handleSuperLoginSig(body);
     // 下游入口狀態查詢（無需 token，上游可隨時查詢）
     if(action==='getDownstreamAccess') return handleGetDownstreamAccess();
     if(action==='setDownstreamAccess') return handleSetDownstreamAccess(body);
@@ -1008,32 +1040,23 @@ function doPost(e){
 }
 
 // ===== 邏輯 =====
-// v5.7：超管密碼 100% 由功能變數（Script Property）SUPER_KEY 提供。
-//   - 本檔冇任何寫死密碼、冇任何 fallback。
-//   - SUPER_KEY 未設定 → 超管登入一律失敗（等於 leaf 上完全關閉維護帳戶入口）。
-//   - 比對用 timing-safe；回應一律用同一句通用訊息，唔會透露隱藏帳戶嘅存在或設定狀態。
-// v5.7: the super-admin password comes 100% from the SUPER_KEY script property — no hardcoded value,
-// no hash fallback, no default password. Unset SUPER_KEY simply means the hidden account cannot log in.
-function superPasswordMatches(plain){
-  const sk=getSuperAdminPassword();
-  if(!sk) return false;                       // 未設定 SUPER_KEY = 一律唔通（唔會退回去任何預設密碼）
-  return ecSafeEqual(String(plain||''), sk);
-}
+// v5.8：leaf 冇超管密碼，所以冇「本地超管登入」。
+//   - 本檔冇寫死密碼、冇雜湊、冇 Script Property、冇 fallback —— 連讀都唔會讀。
+//   - 超管密碼（SUPER_KEY）只存在 APP ADMIN 嘅 Vercel 功能變數；比對亦只喺 Vercel 做。
+//   - 超管入 leaf 嘅唯一方法：action=superLogin + payload + sig（見 handleSuperLoginSig）。
+// v5.8: the leaf holds no super-admin password at all — no constant, no hash, no script property, no fallback.
+// The password lives in the APP ADMIN's Vercel env var; only the Vercel layer compares it. The leaf grants the
+// hidden account a token solely on a valid APP-ADMIN sig (action=superLogin).
 function handleLogin(loginId,password){
   if(!loginId||!password) return jsonResponse({success:false,error:'請填寫帳號和密碼'});
-  // 隱藏維護帳戶：只有帳號名寫在本檔（'sheep'／其衍生內部電郵），密碼由功能變數 SUPER_KEY 提供。
-  // 帳號只存在於後端（getUser 虛擬帳號），不靠 Users 工作表，故 Users 表／用戶管理／成員名單都不會出現。
-  // Hidden maintenance account: only the NAME exists in this file; the password comes from the SUPER_KEY property.
-  // The account is backend-only (virtual getUser entry) and never appears in the Users sheet.
+  // 隱藏維護帳戶：只有帳號名寫在本檔（'sheep'／其衍生內部電郵），本檔冇密碼、亦唔會比對密碼。
+  // 想用超管身份登入，請經 APP 登入（前端 → Vercel /api/super-login → sig → action=superLogin）。
+  // 呢度收到超管帳號就當「查無此帳號」回應 —— 同一個唔存在嘅帳號一模一樣，唔會透露隱藏帳戶存在。
+  // Hidden maintenance account: only the NAME lives in this file; there is no password here to compare.
+  // A local password attempt on it is answered exactly like an unknown account (no oracle, no leak).
   if(isSuperAdminId(loginId)){
-    if(!superPasswordMatches(String(password))){
-      // 通用訊息：唔會透露「未設定 SUPER_KEY」定「密碼錯」，避免確認隱藏帳戶存在
-      Logger.log('super-admin login rejected (SUPER_KEY configured=' + superKeyConfigured() + ')');
-      return jsonResponse({success:false,error:'帳號或密碼錯誤'});
-    }
-    const su=getUser(SUPER_ADMIN_LOGIN);
-    try{ PropertiesService.getScriptProperties().setProperty('SUPER_ADMIN_LAST_LOGIN', now()); }catch(e){}
-    return jsonResponse({success:true,token:createToken(SUPER_ADMIN_LOGIN),user:su});
+    Logger.log('super-admin local password login refused (SUPER_KEY lives in Vercel env only; use action=superLogin sig)');
+    return jsonResponse({success:false,error:'找不到此帳號'});
   }
   let user=(/^\d{10}$/.test(loginId)||/^L\d+/.test(loginId))? getUser(loginId): getUserByEmail(loginId);
   if(!user){
@@ -1059,6 +1082,44 @@ function handleLogin(loginId,password){
   }
   return jsonResponse({success:false,error:'密碼錯誤'});
 }
+
+// ===== v5.8：超管 sig 登入（APP ADMIN 層簽發；leaf 只驗簽，永不見密碼）=====
+/**
+ * 驗「APP ADMIN 層」（Vercel /api/super-login）簽發嘅超管 sig，驗到就發 leaf token。
+ *
+ *   sig = HMAC-SHA256(本單位 API_KEY, canonical(payload))   ← 同 ecSigLogin／下游 sig 同一套
+ *   payload：{childId: 本單位, sub:'sheep', role:'super_admin', children:[], target:'progress', exp, jti}
+ *   exp 上限 30 分鐘（同 BUILD.md §2 一致）；過期／改欄／換 key 一律驗唔過。
+ *
+ * 點解安全：簽名鑰匙係「本單位 apikey」（Vercel 有、leaf 有）而唔係超管密碼 ——
+ * 超管密碼（SUPER_KEY）永遠留喺 Vercel：leaf 讀唔到、寫唔到、回唔到，旅團亦睇唔到。
+ * 超管帳號係 getUser() 嘅虛擬帳號：唔寫入 Users 表，唔會喺用戶管理／成員名單／操作紀錄出現。
+ */
+function handleSuperLoginSig(body){
+  body = body || {};
+  const payload = body.payload || {};
+  const sig = String(body.sig || '');
+  const deny = function(reason){ Logger.log('superLogin denied: ' + reason); return jsonResponse({success:false,error:'超管登入憑證無效'}); };
+
+  if(!getApiKey()) return jsonResponse({success:false,error:'SIG 未啟用：此單位未設定 API Key（TROOP_<編號>_APIKEY）'});
+  if(!sig || !body.payload) return deny('missing_sig');
+  if(!isDownstreamSigValid(payload, sig)) return deny('bad_sig_or_expired');
+
+  // scope 簽死喺 sig 內：只可以係本 leaf 嘅隱藏維護帳戶，唔可以借呢條路做其他帳號。
+  const sub = String(payload.sub || '').trim();
+  if(!isSuperAdminId(sub)) return deny('sub_not_super');
+  if(String(payload.role || '') !== 'super_admin') return deny('role_not_super');
+  const myId = getTroopId();
+  if(myId && !ecSameUnit(myId, payload.childId)) return deny('child_mismatch');
+
+  const su = getUser(SUPER_ADMIN_LOGIN);
+  const token = createToken(SUPER_ADMIN_LOGIN);
+  try{ PropertiesService.getScriptProperties().setProperty('SUPER_ADMIN_LAST_LOGIN', now()); }catch(e){}
+  try{ ecAccessLog(SUPER_ADMIN_LOGIN,'super_admin','app-admin','LOGIN_OK','jti='+String(payload.jti||'')); }catch(e){}
+  writeAudit(SUPER_ADMIN_LOGIN,'super_login',SUPER_ADMIN_LOGIN,'經 APP ADMIN（Vercel）sig 登入（leaf 冇持有超管密碼）');
+  return jsonResponse({success:true,token:token,user:su,via:'app-admin-sig'});
+}
+
 // v5.3.2：重設／直接設定密碼（領袖在用戶管理操作）：
 //   - managerUser：操作者（doPost 已驗證 token）；只可為「自己可管理角色」的用戶重設（支部領袖→成員……）
 //   - newPassword：留空＝預設 1234；填寫＝領袖直接指定新密碼（成員忘記密碼又無登記電郵時用）
@@ -1130,15 +1191,14 @@ function handleChangePassword(ymis,oldP,newP){
   const pwErr=passwordRuleError(newP);
   if(pwErr) return jsonResponse({success:false,error:pwErr});
   if(newP===String(oldP||'')) return jsonResponse({success:false,error:'新密碼不可與原密碼相同'});
-  // v5.2：超管 sheep 為後端虛擬帳號，密碼存於 Script Properties（不會寫入 Users 工作表）。
-  // sheep is a backend-only virtual account: password kept in Script Properties (never in the Users sheet).
-  // v5.5：新密碼寫入 SUPER_KEY（= Vercel 功能變數 SUPER_KEY，兩邊同一隻值）。
+  // v5.8：超管 sheep 係後端虛擬帳號，密碼只存在 APP ADMIN 嘅 Vercel 功能變數 SUPER_KEY ——
+  // leaf 冇密碼可比對、亦冇得寫，所以「改密碼」一律指返去 Vercel。本檔永不寫入、永不回顯任何超管密碼。
+  // v5.8: the super-admin password lives in the APP ADMIN's Vercel env var; the leaf has nothing to verify or
+  // write, so password changes are done in Vercel. Nothing here ever stores or echoes a super-admin password.
   if(isSuperAdminId(ymis)){
-    // v5.7：只寫入功能變數，永不回顯新密碼（回應只有 boolean／提示文字）
-    if(!superPasswordMatches(String(oldP||''))) return jsonResponse({success:false,error:'原密碼錯誤'});
-    setSuperKey(newP);
-    writeAudit(ymis,'change_password',ymis,'維護帳戶更改密碼（只寫入功能變數 SUPER_KEY，永不回顯）');
-    return jsonResponse({success:true,changed:true,message:'密碼已更新（只寫入後端功能變數 SUPER_KEY）；請由 APP ADMIN 同步更新 Vercel 功能變數 SUPER_KEY'});
+    writeAudit(ymis,'change_password_refused',ymis,'超管改密碼必須喺 Vercel 改（leaf 冇、亦唔會寫入超管密碼）');
+    return jsonResponse({success:false,changed:false,code:'SUPER_KEY_AT_APP_ADMIN',
+      error:'維護帳戶密碼只存在 APP ADMIN 嘅 Vercel 功能變數：請去 Vercel → Project → Settings → Environment Variables → SUPER_KEY 改，然後 Redeploy（本系統永不寫入、永不回顯）。'});
   }
   const sheet=getSheet().getSheetByName('Users'); const data=sheet.getDataRange().getValues();
   for(let i=1;i<data.length;i++){
@@ -2019,7 +2079,7 @@ function ecSigLogin(payload,sig){
 }
 
 // ---------- EC 狀態（俾上游／前端偵測本後端能力）----------
-var EC_BACKEND_VERSION='cub-5.7.0-leaf';
+var EC_BACKEND_VERSION='cub-5.8.0-leaf';
 function ecStatus(unitId){
   var ss=getSheet();
   return jsonResponse({
