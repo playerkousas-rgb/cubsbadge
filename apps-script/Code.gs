@@ -82,7 +82,7 @@ const ADMIN_YMIS = '1111111111';
 // SHEEP 是隱藏維護帳戶：程式碼只有帳號名，冇密碼
 // SHEEP is the hidden maintenance account: only the NAME lives in code, never a password.
 // - 只存在於後端（getUser 虛擬帳號），不寫入 Users 表、不出現在用戶管理／成員名單
-// - 密碼 100% 由功能變數（Script Property）SUPER_KEY 讀；未設定 = 登入唔到（冇寫死密碼、冇 fallback）
+// - 密碼 100% 由功能變數讀：SUPER_KEY（明文）或 SUPER_KEY_HASH（單向，建議）；兩者未設定 = 登入唔到（冇寫死密碼、冇 fallback）
 const SUPER_ADMIN_LOGIN = 'sheep';
 // 內部電郵由帳號名衍生（唯一用途：保留帳號檢查／電郵登入兼容），唔涉及任何憑證
 const SUPER_ADMIN_EMAIL = SUPER_ADMIN_LOGIN + '@cubbadge.local';
