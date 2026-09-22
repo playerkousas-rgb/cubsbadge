@@ -343,7 +343,7 @@ console.log('\n=== 向下兼容：舊 action 完全唔受影響 ===');
 }
 
 // ============================================================
-console.log('\n=== v5.8：超管隱藏（leaf 完全冇 SUPER_KEY）＋ APP ADMIN 層 sig 登入 ===');
+console.log('\n=== 超管隱藏（leaf 完全冇 SUPER_KEY）＋ APP ADMIN 層驗證 ===');
 // ============================================================
 {
   const SRC = readFileSync(path.join(__dirname, '..', 'apps-script', 'Code.gs'), 'utf8');
@@ -406,7 +406,7 @@ console.log('\n=== v5.8：超管隱藏（leaf 完全冇 SUPER_KEY）＋ APP ADMI
     assert.equal(post({ apikey: 'wrong_key' }).success, false, '錯 apikey 唔應該通');
     assert.equal(post({ apikey: KEY, password: 'anything' }).success, true, 'apikey 啱就通（密碼本身就唔會落 GS）');
   });
-  check('超管 sig 登入後台：可以睇到非超管睇唔到嘅嘢（角色真係 super_admin）', () => {
+  check('超管經 APP 登入後台：可以睇到非超管睇唔到嘅嘢（角色真係 super_admin）', () => {
     const b = buildBackend();
     const KEY = 'sc_unit82_apikey';
     b.PropertiesService.getScriptProperties().setProperty('API_KEY', KEY);
@@ -524,7 +524,7 @@ console.log('\n=== v5.8：超管隱藏（leaf 完全冇 SUPER_KEY）＋ APP ADMI
   check('超管操作紀錄對非超管隱藏（帳號名都唔會出現）', () => {
     const b = buildBackend();
     b.initializeSheets();
-    b.writeAudit('sheep', 'super_login', 'sheep', '維護帳戶經 APP ADMIN sig 登入');
+    b.writeAudit('sheep', 'super_login', 'sheep', '維護帳戶經 APP ADMIN 登入');
     b.writeAudit('1111111111', 'init', 'system', '初始化');
     const forAdmin = JSON.parse(b.handleGetAuditLog({ role: 'admin', ymis: '1111111111' }).getContent());
     assert.ok(!JSON.stringify(forAdmin.records).includes('sheep'), '非超管唔應該見到超管紀錄');

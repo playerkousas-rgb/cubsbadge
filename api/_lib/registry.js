@@ -1,5 +1,4 @@
-// Shared registry loader for multi-troop system - v3.0 功能變數契約（4樣）
-// (CubBadge aligned with ScoutBadge v5.2 → v5.5 env contract)
+// Shared registry loader for multi-troop system — 功能變數契約（4樣）
 //
 // 死規矩：旅團設定淨係「指向」Vercel 環境變數（功能變數），唔讀 JSON、唔內置 URL：
 //   SUPER_KEY            — APP ADMIN 設定嘅管理 key（保護 /api/register 等管理 API；Vercel 端唯一來源）

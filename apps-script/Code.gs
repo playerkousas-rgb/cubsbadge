@@ -693,7 +693,7 @@ function doGet(e){
   if(action==='health' || action==='diagnose' || action==='checkSheets'){
     const diag = diagnoseSheets();
     // leaf 永不持有 SUPER_KEY —— superKeyConfigured 永遠 false；真正嘅開關喺 Vercel（/api/health envContract）。
-    return jsonResponse({success:true, action: action, diagnose: diag, apiKeyConfigured: !!getApiKey(), superKeyConfigured: superKeyConfigured(), superKeyHeldBy: 'vercel-env', appAdminSigLogin: true, allowLocalLogin: getAllowLocalLogin(), downstreamAccess: getAllowLocalLogin(), timestamp: now()});
+    return jsonResponse({success:true, action: action, diagnose: diag, apiKeyConfigured: !!getApiKey(), superKeyConfigured: superKeyConfigured(), superKeyHeldBy: 'vercel-env', superAdminLoginVia: 'app', allowLocalLogin: getAllowLocalLogin(), downstreamAccess: getAllowLocalLogin(), timestamp: now()});
   }
   if(action==='getLoginMode') return jsonResponse({success:true,login_mode:'standalone', allowLocalLogin: getAllowLocalLogin()});
   // EC：接入口唯讀查詢（ecStatus 公開診斷；ecGetModules 申報本 leaf 有咩模組）

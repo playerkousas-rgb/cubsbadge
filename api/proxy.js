@@ -1,5 +1,5 @@
-// Vercel Serverless Function - Same-origin Proxy for Google Apps Script v2.2 (CubBadge aligned with ScoutBadge v5.2)
-// v5.8：超管（隱藏維護帳戶）密碼只喺 Vercel 比對（SUPER_KEY），之後改送 action=superLogin
+// Vercel Serverless Function - Same-origin Proxy for Google Apps Script
+// 超管（隱藏維護帳戶）密碼只喺 Vercel 比對（SUPER_KEY），之後改送 action=superLogin
 //       （apikey 由 registry 注入）—— 密碼永遠唔會轉發去 leaf GS。
 const { getTroopConfig, getRegistry, normalizeToPadded4, normalizeStripped } = require('./_lib/registry');
 const { isSuperAdminLoginId, verifySuperAdminLogin } = require('./_lib/superadmin');
@@ -61,7 +61,7 @@ module.exports = async function handler(req, res) {
       return res.status(400).json({ success: false, error: 'Missing required parameter: action' });
     }
 
-    // ── v5.8 隱藏超管：SUPER_KEY 只存在 Vercel 功能變數 ──────────────────
+    // ── 隱藏超管：SUPER_KEY 只存在 Vercel 功能變數 ──────────────────
     // 前端照舊送 {action:'login', login_id:'sheep', password}，密碼只喺呢度比對，
     // **永遠唔會**轉發去 leaf GS（旅團開 Sheet／Apps Script／指令碼屬性都見唔到）。
     // 比對通過就改送 action=superLogin，apikey 照舊由 registry 注入。

@@ -1,4 +1,4 @@
-// Health check endpoint - helps diagnose "找不到82的SHEET" issues v2.2 (CubBadge aligned with ScoutBadge v5.2)
+// Health check endpoint - helps diagnose "找不到82的SHEET" issues
 const { getRegistry, getTroopConfig, normalizeToPadded4, superKeyConfigured } = require('./_lib/registry');
 
 module.exports = async function handler(req, res) {
@@ -31,14 +31,14 @@ module.exports = async function handler(req, res) {
     requestedTroopId: troopId,
     normalizedTroopId: normalized,
     troopFound: !!config,
-    // 功能變數契約（4樣）：只回「有冇設定」boolean，永不回值（apikey／SUPER_KEY 紅線；v5.8：SUPER_KEY 只喺 Vercel）
+    // 功能變數契約（4樣）：只回「有冇設定」boolean，永不回值（apikey／SUPER_KEY 紅線：SUPER_KEY 只喺 Vercel）
     envContract: {
       SUPER_KEY: superKeyConfigured(),
       [`TROOP_${normalized}_BACKEND`]: !!(config && config._env && config._env.backend),
       [`TROOP_${normalized}_APIKEY`]: !!(config && config._env && config._env.apikey),
       [`TROOP_${normalized}_NAME`]: !!(config && config._env && config._env.name)
     },
-    // v5.8 超管（維護帳戶）契約：只回「點運作」，永不回任何值／帳號名
+    // 超管（維護帳戶）契約：只回「點運作」，永不回任何值／帳號名
     superLogin: {
       verifiedAt: 'vercel',
       verifies: 'SUPER_KEY（Vercel 功能變數；GS 永不持有）',

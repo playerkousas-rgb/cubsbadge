@@ -1,4 +1,4 @@
-// Vercel Serverless Function - 旅團配置 API v3.0 功能變數契約（4樣）
+// Vercel Serverless Function - 旅團配置 API（功能變數契約 4 樣）
 // 設定淨係指向 Vercel 環境變數：SUPER_KEY + TROOP_<id>_BACKEND / _APIKEY / _NAME（全部由 APP ADMIN 設定；旅團只提供編號／URL／APIKEY）
 // troops.json 已棄用，唔再讀取、唔再有內置 fallback URL。
 const { getRegistry, normalizeToPadded4, normalizeStripped } = require('./_lib/registry');

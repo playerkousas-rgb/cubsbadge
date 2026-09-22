@@ -1,5 +1,5 @@
 // Central admin registration proxy - avoids browser direct fetch to script.google.com
-// v3.0 功能變數契約：APP ADMIN 層嘅管理操作要帶 SUPER_KEY（x-super-key header 或 body superKey）。
+// 功能變數契約：APP ADMIN 層嘅管理操作要帶 SUPER_KEY（x-super-key header 或 body superKey）。
 // SUPER_KEY 由 APP ADMIN 喺 Vercel 設定（唔係旅團設定、GS 亦唔會顯示），並轉發俾後端管理 GS 驗證。
 const { getSuperKey, verifySuperKey } = require('./_lib/registry');
 const ADMIN_API_URL = process.env.SCOUT_ADMIN_API || 'https://script.google.com/macros/s/AKfycbxj5BDDGgjs559smkK4Z5aYImWYeXbN5af8U1ObON0z9WnsN6QJW4I1XWolhs5kQ_H-UQ/exec';

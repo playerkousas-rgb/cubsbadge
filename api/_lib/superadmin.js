@@ -1,4 +1,4 @@
-// api/_lib/superadmin.js — 超管（隱藏維護帳戶）密碼閘口 v5.8
+// api/_lib/superadmin.js — 超管（隱藏維護帳戶）密碼閘口
 //
 // 死規矩：超管密碼（SUPER_KEY）只存在 **Vercel 功能變數**，leaf GS 完全冇。
 // 呢個檔淨係做一件事：將前端送嚟嘅密碼同 process.env.SUPER_KEY 比對（timing-safe）。
