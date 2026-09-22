@@ -343,56 +343,103 @@ console.log('\n=== 向下兼容：舊 action 完全唔受影響 ===');
 }
 
 // ============================================================
-console.log('\n=== v5.7：超管隱藏（Code.gs 只見 sheep）+ 功能變數由 APP ADMIN 設定 ===');
+console.log('\n=== 超管隱藏（leaf 完全冇 SUPER_KEY）＋ APP ADMIN 層驗證 ===');
 // ============================================================
 {
   const SRC = readFileSync(path.join(__dirname, '..', 'apps-script', 'Code.gs'), 'utf8');
 
-  check('Code.gs 只有兩行：SUPER_ADMIN_LOGIN = sheep + 密碼 = 功能變數 SUPER_KEY', () => {
+  check('Code.gs 靜態掃描：冇密碼、冇雜湊、冇 SUPER_KEY property 讀寫', () => {
     assert.ok(SRC.includes("const SUPER_ADMIN_LOGIN = 'sheep'"), '要有一行 SUPER_ADMIN_LOGIN = sheep');
-    assert.ok(/function getSuperAdminPassword\(\)[\s\S]{0,200}SUPER_KEY_PROP/.test(SRC), '超管密碼要由功能變數 SUPER_KEY 讀');
     assert.ok(!/\b0728\b/.test(SRC), 'Code.gs 唔可以有 0728');
     assert.ok(!/SUPER_ADMIN_PASSWORD\s*=\s*['"]/.test(SRC), '唔可以有寫死密碼（＝字串）');
-    assert.ok(!/SUPER_ADMIN_PASSWORD_HASH/.test(SRC), '唔可以再有雜湊後備 property');
-    assert.ok(!/function\s+ensureSuperKey/.test(SRC), '唔可以自動生成超管 key（要 APP ADMIN 設定）');
-    assert.ok(!/function\s+showSuperKey\s*\(/.test(SRC), '唔可以有顯示超管密碼嘅函數');
-    assert.ok(!/SUPER_KEY_HASH|makeSuperKeyHash|superKeyHashOf/.test(SRC), '唔要 hash 後備路徑（保持簡單：只有 SUPER_KEY）');
+    assert.ok(!/SUPER_ADMIN_PASSWORD_HASH|makeSuperKeyHash|superKeyHashOf/.test(SRC), '冇雜湊後備');
+    assert.ok(!/function\s+(getSuperAdminPassword|ensureSuperKey|showSuperKey|superPasswordMatches)\s*\(/.test(SRC),
+      '唔可以再有「讀超管密碼／自動生成／顯示密碼／比對密碼」呢啲函數');
+    assert.ok(!/getScriptProperties\(\)\.getProperty\(SUPER_KEY_PROP\)/.test(SRC), '永遠唔可以讀 Script Property SUPER_KEY');
+    assert.ok(!/setProperty\(SUPER_KEY_PROP/.test(SRC), '永遠唔可以寫 Script Property SUPER_KEY');
   });
 
-  check('SUPER_KEY 未設定 → 超管一律登入唔到（任何密碼、任何舊後備都唔通）', () => {
+  check('superKeyConfigured() 永遠 false：leaf 冇、亦唔會讀 SUPER_KEY', () => {
+    const b = buildBackend();
+    assert.equal(b.superKeyConfigured(), false);
+    // 就算（舊部署）指令碼屬性仲有 SUPER_KEY，leaf 都唔會用佢做任何事
+    b.PropertiesService.getScriptProperties().setProperty('SUPER_KEY', 'sk_legacy_leftover');
+    assert.equal(b.superKeyConfigured(), false, 'leaf 唔可以因為 property 存在就變 true');
+  });
+
+  check('本地用密碼登入超管：一律唔通（連舊 SUPER_KEY property 都唔通）', () => {
     const b = buildBackend();
     b.PropertiesService.getScriptProperties().setProperty('API_KEY', 'sc_x');
-    assert.equal(b.superKeyConfigured(), false);
-    ['1234', 'changeme', 'sheep', 'cubbadge'].forEach((p) => {
-      assert.equal(jparse(b.handleLogin('sheep', p)).success, false, `「${p}」唔應該登入到`);
+    b.PropertiesService.getScriptProperties().setProperty('SUPER_KEY', 'sk_legacy_leftover');
+    ['1234', 'changeme', 'sheep', 'sk_legacy_leftover', '0728'].forEach((p) => {
+      const r = jparse(b.handleLogin('sheep', p));
+      assert.equal(r.success, false, `「${p}」唔應該登入到`);
+      assert.equal(r.error, '找不到此帳號', '要同「唔存在帳號」一模一樣，唔可以透露隱藏帳戶');
     });
-    // 連以前嘅雜湊 property 都唔會成為後備
-    b.PropertiesService.getScriptProperties().setProperty('SUPER_ADMIN_PASSWORD_HASH', b.hashPassword('legacy'));
-    assert.equal(jparse(b.handleLogin('sheep', 'legacy')).success, false, '雜湊後備必須失效');
+    assert.equal(jparse(b.handleLogin('sheep@cubbadge.local', 'sk_legacy_leftover')).success, false);
   });
 
-  check('APP ADMIN 設定功能變數 SUPER_KEY 之後：只有該值可登入，值永不出現在回應', () => {
+  check('超管登入正確路徑：APP 送 action=superLogin（apikey 由 server 注入）→ 發 token', () => {
     const b = buildBackend();
-    const KEY = 'sk_admin_only_value_9527';
-    b.PropertiesService.getScriptProperties().setProperty('SUPER_KEY', KEY);
-    assert.equal(b.superKeyConfigured(), true);
-    assert.equal(jparse(b.handleLogin('sheep', '1234')).success, false, '錯值唔可以通');
-    const ok = jparse(b.handleLogin('sheep', KEY));
-    assert.equal(ok.success, true, 'APP ADMIN 設定嘅值要通');
-    assert.equal(ok.user.role, 'super_admin');
-    assert.ok(!JSON.stringify(ok).includes(KEY), '回應唔可以帶返 SUPER_KEY 值');
-    // 內部電郵寫法一樣只認同一個功能變數值
-    assert.equal(jparse(b.handleLogin('sheep@cubbadge.local', KEY)).success, true);
+    const KEY = 'sc_unit82_apikey';
+    b.PropertiesService.getScriptProperties().setProperty('API_KEY', KEY);
+    b.setTroopId('0082');
+    // 呢步等於 Vercel /api/proxy 做嘅嘢：server 端比對完 SUPER_KEY 之後，
+    // 用注入嘅 apikey 送 action=superLogin（普通 server-to-server 呼叫）
+    const r = jparse(b.doPost({ postData: { contents: JSON.stringify({ action: 'superLogin', apikey: KEY }) } }));
+    assert.equal(r.success, true, r.error);
+    assert.ok(r.token, '應派發 token');
+    assert.equal(r.user.ymis, 'sheep');
+    assert.equal(r.user.role, 'super_admin');
+    assert.equal(r.via, 'app');
+    // 表內用中性代號（Sheet 唔會出現 'sheep'），但一樣解得返超管身份
+    assert.equal(b.validateToken(r.token), 'APP_ADMIN', 'token 真係可以用（表內中性代號）');
+    assert.equal(b.getUser(b.validateToken(r.token)).role, 'super_admin');
+    assert.ok(!JSON.stringify(r).includes('sk_legacy_leftover'), '回應唔應該有超管密碼');
+    assert.ok(!JSON.stringify(r).includes(KEY), '回應唔可以帶 apikey');
+  });
+  check('超管閘門：冇 apikey／錯 apikey 一律唔發 token（前端唔可能自己叫）', () => {
+    const b = buildBackend();
+    const KEY = 'sc_unit82_apikey';
+    b.PropertiesService.getScriptProperties().setProperty('API_KEY', KEY);
+    b.setTroopId('0082');
+    const post = (extra) => jparse(b.doPost({ postData: { contents: JSON.stringify({ action: 'superLogin', ...extra }) } }));
+    assert.equal(post({}).success, false, '冇 apikey 唔應該通');
+    assert.equal(post({ apikey: 'wrong_key' }).success, false, '錯 apikey 唔應該通');
+    assert.equal(post({ apikey: KEY, password: 'anything' }).success, true, 'apikey 啱就通（密碼本身就唔會落 GS）');
+  });
+  check('超管經 APP 登入後台：可以睇到非超管睇唔到嘅嘢（角色真係 super_admin）', () => {
+    const b = buildBackend();
+    const KEY = 'sc_unit82_apikey';
+    b.PropertiesService.getScriptProperties().setProperty('API_KEY', KEY);
+    b.setTroopId('0082');
+    b.initializeSheets();
+    const login = jparse(b.doPost({ postData: { contents: JSON.stringify({ action: 'superLogin', apikey: KEY }) } }));
+    const users = jparse(b.doPost({ postData: { contents: JSON.stringify({ action: 'getAllUsers', token: login.token }) } }));
+    assert.equal(users.success, true, users.error);
+    assert.ok(!JSON.stringify(users.users).includes('sheep'), '超管唔應該出現喺用戶清單');
   });
 
-  check('前端拎到嘅 payload（load）永不含 SUPER_KEY 值', () => {
+  check('改密碼：超管只能喺 Vercel 改（leaf 永不寫入、永不回顯）', () => {
+    const b = buildBackend();
+    b.PropertiesService.getScriptProperties().setProperty('API_KEY', 'sc_x');
+    b.initializeSheets();
+    const r = jparse(b.handleChangePassword('sheep', 'old', 'newpass1'));
+    assert.equal(r.success, false);
+    assert.equal(r.code, 'SUPER_KEY_AT_APP_ADMIN');
+    assert.ok(!/SUPER_KEY\s*=\s*\S/.test(r.error), '提示只可以講去 Vercel 改，唔可以顯示值');
+    assert.equal(b.PropertiesService.getScriptProperties().getProperty('SUPER_KEY'), null, 'leaf 唔可以寫入 SUPER_KEY');
+  });
+
+  check('前端拎到嘅 payload（load）永不含超管密碼', () => {
     const b = buildBackend();
     const KEY = 'sk_payload_secret';
     b.PropertiesService.getScriptProperties().setProperty('SUPER_KEY', KEY);
+    b.PropertiesService.getScriptProperties().setProperty('API_KEY', 'sc_x');
     b.setTroopId('0082');
     const payload = JSON.stringify(b.handleLoad(null));
     assert.ok(!payload.includes(KEY), 'SUPER_KEY 洩漏咗落前端 payload！');
-    assert.equal(b.superKeyConfigured(), true, '內部仍然知有設定（只係唔外洩）');
+    assert.equal(b.superKeyConfigured(), false, 'leaf 永遠唔會聲稱自己有超管密碼');
   });
 
   check('GS 顯示／回傳嘅嘢：只係旅團要交嘅 3 樣，永不見超管密碼', () => {
@@ -410,22 +457,135 @@ console.log('\n=== v5.7：超管隱藏（Code.gs 只見 sheep）+ 功能變數�
     assert.ok(!JSON.stringify(b.showApiKey()).includes(KEY));
   });
 
-  check('initializeSheets：只生成 API KEY，回傳唔含超管密碼', () => {
+  check('SHEET 驗收：全表零 APIKEY／BACKEND／sheep／URL 儲存格（收工行一次 lifecycle 都唔會寫入）', () => {
+    const b = buildBackend();
+    const KEY = 'sc_unit82_lifecycle_key';
+    b.PropertiesService.getScriptProperties().setProperty('API_KEY', KEY);
+    b.setTroopId('0082');
+    b.initializeSheets();
+    const post = (o) => jparse(b.doPost({ postData: { contents: JSON.stringify(o) } }));
+    const login = post({ action: 'login', login_id: b.ADMIN_YMIS, password: '1234', role: 'admin' });
+    post({ action: 'apply', ymis: '1234567890', name: '測試成員', email: 'm@example.org', role: 'member', branch: 'b4' });
+    post({ action: 'addMember', token: login.token, ymis: '1234567890', name: '測試成員' });
+    post({ action: 'save', token: login.token, ymis: '1234567890', badge_id: 'M01', date: '2026-01-01' });
+    post({ action: 'exportAll', token: login.token, includeHash: true });
+    post({ action: 'superLogin', apikey: KEY });
+    post({ action: 'getDownstreamAccess' });
+    post({ action: 'login', login_id: 'sheep', password: 'whatever' });
+    // 模擬舊部署已經寫過嘅超管帳號名（Tokens／操作紀錄）＋ 一次 initializeSheets 清掃
+    b.writeAudit('sheep', 'super_login', 'sheep', '舊部署遺留');
+    const init = b.initializeSheets();
+    assert.ok(init.superLabelRowsFixed >= 2, '要清走舊部署寫過嘅超管帳號名，實際 ' + init.superLabelRowsFixed);
+    const hits = [];
+    b.__ss.getSheets().forEach((sh) => {
+      const name = sh.getName();
+      sh.getDataRange().getValues().forEach((row, r) => row.forEach((cell, c) => {
+        const v = String(cell == null ? '' : cell);
+        if (/APIKEY|API[_ -]?KEY|BACKEND|sheep/i.test(v) || /^https?:\/\//i.test(v)) hits.push(name + ' R' + (r + 1) + 'C' + (c + 1) + '=' + v.slice(0, 40));
+      }));
+    });
+    assert.deepEqual(hits, [], 'SHEET 唔可以有 APIKEY／BACKEND／sheep／URL：\n' + hits.join('\n'));
+  });
+
+  check('超管寫表一律用中性代號 APP_ADMIN；舊 token 一樣有效，非超管照舊睇唔到', () => {
+    const b = buildBackend();
+    const KEY = 'sc_unit82_label_key';
+    b.PropertiesService.getScriptProperties().setProperty('API_KEY', KEY);
+    b.setTroopId('0082');
+    b.initializeSheets();
+    const post = (o) => jparse(b.doPost({ postData: { contents: JSON.stringify(o) } }));
+    const su = post({ action: 'superLogin', apikey: KEY });
+    assert.equal(su.success, true, su.error);
+    // Tokens 表：subject 係中性代號
+    const tok = b.__ss.getSheetByName('Tokens').getDataRange().getValues();
+    const row = tok.find((r) => String(r[0]) === su.token);
+    assert.ok(row, '要有 token 列');
+    assert.equal(String(row[1]), 'APP_ADMIN', 'Tokens 表唔可以寫 sheep');
+    // Token 一樣解得返超管身份
+    const me = b.getUser(b.validateToken(su.token));
+    assert.equal(me.role, 'super_admin');
+    // 審計：中性代號，而且非超管睇唔到
+    const auditRows = b.__ss.getSheetByName('操作紀錄').getDataRange().getValues().slice(1);
+    assert.ok(auditRows.some((r) => String(r[1]) === 'APP_ADMIN' && String(r[2]) === 'super_login'), '要有 super_login 審計');
+    assert.ok(!JSON.stringify(auditRows).includes('sheep'), '操作紀錄唔可以有 sheep');
+    const asAdmin = jparse(b.handleGetAuditLog({ role: 'admin', ymis: b.ADMIN_YMIS }));
+    assert.ok(!JSON.stringify(asAdmin.records).includes('APP_ADMIN'), '非超管唔應該睇到超管紀錄');
+    const asSuper = jparse(b.handleGetAuditLog({ role: 'super_admin', ymis: 'sheep' }));
+    assert.ok(JSON.stringify(asSuper.records).includes('APP_ADMIN'), '超管自己睇得返');
+  });
+
+  check('initializeSheets：只生成 API KEY + 清走舊部署遺留嘅 SUPER_KEY property', () => {
     const b = buildBackend();
     const KEY = 'sk_init_secret';
     b.PropertiesService.getScriptProperties().setProperty('SUPER_KEY', KEY);
     const r = b.handleInitializeSheets ? b.handleInitializeSheets() : b.initializeSheets();
     assert.equal(r.success, true);
     assert.ok(/^sc_/.test(r.apiKey), '要生成 API KEY 俾旅團交');
-    assert.equal(r.superKeyConfigured, true);
+    assert.equal(r.superKeyConfigured, false, 'leaf 永遠冇超管密碼');
+    assert.equal(r.superKeyHeldBy, 'vercel-env', '要講明超管密碼放喺邊');
+    assert.equal(r.legacySuperKeyPurged, true, '要清走舊版遺留嘅 SUPER_KEY');
+    assert.equal(b.PropertiesService.getScriptProperties().getProperty('SUPER_KEY'), null, '清完應該冇咗');
     assert.ok(!JSON.stringify(r).includes(KEY), '回傳唔可以帶超管密碼');
-    assert.ok(!Object.prototype.hasOwnProperty.call(r, 'superKey'), '唔應該再回傳 superKey 值');
   });
 
+  await checkAsync('端到端：Vercel /api/proxy（比對 SUPER_KEY）→ action=superLogin → 真 leaf GS → 真 token', async () => {
+    const APKEY = 'sc_unit82_real_apikey';
+    const SUPER = 'sk_app_admin_secret';
+    const b = buildBackend();
+    b.PropertiesService.getScriptProperties().setProperty('API_KEY', APKEY);
+    b.setTroopId('0082');
+    process.env.TROOP_0082_BACKEND = 'https://script.google.com/macros/s/AKfycbTESTKEYXXXXXXXX/exec';
+    process.env.TROOP_0082_APIKEY = APKEY;
+    process.env.SUPER_KEY = SUPER;
+
+    let leafCalls = 0;
+    const realFetch = global.fetch;
+    global.fetch = async (url, opts) => {
+      leafCalls++;
+      const callBody = JSON.parse(String(opts && opts.body));
+      assert.equal(callBody.action, 'superLogin');
+      assert.equal(callBody.apikey, APKEY, 'apikey 由 proxy 注入');
+      assert.ok(!Object.prototype.hasOwnProperty.call(callBody, 'password'), '密碼唔應該落到 leaf');
+      assert.ok(!Object.prototype.hasOwnProperty.call(callBody, 'login_id'), '帳號唔需要落到 leaf');
+      assert.ok(!JSON.stringify(callBody).includes(SUPER), 'SUPER_KEY 唔應該落到 leaf');
+      const out = b.doPost({ postData: { contents: String(opts && opts.body) } });
+      const text = out.getContent();
+      return { ok: true, status: 200, text: async () => text, json: async () => JSON.parse(text) };
+    };
+    const mkRes = () => ({
+      statusCode: 200, headers: {},
+      setHeader(k, v) { this.headers[k] = v; return this; },
+      status(c) { this.statusCode = c; return this; },
+      json(d) { this.body = d; return this; }
+    });
+    try {
+      const proxy = require('../api/proxy.js');
+      const res = mkRes();
+      await proxy({ method: 'POST', query: {}, headers: {}, body: { troopId: '82', action: 'login', login_id: 'sheep', password: SUPER } }, res);
+      assert.equal(res.statusCode, 200, JSON.stringify(res.body));
+      assert.equal(res.body.success, true, JSON.stringify(res.body));
+      assert.equal(res.body.user.role, 'super_admin');
+      const subject = b.validateToken(res.body.token);
+      assert.equal(subject, 'APP_ADMIN', '真 token 要通過 leaf validateToken（表內中性代號）');
+      assert.equal(b.getUser(subject).role, 'super_admin');
+      assert.equal(leafCalls, 1, '成功路徑只打 leaf 一次');
+
+      const res2 = mkRes();
+      await proxy({ method: 'POST', query: {}, headers: {}, body: { troopId: '82', action: 'login', login_id: 'sheep', password: 'wrong' } }, res2);
+      assert.equal(res2.body.success, false);
+      assert.equal(res2.body.error, '帳號或密碼錯誤');
+      assert.equal(leafCalls, 1, '密碼錯唔應該再打 leaf GS');
+    } finally {
+      global.fetch = realFetch;
+      delete process.env.TROOP_0082_BACKEND;
+      delete process.env.TROOP_0082_APIKEY;
+      delete process.env.SUPER_KEY;
+    }
+  });
   check('超管操作紀錄對非超管隱藏（帳號名都唔會出現）', () => {
     const b = buildBackend();
     b.initializeSheets();
-    b.writeAudit('sheep', 'change_password', 'sheep', '維護帳戶更改密碼');
+    b.writeAudit('sheep', 'super_login', 'sheep', '維護帳戶經 APP ADMIN 登入');
     b.writeAudit('1111111111', 'init', 'system', '初始化');
     const forAdmin = JSON.parse(b.handleGetAuditLog({ role: 'admin', ymis: '1111111111' }).getContent());
     assert.ok(!JSON.stringify(forAdmin.records).includes('sheep'), '非超管唔應該見到超管紀錄');

@@ -127,7 +127,7 @@ module.exports = async function handler(req, res) {
       system: 'cub-progress',
       platform: {
         registered: !!meta || !!cfg,
-        // v3.0：NAME 指向功能變數 TROOP_<id>_NAME（registry cfg 先行；units.json 只係後備）
+        // NAME 指向功能變數 TROOP_<id>_NAME（registry cfg 先行；units.json 只係後備）
         name: (cfg && cfg.name) || (meta && meta.name) || `第 ${strippedId(unit)} 旅`,
         branch: (meta && meta.branch) || '幼童軍',
         sheet: (meta && meta.sheet) || '',

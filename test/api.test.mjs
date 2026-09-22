@@ -401,5 +401,199 @@ await check('health：envContract 回 4 樣 boolean，apikey／SUPER_KEY 值永�
   assert.ok(!raw.includes('sk_secret_hp'), 'SUPER_KEY 洩漏咗！');
 });
 
+await check('B/D 唔入前端：/api/troops 同 /api/health 回應零部署 URL、零 apikey', async () => {
+  clearEnv();
+  process.env.TROOP_0082_BACKEND = 'https://script.google.com/macros/s/AKfycbSECRETID000000000000000/exec';
+  process.env.TROOP_0082_APIKEY = 'sc_front_secret';
+  process.env.TROOP_0082_NAME = '第 82 旅';
+  process.env.SUPER_KEY = 'sk_front_secret';
+  const troops = freshModule('../api/troops.js');
+  const tRes = mockRes();
+  troops(mockReq({ method: 'GET', query: {} }), tRes);
+  const tRaw = JSON.stringify(tRes.body);
+  assert.ok(!tRaw.includes('script.google.com'), 'B（部署 URL）唔可以落前端：' + tRaw.slice(0, 200));
+  assert.ok(!tRaw.includes('sc_front_secret'), 'D（apikey）唔可以落前端');
+  assert.equal(tRes.body.troops['0082'].connected, true, '前端只需要知「掛咗未」');
+  const health = freshModule('../api/health.js');
+  const hRes = mockRes();
+  await health(mockReq({ query: { troopId: '0082', checkBackend: '0' } }), hRes);
+  const hRaw = JSON.stringify(hRes.body);
+  assert.ok(!hRaw.includes('AKfycb'), 'health 唔可以回部署 ID（連片段都唔可以）');
+  assert.ok(!hRaw.includes('sc_front_secret'), 'health 唔可以回 apikey');
+  assert.equal(hRes.body.config.backendConfigured, true, '只講「有冇設定」');
+  clearEnv();
+});
+
+// ============================================================
+console.log('\n=== v5.8 隱藏超管：SUPER_KEY 只存在 Vercel，密碼永不落 GS ===');
+// ============================================================
+await check('超管登入：SUPER_KEY 未設定 → 通用失敗（入口關閉，冇後備密碼）', async () => {
+  clearEnv();
+  process.env.TROOP_0082_BACKEND = 'https://script.google.com/macros/s/AKfycbTESTKEYXXXXXXXX/exec';
+  process.env.TROOP_0082_APIKEY = 'sc_key_82';
+  const sa = freshModule('../api/_lib/superadmin.js');
+  const out = sa.verifySuperAdminLogin({ loginId: 'sheep', password: 'anything', clientKey: 't1' });
+  assert.equal(out.ok, false);
+  assert.equal(out.body.error, '帳號或密碼錯誤', '要同普通登入失敗一模一樣');
+  assert.ok(!JSON.stringify(out.body).includes('sc_key_82'), '唔可以洩露 apikey');
+});
+
+await check('超管登入：只認超管帳號；普通帳號完全唔行呢條路', async () => {
+  clearEnv();
+  process.env.SUPER_KEY = 'sk_admin_secret';
+  const sa = freshModule('../api/_lib/superadmin.js');
+  assert.equal(sa.isSuperAdminLoginId('sheep'), true);
+  assert.equal(sa.isSuperAdminLoginId('sheep@cubbadge.local'), true);
+  assert.equal(sa.isSuperAdminLoginId('1234567890'), false);
+  assert.equal(sa.isSuperAdminLoginId('leader@example.org'), false);
+  const out = sa.verifySuperAdminLogin({ loginId: '1234567890', password: 'sk_admin_secret', clientKey: 't2' });
+  assert.equal(out.ok, false, '普通帳號就算打中 SUPER_KEY 都唔應該經呢條路');
+});
+
+await check('超管登入：密碼錯 → 通用失敗；值永不外洩', async () => {
+  clearEnv();
+  process.env.SUPER_KEY = 'sk_admin_only_value';
+  const sa = freshModule('../api/_lib/superadmin.js');
+  const bad = sa.verifySuperAdminLogin({ loginId: 'sheep', password: 'nope', clientKey: 't3' });
+  assert.equal(bad.ok, false);
+  assert.equal(bad.body.error, '帳號或密碼錯誤');
+  assert.ok(!JSON.stringify(bad.body).includes('sk_admin_only_value'), 'SUPER_KEY 值洩漏咗！');
+  const ok = sa.verifySuperAdminLogin({ loginId: 'sheep', password: 'sk_admin_only_value', clientKey: 't3' });
+  assert.equal(ok.ok, true, '正確密碼要通');
+});
+
+await check('proxy：超管登入 → Vercel 比對 SUPER_KEY，之後只送 action=superLogin（冇密碼）', async () => {
+  clearEnv();
+  const APKEY = 'sc_key_82_secret';
+  const SUPER = 'sk_admin_only_value';
+  process.env.TROOP_0082_BACKEND = 'https://script.google.com/macros/s/AKfycbTESTKEYXXXXXXXX/exec';
+  process.env.TROOP_0082_APIKEY = APKEY;
+  process.env.SUPER_KEY = SUPER;
+  let forwarded = null;
+  stubFetch([['script.google.com', async (u, o) => {
+    forwarded = JSON.parse(o.body);
+    return { body: { success: true, token: 'tok_1', user: { ymis: 'sheep', role: 'super_admin' } } };
+  }]]);
+  try {
+    const handler = freshModule('../api/proxy.js');
+
+    // (a) 密碼錯：唔會打 leaf
+    const bad = mockRes();
+    await handler(mockReq({ method: 'POST', body: { troopId: '0082', action: 'login', login_id: 'sheep', password: 'nope' } }), bad);
+    assert.equal(bad.body.success, false);
+    assert.equal(bad.body.error, '帳號或密碼錯誤');
+    assert.equal(forwarded, null, '密碼錯唔應該打 leaf GS');
+
+    // (b) 密碼啱：轉發 action=superLogin + apikey 由 registry 注入（即係普通 server-to-server）
+    const ok = mockRes();
+    await handler(mockReq({ method: 'POST', body: { troopId: '82', action: 'login', login_id: 'sheep', password: SUPER } }), ok);
+    assert.equal(ok.statusCode, 200, JSON.stringify(ok.body));
+    assert.equal(ok.body.success, true);
+    assert.equal(ok.body.token, 'tok_1');
+
+    assert.ok(forwarded, '應該轉發去 leaf GS');
+    assert.equal(forwarded.action, 'superLogin');
+    assert.equal(forwarded.apikey, APKEY, 'apikey 由 proxy 注入（server 端）');
+    assert.ok(!Object.prototype.hasOwnProperty.call(forwarded, 'password'), '密碼唔可以落 leaf GS');
+    assert.ok(!Object.prototype.hasOwnProperty.call(forwarded, 'login_id'), '帳號唔需要落 leaf GS');
+    assert.ok(!JSON.stringify(forwarded).includes(SUPER), 'SUPER_KEY 唔可以出現喺轉發內容');
+    assert.ok(!JSON.stringify(ok.body).includes(SUPER), '回應唔可以帶 SUPER_KEY');
+    assert.ok(!JSON.stringify(ok.body).includes(APKEY), '回應唔可以帶 apikey');
+  } finally { restoreFetch(); }
+});
+
+await check('proxy：前端自己叫 action=superLogin → 403（唔會派超管 token 出去）', async () => {
+  clearEnv();
+  process.env.TROOP_0082_BACKEND = 'https://script.google.com/macros/s/AKfycbTESTKEYXXXXXXXX/exec';
+  process.env.TROOP_0082_APIKEY = 'sc_key_82_secret';
+  process.env.SUPER_KEY = 'sk_admin_only_value';
+  let forwarded = null;
+  stubFetch([['script.google.com', async (u, o) => { forwarded = JSON.parse(o.body); return { body: { success: true, token: 'tok_super', user: { role: 'super_admin' } } }; }]]);
+  try {
+    const handler = freshModule('../api/proxy.js');
+    const res = mockRes();
+    await handler(mockReq({ method: 'POST', body: { troopId: '0082', action: 'superLogin' } }), res);
+    assert.equal(res.statusCode, 403, JSON.stringify(res.body));
+    assert.equal(res.body.code, 'SUPER_LOGIN_INTERNAL');
+    assert.equal(forwarded, null, '唔應該轉發去 leaf（唔係經超管登入流程）');
+  } finally { restoreFetch(); clearEnv(); }
+});
+
+await check('proxy：上游偶發 HTML 錯誤頁 → 自動重試一次（第二次成功就當無事）', async () => {
+  clearEnv();
+  process.env.TROOP_0082_BACKEND = 'https://script.google.com/macros/s/AKfycbTESTKEYXXXXXXXX/exec';
+  process.env.TROOP_0082_APIKEY = 'sc_key_82_secret';
+  let calls = 0;
+  stubFetch([['script.google.com', async () => {
+    calls++;
+    if (calls === 1) return { body: '<!DOCTYPE html><html><head><script>window["ppConfig"]={};</script></head><body>Sorry</body></html>' };
+    return { body: { success: true, token: 'tok_after_retry', user: { ymis: '1111111111', role: 'admin' } } };
+  }]]);
+  try {
+    const handler = freshModule('../api/proxy.js');
+    const res = mockRes();
+    await handler(mockReq({ method: 'POST', body: { troopId: '0082', action: 'login', login_id: '1111111111', password: '1234' } }), res);
+    assert.equal(res.statusCode, 200, JSON.stringify(res.body));
+    assert.equal(res.body.success, true, '重試後應該成功');
+    assert.equal(res.body.token, 'tok_after_retry');
+    assert.equal(calls, 2, '應該試兩次（一次重試）');
+  } finally { restoreFetch(); clearEnv(); }
+});
+
+await check('proxy：上游一路回 HTML（真係壞）→ 照樣 502，唔會無限重試', async () => {
+  clearEnv();
+  process.env.TROOP_0082_BACKEND = 'https://script.google.com/macros/s/AKfycbTESTKEYXXXXXXXX/exec';
+  process.env.TROOP_0082_APIKEY = 'sc_key_82_secret';
+  let calls = 0;
+  stubFetch([['script.google.com', async () => { calls++; return { body: '<html><body>Sorry, unable to open the file at this time.</body></html>' }; }]]);
+  try {
+    const handler = freshModule('../api/proxy.js');
+    const res = mockRes();
+    await handler(mockReq({ method: 'POST', body: { troopId: '0082', action: 'login', login_id: '1111111111', password: '1234' } }), res);
+    assert.equal(res.statusCode, 502);
+    assert.equal(res.body.success, false);
+    assert.ok(String(res.body.error).includes('GAS Upstream Error'));
+    assert.equal(calls, 2, '只會試兩次');
+    assert.ok(!JSON.stringify(res.body).includes('AKfycbTESTKEY'), '錯誤訊息唔可以漏部署 URL／ID');
+  } finally { restoreFetch(); clearEnv(); }
+});
+
+await check('proxy：下游入口關閉（DOWNSTREAM_CLOSED）→ 回 HTTP 403，訊息照樣帶到前端', async () => {
+  clearEnv();
+  process.env.TROOP_0082_BACKEND = 'https://script.google.com/macros/s/AKfycbTESTKEYXXXXXXXX/exec';
+  process.env.TROOP_0082_APIKEY = 'sc_key_82_secret';
+  stubFetch([['script.google.com', async () => ({
+    body: { success: false, error: '下游本地入口已關閉（ALLOW_LOCAL_LOGIN=false）', code: 'DOWNSTREAM_CLOSED', allowLocal: false }
+  })]]);
+  try {
+    const handler = freshModule('../api/proxy.js');
+    const res = mockRes();
+    await handler(mockReq({ method: 'POST', body: { troopId: '0082', action: 'login', login_id: '1234567890', password: '1234' } }), res);
+    assert.equal(res.statusCode, 403, '閂口後本地登入要回 403');
+    assert.equal(res.body.code, 'DOWNSTREAM_CLOSED');
+    assert.equal(res.body.success, false);
+    assert.ok(res.body.error && res.body.error.length > 0, '要帶訊息俾前端顯示');
+  } finally { restoreFetch(); clearEnv(); }
+});
+
+await check('proxy：普通帳號登入完全唔受影響（照舊 action=login，唔會經超管閘）', async () => {
+  clearEnv();
+  process.env.TROOP_0082_BACKEND = 'https://script.google.com/macros/s/AKfycbTESTKEYXXXXXXXX/exec';
+  process.env.TROOP_0082_APIKEY = 'sc_key_82';
+  process.env.SUPER_KEY = 'sk_admin_x';
+  let forwarded = null;
+  stubFetch([['script.google.com', async (u, o) => { forwarded = JSON.parse(o.body); return { body: { success: true, token: 'tok_3', user: { ymis: '1234567890', role: 'member' } } }; }]]);
+  try {
+    const handler = freshModule('../api/proxy.js');
+    const res = mockRes();
+    await handler(mockReq({ method: 'POST', body: { troopId: '0082', action: 'login', login_id: '1234567890', password: 'abcd' } }), res);
+    assert.equal(res.statusCode, 200);
+    assert.equal(forwarded.action, 'login', '普通帳號照舊送 action=login 落 GS');
+    assert.equal(forwarded.login_id, '1234567890');
+    assert.equal(forwarded.password, 'abcd', '普通帳號密碼照舊交俾自己部 GS 驗');
+    assert.equal(res.body.token, 'tok_3');
+  } finally { restoreFetch(); }
+});
+
 console.log(`\n== api 結果：${passed} 通過，${failed} 失敗 ==`);
 if (failed > 0) process.exit(1);

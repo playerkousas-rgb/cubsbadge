@@ -1,5 +1,8 @@
-// Vercel Serverless Function - Same-origin Proxy for Google Apps Script v2.1 (CubBadge aligned with ScoutBadge v5.2)
+// Vercel Serverless Function - Same-origin Proxy for Google Apps Script
+// 超管（隱藏維護帳戶）密碼只喺 Vercel 比對（SUPER_KEY），之後改送 action=superLogin
+//       （apikey 由 registry 注入）—— 密碼永遠唔會轉發去 leaf GS。
 const { getTroopConfig, getRegistry, normalizeToPadded4, normalizeStripped } = require('./_lib/registry');
+const { isSuperAdminLoginId, verifySuperAdminLogin } = require('./_lib/superadmin');
 
 /**
  * 敏感 action：一定要有 server 端 apikey 先可以轉發（BUILD.md §10 施工次序 1）。
@@ -52,10 +55,41 @@ module.exports = async function handler(req, res) {
 
     const rawTroopId = payload.troopId || payload.troopKey || payload.troop || (req.query && (req.query.troopId || req.query.u || req.query.troop)) || '0082';
     const troopId = String(rawTroopId).trim();
-    const action = payload.action || (req.query && req.query.action);
+    let action = payload.action || (req.query && req.query.action);
 
     if (!action) {
       return res.status(400).json({ success: false, error: 'Missing required parameter: action' });
+    }
+
+    // ── 隱藏超管：SUPER_KEY 只存在 Vercel 功能變數 ──────────────────
+    // 前端照舊送 {action:'login', login_id:'sheep', password}，密碼只喺呢度比對，
+    // **永遠唔會**轉發去 leaf GS（旅團開 Sheet／Apps Script／指令碼屬性都見唔到）。
+    // 比對通過就改送 action=superLogin，apikey 照舊由 registry 注入。
+    let viaSuperAdminLogin = false;   // 只有呢條路（驗過 SUPER_KEY）才可以送 superLogin 落 leaf
+    const isSuperAdminRequest = payload.login_id && isSuperAdminLoginId(payload.login_id);
+    if (isSuperAdminRequest) {
+      const clientKey = String((req.headers && (req.headers['x-forwarded-for'] || req.headers['x-real-ip'])) || '')
+        .split(',')[0].trim() || 'anon';
+      const check = verifySuperAdminLogin({ loginId: payload.login_id, password: payload.password, clientKey });
+      if (!check.ok) return res.status(check.status).json(check.body);
+      // 通過：換成 server-to-server action，密碼即刻丟棄（唔會落 GS）
+      payload.action = 'superLogin';
+      action = 'superLogin';
+      viaSuperAdminLogin = true;
+      delete payload.password;
+      delete payload.login_id;
+    }
+
+    // ── 前端唔可以直接叫 action=superLogin ──────────────────────────────
+    // 冇呢道閘：任何訪客叫 /api/proxy?action=superLogin，proxy 會照注入 apikey 落 leaf，
+    // leaf 見 apikey 啱就派超管 token —— 即係人人做超管。superLogin 只可以由上面條路觸發。
+    if (action === 'superLogin' && !viaSuperAdminLogin) {
+      console.warn(`[PROXY] refuse client-supplied action=superLogin troop=${troopId}`);
+      return res.status(403).json({
+        success: false,
+        code: 'SUPER_LOGIN_INTERNAL',
+        error: '超管登入只可以經 APP 登入流程（帳號 sheep + 密碼）'
+      });
     }
 
     const troopConfig = getTroopConfig(troopId);
@@ -119,45 +153,59 @@ module.exports = async function handler(req, res) {
     const timeoutMs = 25000;
     const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
-    let gasResponse;
-
-    if (action === 'load') {
-      // Frontend sends load as POST via apiRequest, but Apps Script implements load in doGet().
-      // Translate both proxy methods to upstream GET so login and post-login data load use compatible entry points.
-      const targetUrl = new URL(gasUrl);
-      targetUrl.searchParams.set('action', 'load');
-      if (payload.token) targetUrl.searchParams.set('token', payload.token);
-      if (payload.apikey) targetUrl.searchParams.set('apikey', payload.apikey);
-
-      gasResponse = await fetch(targetUrl.toString(), {
-        method: 'GET',
-        headers: { 'Accept': 'application/json' },
-        redirect: 'follow',
-        signal: controller.signal
-      });
-    } else {
+    // 一個上游請求（load 行 GET，其餘行 POST）；重試都用同一個函數、同一個 timeout signal
+    const forward = async () => {
+      if (action === 'load') {
+        // Frontend sends load as POST via apiRequest, but Apps Script implements load in doGet().
+        // Translate both proxy methods to upstream GET so login and post-login data load use compatible entry points.
+        const targetUrl = new URL(gasUrl);
+        targetUrl.searchParams.set('action', 'load');
+        if (payload.token) targetUrl.searchParams.set('token', payload.token);
+        if (payload.apikey) targetUrl.searchParams.set('apikey', payload.apikey);
+        return fetch(targetUrl.toString(), {
+          method: 'GET',
+          headers: { 'Accept': 'application/json' },
+          redirect: 'follow',
+          signal: controller.signal
+        });
+      }
       const forwardPayload = { ...payload };
       delete forwardPayload.troopId;
       delete forwardPayload.troopKey;
       delete forwardPayload.troop;
-
-      gasResponse = await fetch(gasUrl, {
+      return fetch(gasUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'text/plain;charset=utf-8' },
         body: JSON.stringify(forwardPayload),
         redirect: 'follow',
         signal: controller.signal
       });
-    }
+    };
 
+    // fetch 本身出錯（timeout／網絡）照舊拋去外層（504／500）；呢度只處理「有回應但唔係 JSON」
+    const gasResponse = await forward();
     clearTimeout(timeoutId);
 
-    const rawText = await gasResponse.text();
+    let rawText = await gasResponse.text();
     let jsonResult = null;
 
     try {
       jsonResult = JSON.parse(rawText);
     } catch (parseErr) {
+      // Google 偶爾會回一頁 HTML（唔係我哋 script 出嘅 JSON）——登入會忽然「後端服務響應異常」。
+      // 呢種係上游一時嘅嘢：即刻重試一次，成功就當無事。
+      const _head = rawText.trimStart().slice(0, 20).toLowerCase();          // Google 嘅 HTML 錯誤頁
+      if (_head.startsWith('<!doctype') || _head.startsWith('<html')) {
+        console.log(`[PROXY] upstream returned HTML action=${action} troop=${troopId} — retry once`);
+        try {
+          const retryText = await (await forward()).text();
+          jsonResult = JSON.parse(retryText);
+          rawText = retryText;
+        } catch (retryErr) { jsonResult = null; }
+      }
+    }
+
+    if (!jsonResult) {
       console.error(`[PROXY] Upstream non-JSON troop=${troopId} (norm=${normalizeToPadded4(troopId)}), action=${action}, status=${gasResponse.status}`);
       const isSheetMissing = /Exception.*sheet/i.test(rawText) || /找不到/.test(rawText) || /工作表/.test(rawText);
       return res.status(502).json({
@@ -169,8 +217,8 @@ module.exports = async function handler(req, res) {
         troubleshooting: {
           troopIdRequested: troopId,
           troopIdNormalized: normalizeToPadded4(troopId),
-          gasUrl: gasUrl.substring(0, 80) + '...',
-          hint: '常見原因：1) Apps Script 未重新部署「新版本」 2) 未執行 initializeSheets() 3) Google 帳戶授權過期 4) Spreadsheet 被刪除'
+          backendHost: (() => { try { return new URL(gasUrl).hostname; } catch (e) { return 'invalid'; } })(),
+          hint: '常見原因：1) Apps Script 未重新部署「新版本」 2) 未執行 initializeSheets() 3) Google 帳戶授權過期 4) Spreadsheet 被刪除（如只係偶然一次，通常係 Google 一時嘅事，重試就得）'
         }
       });
     }
@@ -188,6 +236,9 @@ module.exports = async function handler(req, res) {
         };
       }
     }
+
+    // 下游入口關閉（leaf 回 code=DOWNSTREAM_CLOSED）：代理回 HTTP 403，前端一樣讀到同一個訊息
+    if (jsonResult && jsonResult.code === 'DOWNSTREAM_CLOSED') return res.status(403).json(jsonResult);
 
     return res.status(200).json(jsonResult);
 

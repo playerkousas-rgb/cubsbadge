@@ -1,5 +1,10 @@
 # CHANGE LOG v5.7 — 設定契約更正（所有功能變數由 APP ADMIN 設定）+ 超管真正隱藏
 
+> ⚠️ **已被 v5.8 取代（見 `docs/CHANGE_LOG_v5.8.md`）**：
+> v5.7 寫「超管密碼 = 功能變數 `SUPER_KEY`（**GS Script Property**），去 ⚙ 專案設定 → 指令碼屬性睇／改」係**錯**嘅 ——
+> 指令碼屬性旅團睇得到，等於冇隱藏。v5.8 起 `SUPER_KEY` **只放喺 Vercel 功能變數**，
+> GS 冇密碼、冇 Script Property；超管登入改為「Vercel 比對密碼 → 送 `action=superLogin` 落 leaf」。
+
 > 更正 v5.5／v5.6 寫錯嘅兩件事：
 > 1. **功能變數唔係由旅團設定** —— 旅團只生成 API KEY，交 3 樣（編號 / 部署 URL / API KEY）；`SUPER_KEY`、`TROOP_<id>_NAME` 同全部 Vercel 功能變數由 **APP ADMIN** 設定。
 > 2. **超管帳號唔可以放出來** —— `Code.gs` 之前寫死 `SUPER_ADMIN_PASSWORD = '0728'`，仲有 `showSuperKey()` / `showVercelEnv()` 彈窗顯示超管密碼。全部移除。

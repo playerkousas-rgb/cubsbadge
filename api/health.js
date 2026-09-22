@@ -1,4 +1,4 @@
-// Health check endpoint - helps diagnose "找不到82的SHEET" issues v2.2 (CubBadge aligned with ScoutBadge v5.2)
+// Health check endpoint - helps diagnose "找不到82的SHEET" issues
 const { getRegistry, getTroopConfig, normalizeToPadded4, superKeyConfigured } = require('./_lib/registry');
 
 module.exports = async function handler(req, res) {
@@ -31,19 +31,29 @@ module.exports = async function handler(req, res) {
     requestedTroopId: troopId,
     normalizedTroopId: normalized,
     troopFound: !!config,
-    // 功能變數契約（4樣）：只回「有冇設定」boolean，永不回值（apikey／SUPER_KEY 紅線）
+    // 功能變數契約（4樣）：只回「有冇設定」boolean，永不回值（apikey／SUPER_KEY 紅線：SUPER_KEY 只喺 Vercel）
     envContract: {
       SUPER_KEY: superKeyConfigured(),
       [`TROOP_${normalized}_BACKEND`]: !!(config && config._env && config._env.backend),
       [`TROOP_${normalized}_APIKEY`]: !!(config && config._env && config._env.apikey),
       [`TROOP_${normalized}_NAME`]: !!(config && config._env && config._env.name)
     },
+    // 超管（維護帳戶）契約：只回「點運作」，永不回任何值／帳號名
+    superLogin: {
+      verifiedAt: 'vercel',
+      verifies: 'SUPER_KEY（Vercel 功能變數；GS 永不持有）',
+      leafHandshake: 'POST /api/proxy {action:"login", login_id:"sheep", password:<SUPER_KEY>} → 代理就地比對 → 只送 {action:"superLogin"}（apikey 由 server 端注入）俾 leaf',
+      requiresConfigured: {
+        SUPER_KEY: superKeyConfigured(),
+        [`TROOP_${normalized}_APIKEY`]: !!(config && config._env && config._env.apikey)
+      },
+      gsHoldsSuperKey: false
+    },
     config: config ? {
       name: config.name,
       backendHost: (() => { try { return new URL(config.backend).hostname; } catch(e){ return 'invalid'; } })(),
       hasApikey: !!config.apikey,
-      backendPreview: config.backend.substring(0, 100) + '...',
-      fullBackend: config.backend
+      backendConfigured: !!config.backend       // B/D 值唔回前端：只講「有冇設定」
     } : null,
     registry: {
       totalKeys: Object.keys(registry).length,
@@ -61,9 +71,9 @@ module.exports = async function handler(req, res) {
       steps: [
         '1. 檢查 /api/troops 是否包含 0082',
         '2. 檢查 /api/health?troopId=0082 的 troopFound 是否 true',
-        '3. 檢查 Vercel 環境變數 TROOP_0082_BACKEND / TROOP_0082_APIKEY / TROOP_0082_NAME 是否已設定（全部由 APP ADMIN 設定；另加全 APP 一個 SUPER_KEY）',
+        '3. 檢查 Vercel 環境變數 TROOP_0082_BACKEND / TROOP_0082_APIKEY / TROOP_0082_NAME 是否已設定（全部由 APP ADMIN 設定；另加全 APP 一個 SUPER_KEY）—— 維護帳戶登入需要 SUPER_KEY + 該旅團 _APIKEY（Vercel 用 apikey 簽 sig 俾 leaf 驗）',
         '4. 在 Google Apps Script 編輯器執行 diagnoseSheets() 查看缺失表',
-        '5. 執行 initializeSheets() 重建缺失工作表（只生成 API_KEY；SUPER_KEY 由 APP ADMIN 設定）',
+        '5. 執行 initializeSheets() 重建缺失工作表（只生成 API_KEY；SUPER_KEY 由 APP ADMIN 設定喺 Vercel，leaf 永不持有 —— 順手會清走舊版遺留嘅 SUPER_KEY property）',
         '6. 重新部署 Apps Script 為新版本，確保「任何人可存取」',
         '7. 檢查 Google Sheet 是否被誤刪除或只有 admin 一人'
       ]
