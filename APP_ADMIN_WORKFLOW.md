@@ -52,14 +52,12 @@ TROOP_0082_APIKEY：sc_xxxxxxxx
 
 ## 超管帳號 `sheep`（唔會再放出來）
 
-- `apps-script/Code.gs` **只有帳號名 `sheep`**：冇寫死密碼（`0728` 已完全移除）、冇自動生成、冇顯示功能
-- 密碼 100% 由功能變數讀取：
-  - Vercel：`SUPER_KEY`（你設定，保護管理 API）
-  - leaf GS（可選，你決定）：`SUPER_KEY`（明文）**或** `SUPER_KEY_HASH`（單向 SHA-256，**建議**：跑 `makeSuperKeyHash()` 拎 hash 交旅團貼入，旅團永遠唔會知密碼）
-  - 兩個都未設定 → leaf 上超管入口完全關閉（唔會有任何後備密碼）
+- `apps-script/Code.gs` **只有兩行**：`SUPER_ADMIN_LOGIN = 'sheep'`、`SUPER_ADMIN_PASSWORD = 功能變數 SUPER_KEY`
+- 冇寫死密碼（`0728` 已完全移除）、冇自動生成、冇顯示功能；Vercel 同 leaf GS 用同一隻 `SUPER_KEY` 值
+- 未設定 → leaf 上超管入口完全關閉（唔會有任何後備密碼）
 - 超管唔會出現喺：Users 表、用戶管理、成員名單、全團總覽、**操作紀錄**（非超管見唔到）
 - 超管「改密碼」只寫入功能變數、永不回顯；記得同步更新 Vercel `SUPER_KEY`
-- GS 彈窗（`initializeSheets()` / `showApiKey()` / `showVercelEnv()`）只顯示旅團要交嘅 3 樣；`showSuperKeyStatus()` 只顯示「已設定 / 未設定」
+- GS 彈窗（`initializeSheets()` / `showApiKey()` / `showVercelEnv()`）只顯示旅團要交嘅 3 樣，永不顯示超管密碼
 
 ## 紅線
 

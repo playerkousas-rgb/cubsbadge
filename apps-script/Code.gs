@@ -15,12 +15,10 @@
 //   - handleLoad 回應新增 logRequests + logRequestsSupported
 //   - 修復 handleSaveLogRecord setValues 欄數不符（13→12）的既有 bug / fix setValues column-count bug
 // 超管 SHEEP（v5.7 收緊：帳號名 'sheep' 係程式碼唯一見到嘅嘢）／Super-admin SHEEP (v5.7 tighten):
-//   - 本檔只有帳號名 'sheep'（＋由佢衍生嘅內部電郵）。**冇任何寫死密碼**、冇預設／後備密碼。
-//     Only the account NAME 'sheep' exists in this file; there is NO hardcoded / default / fallback password.
-//   - 密碼 100% 由功能變數讀取：SUPER_KEY（明文，APP ADMIN 設定）或 SUPER_KEY_HASH（單向 SHA-256，建議）。
-//     兩個都未設定 = 完全登入唔到（唔會開後門、唔會有預設密碼）。
-//     Password comes 100% from script properties: SUPER_KEY (plain) or SUPER_KEY_HASH (one-way, recommended).
-//     If neither is set, super-admin login is simply closed — no backdoor, no default password.
+//   - 本檔只有兩行：SUPER_ADMIN_LOGIN = 'sheep'、SUPER_ADMIN_PASSWORD = 功能變數 SUPER_KEY。
+//     Only two things: SUPER_ADMIN_LOGIN = 'sheep' and the password = SUPER_KEY property. No hardcoded password.
+//   - 超管密碼 = 功能變數 SUPER_KEY（APP ADMIN 設定；未設定 = 完全登入唔到，冇寫死密碼、冇 fallback）。
+//     The super-admin password = the SUPER_KEY script property (set by the APP ADMIN; unset = no login).
 //   - 本檔永不生成、永不顯示、永不回傳超管密碼（showSuperKey() 已移除；showApiKey()／initializeSheets() 只顯示旅團要交嘅 API KEY）。
 //     This file never generates / prints / returns the super-admin password.
 //   - Users 表／用戶管理／成員名單不會出現 sheep（getUser 虛擬帳號；getAllUsers/getMembers 排除；操作紀錄亦對非超管隱藏）。
@@ -52,8 +50,8 @@
 //   ★ 誰設定什麼（v5.7 定死）：
 //     - 旅團（leaf 部署者）只做 3 樣：① 部署 GS ② 跑 initializeSheets() 拎 API KEY ③ 把「旅團編號 + 部署 URL + API KEY」交 APP ADMIN
 //     - APP ADMIN（Vercel Project 維護者）設定全部功能變數：SUPER_KEY + TROOP_<id>_BACKEND / _APIKEY / _NAME
-//   SUPER_KEY            ↔ Script Property 'SUPER_KEY'：APP ADMIN 層嘅管理 key（保護 /api/register 等管理 API）。
-//                          喺 leaf GS 有設定嘅話，亦係超管 sheep 嘅登入密碼（兩邊同一隻值）；未設定 = leaf 上 sheep 登入完全關閉。
+//   SUPER_KEY            ↔ 超管密碼（SUPER_ADMIN_PASSWORD = 功能變數 SUPER_KEY）：
+//                          APP ADMIN 喺 Vercel／GS Script Properties 設定；未設定 = leaf 上超管登入完全關閉。
 //                          GS 永不生成、永不顯示、永不回傳此值（要睇／要改：GS 編輯器 → 專案設定 → 指令碼屬性）。
 //   TROOP_<id>_BACKEND   ↔ 部署 URL（/exec；由旅團提供，APP ADMIN 入 Vercel）
 //   TROOP_<id>_APIKEY    ↔ Script Property 'API_KEY'（旅團跑 initializeSheets 自動生成，交 APP ADMIN）
@@ -69,9 +67,9 @@
 //   - 更正 v5.5／v5.6 寫錯：功能變數**唔係由旅團設定**
 //       旅團（leaf）只做 3 樣：① 部署 GS ② 跑 initializeSheets()（只生成 API KEY）③ 交「旅團編號 + 部署 URL + API KEY」俾 APP ADMIN
 //       APP ADMIN 喺 Vercel 設定**全部**功能變數：SUPER_KEY + TROOP_<id>_BACKEND / _APIKEY / _NAME
-//   - 超管 sheep：本檔只有帳號名；密碼 100% 由功能變數讀取（SUPER_KEY 明文 或 SUPER_KEY_HASH 單向 hash，二選一）
+//   - 超管 sheep：本檔只有兩行 —— SUPER_ADMIN_LOGIN = 'sheep'；SUPER_ADMIN_PASSWORD = 功能變數 SUPER_KEY（APP ADMIN 設定）
 //       ❌ 移除：寫死密碼常數、雜湊後備 property、ensureSuperKey()（自動生成）、showSuperKey()（顯示密碼）
-//       ✅ 新增：superKeyConfigured()（只回 boolean）、showSuperKeyStatus()（只顯示有冇設定）、superKeyHashOf() / makeSuperKeyHash()（只輸出 hash）
+//       ✅ 只保留：superKeyConfigured()（只回 boolean）
 //       ✅ 未設定 = 超管完全登入唔到；登入失敗回同一句通用訊息，唔會透露隱藏帳戶
 //       ✅ GS 永不顯示／回傳超管密碼；initializeSheets()／showApiKey()／showVercelEnv() 只顯示旅團要交嘅 3 樣
 //       ✅ 超管操作紀錄對非超管隱藏（handleGetAuditLog(viewer)）
@@ -82,7 +80,7 @@ const ADMIN_YMIS = '1111111111';
 // SHEEP 是隱藏維護帳戶：程式碼只有帳號名，冇密碼
 // SHEEP is the hidden maintenance account: only the NAME lives in code, never a password.
 // - 只存在於後端（getUser 虛擬帳號），不寫入 Users 表、不出現在用戶管理／成員名單
-// - 密碼 100% 由功能變數讀：SUPER_KEY（明文）或 SUPER_KEY_HASH（單向，建議）；兩者未設定 = 登入唔到（冇寫死密碼、冇 fallback）
+// - SUPER_ADMIN_PASSWORD = 功能變數 SUPER_KEY（未設定 = 登入唔到；呢度冇寫死任何密碼）
 const SUPER_ADMIN_LOGIN = 'sheep';
 // 內部電郵由帳號名衍生（唯一用途：保留帳號檢查／電郵登入兼容），唔涉及任何憑證
 const SUPER_ADMIN_EMAIL = SUPER_ADMIN_LOGIN + '@cubbadge.local';
@@ -119,73 +117,27 @@ function getApiKey() {
 
 // ===== 功能變數契約（後端GS ↔ Vercel 環境變數）=====
 // 後端GS 嘅 Script Properties 同 Vercel 環境變數一一對應（兩邊同一隻值）：
-//   SUPER_KEY            ↔ getSuperKey()   Script Property 'SUPER_KEY'  ← 由 APP ADMIN 設定（GS 只讀，永不顯示）
+//   超管密碼              ↔ SUPER_ADMIN_PASSWORD = 功能變數 SUPER_KEY（Script Property）← APP ADMIN 設定，GS 只讀，永不顯示
 //   TROOP_<id>_BACKEND   ↔ 部署 URL（getScriptUrl()，部署為網頁應用程式後 /exec 結尾嗰條）
 //   TROOP_<id>_APIKEY    ↔ getApiKey()     Script Property 'API_KEY'（旅團 initializeSheets 生成，交 APP ADMIN）
 //   TROOP_<id>_NAME      ↔ getTroopName()  Script Property 'TROOP_NAME'（APP ADMIN 層）
 // 一切設定指向功能變數（唔再寫死、唔再指向 JSON）。
 const SUPER_KEY_PROP = 'SUPER_KEY';
-// 可選（建議）做法：leaf 只存 hash（SHA-256 hex），旅團就算開 Script Properties 都拎唔到超管密碼。
-// Optional (recommended): store only the SHA-256 hash in the leaf so the troop never sees the password.
-const SUPER_KEY_HASH_PROP = 'SUPER_KEY_HASH';
 const TROOP_NAME_PROP = 'TROOP_NAME';
 const TROOP_ID_PROP = 'TROOP_ID';
-/** 讀超管功能變數值（只供後端驗證用；永不回傳俾前端、永不顯示）。 */
-function getSuperKey() {
+// SUPER_ADMIN_PASSWORD = 功能變數 SUPER_KEY（唯一來源；未設定 = 登入唔到，呢度冇寫死任何密碼）
+// SUPER_ADMIN_PASSWORD = the SUPER_KEY script property (the only source; unset means no login).
+function getSuperAdminPassword() {
   try { return PropertiesService.getScriptProperties().getProperty(SUPER_KEY_PROP) || ''; }
   catch (e) { return ''; }
 }
-/** 讀超管 hash 功能變數（SHA-256 hex；只供後端驗證用，單向唔可以反推密碼）。 */
-function getSuperKeyHash() {
-  try { return String(PropertiesService.getScriptProperties().getProperty(SUPER_KEY_HASH_PROP) || '').trim().toLowerCase(); }
-  catch (e) { return ''; }
-}
-/**
- * 超管入口有冇啟用（只回 boolean，永不回值）——前端／health 可安全顯示。
- * 有設 SUPER_KEY（明文）或 SUPER_KEY_HASH（單向 hash）其中一樣 = 已啟用；未設 = 完全關閉。
- */
-function superKeyConfigured() { return !!getSuperKey() || !!getSuperKeyHash(); }
-/**
- * APP ADMIN 用：計出超管密碼嘅 SHA-256 hash，交旅團貼入 Script Property SUPER_KEY_HASH。
- * 呢個函數係單向嘅（由密碼得出 hash），唔會顯示密碼本身；旅團貼 hash 就永遠唔會知密碼。
- * APP-ADMIN helper: prints only the one-way hash to hand to a troop (the password itself is never shown).
- */
-function superKeyHashOf(plain) {
-  const h = hashPassword(String(plain || ''));
-  Logger.log(SUPER_KEY_HASH_PROP + ' = ' + h);
-  return h;
-}
-/** 輸入密碼 → 只輸出 hash（方便 APP ADMIN copy 俾旅團貼；唔會顯示密碼）。 */
-function makeSuperKeyHash() {
-  const ui = SpreadsheetApp.getUi();
-  const h = superKeyHashOf(ui ? ui.prompt('超管 hash', '輸入超管密碼（只會輸出單向 SHA-256 hash，唔會顯示密碼）：', ui.ButtonSet.OK_CANCEL).getResponseText() : '');
-  if (ui) ui.alert(SUPER_KEY_HASH_PROP, '交旅團貼入 GS → 專案設定 → 指令碼屬性：\n\n' + SUPER_KEY_HASH_PROP + ' = ' + h + '\n\n（單向 hash：旅團拎到 hash 都反推唔到密碼；APP ADMIN 喺 Vercel 設定 SUPER_KEY = 你嘅密碼）', ui.ButtonSet.OK);
-  return h;
-}
+function getSuperKey() { return getSuperAdminPassword(); }   // 別名（內部沿用）
+/** 功能變數 SUPER_KEY 有冇設定（只回 boolean，永不回值）。 */
+function superKeyConfigured() { return !!getSuperAdminPassword(); }
 /** 寫入超管功能變數（只寫不讀；由超管本人「改密碼」觸發）。 */
 function setSuperKey(v) {
   PropertiesService.getScriptProperties().setProperty(SUPER_KEY_PROP, String(v || ''));
   return true;
-}
-/** 只顯示「有冇設定」，永不顯示值（SUPER_KEY 值只可以由 GS 專案設定 → 指令碼屬性 睇）。 */
-function showSuperKeyStatus() {
-  const plain = !!getSuperKey();
-  const hashed = !!getSuperKeyHash();
-  const set = plain || hashed;
-  const msg = '超管入口：' + (set ? '✅ 已啟用（永不顯示值）' : '⛔ 未啟用（維護帳戶完全登入唔到）') +
-    '\n\n' +
-    'SUPER_KEY（明文功能變數）：' + (plain ? '✅ 已設定' : '— 未設定') +
-    '\nSUPER_KEY_HASH（單向 hash，建議）：' + (hashed ? '✅ 已設定' : '— 未設定') +
-    '\n\n' +
-    (set
-      ? '值一律唔會喺 GS 顯示：要改就去 GS 編輯器 → ⚙ 專案設定 → 指令碼屬性（由 APP ADMIN 設定）。'
-      : '本檔冇寫死任何超管密碼、冇任何後備密碼：未設定 = 完全登入唔到，亦唔會有任何 fallback。') +
-    '\n\nVercel 功能變數 SUPER_KEY（APP ADMIN 設定，保護 /api/register 等管理 API）要同呢隻密碼一致。\n' +
-    '建議：leaf 只貼單向 hash（SUPER_KEY_HASH）—— 跑 makeSuperKeyHash() 拎 hash 交旅團，旅團永遠唔會知密碼。';
-  const ui = SpreadsheetApp.getUi();
-  if (ui) ui.alert('SUPER_KEY 狀態', msg, ui.ButtonSet.OK);
-  Logger.log('SUPER_KEY configured: ' + set);
-  return set;
 }
 function getTroopId() {
   return PropertiesService.getScriptProperties().getProperty(TROOP_ID_PROP) || '';
@@ -1050,18 +1002,15 @@ function doPost(e){
 
 // ===== 邏輯 =====
 // v5.7：超管密碼 100% 由功能變數（Script Property）SUPER_KEY 提供。
-//   - 本檔冇任何寫死密碼、冇雜湊 property 後備、冇任何 fallback。
+//   - 本檔冇任何寫死密碼、冇任何 fallback。
 //   - SUPER_KEY 未設定 → 超管登入一律失敗（等於 leaf 上完全關閉維護帳戶入口）。
 //   - 比對用 timing-safe；回應一律用同一句通用訊息，唔會透露隱藏帳戶嘅存在或設定狀態。
 // v5.7: the super-admin password comes 100% from the SUPER_KEY script property — no hardcoded value,
 // no hash fallback, no default password. Unset SUPER_KEY simply means the hidden account cannot log in.
 function superPasswordMatches(plain){
-  const pw=String(plain||'');
-  const sk=getSuperKey();
-  if(sk) return ecSafeEqual(pw, sk);          // 明文功能變數優先（APP ADMIN 設定）
-  const h=getSuperKeyHash();
-  if(h) return /^[0-9a-f]{64}$/.test(h) && ecSafeEqual(hashPassword(pw), h);  // 只有 hash 時用單向比對
-  return false;                               // 兩個都未設定 = 一律唔通（唔會退回去任何預設密碼）
+  const sk=getSuperAdminPassword();
+  if(!sk) return false;                       // 未設定 SUPER_KEY = 一律唔通（唔會退回去任何預設密碼）
+  return ecSafeEqual(String(plain||''), sk);
 }
 function handleLogin(loginId,password){
   if(!loginId||!password) return jsonResponse({success:false,error:'請填寫帳號和密碼'});

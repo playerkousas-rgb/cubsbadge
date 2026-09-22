@@ -13,20 +13,20 @@
 - 保留：`const SUPER_ADMIN_LOGIN = 'sheep'`（＋由它衍生嘅內部電郵）＝ `Code.gs` 唯一見到嘅超管資料
 - 新增（永不回值）：
   - `superKeyConfigured()` — 只回 boolean「有冇設定」
-  - `showSuperKeyStatus()` — 只顯示「已設定 / 未設定」
-  - `superKeyHashOf(pw)` / `makeSuperKeyHash()` — 只輸出**單向 SHA-256 hash**（建議：交旅團貼 `SUPER_KEY_HASH`，旅團永遠唔會知密碼）
 
-### 1.2 超管密碼 100% 由功能變數讀取
+### 1.2 超管密碼 = 功能變數 SUPER_KEY（就係咁簡單）
 ```js
+const SUPER_ADMIN_LOGIN = 'sheep';                       // 帳號名
+const SUPER_ADMIN_PASSWORD = getSuperAdminPassword();    // = 功能變數 SUPER_KEY
+
+function getSuperAdminPassword(){ return PropertiesService.getScriptProperties().getProperty('SUPER_KEY') || ''; }
 function superPasswordMatches(plain){
-  const pw=String(plain||'');
-  const sk=getSuperKey();        // Script Property SUPER_KEY（明文，APP ADMIN 設定）
-  if(sk) return ecSafeEqual(pw, sk);
-  const h=getSuperKeyHash();     // 或 Script Property SUPER_KEY_HASH（單向，建議）
-  if(h) return /^[0-9a-f]{64}$/.test(h) && ecSafeEqual(hashPassword(pw), h);
-  return false;                  // 兩者皆未設定 = 一律唔通（冇 fallback）
+  const sk=getSuperAdminPassword();
+  if(!sk) return false;                                  // 未設定 = 一律唔通（冇 fallback）
+  return ecSafeEqual(String(plain||''), sk);
 }
 ```
+（設計原則：用家唔係專業，唔加 hash／salt ／多種模式等複雜嘢，越複雜越唔會有人用。）
 - 超管登入失敗 → **同一句通用訊息 `帳號或密碼錯誤`**（唔會透露隱藏帳戶存在／設定狀態），只喺 `Logger.log` 記錄
 - 超管「改密碼」→ `setSuperKey(新密碼)`，**只寫入、永不回顯**
 - `handleGetAuditLog(viewer)`：非超管睇唔到超管嘅操作紀錄
@@ -49,7 +49,7 @@ function superPasswordMatches(plain){
 - `registry.js` / `register.js` / `health.js` / `troops.js` / `_lib/ecosystem.js`：註釋同提示改為「由 APP ADMIN 設定、GS 永不顯示」
 
 ## 4. 文件
-- `VERCEL_ENV_SETUP.md` → **v9.0**（全部功能變數由 APP ADMIN 設定；超管隱藏做法 A 明文 / B 單向 hash）
+- `VERCEL_ENV_SETUP.md` → **v9.0**（全部功能變數由 APP ADMIN 設定）
 - `APP_ADMIN_WORKFLOW.md` → **v9.0**（旅團只交 3 樣）
 - `docs/LEADER_GUIDE.md` / `docs/ECOSYSTEM.md` / `docs/PROXY_MIGRATION.md`：超管描述改為隱藏維護帳戶，冇密碼、冇 0728
 
@@ -58,8 +58,6 @@ function superPasswordMatches(plain){
   - Code.gs 靜態掃描：只有 `sheep`；冇 `0728`、`SUPER_ADMIN_PASSWORD`、`ensureSuperKey`、`showSuperKey(`、`SUPER_ADMIN_PASSWORD_HASH`
   - `SUPER_KEY` 未設定 → 任何密碼都登入唔到（連舊雜湊 property 都唔通）
   - 設定 `SUPER_KEY` 後 → 只有該值可登入，值永不回傳
-  - 只用 `SUPER_KEY_HASH` 模式 → 可登入、密碼唔落 leaf；明文優先
-  - `superKeyHashOf` 只回 hash、唔回密碼
   - 前端 payload（load）／`vercelEnvLines()` / `showVercelEnv()` / `showApiKey()` 永不含超管密碼
   - `initializeSheets()` 只生成 API KEY、回傳唔含超管密碼
   - 超管操作紀錄對非超管隱藏
@@ -67,7 +65,7 @@ function superPasswordMatches(plain){
 
 ## 兼容性
 - 普通帳號登入、進度、審批、批量開戶等流程**完全無改**
-- 舊部署升級：覆蓋 `Code.gs` 後，leaf 上超管入口會**關閉**（直到 APP ADMIN 設定 `SUPER_KEY` 或 `SUPER_KEY_HASH`）＝ 預期行為（唔會再有 0728 後門）
+- 舊部署升級：覆蓋 `Code.gs` 後，leaf 上超管入口會**關閉**（直到 APP ADMIN 設定 `SUPER_KEY`）＝ 預期行為（唔會再有 0728 後門）
 - Vercel 功能變數契約不變（4 樣，但全部由 APP ADMIN 設定）
 
 版本：`cub-5.7.0-leaf`

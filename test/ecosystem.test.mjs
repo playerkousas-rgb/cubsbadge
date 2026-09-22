@@ -348,13 +348,15 @@ console.log('\n=== v5.7：超管隱藏（Code.gs 只見 sheep）+ 功能變數�
 {
   const SRC = readFileSync(path.join(__dirname, '..', 'apps-script', 'Code.gs'), 'utf8');
 
-  check('Code.gs 只見到帳號名 sheep：冇寫死密碼、冇預設密碼、冇自動生成超管 key', () => {
-    assert.ok(SRC.includes("const SUPER_ADMIN_LOGIN = 'sheep'"), '帳號名 sheep 應該喺度');
+  check('Code.gs 只有兩行：SUPER_ADMIN_LOGIN = sheep + 密碼 = 功能變數 SUPER_KEY', () => {
+    assert.ok(SRC.includes("const SUPER_ADMIN_LOGIN = 'sheep'"), '要有一行 SUPER_ADMIN_LOGIN = sheep');
+    assert.ok(/function getSuperAdminPassword\(\)[\s\S]{0,200}SUPER_KEY_PROP/.test(SRC), '超管密碼要由功能變數 SUPER_KEY 讀');
     assert.ok(!/\b0728\b/.test(SRC), 'Code.gs 唔可以有 0728');
-    assert.ok(!/SUPER_ADMIN_PASSWORD/.test(SRC), '唔可以有寫死密碼常數');
+    assert.ok(!/SUPER_ADMIN_PASSWORD\s*=\s*['"]/.test(SRC), '唔可以有寫死密碼（＝字串）');
+    assert.ok(!/SUPER_ADMIN_PASSWORD_HASH/.test(SRC), '唔可以再有雜湊後備 property');
     assert.ok(!/function\s+ensureSuperKey/.test(SRC), '唔可以自動生成超管 key（要 APP ADMIN 設定）');
     assert.ok(!/function\s+showSuperKey\s*\(/.test(SRC), '唔可以有顯示超管密碼嘅函數');
-    assert.ok(!/SUPER_ADMIN_PASSWORD_HASH/.test(SRC), '唔可以再有雜湊後備 property');
+    assert.ok(!/SUPER_KEY_HASH|makeSuperKeyHash|superKeyHashOf/.test(SRC), '唔要 hash 後備路徑（保持簡單：只有 SUPER_KEY）');
   });
 
   check('SUPER_KEY 未設定 → 超管一律登入唔到（任何密碼、任何舊後備都唔通）', () => {
@@ -381,28 +383,6 @@ console.log('\n=== v5.7：超管隱藏（Code.gs 只見 sheep）+ 功能變數�
     assert.ok(!JSON.stringify(ok).includes(KEY), '回應唔可以帶返 SUPER_KEY 值');
     // 內部電郵寫法一樣只認同一個功能變數值
     assert.equal(jparse(b.handleLogin('sheep@cubbadge.local', KEY)).success, true);
-  });
-
-  check('只用 hash 模式（建議）：旅團貼 SUPER_KEY_HASH，密碼本身唔落 leaf', () => {
-    const b = buildBackend();
-    const KEY = 'app-admin-only-password';
-    b.PropertiesService.getScriptProperties().setProperty('SUPER_KEY_HASH', b.hashPassword(KEY));
-    assert.equal(b.superKeyConfigured(), true, '只有 hash 都算已啟用');
-    assert.equal(jparse(b.handleLogin('sheep', 'wrong')).success, false);
-    const ok = jparse(b.handleLogin('sheep', KEY));
-    assert.equal(ok.success, true);
-    assert.ok(!JSON.stringify(ok).includes(KEY), '回應唔可以帶返密碼');
-    // 明文功能變數優先（兩者同時存在時以 SUPER_KEY 為準）
-    b.PropertiesService.getScriptProperties().setProperty('SUPER_KEY', 'plain-wins');
-    assert.equal(jparse(b.handleLogin('sheep', 'plain-wins')).success, true);
-    assert.equal(jparse(b.handleLogin('sheep', KEY)).success, false);
-  });
-
-  check('makeSuperKeyHash / superKeyHashOf：單向輸出 hash，唔會回傳密碼', () => {
-    const b = buildBackend();
-    const h = b.superKeyHashOf('my-secret-pw');
-    assert.ok(/^[0-9a-f]{64}$/.test(h), '要輸出 64 位 hex hash');
-    assert.ok(!String(h).includes('my-secret-pw'), '唔可以回傳密碼本身');
   });
 
   check('前端拎到嘅 payload（load）永不含 SUPER_KEY 值', () => {

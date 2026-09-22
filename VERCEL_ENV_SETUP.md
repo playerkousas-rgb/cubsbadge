@@ -39,29 +39,22 @@
 
 ---
 
-## 三、超管帳號（`sheep`）點隱藏
+## 三、超管帳號（`sheep`）—— 就兩行
 
-**`Code.gs` 只有一樣嘢：帳號名 `sheep`。**
-- 冇任何寫死密碼（`0728` 已完全移除）
-- 冇 `ensureSuperKey()` 自動生成、冇 `showSuperKey()` 顯示、冇雜湊 property 後備
-- 密碼 100% 由功能變數讀取，兩個做法（二選一，APP ADMIN 決定）：
+```js
+const SUPER_ADMIN_LOGIN = 'sheep';                                        // 帳號名
+const SUPER_ADMIN_PASSWORD = getSuperAdminPassword();                     // = 功能變數 SUPER_KEY
+function getSuperAdminPassword(){ return PropertiesService.getScriptProperties().getProperty('SUPER_KEY') || ''; }
+```
 
-| 做法 | leaf GS Script Property | 邊個設定 | 安全度 |
-|------|------------------------|---------|--------|
-| A. 明文 | `SUPER_KEY` = 密碼 | **APP ADMIN 設定**（旅團唔知） | 開 GS Script Properties 睇得到 |
-| B. **建議**：單向 hash | `SUPER_KEY_HASH` = 密碼嘅 SHA-256 | APP ADMIN 跑 `makeSuperKeyHash()` 拎 hash，交旅團貼入 | ✅ 旅團拎到 hash 都反推唔到密碼 |
+- `Code.gs` **冇任何寫死密碼**（`0728` 已完全移除）、冇自動生成、冇顯示、冇雜湊後備
+- **未設定 `SUPER_KEY` = leaf 上超管完全登入唔到**（唔會有任何後備密碼）；舊部署升級後屬預期
+- 超管登入失敗一律回**同一句通用訊息**，唔會透露隱藏帳戶存在
+- 超管唔會出現喺：Users 表、用戶管理、成員名單、全團總覽、**操作紀錄**（非超管見唔到）
+- 超管「改密碼」= `setSuperKey(新密碼)`（只寫入功能變數，**永不回顯**）；記得同步更新 Vercel `SUPER_KEY`
+- 要睇／要改值：GS 編輯器 → ⚙ 專案設定 → 指令碼屬性 → `SUPER_KEY`（只有你睇到）
 
-- 兩個都**未設定** → leaf 上超管入口**完全關閉**（連舊 `0728` 都唔會通）；超管照樣可以喺 APP 層用 Vercel `SUPER_KEY` 操作管理 API。
-- 超管登入失敗一律回**同一句通用訊息**，唔會透露隱藏帳戶存在或設定狀態。
-- 超管**唔會**出現喺：Users 表、用戶管理、成員名單、全團總覽、**操作紀錄**（非超管唔會見到超管嘅紀錄）。
-- 超管「改密碼」= 只寫入功能變數（`setSuperKey(新密碼)`，寫入 `SUPER_KEY`），**永不回顯**；記得同步更新 Vercel `SUPER_KEY`。
-  （用 hash 模式時：改用 `superKeyHashOf(新密碼)` 拎新 hash，更新 leaf 嘅 `SUPER_KEY_HASH`。）
-
-**點睇／點改超管功能變數（永不經 GS 顯示值）：**
-GS 編輯器 → ⚙ 專案設定 → 指令碼屬性（Script Properties）→ 自己睇／改。
-APP ADMIN 輔助函數：`superKeyHashOf('密碼')`、`makeSuperKeyHash()`（只輸出 hash）、`showSuperKeyStatus()`（只顯示「已設定／未設定」）。
-
----
+> 密碼由你定，**唔需要複雜**：6–8 位自己記得就得。緊要嘅係：唔喺程式碼、唔喺文件、唔喺 GitHub。
 
 ## 四、`SUPER_KEY` 喺 Vercel 端嘅用途
 
@@ -70,7 +63,7 @@ APP ADMIN 輔助函數：`superKeyHashOf('密碼')`、`makeSuperKeyHash()`（只
   - 驗證失敗 → `403`
   - 驗證通過 → 轉發註冊俾後端管理 GS
 - `/api/health` 只回 `SUPER_KEY` **有冇設定**（boolean），**永不回值**
-- 超管 `sheep` 喺 leaf GS 登入時，密碼比對嘅就係 leaf 上嘅 `SUPER_KEY` / `SUPER_KEY_HASH`（＝你喺 Vercel 設定嘅同一隻密碼）
+- 超管 `sheep` 喺 leaf GS 登入時，密碼比對嘅就係 leaf 上嘅 `SUPER_KEY`（＝你喺 Vercel 設定嘅同一隻值）
 
 ---
 
@@ -90,7 +83,7 @@ APP ADMIN 輔助函數：`superKeyHashOf('密碼')`、`makeSuperKeyHash()`（只
 - [ ] Vercel 功能變數：`SUPER_KEY` + `TROOP_<id>_BACKEND` / `_APIKEY` / `_NAME`（全部由 APP ADMIN 設定）
 - [ ] 已 Redeploy
 - [ ] leaf GS：`Code.gs` 只有 `sheep` 帳號名（無寫死密碼）
-- [ ] 超管入口：設定 `SUPER_KEY`（明文）**或** `SUPER_KEY_HASH`（建議）後才生效
+- [ ] 超管入口：喺 leaf GS 指令碼屬性設定 `SUPER_KEY` 後才生效（同 Vercel 同一隻值）
 - [ ] 用超管登入一次；用普通領袖帳號確認見唔到超管（用戶管理／成員名單／操作紀錄）
 - [ ] `/api/health` 嘅 `envContract` 4 樣 boolean + `SUPER_KEY` 都係 true
 
@@ -102,20 +95,20 @@ APP ADMIN 輔助函數：`superKeyHashOf('密碼')`、`makeSuperKeyHash()`（只
 A: 因為**全部功能變數由 APP ADMIN 設定**：值（`SUPER_KEY`、`TROOP_<id>_NAME`）你話事，URL／API Key 由旅團交俾你入 Vercel。旅團只係部署自己嘅 GS 同交 3 樣資料。
 
 **Q: 超管密碼喺邊？**
-A: 只喺功能變數（Vercel `SUPER_KEY`；leaf 可選 `SUPER_KEY` 或 `SUPER_KEY_HASH`）。`Code.gs` 只有帳號名 `sheep`，冇密碼。
+A: 只喺功能變數 `SUPER_KEY`。`Code.gs` 只有帳號名 `sheep` 同「密碼 = SUPER_KEY」呢兩行，冇密碼值。
 
 **Q: 我會唔會唔記得咗超管密碼？**
-A: 去 Vercel → Settings → Environment Variables 睇 `SUPER_KEY`（只有你睇到）；leaf 用咗 hash 模式就要喺你嘅密碼庫搵返。
+A: 去 GS → ⚙ 專案設定 → 指令碼屬性（leaf）或 Vercel → Settings → Environment Variables 睇 `SUPER_KEY`（只有你睇到）。
 
 **Q: 旅團自己開 GS Script Properties 會唔會睇到我密碼？**
-A: 用 A 模式（明文 `SUPER_KEY`）會；用 **B 模式（`SUPER_KEY_HASH`，建議）** 就唔會——只有單向 hash。
+A: 會睇到 `SUPER_KEY` 嘅值。如果你想連旅團都唔知：leaf 嗰隻 `SUPER_KEY` 用另一個值，超管喺 APP 層（Vercel `SUPER_KEY`）照舊管晒所有旅團，唔受影響。
 
 **Q: GS 彈窗會唔會再顯示帳號密碼？**
-A: 唔會。`initializeSheets()` 只顯示「交俾 APP ADMIN 嘅 3 樣」＋預設管理員帳號提示；超管相關一律只回 boolean。
+A: 唔會。`initializeSheets()` 只顯示「交俾 APP ADMIN 嘅 3 樣」＋預設管理員帳號提示，冇任何超管密碼。
 
 **Q: 幾個旅團點算？**
 A: 每旅團 3 個功能變數；`SUPER_KEY` 全 APP 一個（你一個人管晒）。
 
 ---
 
-COPYRIGHT 2026 Scout System - Vercel Env v9.0：全部功能變數由 APP ADMIN 設定；超管只見 `sheep`
+COPYRIGHT 2026 Scout System - Vercel Env v9.0：全部功能變數由 APP ADMIN 設定；超管 = `sheep` + 功能變數 `SUPER_KEY`
