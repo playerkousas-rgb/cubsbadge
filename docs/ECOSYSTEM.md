@@ -1,7 +1,7 @@
 # 接入口 (ECOSYSTEM)
 
 > 規格來源：BUILD.md（建構定案唯一真理）
-> 對應版本：cubsbadge v5.8.0-leaf
+> 對應後端版本字串（`EC_BACKEND_VERSION`）：`cub-leaf`
 
 ## 本系統喺生態圈嘅位置
 

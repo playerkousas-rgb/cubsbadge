@@ -20,7 +20,7 @@
 - **未設定 `SUPER_KEY`** = 超管登入唔到（冇後備密碼）。失敗一律回「帳號或密碼錯誤」，唔會透露隱藏帳戶存在。
 - **旅團睇唔到密碼**：Google Sheet、Apps Script、專案設定、指令碼屬性都冇。
 
-## 2. `apps-script/Code.gs`（v5.8.0-leaf）
+## 2. `apps-script/Code.gs`
 
 | 改動 | 內容 |
 |---|---|
@@ -37,10 +37,19 @@
 - `api/proxy.js`：超管登入就地處理，密碼**永遠唔會**轉發去 GS；其他帳號流程零改動。
 - `api/health.js`：診斷文字更新。
 
+## 3b. GS 減重（讀取快啲）
+
+| 改動 | 內容 |
+|---|---|
+| 加 | `tbl()` —— 同一次執行內嘅表快取：同一個 action 重複查同一張表唔會再叫 API |
+| 加 | `sheetMap()` / `ensureTable()` / `styleHeader()` —— 合併 17 段重複表頭設定、6 段重複建表邏輯 |
+| 效果 | `initializeSheets()` 查表 **15 → 2 次**（另加一次 `getSheets()`）；`handleLoad` 9 → 7 次；其餘 handler 本來已最少 |
+
 ## 4. 前端／文件
 
 - `index.html`：版本 → v5.8；文案加「GS 完全冇超管密碼」；`isSystemAccount()` 唔再硬寫帳號名。
 - `VERCEL_ENV_SETUP.md` v10.0、`APP_ADMIN_WORKFLOW.md` v10.0、`docs/CHANGE_LOG_v5.8.md`（本檔）、v5.7 文件加註更正。
+- 規矩：**程式碼內唔寫版號註解**（Code.gs／api／index.html），版號只留喺 MD 文件。
 
 ## 5. 測試
 
@@ -54,6 +63,6 @@ leaf 分唔清「APP 打嚟」定「旅團自己打嚟」—— 但如果加簽�
 同「旅團簡單化」相反。而且旅團本身已經有自己個 Sheet 嘅完全控制權，多呢一步對佢哋冇實際好處。
 所以 v5.8 唔加：**密碼放 Vercel，GS 冇**（已經達到「隱藏」嘅目的），流程同以前一樣。
 
-版本：`cub-5.8.0-leaf`
+後端版本字串（`EC_BACKEND_VERSION`）：`cub-leaf`
 
 COPYRIGHT 2026 Scout System
