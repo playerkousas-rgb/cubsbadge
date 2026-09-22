@@ -1,4 +1,4 @@
-# 👨‍💼 幼童軍領袖教學 (Leader) v5.2 - 中英對照 + 超管隱藏 + 家長申報
+# 👨‍💼 幼童軍領袖教學 (Leader) v5.7 - 中英對照 + 維護帳戶隱藏 + 家長申報
 
 > 全部由領袖負責，無執委，幼童軍年紀小，全部由領袖填寫，家長只看
 
@@ -12,12 +12,12 @@
 ## 資料範圍
 
 - 此部署只處理**幼童軍支部**的成員、進度和獎章；不要把其他支部的名單或紀錄匯入此 Google Sheet。
-- 系統維護帳號 sheep / super_admin 不會出現在成員名單、全團總覽或用戶管理中（僅超管自己可見）。超管只寫在 Code.gs，SETUP 彈窗不顯示帳號密碼（v5.2 修復）。
+- 系統維護帳戶（隱藏）不會出現在成員名單、全團總覽、用戶管理或操作紀錄中；`Code.gs` 只有帳號名，冇寫死密碼，密碼由功能變數（由 APP ADMIN 設定）讀取，SETUP 彈窗永不顯示帳號密碼。
 
 ## 主要功能（對齊 ScoutBadge v5.2）
 
 - **中英文一鍵切換**：右上角 🌐 English / 中文，純介面翻譯層，項目 ID 及後端紀錄完全不變，後端仍用中文正名寫入，適合英語旅團。
-- **超管隱藏**：sheep / 0728（或 sheep@cubbadge.local）為後端隱藏維護帳戶，只存在於程式碼／Script Properties，不寫入 Users 表，不在用戶管理出現。initializeSheets() 會自動清除舊部署遺留的 sheep 列，防護保留：不能被停用／重設密碼／改角色／申請／批量開戶佔用。
+- **維護帳戶隱藏（v5.7）**：後端隱藏維護帳戶只由 APP ADMIN 管理——`Code.gs` 只有帳號名，密碼存於功能變數（`SUPER_KEY` 或單向 `SUPER_KEY_HASH`，由 APP ADMIN 設定），未設定即完全登入唔到（冇任何預設／後備密碼）。帳戶不寫入 Users 表、不在用戶管理／成員名單／操作紀錄出現；initializeSheets() 會自動清除舊部署遺留嘅相關列，防護保留：不能被停用／重設密碼／改角色／申請／批量開戶佔用。
 - **幼童軍專用邏輯**：會員章→幼童軍獎章→歷奇章→高級歷奇章→金紫荊獎章（PT/68）。全部進度由領袖填寫，家長/成員只看。進度申請預設關閉（allow_member_requests=false），活動履歷申報恆常開放（家長=成員帳號填寫，領袖審批）。
 - **活動履歷「家長/成員申報 → 領袖審批」v5.2**：與童軍支部一致，家長/成員可為自己申報服務／活動／訓練班紀錄；批准後才寫入活動履歷；已批准要改，由家長/成員再提交修改申報，經領袖重批後以同一 record_id 更新（只有履歷可自行申報修改；進度獎章及其他獎章批准後只有領袖可改）。
 - **批量開戶**：上載 YMIS「自訂報表」PDF（支援密碼解鎖）自動讀出 YMIS／姓名／電郵，預覽後一鍵開戶；亦支援 Excel/CSV/JSON。
@@ -83,7 +83,7 @@
 - **Fix SyntaxError await in batchApprove breaking homepage JS**：batchApprove 必須為 async function，避免 await 在非 async 函數中導致整頁 JS 報錯卡死。
 - **Fix 82/0082 normalization**：normalizeToPadded4 / normalizeStripped，0082 和 82 互通，proxy 返回 troubleshooting 提示，健康檢查 /api/health 檢查 normalization 是否工作。
 - **Enhance diagnoseSheets to detect empty SHEET**：diagnoseSheets() 檢查必要工作表是否齊全，usersCount / membersCount 判斷是否為空表/被重置，提示檢查是否連錯試算表。
-- **超管隱藏**：SETUP 彈窗不顯示 sheep 帳號密碼，只寫在 GS；Users 表及用戶管理不會出現 sheep，僅超管可見；保留帳號檢查、移除舊列、防護保留。
+- **維護帳戶隱藏（v5.7）**：SETUP 彈窗永不顯示帳號密碼（只顯示旅團要交俾 APP ADMIN 嘅 API Key）；Users 表、用戶管理、成員名單、操作紀錄都唔會出現該帳戶；保留帳號檢查、移除舊列、防護保留。
 
 ## 日常紀錄及金紫荊申請工作流程
 
@@ -96,4 +96,4 @@
 > APP 已涵蓋會員章、幼童軍獎章、歷奇章、高級歷奇章、金紫荊獎章及活動徽章名錄。專業活動、安全規定、正式簽發與官方表格以香港童軍總會最新版本為準。
 
 ---
-COPYRIGHT 2026 Scout System • CubBadge v5.2 • 中英對照 • 超管隱藏 • 家長申報領袖審批 • 對齊 ScoutBadge 最近修復
+COPYRIGHT 2026 Scout System • CubBadge v5.7 • 中英對照 • 維護帳戶隱藏 • 家長申報領袖審批 • 對齊 ScoutBadge 最近修復

@@ -1,5 +1,7 @@
 # CHANGE LOG v5.6 — 下游配套（上游控下游寫 + JSON 含 hash 搬遷）
 
+> ⚠️ **已被 v5.7 更正（見 `docs/CHANGE_LOG_v5.7.md`）**：超管密碼唔再由旅團／GS 產生或顯示；所有 Vercel 功能變數由 APP ADMIN 設定。
+
 > 在 v5.5 功能變數契約（4樣）之上，補齊 `BUILD.md §1+§2` 對下游（進度 leaf）要做嘅部分。  
 > 未有上游時多餘、有上游時直接可用；全部新增無改動既有 action，完全向下兼容，單用時 `ALLOW_LOCAL_LOGIN` 保持 `true` 唔會誤閂。
 

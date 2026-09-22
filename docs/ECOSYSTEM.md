@@ -150,17 +150,17 @@ GAS 端亦有對應嘅 `ecStatus` / `ecGetModules`（免 token,唔含敏感資�
 
 ---
 
-## 6. 環境變數（功能變數契約 4 樣）
+## 6. 環境變數（功能變數契約；全部由 APP ADMIN 設定）
 
 | 變數 | 用途 | 必需 |
 |---|---|---|
-| `SUPER_KEY` | 超管 key（同後端 GS 超管 sheep 密碼對應，兩邊同一隻值）；保護 `/api/register` | 管理 API 必需 |
+| `SUPER_KEY` | APP ADMIN 設定嘅管理 key（= 超管帳戶密碼，同 leaf GS 功能變數對應）；保護 `/api/register` | 管理 API 必需 |
 | `TROOP_<id>_BACKEND` | 本 leaf `/exec` URL（後端GS 對應：部署 URL） | 是 |
 | `TROOP_<id>_APIKEY` | 本 leaf apikey（**只存 server**；後端GS 對應：Script Property `API_KEY`） | 敏感 action + sigLogin 必需 |
 | `TROOP_<id>_NAME` | 旅團名稱（後端GS 對應：Script Property `TROOP_NAME`） | 是 |
 | `EC_FLUSH_KEY` | cache flush 授權 | 否（未設＝flush 回 503） |
 
-設定全部指向功能變數（唔讀 JSON）；`troops.json` 已棄用。詳見 `VERCEL_ENV_SETUP.md`。
+設定全部指向功能變數（唔讀 JSON）；**全部由 APP ADMIN 設定**，旅團只提供編號／部署 URL／API Key。`troops.json` 已棄用。詳見 `VERCEL_ENV_SETUP.md`（v9.0）。
 
 ---
 

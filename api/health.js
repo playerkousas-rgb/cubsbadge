@@ -61,9 +61,9 @@ module.exports = async function handler(req, res) {
       steps: [
         '1. 檢查 /api/troops 是否包含 0082',
         '2. 檢查 /api/health?troopId=0082 的 troopFound 是否 true',
-        '3. 檢查 Vercel 環境變數 TROOP_0082_BACKEND / TROOP_0082_APIKEY / TROOP_0082_NAME 是否已設定（另加全 APP 一個 SUPER_KEY）',
+        '3. 檢查 Vercel 環境變數 TROOP_0082_BACKEND / TROOP_0082_APIKEY / TROOP_0082_NAME 是否已設定（全部由 APP ADMIN 設定；另加全 APP 一個 SUPER_KEY）',
         '4. 在 Google Apps Script 編輯器執行 diagnoseSheets() 查看缺失表',
-        '5. 執行 initializeSheets() 重建缺失工作表（會自動生成 API_KEY + SUPER_KEY）',
+        '5. 執行 initializeSheets() 重建缺失工作表（只生成 API_KEY；SUPER_KEY 由 APP ADMIN 設定）',
         '6. 重新部署 Apps Script 為新版本，確保「任何人可存取」',
         '7. 檢查 Google Sheet 是否被誤刪除或只有 admin 一人'
       ]
@@ -76,7 +76,7 @@ module.exports = async function handler(req, res) {
       success: false,
       error: `Troop ${troopId} not found. 可能是 Vercel 環境變數未設定 TROOP_${normalized}_BACKEND / _APIKEY / _NAME。`,
       receivedTroopId: troopId,
-      envVarHint: `檢查 Vercel 環境變數 TROOP_${normalized}_BACKEND / TROOP_${normalized}_APIKEY / TROOP_${normalized}_NAME 是否設定（另加全 APP 一個 SUPER_KEY）`
+      envVarHint: `APP ADMIN 檢查 Vercel 環境變數 TROOP_${normalized}_BACKEND / TROOP_${normalized}_APIKEY / TROOP_${normalized}_NAME 是否設定（另加全 APP 一個 SUPER_KEY）`
     });
   }
 

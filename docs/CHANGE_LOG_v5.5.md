@@ -1,5 +1,9 @@
 # CHANGE LOG v5.5 — 功能變數契約（4樣）+ 後端GS 對應
 
+> ⚠️ **已被 v5.7 更正（見 `docs/CHANGE_LOG_v5.7.md`）**：
+> 本文件寫「超管密碼 = `SUPER_KEY`，用 `showSuperKey()` 睇」、「旅團跑 initializeSheets 會生成 SUPER_KEY 交 APP ADMIN」係**錯**嘅做法，已作廢。
+> 正確：**所有功能變數由 APP ADMIN 設定**；旅團只生成 API KEY、只交 3 樣（編號／部署 URL／API KEY）；`Code.gs` 只有帳號名 `sheep`，冇寫死密碼、GS 永不顯示超管密碼。
+
 > 更正之前 agent 寫錯嘅設定契約。全部設定「指向功能變數」，唔再指向 JSON、唔再寫死。
 
 ## 契約：Vercel 環境變數 4 樣

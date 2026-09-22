@@ -1,6 +1,6 @@
 // Central admin registration proxy - avoids browser direct fetch to script.google.com
-// v3.0 功能變數契約：管理員操作要帶 SUPER_KEY（x-super-key header 或 body superKey），
-// 同後端 GS 超管 sheep 密碼對應（兩邊同一隻值），並轉發俾後端管理 GS 驗證。
+// v3.0 功能變數契約：APP ADMIN 層嘅管理操作要帶 SUPER_KEY（x-super-key header 或 body superKey）。
+// SUPER_KEY 由 APP ADMIN 喺 Vercel 設定（唔係旅團設定、GS 亦唔會顯示），並轉發俾後端管理 GS 驗證。
 const { getSuperKey, verifySuperKey } = require('./_lib/registry');
 const ADMIN_API_URL = process.env.SCOUT_ADMIN_API || 'https://script.google.com/macros/s/AKfycbxj5BDDGgjs559smkK4Z5aYImWYeXbN5af8U1ObON0z9WnsN6QJW4I1XWolhs5kQ_H-UQ/exec';
 const TIMEOUT_MS = 12000;
@@ -41,12 +41,12 @@ async function handler(req, res) {
     return res.status(400).json({ success: false, error: 'Invalid JSON body' });
   }
 
-  // ── SUPER_KEY 超管驗證（功能變數 SUPER_KEY ↔ 後端 GS 超管 sheep 密碼）──
+  // ── SUPER_KEY 驗證（APP ADMIN 喺 Vercel 設定嘅管理 key；GS 永不顯示值）──
   // key 未設定 = 管理 API 停用（同 EC_FLUSH_KEY 一樣，唔會變成公開註冊口）。
   if (!getSuperKey()) {
     return res.status(503).json({
       success: false,
-      error: 'SUPER_KEY 未設定：請喺 Vercel 環境變數設定 SUPER_KEY（同後端 GS 超管 sheep 密碼對應，兩邊同一隻值）'
+      error: 'SUPER_KEY 未設定：請 APP ADMIN 喺 Vercel 環境變數設定 SUPER_KEY（管理 API 用）'
     });
   }
   const providedKey = String((req.headers && req.headers['x-super-key']) || body.superKey || body.super_key || '');

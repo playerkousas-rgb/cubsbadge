@@ -1,5 +1,5 @@
 {
-  "_doc": "本 leaf 嘅平台 registry — 公開 metadata only。設定指向 Vercel 功能變數（4樣）：SUPER_KEY、TROOP_<id>_BACKEND、TROOP_<id>_APIKEY、TROOP_<id>_NAME（後端GS 對應）；apikey／SUPER_KEY 值只存功能變數，永不寫入此檔。",
+  "_doc": "本 leaf 嘅平台 registry — 公開 metadata only。設定全部喺 Vercel 功能變數，由 APP ADMIN 設定：SUPER_KEY、TROOP_<id>_BACKEND、TROOP_<id>_APIKEY、TROOP_<id>_NAME（旅團只提供編號／部署 URL／API Key）；apikey／SUPER_KEY 值只存功能變數，永不寫入此檔。",
   "version": "1.1.0",
   "updated_at": "2026-09-22",
   "platform": {

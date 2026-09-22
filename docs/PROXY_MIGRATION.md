@@ -143,10 +143,10 @@
 ## Vercel 是否需要新增環境變數？
 
 - 功能變數契約（4樣，全部必需）：
-  - `SUPER_KEY`（全 APP 一個）：超管 key（同後端 GS 超管 sheep 密碼對應）；`/api/register` 要帶 `x-super-key`
+  - `SUPER_KEY`（全 APP 一個，**APP ADMIN 設定**）：管理 key（= 超管帳戶密碼，同 leaf GS 功能變數對應）；`/api/register` 要帶 `x-super-key`
   - 每旅團 3 個：`TROOP_XXXX_BACKEND` / `TROOP_XXXX_APIKEY` / `TROOP_XXXX_NAME`（或 `TROOP_82_*` 去零變體）
   - 可選 `SCOUT_ADMIN_API` 用於 `/api/register` 轉發目標，預設已 hardcode 為現有 admin GAS，無 env 時仍可用。
-- 若新增旅團，按流程：旅團交 4 樣 → 管理員喺 Vercel 加 `TROOP_XXXX_BACKEND` / `_APIKEY` / `_NAME` 功能變數 + redeploy（唔使改任何 JSON；`troops.json` 已棄用）。詳見 `VERCEL_ENV_SETUP.md`。
+- 若新增旅團，按流程：旅團交 **3 樣**（旅團編號／部署 URL／API Key）→ APP ADMIN 喺 Vercel 加 `TROOP_XXXX_BACKEND` / `_APIKEY` / `_NAME` 功能變數（`SUPER_KEY` 全 APP 一個，亦由 APP ADMIN 設定）+ redeploy（唔使改任何 JSON；`troops.json` 已棄用）。詳見 `VERCEL_ENV_SETUP.md`（v9.0）。
 
 ## 部署及合併步驟
 
