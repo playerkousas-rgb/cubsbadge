@@ -65,6 +65,7 @@ function makeSheet(name, header) {
   const rows = header ? [header.slice()] : [[]];
   const sheet = {
     name,
+    getName() { return sheet.name; },
     rows,
     appendRow(vals) {
       const target = header.length;
