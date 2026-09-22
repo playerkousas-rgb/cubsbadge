@@ -247,7 +247,27 @@ await check('proxy：前端自帶 apikey 會被丟棄，一律用 registry 嗰�
   } finally { restoreFetch(); }
 });
 
-await check('proxy：apikey 未設定 → 敏感 action 直接 503（§10 施工次序 1）', async () => {
+await check('proxy：未設 apikey 但用戶已登入 → 照行（唔可以整死現有旅團）', async () => {
+  // 回歸防線：好多旅團部署咗但未喺 Vercel 設 TROOP_<id>_APIKEY，
+  // 一直靠 session token 運作（Code.gs 本身就有呢個向下兼容）。
+  // proxy 唔可以喺呢度一刀切攔截，否則勾進度／開戶／批量加人即刻全死。
+  clearEnv();
+  process.env.TROOP_0082_BACKEND = 'https://script.google.com/macros/s/AKfycbREALXXXXXXXXXX/exec';
+  let called = false;
+  stubFetch([['script.google.com', async () => { called = true; return { body: { success: true } }; }]]);
+  try {
+    const handler = freshModule('../api/proxy.js');
+    for (const action of ['save', 'addUser', 'addMember', 'saveOtherBadge', 'bulkAddUsers']) {
+      called = false;
+      const res = mockRes();
+      await handler(mockReq({ method: 'POST', body: { troopId: '82', action, token: 'valid-session' } }), res);
+      assert.equal(res.statusCode, 200, `${action} 應該照行`);
+      assert.ok(called, `${action} 應該真係打到上游`);
+    }
+  } finally { restoreFetch(); }
+});
+
+await check('proxy：冇 apikey 又冇 token → 401（真係零認證先攔）', async () => {
   clearEnv();
   process.env.TROOP_0082_BACKEND = 'https://script.google.com/macros/s/AKfycbREALXXXXXXXXXX/exec';
   let called = false;
@@ -255,11 +275,10 @@ await check('proxy：apikey 未設定 → 敏感 action 直接 503（§10 施工
   try {
     const handler = freshModule('../api/proxy.js');
     const res = mockRes();
-    await handler(mockReq({ method: 'POST', body: { troopId: '82', action: 'save', token: 't', changes: [] } }), res);
-    assert.equal(res.statusCode, 503);
-    assert.equal(res.body.code, 'apikey_not_configured');
+    await handler(mockReq({ method: 'POST', body: { troopId: '82', action: 'save', changes: [] } }), res);
+    assert.equal(res.statusCode, 401);
+    assert.equal(res.body.code, 'no_credentials');
     assert.ok(!called, '拒絕就唔應該打上游');
-    assert.ok(res.body.troubleshooting.hint.includes('TROOP_0082_APIKEY'));
   } finally { restoreFetch(); }
 });
 

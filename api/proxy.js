@@ -94,15 +94,21 @@ module.exports = async function handler(req, res) {
     delete payload.backend;   // 前端永遠唔可以自帶 backend URL（SSRF 防線）
     delete payload.scriptUrl;
 
-    if (!troopConfig.apikey && SENSITIVE_ACTIONS.has(action)) {
-      // key 未設定即拒絕敏感 action：寧可擺明唔做，都好過無聲無息行一個冇認證嘅上游。
-      console.error(`[PROXY] refuse action=${action} troop=${troopId}: apikey not configured`);
-      return res.status(503).json({
+    // key 未設定 + 連 token 都冇 = 真係零認證，擺明唔做好過無聲無息行落去。
+    //
+    // 注意：唔可以淨係見到「冇 apikey」就攔。GAS 本身有向下兼容設計
+    // （Code.gs：「若無 apikey 但有有效 token 也允許」），好多旅團部署咗
+    // 但未喺 Vercel 設 TROOP_<id>_APIKEY，佢哋一直靠 session token 正常運作。
+    // 喺呢度一刀切攔截，會即刻整死勾進度／開戶／批量加人。
+    // 認證與否最終由 GAS 判斷，proxy 只負責擋「乜都冇」嗰種。
+    if (!troopConfig.apikey && !payload.token && SENSITIVE_ACTIONS.has(action)) {
+      console.error(`[PROXY] refuse action=${action} troop=${troopId}: no apikey and no token`);
+      return res.status(401).json({
         success: false,
-        code: 'apikey_not_configured',
-        error: `單位 ${troopId} 未設定 API Key，敏感操作 (${action}) 已被拒絕。`,
+        code: 'no_credentials',
+        error: `敏感操作 (${action}) 需要登入。請重新登入後再試。`,
         troubleshooting: {
-          hint: `請喺 Vercel 設定環境變數 TROOP_${normalizeToPadded4(troopId)}_APIKEY，或喺 data/troops.json 補上 apikey。`,
+          hint: `若此單位長期靠 API Key 運作，請喺 Vercel 設定環境變數 TROOP_${normalizeToPadded4(troopId)}_APIKEY。`,
           action
         }
       });
