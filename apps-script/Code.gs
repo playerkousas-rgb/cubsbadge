@@ -16,14 +16,17 @@ const ADMIN_YMIS = '1111111111';
 const SUPER_ADMIN_LOGIN = 'sheep';
 // 內部電郵由帳號名衍生（唯一用途：保留帳號檢查／電郵登入兼容），唔涉及任何憑證
 const SUPER_ADMIN_EMAIL = SUPER_ADMIN_LOGIN + '@cubbadge.local';
+// 表內儲存用嘅中性代號：Sheet 儲存格永遠唔會寫 'sheep'（驗收：SHEET 搜 "sheep" 零儲存格命中）
+const SUPER_STORAGE_ID = 'APP_ADMIN';
 // 保留帳號檢查：任何申請／開戶／改角色都不可佔用 sheep 或佢嘅內部電郵
 // Reserved-account guard: no apply / addUser / bulk / role-edit may take over sheep or its email.
 function isSuperAdminId(id){
   const v=String(id||'').trim().toLowerCase();
-  return v===SUPER_ADMIN_LOGIN || v===SUPER_ADMIN_EMAIL;
+  return v===SUPER_ADMIN_LOGIN || v===SUPER_ADMIN_EMAIL || v===SUPER_STORAGE_ID.toLowerCase();
 }
 function isSuperAdminReserved(ymis,email){
-  return String(ymis||'').trim().toLowerCase()===SUPER_ADMIN_LOGIN ||
+  const y=String(ymis||'').trim().toLowerCase();
+  return y===SUPER_ADMIN_LOGIN || y===SUPER_STORAGE_ID.toLowerCase() ||
          (String(email||'').trim()!=='' && String(email).trim().toLowerCase()===SUPER_ADMIN_EMAIL);
 }
 const ADMIN_NAME = '管理員';
@@ -464,6 +467,8 @@ function initializeSheets() {
   const apiKey = getApiKey();
   // 超管密碼只喺 APP ADMIN 嘅 Vercel 功能變數：leaf 唔生成、唔讀、唔寫；舊部署遺留嘅指令碼屬性順手清走。
   const purgedLegacySuperKey = purgeLegacySuperKeyProperty();
+  const superLabelRowsFixed = purgeSuperAdminLabels();   // 舊部署寫過 'sheep' 就改成中性代號
+  if (superLabelRowsFixed) removeSuperAdminRows();       // 順手再確保 Users／成員名單冇超管列
   setConfigDefaults(cfgSheet);                  // allow_member_requests／view_others／progress_scope 等預設值
   try {
     const _propsDown = PropertiesService.getScriptProperties();
@@ -477,10 +482,10 @@ function initializeSheets() {
         const r=ui.prompt('旅團編號','功能變數命名用 TROOP_0082_BACKEND 呢種格式。\n請輸入旅團編號（例如 0082）：',ui.ButtonSet.OK_CANCEL);
         if(r && r.getSelectedButton()===ui.Button.OK && String(r.getResponseText()||'').trim()) setTroopId(r.getResponseText());
       }
-      ui.alert('✅ 初始化完成！\n\n' + INIT_DONE_LINES + '\n' + (purgedLegacySuperKey ? '🗑️ 已清走舊版遺留喺指令碼屬性嘅 SUPER_KEY（超管密碼只應存在 Vercel）。\n' : '') + '詳情隨時再睇：showVercelEnv() / showApiKey()');
+      ui.alert('✅ 初始化完成！\n\n' + INIT_DONE_LINES + '\n' + (purgedLegacySuperKey ? '🗑️ 已清走舊版遺留喺指令碼屬性嘅 SUPER_KEY（超管密碼只應存在 Vercel）。\n' : '') + (superLabelRowsFixed ? '🧹 已把 '+superLabelRowsFixed+' 格舊超管帳號名改成中性代號。\n' : '') + '詳情隨時再睇：showVercelEnv() / showApiKey()');
     }
   }catch(e){}
-  return {success:true,apiKey:apiKey,superKeyConfigured:superKeyConfigured(),superKeyHeldBy:'vercel-env',legacySuperKeyPurged:!!purgedLegacySuperKey,scriptUrl:scriptUrl,troopId:getTroopId(),troopName:getTroopName()};
+  return {success:true,apiKey:apiKey,superKeyConfigured:superKeyConfigured(),superKeyHeldBy:'vercel-env',legacySuperKeyPurged:!!purgedLegacySuperKey,superLabelRowsFixed:superLabelRowsFixed,scriptUrl:scriptUrl,troopId:getTroopId(),troopName:getTroopName()};
 }
 
 // ===== 用戶查詢 =====
@@ -973,9 +978,9 @@ function handleSuperLogin(body){
   body = body || {};
   if(!getApiKey()) return jsonResponse({success:false,error:'此單位未設定 API Key（TROOP_<編號>_APIKEY），超管登入停用'});
   const su = getUser(SUPER_ADMIN_LOGIN);
-  const token = createToken(SUPER_ADMIN_LOGIN);
+  const token = createToken(SUPER_STORAGE_ID);   // 寫入 Tokens 表用中性代號，唔會出現 'sheep'
   try{ PropertiesService.getScriptProperties().setProperty('SUPER_ADMIN_LAST_LOGIN', now()); }catch(e){}
-  writeAudit(SUPER_ADMIN_LOGIN,'super_login',SUPER_ADMIN_LOGIN,'經 APP 登入（leaf 冇持有超管密碼）');
+  writeAudit(SUPER_STORAGE_ID,'super_login',SUPER_STORAGE_ID,'經 APP 登入（leaf 冇持有超管密碼）');
   return jsonResponse({success:true,token:token,user:su,via:'app'});
 }
 
@@ -1055,7 +1060,7 @@ function handleChangePassword(ymis,oldP,newP){
   // the super-admin password lives in the APP ADMIN's Vercel env var; the leaf has nothing to verify or
   // write, so password changes are done in Vercel. Nothing here ever stores or echoes a super-admin password.
   if(isSuperAdminId(ymis)){
-    writeAudit(ymis,'change_password_refused',ymis,'超管改密碼必須喺 Vercel 改（leaf 冇、亦唔會寫入超管密碼）');
+    writeAudit(SUPER_STORAGE_ID,'change_password_refused',SUPER_STORAGE_ID,'超管改密碼必須喺 Vercel 改（leaf 冇、亦唔會寫入超管密碼）');
     return jsonResponse({success:false,changed:false,code:'SUPER_KEY_AT_APP_ADMIN',
       error:'維護帳戶密碼只存在 APP ADMIN 嘅 Vercel 功能變數：請去 Vercel → Project → Settings → Environment Variables → SUPER_KEY 改，然後 Redeploy（本系統永不寫入、永不回顯）。'});
   }
@@ -1242,6 +1247,27 @@ function getMembers(){
 }
 // 移除舊部署可能已寫入 Users／成員名單的超管列（只匹配 sheep / sheep@cubbadge.local，不會誤刪其他帳號）
 // Remove any legacy super-admin rows (matching sheep / sheep@cubbadge.local only — never touches other accounts).
+/**
+ * 舊部署可能已經把超管帳號名寫過落表（Tokens／操作紀錄／EC_ACCESS_LOG）。
+ * 呢度把嗰啲格改成中性代號（APP_ADMIN），令「SHEET 搜 sheep」零命中；只改值，唔刪任何紀錄。
+ */
+function purgeSuperAdminLabels(){
+  let fixed=0;
+  const names=['Tokens','操作紀錄','EC_ACCESS_LOG'];
+  for(let i=0;i<names.length;i++){
+    const sh=tbl(names[i]); if(!sh) continue;
+    let d; try{ d=sh.getDataRange().getValues(); }catch(e){ continue; }
+    for(let r=0;r<d.length;r++){
+      for(let c=0;c<d[r].length;c++){
+        const v=String(d[r][c]==null?'':d[r][c]);
+        if(v && isSuperAdminId(v) && v.trim().toUpperCase()!==SUPER_STORAGE_ID){
+          try{ sh.getRange(r+1,c+1).setValue(SUPER_STORAGE_ID); fixed++; }catch(e){}
+        }
+      }
+    }
+  }
+  return fixed;
+}
 function removeSuperAdminRows(){
   try{
     // 改用 getUsersTable（表頭解析），欄位調動也不會誤刪其他帳號

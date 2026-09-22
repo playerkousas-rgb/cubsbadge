@@ -392,7 +392,9 @@ console.log('\n=== 超管隱藏（leaf 完全冇 SUPER_KEY）＋ APP ADMIN 層�
     assert.equal(r.user.ymis, 'sheep');
     assert.equal(r.user.role, 'super_admin');
     assert.equal(r.via, 'app');
-    assert.equal(b.validateToken(r.token), 'sheep', 'token 真係可以用');
+    // 表內用中性代號（Sheet 唔會出現 'sheep'），但一樣解得返超管身份
+    assert.equal(b.validateToken(r.token), 'APP_ADMIN', 'token 真係可以用（表內中性代號）');
+    assert.equal(b.getUser(b.validateToken(r.token)).role, 'super_admin');
     assert.ok(!JSON.stringify(r).includes('sk_legacy_leftover'), '回應唔應該有超管密碼');
     assert.ok(!JSON.stringify(r).includes(KEY), '回應唔可以帶 apikey');
   });
@@ -455,6 +457,63 @@ console.log('\n=== 超管隱藏（leaf 完全冇 SUPER_KEY）＋ APP ADMIN 層�
     assert.ok(!JSON.stringify(b.showApiKey()).includes(KEY));
   });
 
+  check('SHEET 驗收：全表零 APIKEY／BACKEND／sheep／URL 儲存格（收工行一次 lifecycle 都唔會寫入）', () => {
+    const b = buildBackend();
+    const KEY = 'sc_unit82_lifecycle_key';
+    b.PropertiesService.getScriptProperties().setProperty('API_KEY', KEY);
+    b.setTroopId('0082');
+    b.initializeSheets();
+    const post = (o) => jparse(b.doPost({ postData: { contents: JSON.stringify(o) } }));
+    const login = post({ action: 'login', login_id: b.ADMIN_YMIS, password: '1234', role: 'admin' });
+    post({ action: 'apply', ymis: '1234567890', name: '測試成員', email: 'm@example.org', role: 'member', branch: 'b4' });
+    post({ action: 'addMember', token: login.token, ymis: '1234567890', name: '測試成員' });
+    post({ action: 'save', token: login.token, ymis: '1234567890', badge_id: 'M01', date: '2026-01-01' });
+    post({ action: 'exportAll', token: login.token, includeHash: true });
+    post({ action: 'superLogin', apikey: KEY });
+    post({ action: 'getDownstreamAccess' });
+    post({ action: 'login', login_id: 'sheep', password: 'whatever' });
+    // 模擬舊部署已經寫過嘅超管帳號名（Tokens／操作紀錄）＋ 一次 initializeSheets 清掃
+    b.writeAudit('sheep', 'super_login', 'sheep', '舊部署遺留');
+    const init = b.initializeSheets();
+    assert.ok(init.superLabelRowsFixed >= 2, '要清走舊部署寫過嘅超管帳號名，實際 ' + init.superLabelRowsFixed);
+    const hits = [];
+    b.__ss.getSheets().forEach((sh) => {
+      const name = sh.getName();
+      sh.getDataRange().getValues().forEach((row, r) => row.forEach((cell, c) => {
+        const v = String(cell == null ? '' : cell);
+        if (/APIKEY|API[_ -]?KEY|BACKEND|sheep/i.test(v) || /^https?:\/\//i.test(v)) hits.push(name + ' R' + (r + 1) + 'C' + (c + 1) + '=' + v.slice(0, 40));
+      }));
+    });
+    assert.deepEqual(hits, [], 'SHEET 唔可以有 APIKEY／BACKEND／sheep／URL：\n' + hits.join('\n'));
+  });
+
+  check('超管寫表一律用中性代號 APP_ADMIN；舊 token 一樣有效，非超管照舊睇唔到', () => {
+    const b = buildBackend();
+    const KEY = 'sc_unit82_label_key';
+    b.PropertiesService.getScriptProperties().setProperty('API_KEY', KEY);
+    b.setTroopId('0082');
+    b.initializeSheets();
+    const post = (o) => jparse(b.doPost({ postData: { contents: JSON.stringify(o) } }));
+    const su = post({ action: 'superLogin', apikey: KEY });
+    assert.equal(su.success, true, su.error);
+    // Tokens 表：subject 係中性代號
+    const tok = b.__ss.getSheetByName('Tokens').getDataRange().getValues();
+    const row = tok.find((r) => String(r[0]) === su.token);
+    assert.ok(row, '要有 token 列');
+    assert.equal(String(row[1]), 'APP_ADMIN', 'Tokens 表唔可以寫 sheep');
+    // Token 一樣解得返超管身份
+    const me = b.getUser(b.validateToken(su.token));
+    assert.equal(me.role, 'super_admin');
+    // 審計：中性代號，而且非超管睇唔到
+    const auditRows = b.__ss.getSheetByName('操作紀錄').getDataRange().getValues().slice(1);
+    assert.ok(auditRows.some((r) => String(r[1]) === 'APP_ADMIN' && String(r[2]) === 'super_login'), '要有 super_login 審計');
+    assert.ok(!JSON.stringify(auditRows).includes('sheep'), '操作紀錄唔可以有 sheep');
+    const asAdmin = jparse(b.handleGetAuditLog({ role: 'admin', ymis: b.ADMIN_YMIS }));
+    assert.ok(!JSON.stringify(asAdmin.records).includes('APP_ADMIN'), '非超管唔應該睇到超管紀錄');
+    const asSuper = jparse(b.handleGetAuditLog({ role: 'super_admin', ymis: 'sheep' }));
+    assert.ok(JSON.stringify(asSuper.records).includes('APP_ADMIN'), '超管自己睇得返');
+  });
+
   check('initializeSheets：只生成 API KEY + 清走舊部署遺留嘅 SUPER_KEY property', () => {
     const b = buildBackend();
     const KEY = 'sk_init_secret';
@@ -506,7 +565,9 @@ console.log('\n=== 超管隱藏（leaf 完全冇 SUPER_KEY）＋ APP ADMIN 層�
       assert.equal(res.statusCode, 200, JSON.stringify(res.body));
       assert.equal(res.body.success, true, JSON.stringify(res.body));
       assert.equal(res.body.user.role, 'super_admin');
-      assert.equal(b.validateToken(res.body.token), 'sheep', '真 token 要通過 leaf validateToken');
+      const subject = b.validateToken(res.body.token);
+      assert.equal(subject, 'APP_ADMIN', '真 token 要通過 leaf validateToken（表內中性代號）');
+      assert.equal(b.getUser(subject).role, 'super_admin');
       assert.equal(leafCalls, 1, '成功路徑只打 leaf 一次');
 
       const res2 = mkRes();

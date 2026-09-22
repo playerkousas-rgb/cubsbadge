@@ -479,6 +479,24 @@ await check('proxy：超管登入 → Vercel 比對 SUPER_KEY，之後只送 act
   } finally { restoreFetch(); }
 });
 
+await check('proxy：下游入口關閉（DOWNSTREAM_CLOSED）→ 回 HTTP 403，訊息照樣帶到前端', async () => {
+  clearEnv();
+  process.env.TROOP_0082_BACKEND = 'https://script.google.com/macros/s/AKfycbTESTKEYXXXXXXXX/exec';
+  process.env.TROOP_0082_APIKEY = 'sc_key_82_secret';
+  stubFetch([['script.google.com', async () => ({
+    body: { success: false, error: '下游本地入口已關閉（ALLOW_LOCAL_LOGIN=false）', code: 'DOWNSTREAM_CLOSED', allowLocal: false }
+  })]]);
+  try {
+    const handler = freshModule('../api/proxy.js');
+    const res = mockRes();
+    await handler(mockReq({ method: 'POST', body: { troopId: '0082', action: 'login', login_id: '1234567890', password: '1234' } }), res);
+    assert.equal(res.statusCode, 403, '閂口後本地登入要回 403');
+    assert.equal(res.body.code, 'DOWNSTREAM_CLOSED');
+    assert.equal(res.body.success, false);
+    assert.ok(res.body.error && res.body.error.length > 0, '要帶訊息俾前端顯示');
+  } finally { restoreFetch(); clearEnv(); }
+});
+
 await check('proxy：普通帳號登入完全唔受影響（照舊 action=login，唔會經超管閘）', async () => {
   clearEnv();
   process.env.TROOP_0082_BACKEND = 'https://script.google.com/macros/s/AKfycbTESTKEYXXXXXXXX/exec';

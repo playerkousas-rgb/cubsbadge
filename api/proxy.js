@@ -209,6 +209,9 @@ module.exports = async function handler(req, res) {
       }
     }
 
+    // 下游入口關閉（leaf 回 code=DOWNSTREAM_CLOSED）：代理回 HTTP 403，前端一樣讀到同一個訊息
+    if (jsonResult && jsonResult.code === 'DOWNSTREAM_CLOSED') return res.status(403).json(jsonResult);
+
     return res.status(200).json(jsonResult);
 
   } catch (err) {
