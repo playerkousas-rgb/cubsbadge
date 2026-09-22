@@ -53,6 +53,11 @@ function superPasswordMatches(plain){
 - `APP_ADMIN_WORKFLOW.md` → **v9.0**（旅團只交 3 樣）
 - `docs/LEADER_GUIDE.md` / `docs/ECOSYSTEM.md` / `docs/PROXY_MIGRATION.md`：超管描述改為隱藏維護帳戶，冇密碼、冇 0728
 
+## 4.5 密碼規則：一律 4-8 位（v5.7）
+- 後端：`MIN_PASSWORD_LEN = 4`、`MAX_PASSWORD_LEN = 8`，共用一個 `passwordRuleError(pw)`（改密／重設／開戶／批量開戶全部同一條規則），訊息統一「密碼需 4-8 位」
+- 前端：所有密碼輸入框 `minlength="4" maxlength="8"`（強制改密／重設密碼／新增帳號），提示文字同錯誤訊息一併改為 4-8 位
+- 舊帳號用長過 8 位嘅舊密碼**照樣登入得**（登入唔驗長度）；只有新設／重設密碼受 4-8 位限制
+
 ## 5. 測試
 - `test/ecosystem.test.mjs` 新增 **v5.7 區塊（9 項）**：
   - Code.gs 靜態掃描：只有 `sheep`；冇 `0728`、`SUPER_ADMIN_PASSWORD`、`ensureSuperKey`、`showSuperKey(`、`SUPER_ADMIN_PASSWORD_HASH`
@@ -61,7 +66,8 @@ function superPasswordMatches(plain){
   - 前端 payload（load）／`vercelEnvLines()` / `showVercelEnv()` / `showApiKey()` 永不含超管密碼
   - `initializeSheets()` 只生成 API KEY、回傳唔含超管密碼
   - 超管操作紀錄對非超管隱藏
-- 結果：`api 23 / ecosystem 50 / e2e 69` 全綠
+  - 密碼 4-8 位：8 位可通過、9 位被拒、`passwordRuleError` 邊界檢查
+- 結果：`api 23 / ecosystem 48 / e2e 72` 全綠
 
 ## 兼容性
 - 普通帳號登入、進度、審批、批量開戶等流程**完全無改**

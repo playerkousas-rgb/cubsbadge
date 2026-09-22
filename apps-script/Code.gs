@@ -98,10 +98,17 @@ const ADMIN_NAME = '管理員';
 const ADMIN_EMAIL = 'admin@example.com';
 const ADMIN_PASS = 'changeme';
 // v5.3.1（對齊 SCOUTBADGE／VSBADGE）：申請批核後初始臨時密碼統一預設 1234；
-// 首次登入強制改密（最少 MIN_PASSWORD_LEN 位）後才可使用。
+// 首次登入強制改密後才可使用。
+// v5.7：密碼規定 4-8 位（用家唔係專業，越複雜越唔會用）。
 const MIN_PASSWORD_LEN = 4;
-const MAX_PASSWORD_LEN = 128;
+const MAX_PASSWORD_LEN = 8;
 const DEFAULT_TEMP_PASSWORD = '1234';
+// 密碼規則（全系統一致）：4-8 位。回傳空字串 = 合格。
+function passwordRuleError(pw){
+  const s=String(pw||'');
+  if(s.length<MIN_PASSWORD_LEN || s.length>MAX_PASSWORD_LEN) return '密碼需 '+MIN_PASSWORD_LEN+'-'+MAX_PASSWORD_LEN+' 位';
+  return '';
+}
 
 // ===== 工具 =====
 function getSheet() { return SpreadsheetApp.getActiveSpreadsheet(); }
@@ -1063,8 +1070,8 @@ function handleResetPassword(targetYmis,managerUser,newPassword){
   // v5.2：超管 sheep 不在 Users 表，不能被重設密碼 / sheep is backend-only: password reset blocked.
   if(isSuperAdminId(targetYmis)) return jsonResponse({success:false,error:'此為系統保留帳號，不能重設密碼'});
   const temp=String(newPassword||DEFAULT_TEMP_PASSWORD);
-  if(temp.length<MIN_PASSWORD_LEN) return jsonResponse({success:false,error:'新密碼至少'+MIN_PASSWORD_LEN+'位'});
-  if(temp.length>MAX_PASSWORD_LEN) return jsonResponse({success:false,error:'新密碼不可超過'+MAX_PASSWORD_LEN+'位'});
+  const pwErr=passwordRuleError(temp);
+  if(pwErr) return jsonResponse({success:false,error:pwErr});
   let t=getUsersTable();
   if(!t) return jsonResponse({success:false,error:'找不到 Users 工作表'});
   let row=findUserRowByYmis(t,targetYmis);
@@ -1119,9 +1126,9 @@ function handleGetAuditLog(viewer){
   return jsonResponse({success:true,records:out});
 }
 function handleChangePassword(ymis,oldP,newP){
-  // v5.3.1：首次登入／重設後強制改密，新密碼最少 MIN_PASSWORD_LEN(4) 位即可。
-  if(newP.length<MIN_PASSWORD_LEN) return jsonResponse({success:false,error:'新密碼至少'+MIN_PASSWORD_LEN+'位'});
-  if(newP.length>MAX_PASSWORD_LEN) return jsonResponse({success:false,error:'新密碼不可超過'+MAX_PASSWORD_LEN+'位'});
+  // v5.7：新密碼一律 4-8 位（同一條規則）。
+  const pwErr=passwordRuleError(newP);
+  if(pwErr) return jsonResponse({success:false,error:pwErr});
   if(newP===String(oldP||'')) return jsonResponse({success:false,error:'新密碼不可與原密碼相同'});
   // v5.2：超管 sheep 為後端虛擬帳號，密碼存於 Script Properties（不會寫入 Users 工作表）。
   // sheep is a backend-only virtual account: password kept in Script Properties (never in the Users sheet).
@@ -1405,7 +1412,7 @@ function createUserRecord(body,mgr){
   if(!/^(\d{10}|L\d+)$/.test(ymis)) return {success:false,error:'YMIS 須為 10 位數字（領袖可留空，會自動編配）'};
   if(!name) return {success:false,error:'請填寫姓名'};
   if(password && !role) return {success:false,error:'開立帳號需指定 role'};
-  if(password && password.length<MIN_PASSWORD_LEN) return {success:false,error:'密碼至少'+MIN_PASSWORD_LEN+'位'};
+  if(password){ const pwErr=passwordRuleError(password); if(pwErr) return {success:false,error:pwErr}; }
   if(isSuperAdminReserved(ymis,body.email)) return {success:false,error:'此帳號已被保留，請使用其他帳號'};
   // v5.3.2：YMIS／Email 全表唯一（包括已停用帳號）—— 同一個 YMIS／Email 不可開第二個帳號；
   // 舊帳號已停用時提示改用「重新啟用」，不再產生重複列（重複列曾導致重設密碼寫錯列）

@@ -146,7 +146,7 @@ function seedUser(sandbox, o) {
   check('批量回傳訊息', () => assert.ok(res.message.includes('3 成功')));
 }
 
-// ---------- 【10g】首次登入強制改密最少 4 位 ----------
+// ---------- 【10g】首次登入強制改密：密碼 4-8 位 ----------
 {
   const b = buildBackend();
   seedUser(b, { ymis: '1000000001', name: '新成員', email: 'm1@example.org', role: 'member', pwd: '1234', force: true });
@@ -156,6 +156,16 @@ function seedUser(sandbox, o) {
   seedUser(b, { ymis: '1000000002', name: '另一員', email: 'm2@example.org', role: 'member', pwd: '1234', force: true });
   const bad3 = jparse(b.handleChangePassword('1000000002', '1234', 'abc'));
   check('新密碼少於 4 位被拒', () => { assert.equal(bad3.success, false); assert.ok(bad3.error.includes('4')); });
+  const bad9 = jparse(b.handleChangePassword('1000000002', '1234', 'abcdefghi'));
+  check('新密碼超過 8 位被拒（4-8 位規則）', () => { assert.equal(bad9.success, false); assert.ok(bad9.error.includes('8')); });
+  const ok8 = jparse(b.handleChangePassword('1000000002', '1234', 'abcdefgh'));
+  check('新密碼 8 位可通過（4-8 位規則）', () => assert.equal(ok8.success, true));
+  check('passwordRuleError：4-8 位以外一律有錯', () => {
+    assert.equal(b.passwordRuleError('abc'), '密碼需 4-8 位');
+    assert.equal(b.passwordRuleError('abcdefghi'), '密碼需 4-8 位');
+    assert.equal(b.passwordRuleError('abcd'), '');
+    assert.equal(b.passwordRuleError('abcdefgh'), '');
+  });
   // 登入回傳 force_change_password
   const login = jparse(b.handleLogin('1000000001', 'abcd'));
   check('改密後登入不再強制改密', () => { assert.equal(login.success, true); assert.equal(login.force_change_password, false); });
