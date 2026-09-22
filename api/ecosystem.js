@@ -1,14 +1,16 @@
 // ============================================================
-// /api/ecosystem — 旅團生態圈接入端點 (BUILD.md §1 §2 §4 §5)
+// /api/ecosystem — 本 leaf 嘅接入口
 //
-//   ?action=registry   兩層 registry 合併結果（公開 metadata，永無 apikey）
-//   ?action=modules    TROOP_MODULES 解析後的啟用模組 + 自動導航
-//   ?action=share      某模組可分享到邊啲支部（接收方要有該模組）
-//   ?action=flush      手動清 5 分鐘 cache（需 EC_FLUSH_KEY）
-//   ?action=stats      cache 狀態（診斷用）
-//   POST action=sigLogin  上層 sig 換本 leaf session（§2 三點進入之一）
+// 本系統 = 幼童軍進度追蹤,生態圈最下游嘅 leaf。
+// 呢個端點淨係做「自我描述」同「收上游接入」,唔會主動打上游。
 //
-// 死規矩：apikey 只存 server（env / OPS 表），永不回前端、永不入 URL、永不入 QR。
+//   ?action=registry      我係邊個單位、我有咩模組、點搵到我（公開,永無 apikey）
+//   ?action=modules       本單位啟用咗嘅模組
+//   ?action=flush         清 cache（需 EC_FLUSH_KEY）
+//   ?action=stats         cache 狀態（診斷用）
+//   POST action=sigLogin  上層簽發嘅 sig 換本 leaf session（BUILD.md §2 三點進入之一）
+//
+// 死規矩: apikey 只存 server（env）,永不回前端、永不入 URL、永不入 QR。
 // ============================================================
 
 const { normId, strippedId, isValidUnitId } = require('./_lib/normid');
@@ -57,13 +59,12 @@ module.exports = async function handler(req, res) {
   }
 
   try {
-    // ---------- flush：手動清 cache（BUILD.md §1）----------
     if (action === 'flush') {
       const key = String(req.headers['x-ec-flush-key'] || body.flushKey || query.key || '');
       const expected = process.env.EC_FLUSH_KEY || '';
       if (!expected) return res.status(503).json({ success: false, error: 'EC_FLUSH_KEY 未設定，flush endpoint 停用' });
       if (key !== expected) return res.status(403).json({ success: false, error: 'Forbidden' });
-      const cleared = eco.cacheFlush(query.scope === 'all' ? null : `ops:${unit}`);
+      const cleared = eco.cacheFlush(query.scope === 'all' ? null : `unit:${unit}`);
       return res.status(200).json({ success: true, cleared, scope: query.scope === 'all' ? 'all' : unit });
     }
 
@@ -72,6 +73,8 @@ module.exports = async function handler(req, res) {
     }
 
     // ---------- sigLogin：上層 sig 換 leaf session（BUILD.md §2）----------
+    // 呢度係接入口嘅核心:上游（旅系統／地域）簽張飛落嚟,本 leaf 認得就俾入。
+    // 本 leaf 唔會反過來打上游 —— 要接入係上游打落嚟。
     if (action === 'sigLogin') {
       const cfg = getTroopConfig(unit);
       if (!cfg) return res.status(404).json({ success: false, error: `Unregistered unit: ${unit}` });
@@ -85,9 +88,9 @@ module.exports = async function handler(req, res) {
       if (normId(v.scope.childId) !== unit) {
         return res.status(401).json({ success: false, error: 'SIG childId 與請求單位不符' });
       }
-      const enabled = eco.resolveModules(unit, (await eco.getTroopRegistry(unit)).modules);
+      const enabled = eco.resolveModules(unit);
       const target = v.scope.target || 'progress';
-      const gate = eco.assertModuleEnabled(target === 'progress' ? 'progress' : target, enabled);
+      const gate = eco.assertModuleEnabled(target, enabled);
       if (!gate.ok) return res.status(403).json({ success: false, error: gate.error, code: gate.code });
       // 只回 scope，唔回 apikey；前端之後照行 /api/proxy（server 端先 inject key）。
       return res.status(200).json({
@@ -95,49 +98,33 @@ module.exports = async function handler(req, res) {
         unit,
         scope: v.scope,
         modules: enabled,
-        navigation: eco.buildNavigation(enabled),
         note: 'sig 已驗；apikey 永不回傳，業務請求一律經同源 /api/proxy。'
       });
     }
 
-    // ---------- registry / modules / share ----------
+    // ---------- registry / modules ----------
     const platform = eco.getPlatformUnits();
     const meta = platform[unit] || null;
     const cfg = getTroopConfig(unit);
-    const force = query.force === '1' || body.force === true;
-    const troopReg = await eco.getTroopRegistry(unit, { force });
-    const enabled = eco.resolveModules(unit, troopReg.modules);
+    const enabled = eco.resolveModules(unit);
 
     if (action === 'modules') {
       return res.status(200).json({
         success: true,
         unit,
         modules: enabled,
-        navigation: eco.buildNavigation(enabled),
-        registryModules: eco.MODULE_REGISTRY,
-        opsLinked: troopReg.ok
+        detail: eco.describeModules(enabled)
       });
     }
 
-    if (action === 'share') {
-      const moduleId = String(body.module || query.module || 'notice');
-      const gate = eco.assertModuleEnabled(moduleId, enabled);
-      if (!gate.ok) return res.status(403).json({ success: false, error: gate.error, code: gate.code });
-      return res.status(200).json({
-        success: true,
-        unit,
-        module: moduleId,
-        targets: eco.shareTargets(moduleId, troopReg.branches),
-        note: '分享前設 = 接收方都有該模組；冇該模組嘅支部唔會出現喺清單。'
-      });
-    }
-
-    // 預設 registry
+    // 預設 registry：本 leaf 嘅自我描述
     return res.status(200).json({
       success: true,
       unit,
       normalized: { padded: unit, stripped: strippedId(unit) },
       identity: { axiom: 'SCOUT_ID + 所在 SHEET' },
+      role: 'leaf',
+      system: 'cub-progress',
       platform: {
         registered: !!meta || !!cfg,
         name: (meta && meta.name) || (cfg && cfg.name) || `第 ${strippedId(unit)} 旅`,
@@ -147,16 +134,16 @@ module.exports = async function handler(req, res) {
         apikeyConfigured: !!(cfg && cfg.apikey),
         registeredVia: (meta && meta.registered_via) || (cfg ? 'env' : null)
       },
-      troop: {
-        opsLinked: troopReg.ok,
-        reason: troopReg.ok ? null : troopReg.reason,
-        opsVersion: troopReg.opsVersion || null,
-        branches: troopReg.branches || [],
-        fetchedAt: troopReg.fetchedAt || null,
-        cacheTtlMs: eco.CACHE_TTL_MS
-      },
       modules: enabled,
-      navigation: eco.buildNavigation(enabled),
+      detail: eco.describeModules(enabled),
+      upstream: {
+        // 開定俾上游嘅接入口。本 leaf 唔會主動打出去。
+        sigLogin: 'POST /api/ecosystem {action:"sigLogin", unit, payload, sig}',
+        sigAlgorithm: 'HMAC-SHA256(本單位 apikey, canonical(payload))',
+        payloadFields: ['childId', 'sub', 'role', 'children', 'target', 'exp'],
+        maxTtlSec: 1800,
+        doc: 'docs/ECOSYSTEM.md'
+      },
       _note: 'apikey 永不出現喺此回應；一切業務請求經同源 /api/proxy 由伺服器注入。'
     });
   } catch (err) {

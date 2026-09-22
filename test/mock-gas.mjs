@@ -123,8 +123,6 @@ function newSpreadsheet() {
     getSheets() { return Object.values(sheets); },
     insertSheet(n) {
       const h = {
-        'EC_REGISTRY': ['unit_id','name','branch','backend','apikey','modules','status','updated_at','updated_by'],
-        'EC_MODULES': ['module','enabled','scope','note','updated_at','updated_by'],
         'EC_ACCESS_LOG': ['ts','sub','role','via','event','detail'],
         'Users': USERS_HEADER,
         'Applications': ['app_id','ymis','name','email','role','branch','status','applied_at','reviewed_by','reviewed_at','note'],

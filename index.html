@@ -382,7 +382,6 @@ html[lang="en"] body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","No
     <button class="nav-tab" id="btn-tab-overview" onclick="switchTab('overview', this)" data-i18n="nav_overview">👥 全團總覽</button>
     <button class="nav-tab" id="btn-tab-requests" onclick="switchTab('requests', this)"><span data-i18n="nav_requests">✅ 審批中心</span> <span id="badgeRequestsCount" style="background:var(--red);color:#fff;border-radius:999px;padding:1px 6px;font-size:10px;display:none">0</span></button>
     <button class="nav-tab" id="btn-tab-logs" onclick="switchTab('logs', this)" data-i18n="nav_logs">📅 活動履歷</button>
-    <button class="nav-tab" id="btn-tab-notice" onclick="switchTab('notice', this)"><span data-i18n="nav_notice">📢 通告</span> <span id="noticeBadgeCount" style="background:var(--blue);color:#fff;border-radius:999px;padding:1px 6px;font-size:10px;display:none">0</span></button>
     <button class="nav-tab" id="btn-tab-forms" onclick="switchTab('forms', this)" data-i18n="nav_forms">🏅 金紫荊申請</button>
     <button class="nav-tab" id="btn-tab-help" onclick="switchTab('help', this)" data-i18n="nav_help">❓ 教學</button>
     <button class="nav-tab" id="btn-tab-info" onclick="switchTab('info', this)" data-i18n="nav_info">📚 資料庫</button>
@@ -392,7 +391,6 @@ html[lang="en"] body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","No
   <div id="tab-overview" class="tab-content"></div>
   <div id="tab-requests" class="tab-content"></div>
   <div id="tab-logs" class="tab-content"></div>
-  <div id="tab-notice" class="tab-content"></div>
   <div id="tab-forms" class="tab-content"></div>
   <div id="tab-help" class="tab-content"></div>
   <div id="tab-info" class="tab-content"></div>
@@ -559,28 +557,6 @@ html[lang="en"] body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","No
   <div class="modal-actions"><button class="btn btn-secondary" onclick="closeModal('accountApplyModal')" data-i18n="cancel">取消</button><button class="btn btn-primary" onclick="submitAccountApply()" data-i18n="submit">提交申請</button></div>
 </div></div>
 
-<div id="subscribeModal" class="modal"><div class="modal-content" style="max-width:720px">
-  <h3 data-i18n="sub_title">🔔 個人化訂閱設定</h3>
-  <p style="font-size:12px;color:var(--text-light);line-height:1.7" data-i18n="sub_desc">揀支部 × 項目。</p>
-  <p style="font-size:11px;background:var(--green-light);color:var(--green);padding:8px 10px;border-radius:8px;margin:8px 0" data-i18n="sub_privacy">🔒 私隱</p>
-  <div id="subBody"><div style="text-align:center;padding:20px;color:var(--text-light)"><div class="spinner" style="margin:0 auto 10px"></div><span data-i18n="sub_loading">讀取訂閱字典中…</span></div></div>
-  <div class="modal-actions"><button class="btn btn-secondary" onclick="closeModal('subscribeModal')" data-i18n="cancel">取消</button><button class="btn btn-primary" id="btnSaveSub" onclick="saveSubscription()" data-i18n="sub_save">💾 儲存訂閱設定</button></div>
-</div></div>
-
-<div id="shareModal" class="modal"><div class="modal-content" style="max-width:420px">
-  <h3 data-i18n="share_title">🔗 分享</h3>
-  <p style="font-size:11px;color:var(--text-light);line-height:1.7" data-i18n="share_desc">收到連結／QR 的人可直接開啟該頁，毋須任何密碼。</p>
-  <div id="shareTitleLine" style="font-size:13px;font-weight:600;margin:8px 0;word-break:break-word"></div>
-  <div id="shareQrBox" style="text-align:center;padding:10px;background:#fff;border:1px solid var(--border);border-radius:10px"></div>
-  <div style="font-size:11px;color:var(--text-light);text-align:center;margin-top:4px" data-i18n="share_qr">掃描 QR 開啟</div>
-  <input type="text" id="shareUrlInput" readonly style="width:100%;margin-top:10px;padding:8px;border:2px solid var(--border);border-radius:8px;font-size:11px;font-family:monospace">
-  <div class="modal-actions" style="flex-wrap:wrap">
-    <button class="btn btn-sm btn-secondary" onclick="copyShareLink()" data-i18n="share_copy">📋 複製連結</button>
-    <button class="btn btn-sm btn-success" id="btnShareWa" data-i18n="share_wa">💬 WhatsApp</button>
-    <button class="btn btn-sm btn-primary" onclick="closeModal('shareModal')" data-i18n="close">關閉</button>
-  </div>
-</div></div>
-
 <div id="savingOverlay" class="saving-overlay"><div class="spinner"></div><h3 id="savingText" style="color:#8B5A00;font-size:16px">正在寫入雲端...</h3><p id="savingSub" style="font-size:12px;color:var(--text-light)">請稍候，切勿關閉頁面</p><div style="width:200px;height:6px;background:var(--border);border-radius:999px;overflow:hidden"><div id="savingProgress" style="height:100%;width:0%;background:var(--maroon);transition:width .3s"></div></div></div>
 <div id="toast" class="toast"></div>
 
@@ -592,10 +568,6 @@ html[lang="en"] body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","No
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="assets/ymis-parse.js"></script>
-<!-- 旅團生態圈接入 (BUILD.md)：normId 鏡像 / registry 客戶端 / 分享 QR / 個人化訂閱 -->
-<script src="assets/ec-qr.js"></script>
-<script src="assets/ec-core.js"></script>
-<script src="assets/ec-subscribe.js"></script>
 <script>
 /* ================== 🌐 i18n ================== */
 const I18N={
@@ -644,74 +616,7 @@ zh:{
   forms_auto_title:'🏅 金紫荊獎章申請支援',forms_auto_desc:'日常進度已直接在 APP 及 Google Sheet 保存，毋須再次列印或另建 PDF 紀錄冊。本頁只在準備金紫荊獎章開展、考驗及申請時使用。',forms_auto_pts:'<li>按已記錄的完成日期整理金紫荊申請所需資料</li><li>產生官方紀錄冊的填寫核對清單</li><li>保留官方 PT/67、PT/68 及官方紀錄冊下載</li>',forms_guide_title:'📋 幼童軍表格說明',forms_guide_desc:'<b>PT/68 金紫荊獎章及證書申請表</b>：幼童軍最高榮譽，需先完成高級歷奇章。<br><b>PT/67 開展通知書</b>：開始考驗前提交。<br><b>考驗紀錄冊</b>：24頁紀錄露營、遠足、先鋒、烹飪、黑夜歷程/攀登/繩網、活動徽章、領導、服務。',
   forms_pick_member:'選擇成員：',forms_gen_pt68:'🏅 金紫荊申請資料核對',forms_gen_pt67:'📄 金紫荊開展資料核對',forms_gen_record:'📓 官方紀錄冊填寫核對清單',forms_gen_cert:'🏆 產生旅團證書',cert_title:'幼童軍完成證書',cert_en:'CUB SCOUT ACHIEVEMENT CERTIFICATE',
   log_service:'服務',log_activity:'活動',log_training:'訓練班',log_total_hours:'服務總時數',log_add_btn:'➕ 新增紀錄',log_self_add:'📝 申報紀錄',log_none:'暫無紀錄',log_none_leader:'，可按上方「➕ 新增紀錄」補登',log_empty_self:'，可按上方「📝 申報紀錄」自行申報（需領袖批准）',log_role:'崗位：',log_hours:'時數：',log_cert:'證書：',log_recorder:'記錄：',log_edit_title:'編輯',log_del_title:'刪除',log_updated:'✅ 活動履歷已更新',log_cannot_read:'未能讀取紀錄',log_read_fail:'讀取失敗：',log_only_leader_add:'只有領袖可以新增／編輯紀錄',log_backend_old:'後端未升級 v5.2，暫未能儲存',log_not_found:'找不到紀錄，請先重新載入',log_modal_edit:'✏️ 編輯紀錄',log_title_service:'服務名稱',log_title_training:'訓練班名稱',log_title_activity:'活動名稱',log_label_hours:'時數',log_label_service_hours:'服務時數',log_fill_required:'請填寫日期及名稱',log_saving:'儲存中...',log_saved_demo:'✅ 已儲存（DEMO 本機模式，不寫入雲端）',log_saved:'✅ 已儲存 {0} 筆活動履歷',log_saved_partial:'已儲存 {0} 筆；{1} 筆失敗（{2}）',log_save_fail:'儲存失敗：',log_backend_old_err:'旅團後端未升級 v5.2：請通知管理員更新 Code.gs 並執行 initializeSheets()',log_del_confirm:'確定刪除「{0}」？此操作不能復原。',log_only_leader_del:'只有領袖可以刪除紀錄',log_deleted_demo:'已刪除（DEMO 本機模式）',log_deleted:'✅ 已刪除紀錄',log_del_fail:'刪除失敗：',log_pending_h:'待領袖審批的申報',log_req_new:'新增申報',log_req_edit:'修改申報',log_cancel_req:'↩️ 取消申報',log_cancel_confirm:'確定取消申報「{0}」？',log_cancelled:'✅ 已取消申報',log_edit_pending:'⏳ 修改待批',log_edit_pending_toast:'此紀錄已有待批修改申報，請等待領袖審批或先取消',log_req_edit_btn:'申請修改（需領袖重批）',log_only_own_edit:'只可申請修改自己的紀錄',log_req_add_title:'📝 申報活動履歷（需領袖批准）',log_req_edit_title:'✏️ 申請修改紀錄（需領袖重批）',log_req_submit:'📨 提交申報',log_req_sending:'提交中...',log_req_sent:'✅ 申報已提交，待領袖審批',log_req_fail:'申報失敗：',log_req_demo_ok:'✅ 已提交申報（DEMO 本機模式）',log_req_need_upgrade:'後端未升級 v5.2，暫未能自行申報，請聯絡領袖代為輸入',logm_req_hint:'💡 提交後由領袖審批，批准後才會寫入活動履歷。已批准的紀錄如需修改，可再提交修改申報，經領袖重批後更新。',log_orig_rec:'原紀錄：',log_orig_missing:'⚠️ 找不到原紀錄（可能已被刪除）',log_req_approved:'✅ 已批准申報',log_req_rejected:'已拒絕申報',
-  nav_notice:'📢 通告',retry:'🔄 重試',
-  import_title:'📥 收到一則通告',
-  import_desc:'呢則通告由通告圖書館交俾本系統。下面係內容預覽，確認之後先會收入你嘅旅團收件匣。',
-  import_zero_priv:'🔒 外部系統零特權：圖書館只可以把內容送入嚟，佢冇本系統任何權限、改唔到你嘅資料。是否收納、幾時公布，一律由本旅團領袖決定。',
-  import_accept:'📥 收入本旅團收件匣',
-  import_home:'🏠 返回首頁',
-  import_saved:'✅ 已收入本旅團收件匣，登入後可在通告頁處理。',
-  import_saved_anon:'✅ 已暫存喺你部機。請登入你嘅旅團，再返嚟處理。',
-  import_bad_title:'⚠️ 連結內容不完整',
-  import_bad_desc:'呢條匯入連結冇帶通告標題或來源，可能係複製時斷咗。請返回通告圖書館重新按「送到旅團系統」。',
-  import_f_title:'標題',import_f_source:'來源',import_f_date:'日期',import_f_deadline:'截止',import_f_audience:'對象',import_f_fee:'費用',
 
-  notice_h:'📢 通告 · 本旅團 + 個人化訂閱',
-  notice_sub:'本單位通告與你已訂閱的通告圖書館項目，同頁同列表（附來源標示）。',
-  notice_settings:'⚙️ 訂閱設定',
-  notice_refresh:'🔄 重新整理',
-  notice_none:'未有通告',
-  notice_none_sub:'設定個人化訂閱後，命中你支部及項目的新通告會自動出現在此，亦可推送到你部機。',
-  notice_open_settings:'⚙️ 立即設定訂閱',
-  notice_src_library:'通告圖書館',
-  notice_src_unit:'本單位',
-  notice_deadline:'截止：',
-  notice_audience:'對象：',
-  notice_fee:'費用：',
-  notice_attachment:'📎 開啟附件',
-  notice_share:'🔗 分享',
-  notice_loading:'讀取通告中…',
-  notice_load_fail:'通告讀取失敗：',
-  notice_updated:'圖書館最後更新：',
-  notice_count_fmt:'命中 {0} 則',
-  sub_title:'🔔 個人化訂閱設定',
-  sub_desc:'揀支部 × 項目。命中「支部 AND 項目」的新通告先會出現／推送，同一通告只推一次。設定只存喺你部機（LocalStorage），唔會上傳身份資料。',
-  sub_privacy:'🔒 私隱：只上傳瀏覽器通知地址同你揀咗嘅支部／項目 — 冇 YMIS、冇姓名、冇電郵。館方只知「幾多人訂、訂咩」，唔知「邊個」。',
-  sub_branch_h:'1. 揀支部',
-  sub_topic_h:'2. 揀項目',
-  sub_topic_hint:'先揀支部，下面會列出該支部的訓練／服務／活動／比賽項目。',
-  sub_all_new:'🌐 全選：所有新通告（不限支部或分類，包括未分類）',
-  sub_push_h:'3. 推送通知',
-  sub_push_on:'🔔 開啟推送通知',
-  sub_push_off:'🔕 關閉推送通知',
-  sub_push_note:'開啟後由通告圖書館每日 06:00 檢查，命中即推。iOS 需先將本站「加到主畫面」。',
-  sub_push_unsupported:'⚠️ 此瀏覽器不支援推送通知；你仍可在通告頁查看已訂閱項目。',
-  sub_save:'💾 儲存訂閱設定',
-  sub_saved:'✅ 訂閱設定已儲存（只存喺你部機）',
-  sub_push_enabled:'✅ 已開啟推送通知',
-  sub_push_disabled:'已關閉推送通知',
-  sub_push_fail:'推送設定失敗：',
-  sub_pick_topic:'請至少揀一個訂閱項目',
-  sub_selected_fmt:'已揀 {0} 個項目',
-  sub_loading:'讀取訂閱字典中…',
-  sub_load_fail:'訂閱字典讀取失敗：',
-  sub_deeplink:'📖 前往通告圖書館',
-  share_title:'🔗 分享',
-  share_desc:'收到連結／QR 的人可直接開啟該頁，毋須任何密碼。連結與 QR 永不含 API Key 或登入資料。',
-  share_copy:'📋 複製連結',
-  share_copied:'✅ 連結已複製',
-  share_wa:'💬 WhatsApp',
-  share_qr:'掃描 QR 開啟',
-  share_qr_toolong:'內容過長，未能生成 QR；請改用複製連結。',
-  eco_title:'🔗 生態圈接入',
-  eco_unit:'單位',
-  eco_platform:'平台 registry',
-  eco_troop:'旅系統 registry',
-  eco_linked:'已接入',
-  eco_standalone:'獨立運作',
-  eco_modules:'已啟用模組',
-  eco_backend_ver:'後端版本',
-  eco_refresh:'🔄 重新讀取接入狀態',
   help_title_fmt:'❓ 教學 - 按角色分開 (你當前：{0} {1})',help_intro:'此頁只顯示你關心的功能，已改為內嵌版，不會再出現 404。',help_member_btn:'👤 家長/成員教學',help_leader_btn:'👨‍💼 領袖教學',help_docs_title:'📚 完整文件',
   info_roles_title:'👥 登入後各功能教學 - 家長/成員 / 領袖',info_member_can:'👤 家長/成員 (member) 可以做什麼',info_member_pts:'<li>只能看自己的進度，不能看全團（除非團長開放互看）</li><li>不可直接勾選進度，所有進度由領袖負責更新</li><li>可在「📅活動履歷」自行申報服務／活動／訓練班紀錄（家長=成員帳號）→ 領袖審批</li><li>可使用「🏅金紫荊申請」表格列印</li><li>可查看「📚資料庫」內官方訓練綱要、森林故事、制服等</li>',info_leader_can:'👨‍💼 領袖可以做什麼',info_leader_pts:'<li>全部功能 - 幼童軍年紀小，全部由領袖處理，無執委</li><li>我的進度選任何成員看紀錄，直接勾選+日期，離線暫存確認寫入</li><li>全團總覽：會員章一眼睇+批量一鍵幫全團剔</li><li>審批中心：用戶審批+履歷申報審批</li><li>活動履歷：直接新增/編輯/刪除+批量套用多成員</li><li>用戶管理：改角色、權限、批量開戶 YMIS PDF、重設密碼（可直接設定新密碼）、改資料、停用／重新啟用、刪除純成員</li><li>YMIS／Email 全團唯一，同一個不可開第二個帳號</li>',
   users_role_title:'👥 角色說明：USER vs 成員',users_role_body:'<b>USER</b> = 所有在 Users 表的人，包括：<br>• <span class="role-badge role-member">幼童軍成員 member</span> = 幼童軍，年紀小<br>• <span class="role-badge role-branch_leader">幼童軍團長 branch_leader</span> = 領袖<br>• <span class="role-badge role-group_leader">旅長 group_leader</span> = 領袖<br>• <span class="role-badge role-admin">管理員 admin</span> = 領袖<br>{0}<b>成員</b> = role=member 的人。<br><b>領袖</b> = 幼童軍團長/旅長/管理員{1}，全部由領袖處理，無執委。',
@@ -800,74 +705,7 @@ en:{
   forms_auto_title:'🏅 Golden Bauhinia Award Application Support',forms_auto_desc:'Daily progress saved directly in APP and Google Sheet, no need to print separate record book. This page only for Golden Bauhinia commencement, assessment and application.',forms_auto_pts:'<li>Organise Golden Bauhinia required data by recorded dates</li><li>Generate checklist to fill official record book</li><li>Keep official PT/67, PT/68 and official record book downloads</li>',forms_guide_title:'📋 Cub Forms',forms_guide_desc:'<b>PT/68 Golden Bauhinia Award & Certificate Application Form</b>: highest honour, need Adventure Crest first.<br><b>PT/67 Commencement Notice</b>: submit before starting.<br><b>Record Book</b>: 24 pages for camping/hiking/pioneering/cooking/night hike/climbing/ropes/activity badges/leadership/service.',
   forms_pick_member:'Pick member:',forms_gen_pt68:'🏅 Golden Bauhinia Application Data Check',forms_gen_pt67:'📄 Golden Bauhinia Commencement Data Check',forms_gen_record:'📓 Official Record Book Filling Checklist',forms_gen_cert:'🏆 Generate Troop Certificate',cert_title:'Cub Scout Achievement Certificate',cert_en:'CUB SCOUT ACHIEVEMENT CERTIFICATE',
   log_service:'Service',log_activity:'Activity',log_training:'Training',log_total_hours:'Total service hours',log_add_btn:'➕ Add record',log_self_add:'📝 Claim record',log_none:'No records',log_none_leader:', leaders can add via \"➕ Add record\" above',log_empty_self:', tap \"📝 Claim record\" above to self-claim (leader approval needed)',log_role:'Role:',log_hours:'Hours:',log_cert:'Cert:',log_recorder:'Recorded by:',log_edit_title:'Edit',log_del_title:'Delete',log_updated:'✅ Activity logs updated',log_cannot_read:'Cannot read records',log_read_fail:'Read failed:',log_only_leader_add:'Only leaders can add/edit records',log_backend_old:'Backend not upgraded to v5.2, cannot save yet',log_not_found:'Record not found, please reload first',log_modal_edit:'✏️ Edit record',log_title_service:'Service name',log_title_training:'Course name',log_title_activity:'Activity name',log_label_hours:'Hours',log_label_service_hours:'Service hours',log_fill_required:'Please fill date and name',log_saving:'Saving...',log_saved_demo:'✅ Saved (DEMO local mode, not to cloud)',log_saved:'✅ Saved {0} activity log records',log_saved_partial:'Saved {0}; {1} failed ({2})',log_save_fail:'Save failed:',log_backend_old_err:'Troop backend not upgraded to v5.2: ask admin to update Code.gs and run initializeSheets()',log_del_confirm:'Delete \"{0}\"? Cannot undo.',log_only_leader_del:'Only leaders can delete records',log_deleted_demo:'Deleted (DEMO local mode)',log_deleted:'✅ Record deleted',log_del_fail:'Delete failed:',log_pending_h:'Claims awaiting leader',log_req_new:'New claim',log_req_edit:'Edit claim',log_cancel_req:'↩️ Cancel claim',log_cancel_confirm:'Cancel claim \"{0}\"?',log_cancelled:'✅ Claim cancelled',log_edit_pending:'⏳ Edit pending',log_edit_pending_toast:'This record already has pending edit claim, wait for leader or cancel first',log_req_edit_btn:'Request edit (leader re-approves)',log_only_own_edit:'Can only request edit own records',log_req_add_title:'📝 Claim activity log (leader approval needed)',log_req_edit_title:'✏️ Request edit record (leader re-approves)',log_req_submit:'📨 Submit claim',log_req_sending:'Submitting...',log_req_sent:'✅ Claim submitted, awaiting leader approval',log_req_fail:'Claim failed:',log_req_demo_ok:'✅ Claim submitted (DEMO local mode)',log_req_need_upgrade:'Backend not upgraded to v5.2, cannot self-claim, ask leader to input',logm_req_hint:'💡 After submit, leaders approve before writing. Approved records can request edit, leader re-approves to update.',log_orig_rec:'Original:',log_orig_missing:'⚠️ Original record not found (maybe deleted)',log_req_approved:'✅ Claim approved',log_req_rejected:'Claim rejected',
-  nav_notice:'📢 Circulars',retry:'🔄 Retry',
-  import_title:'📥 A circular was sent to you',
-  import_desc:'The Circular Library handed this circular to this system. Below is a preview; it only enters your troop inbox after you confirm.',
-  import_zero_priv:'🔒 External systems have zero privilege: the library can only hand content over. It holds no permission here and cannot change your data. Whether and when to publish is entirely your troop leaders\' call.',
-  import_accept:'📥 Accept into troop inbox',
-  import_home:'🏠 Back to home',
-  import_saved:'✅ Saved to your troop inbox; handle it on the Circulars page after signing in.',
-  import_saved_anon:'✅ Held on this device. Sign in to your troop, then come back to handle it.',
-  import_bad_title:'⚠️ Incomplete link',
-  import_bad_desc:'This import link carries no title or source and may have been truncated. Please go back to the Circular Library and press "Send to troop system" again.',
-  import_f_title:'Title',import_f_source:'Source',import_f_date:'Date',import_f_deadline:'Deadline',import_f_audience:'Audience',import_f_fee:'Fee',
 
-  notice_h:'📢 Circulars · Troop + Personal subscriptions',
-  notice_sub:'Your unit circulars and your subscribed Circular Library items, one list with source labels.',
-  notice_settings:'⚙️ Subscription settings',
-  notice_refresh:'🔄 Refresh',
-  notice_none:'No circulars',
-  notice_none_sub:'Set up personal subscriptions and matching new circulars appear here automatically, and can be pushed to your device.',
-  notice_open_settings:'⚙️ Set up subscriptions',
-  notice_src_library:'Circular Library',
-  notice_src_unit:'This unit',
-  notice_deadline:'Deadline: ',
-  notice_audience:'Audience: ',
-  notice_fee:'Fee: ',
-  notice_attachment:'📎 Open attachment',
-  notice_share:'🔗 Share',
-  notice_loading:'Loading circulars…',
-  notice_load_fail:'Failed to load circulars: ',
-  notice_updated:'Library last updated: ',
-  notice_count_fmt:'{0} matched',
-  sub_title:'🔔 Personal subscription settings',
-  sub_desc:'Pick branch × topic. Only circulars matching BOTH branch AND topic appear/push, each circular pushed once. Settings stay on your device (LocalStorage); no identity is uploaded.',
-  sub_privacy:'🔒 Privacy: only the browser push endpoint and your chosen branches/topics are sent — no YMIS, no name, no email. The library knows how many subscribe and to what, never who.',
-  sub_branch_h:'1. Pick branches',
-  sub_topic_h:'2. Pick topics',
-  sub_topic_hint:'Pick branches first; their training/service/activity/competition topics appear below.',
-  sub_all_new:'🌐 Select all: every new circular (any branch or category, including untagged)',
-  sub_push_h:'3. Push notifications',
-  sub_push_on:'🔔 Enable push',
-  sub_push_off:'🔕 Disable push',
-  sub_push_note:'The Circular Library checks daily at 06:00 and pushes on a match. On iOS add this site to your Home Screen first.',
-  sub_push_unsupported:'⚠️ This browser does not support push; you can still view subscribed items on the Circulars page.',
-  sub_save:'💾 Save subscription settings',
-  sub_saved:'✅ Subscription settings saved (stored on your device only)',
-  sub_push_enabled:'✅ Push notifications enabled',
-  sub_push_disabled:'Push notifications disabled',
-  sub_push_fail:'Push setup failed: ',
-  sub_pick_topic:'Please pick at least one topic',
-  sub_selected_fmt:'{0} topics selected',
-  sub_loading:'Loading subscription catalog…',
-  sub_load_fail:'Failed to load subscription catalog: ',
-  sub_deeplink:'📖 Open Circular Library',
-  share_title:'🔗 Share',
-  share_desc:'Anyone with the link/QR opens that page directly, no password needed. Links and QR codes never contain an API key or login data.',
-  share_copy:'📋 Copy link',
-  share_copied:'✅ Link copied',
-  share_wa:'💬 WhatsApp',
-  share_qr:'Scan QR to open',
-  share_qr_toolong:'Content too long for a QR code; please copy the link instead.',
-  eco_title:'🔗 Ecosystem connection',
-  eco_unit:'Unit',
-  eco_platform:'Platform registry',
-  eco_troop:'Troop registry',
-  eco_linked:'Connected',
-  eco_standalone:'Standalone',
-  eco_modules:'Enabled modules',
-  eco_backend_ver:'Backend version',
-  eco_refresh:'🔄 Reload connection status',
   help_title_fmt:'❓ Guide - By role (you: {0} {1})',help_intro:'This page shows only your role, embedded, no 404.',help_member_btn:'👤 Parent/Member Guide',help_leader_btn:'👨‍💼 Leader Guide',help_docs_title:'📚 Full docs',
   info_roles_title:'👥 Feature guide after login - Parent/Member / Leader',info_member_can:'👤 What Parent/Member can do',info_member_pts:'<li>View own progress only, cannot view whole troop (unless GSL enables)</li><li>Cannot tick progress, all by leaders</li><li>Can claim service/activity/training records in \"📅 Activity Logs\" (parent=member account) → leader approves</li><li>Can use \"🏅 Golden Bauhinia\" forms print</li><li>Can view official syllabus, Jungle Book, uniform in \"📚 Library\"</li>',info_leader_can:'👨‍💼 What leaders can do',info_leader_pts:'<li>All functions - Cubs young, all handled by leaders, no exec</li><li>My progress: any member, direct tick+date, offline cache confirm write</li><li>Troop overview: Membership at a glance + batch tick whole troop</li><li>Approval centre: user approvals + log claims</li><li>Activity logs: direct add/edit/delete + batch to multiple members</li><li>User management: change role, permission, bulk onboard YMIS PDF, reset PW (can set a new password directly), edit info, deactivate / reactivate, delete member-only entries</li><li>YMIS/email unique troop-wide — one identity cannot open two accounts</li>',
   users_role_title:'👥 Roles: USER vs Member',users_role_body:'<b>USER</b> = everyone in Users sheet, including:<br>• <span class="role-badge role-member">Cub member</span> = Cubs young<br>• <span class="role-badge role-branch_leader">Cub Scout Leader</span> = leader<br>• <span class="role-badge role-group_leader">GSL</span> = leader<br>• <span class="role-badge role-admin">Admin</span> = leader<br>{0}<b>Member</b> = role=member.<br><b>Leader</b> = CSL/GSL/Admin{1}, all handled by leaders, no exec.',
@@ -983,7 +821,7 @@ async function apiRequest(gasData, opts={}){
 
 function isSystemAccount(user){ return String(user?.ymis||'').toLowerCase()==='sheep' || String(user?.role||'')==='super_admin'; }
 function cubMembersOnly(list){ return (list||[]).filter(m=>!isSystemAccount(m)); }
-const LS={session:'cubbadge_session_v2',pending:(tid)=>`cub_pending_${tid}`,requests:(tid,ymis)=>`cub_requests_${tid}_${ymis}`,cacheProgress:(tid)=>`cub_cache_progress_${tid}`,inbox:(tid)=>`cub_inbox_${tid}`};
+const LS={session:'cubbadge_session_v2',pending:(tid)=>`cub_pending_${tid}`,requests:(tid,ymis)=>`cub_requests_${tid}_${ymis}`,cacheProgress:(tid)=>`cub_cache_progress_${tid}`};
 function todayISO(){ return new Date().toISOString().split('T')[0]; }
 
 /* i18n merge for cub segments */
@@ -1108,9 +946,6 @@ document.addEventListener('DOMContentLoaded',()=>{
   document.querySelectorAll('.lang-toggle-btn').forEach(btn=>{ btn.textContent=currentLang==='en'?'🌐 中文':'🌐 English'; });
   applyStaticI18n();
   const params=getUrlParams();
-  // EXTERNAL.md 模式 A：外部系統（通告圖書館等）把一則通告「交俾」本系統。
-  // 外部系統零特權 —— 佢只可以送內容入嚟，冇任何 key、改唔到資料，一切要本地領袖確認。
-  if(location.pathname.replace(/\/+$/,'')==='/library/import'){ handleLibraryImport(params); return; }
   const hasPortal=params.get('from')==='portal'||params.get('u')||params.get('role')||params.get('ymis');
   if(hasPortal){ handlePortalParams(); }else{ loadTroops(); checkSavedSession(); }
   const loginIdEl=document.getElementById('loginId');
@@ -1118,86 +953,6 @@ document.addEventListener('DOMContentLoaded',()=>{
   if(loginIdEl) loginIdEl.addEventListener('keypress', e=>{ if(e.key==='Enter') doLogin(); });
   if(loginPwEl) loginPwEl.addEventListener('keypress', e=>{ if(e.key==='Enter') doLogin(); });
 });
-
-/**
- * /library/import — 通告圖書館（或任何外部工具）嘅「交俾」入口。EXTERNAL.md 模式 A。
- *
- * 契約由 scout-circulars 的 buildScoutSystemImportUrl() 定：
- *   ?title&sourceSite&region&date&sourceUrl&attachmentUrl&pdf_url&key&deadline&audience&fee
- *
- * 零特權原則：
- *   - 呢度只係讀 URL 參數畫個預覽，唔會、亦唔可以直接寫入任何 Sheet；
- *   - 要入到本單位通告，一定要本地領袖登入之後自己撳「收入本旅團」；
- *   - 未登入就只係暫存喺本機收件匣，登入後先處理。
- */
-function handleLibraryImport(params){
-  const pick=(...keys)=>{ for(const k of keys){ const v=params.get(k); if(v) return v; } return ''; };
-  const item={
-    title:pick('title'),
-    source:pick('sourceSite','source_site','source'),
-    region:pick('region'),
-    date:pick('date','captured_date'),
-    url:pick('sourceUrl','source_url','url'),
-    attachment:pick('attachmentUrl','pdf_url','attachment'),
-    key:pick('key'),
-    deadline:pick('deadline'),
-    audience:pick('audience'),
-    fee:pick('fee'),
-    receivedAt:new Date().toISOString()
-  };
-  document.getElementById('homePage').style.display='none';
-  document.getElementById('loginPage').style.display='none';
-  document.getElementById('mainApp').style.display='none';
-
-  const box=document.createElement('div');
-  box.className='container';
-  box.style.cssText='max-width:640px;margin:24px auto';
-  if(!item.title && !item.url){
-    box.innerHTML=`<div class="info-section" style="border-left-color:var(--red)">
-      <h3>${t('import_bad_title')}</h3>
-      <p style="font-size:12px;color:var(--text-light);line-height:1.8">${t('import_bad_desc')}</p>
-      <a class="btn btn-primary" href="/">${t('import_home')}</a></div>`;
-    document.body.appendChild(box); return;
-  }
-  const rows=[
-    [t('import_f_title'),item.title],
-    [t('import_f_source'),[item.source,item.region].filter(Boolean).join(' · ')],
-    [t('import_f_date'),item.date],
-    [t('import_f_deadline'),item.deadline],
-    [t('import_f_audience'),item.audience],
-    [t('import_f_fee'),item.fee]
-  ].filter(r=>r[1]);
-  box.innerHTML=`<div class="info-section" style="border-left-color:var(--blue);background:var(--blue-light)">
-      <h3 style="color:var(--blue)">${t('import_title')}</h3>
-      <p style="font-size:12px;color:var(--text-light);line-height:1.8">${t('import_desc')}</p>
-    </div>
-    <div class="info-card" style="margin-top:12px">
-      ${rows.map(([k,v])=>`<div style="display:flex;gap:8px;padding:5px 0;border-bottom:1px solid var(--border);font-size:13px">
-        <div style="min-width:84px;color:var(--text-light);flex-shrink:0">${k}</div>
-        <div style="word-break:break-word;font-weight:500">${escapeHtmlText(v)}</div></div>`).join('')}
-      ${item.attachment?`<div style="margin-top:10px"><a class="btn btn-sm btn-blue" href="${escapeHtmlText(item.attachment)}" target="_blank" rel="noopener">${t('notice_attachment')}</a></div>`:''}
-    </div>
-    <div class="info-section" style="margin-top:12px;background:var(--green-light)">
-      <p style="font-size:11px;color:var(--green);line-height:1.8">${t('import_zero_priv')}</p>
-    </div>
-    <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">
-      <button class="btn btn-primary" id="btnImportAccept">${t('import_accept')}</button>
-      <a class="btn btn-secondary" href="/">${t('import_home')}</a>
-    </div>
-    <div id="importMsg" style="margin-top:10px;font-size:12px"></div>`;
-  document.body.appendChild(box);
-
-  document.getElementById('btnImportAccept').onclick=()=>{
-    let ss=null; try{ ss=JSON.parse(localStorage.getItem(LS.session)||'null'); }catch(e){}
-    const tid=(ss&&ss.troopId)||'pending';
-    let inbox=[]; try{ inbox=JSON.parse(localStorage.getItem(LS.inbox(tid))||'[]'); }catch(e){}
-    if(!inbox.some(x=>x.url===item.url&&x.title===item.title)) inbox.unshift(item);
-    localStorage.setItem(LS.inbox(tid),JSON.stringify(inbox.slice(0,50)));
-    const msg=document.getElementById('importMsg');
-    msg.style.color='var(--green)';
-    msg.textContent=ss?t('import_saved'):t('import_saved_anon');
-  };
-}
 
 async function handlePortalParams(){
   const params=getUrlParams();
@@ -1386,10 +1141,6 @@ function setupTabsByRole(){
   }
   document.getElementById('btn-tab-overview').style.display=canViewOverview?'block':'none';
   document.getElementById('btn-tab-users').style.display=isManage?'block':'none';
-  // 生態圈：模組註冊表決定「通告」入口（demo 模式一律顯示，行本機字典）
-  const nb=document.getElementById('btn-tab-notice');
-  if(nb) nb.style.display=isDemoMode()?'block':'none';
-  loadEcosystemState().then(()=>{ if(nb&&!isDemoMode()) nb.style.display=(ecoState&&ecoState.modules&&ecoState.modules.indexOf('notice')>=0)?'block':'none'; });
   try{
     const p=localStorage.getItem(LS.pending(currentTroopId));
     if(p){ pendingChanges=JSON.parse(p); updateSaveBar(); }
@@ -1516,7 +1267,6 @@ function switchTab(name, btn){
         else if(name==='overview') renderOverviewTab();
         else if(name==='requests') renderRequestsTab();
         else if(name==='logs') renderLogsTab();
-        else if(name==='notice') renderNoticeTab();
         else if(name==='forms') renderFormsTab();
         else if(name==='help') renderHelpTab();
         else if(name==='info') renderInfoTab();
@@ -2372,239 +2122,6 @@ async function renderHelpTab(){
   c.innerHTML=html;
 }
 function switchHelpRole(r){ const key=(r==='leader'?'leader':'member'); const el=document.getElementById('helpContent'); if(el) el.innerHTML=`<div style="font-size:14px;line-height:1.8">${getGuideHtml(key)}</div>`; document.querySelectorAll('#tab-help [data-help-role]').forEach(b=>{ b.className='btn btn-sm '+(b.getAttribute('data-help-role')===key?'btn-primary':'btn-secondary'); }); }
-
-/* ============================================================
- * 旅團生態圈 (BUILD.md) — 通告 / 個人化訂閱 / 分享 / 接入狀態
- * ============================================================ */
-let ecoState=null;          // /api/ecosystem registry 結果
-let noticeItems=[];         // 通告頁目前清單
-let subDraft=null;          // 訂閱設定草稿（未按儲存前唔會寫 LocalStorage）
-
-/** 讀取生態圈接入狀態（registry + 模組 + 導航），失敗唔會阻塞其他功能。 */
-async function loadEcosystemState(force){
-  if(!window.ECCore) return null;
-  if(isDemoMode()) return null;
-  try{
-    ecoState=await window.ECCore.loadEcosystem(currentTroopId,force);
-    applyModuleVisibility();
-    return ecoState;
-  }catch(e){ console.warn('ecosystem load failed',e.message); return null; }
-}
-
-/** 模組註冊表決定導航：停用模組唔畫入口（server-side 一樣有 gate）。 */
-function applyModuleVisibility(){
-  if(!ecoState||!ecoState.modules) return;
-  const btn=document.getElementById('btn-tab-notice');
-  if(btn) btn.style.display=(ecoState.modules.indexOf('notice')>=0)?'':'none';
-}
-
-/* ---------- 通告頁 ---------- */
-async function renderNoticeTab(){
-  const c=document.getElementById('tab-notice'); if(!c) return;
-  const prefs=window.ECSubscribe?window.ECSubscribe.loadPrefs():{branches:[],topics:[]};
-  const header=`<div class="info-section" style="border-left-color:var(--blue);background:var(--blue-light)">
-    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
-      <div><h3 style="color:var(--blue)">${t('notice_h')}</h3>
-      <p style="font-size:12px;color:var(--text-light);margin-top:3px">${t('notice_sub')}</p></div>
-      <div style="display:flex;gap:6px;flex-wrap:wrap">
-        <button class="btn btn-sm btn-primary" onclick="openSubscribeModal()">${t('notice_settings')}</button>
-        <button class="btn btn-sm btn-outline" onclick="renderNoticeTab()">${t('notice_refresh')}</button>
-      </div>
-    </div>
-    ${prefs.topics.length?`<div style="font-size:11px;color:var(--blue);margin-top:6px">${tf('sub_selected_fmt',prefs.topics.length)}${prefs.pushEnabled?' · 🔔':''}</div>`:''}
-  </div>`;
-  c.innerHTML=header+`<div id="noticeList" style="margin-top:12px"><div style="text-align:center;padding:24px;color:var(--text-light)"><div class="spinner" style="margin:0 auto 10px"></div>${t('notice_loading')}</div></div>`;
-
-  const list=document.getElementById('noticeList');
-  if(!prefs.topics.length){
-    list.innerHTML=`<div class="info-section" style="text-align:center;padding:26px">
-      <div style="font-size:34px">📭</div>
-      <h3 style="margin-top:8px">${t('notice_none')}</h3>
-      <p style="font-size:12px;color:var(--text-light);margin:8px auto;max-width:520px;line-height:1.8">${t('notice_none_sub')}</p>
-      <button class="btn btn-primary" onclick="openSubscribeModal()">${t('notice_open_settings')}</button>
-    </div>`;
-    updateNoticeBadge(0);
-    return;
-  }
-  try{
-    const d=await window.ECSubscribe.fetchSubscribedNotices(currentTroopId);
-    if(d.success===false) throw new Error(d.error||'load failed');
-    noticeItems=d.items||[];
-    updateNoticeBadge(noticeItems.length);
-    if(!noticeItems.length){
-      list.innerHTML=`<div class="info-section" style="text-align:center;padding:24px;color:var(--text-light)">${t('notice_none')}</div>`;
-      return;
-    }
-    let html=`<div style="font-size:11px;color:var(--text-light);margin-bottom:8px">${tf('notice_count_fmt',noticeItems.length)}${d.lastUpdated?` · ${t('notice_updated')}${escapeHtmlText(d.lastUpdated)}`:''}</div>`;
-    html+=noticeItems.map((n,i)=>{
-      const meta=[];
-      if(n.deadline) meta.push(`${t('notice_deadline')}${escapeHtmlText(n.deadline)}`);
-      if(n.audience) meta.push(`${t('notice_audience')}${escapeHtmlText(n.audience)}`);
-      if(n.fee) meta.push(`${t('notice_fee')}${escapeHtmlText(n.fee)}`);
-      const tags=(n.branches||[]).slice(0,4).map(b=>`<span class="syllabus-direct-note">${escapeHtmlText(b)}</span>`).join('');
-      return `<div class="info-card" style="border-left-color:var(--blue);margin-bottom:10px">
-        <div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;align-items:flex-start">
-          <div style="flex:1;min-width:200px">
-            <div style="font-size:10px;color:var(--blue);font-weight:700">${escapeHtmlText(n.source||t('notice_src_library'))} · ${escapeHtmlText(n.date||'')}</div>
-            <div style="font-size:14px;font-weight:600;line-height:1.6;margin-top:3px;word-break:break-word">${escapeHtmlText(n.title)}</div>
-            ${meta.length?`<div style="font-size:11px;color:var(--text-light);margin-top:4px">${meta.join(' · ')}</div>`:''}
-            <div style="margin-top:5px">${tags}</div>
-          </div>
-        </div>
-        <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap">
-          <a class="btn btn-sm btn-blue" href="${escapeHtmlText(n.attachment||n.url)}" target="_blank" rel="noopener">${t('notice_attachment')}</a>
-          <button class="btn btn-sm btn-outline" onclick="openShareModal('notice',${i})">${t('notice_share')}</button>
-        </div>
-      </div>`;
-    }).join('');
-    list.innerHTML=html;
-  }catch(e){
-    list.innerHTML=`<div class="info-section" style="color:var(--red)">${t('notice_load_fail')}${escapeHtmlText(e.message)}<br><button class="btn btn-sm btn-primary" style="margin-top:8px" onclick="renderNoticeTab()">${t('retry')}</button></div>`;
-  }
-}
-function updateNoticeBadge(n){
-  const b=document.getElementById('noticeBadgeCount'); if(!b) return;
-  if(n>0){ b.textContent=n>99?'99+':String(n); b.style.display=''; } else b.style.display='none';
-}
-
-/* ---------- 個人化訂閱設定 ★ ---------- */
-async function openSubscribeModal(){
-  document.getElementById('subscribeModal').classList.add('active');
-  const body=document.getElementById('subBody');
-  body.innerHTML=`<div style="text-align:center;padding:20px;color:var(--text-light)"><div class="spinner" style="margin:0 auto 10px"></div>${t('sub_loading')}</div>`;
-  const prefs=window.ECSubscribe.loadPrefs();
-  subDraft={branches:prefs.branches.slice(),topics:prefs.topics.slice(),pushEnabled:prefs.pushEnabled};
-  try{
-    const cfg=await window.ECSubscribe.loadConfig();
-    if(!cfg.catalog) throw new Error(cfg.catalogError||'catalog unavailable');
-    renderSubscribeBody(cfg);
-  }catch(e){
-    body.innerHTML=`<div style="color:var(--red);padding:14px;font-size:12px">${t('sub_load_fail')}${escapeHtmlText(e.message)}
-      <br><button class="btn btn-sm btn-primary" style="margin-top:8px" onclick="openSubscribeModal()">${t('retry')}</button></div>`;
-  }
-}
-
-function renderSubscribeBody(cfg){
-  const body=document.getElementById('subBody');
-  const catalog=cfg.catalog;
-  const allNew=subDraft.topics.indexOf('all:new')>=0;
-  let html='';
-
-  html+=`<label style="display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600;background:var(--maroon-light);padding:10px;border-radius:8px;cursor:pointer">
-    <input type="checkbox" id="subAllNew" ${allNew?'checked':''} onchange="toggleSubAllNew(this.checked)" style="width:auto">
-    <span>${t('sub_all_new')}</span></label>`;
-
-  html+=`<div id="subDetail" style="${allNew?'opacity:.45;pointer-events:none':''}">`;
-  html+=`<h4 style="font-size:13px;margin:12px 0 6px;color:#8B5A00">${t('sub_branch_h')}</h4>
-    <div style="display:flex;flex-wrap:wrap;gap:6px">`;
-  (catalog.branches||[]).forEach(b=>{
-    const on=subDraft.branches.indexOf(b.id)>=0;
-    html+=`<button type="button" class="btn btn-sm ${on?'btn-primary':'btn-secondary'}" data-sub-branch="${escapeHtmlText(b.id)}" onclick="toggleSubBranch('${escapeHtmlText(b.id)}')">${escapeHtmlText(b.label)}</button>`;
-  });
-  html+=`</div>`;
-
-  html+=`<h4 style="font-size:13px;margin:14px 0 4px;color:#8B5A00">${t('sub_topic_h')}</h4>
-    <p style="font-size:11px;color:var(--text-light);margin-bottom:6px">${t('sub_topic_hint')}</p>
-    <div id="subTopics" style="max-height:38vh;overflow-y:auto;border:1px solid var(--border);border-radius:8px;padding:8px"></div>`;
-  html+=`</div>`;
-
-  const supported=window.ECSubscribe.pushSupported();
-  html+=`<h4 style="font-size:13px;margin:14px 0 4px;color:#8B5A00">${t('sub_push_h')}</h4>`;
-  if(!supported){
-    html+=`<div style="font-size:11px;color:var(--orange);background:#FFF7E6;padding:8px;border-radius:8px">${t('sub_push_unsupported')}</div>`;
-  }else{
-    html+=`<label style="display:flex;align-items:center;gap:8px;font-size:12px;cursor:pointer">
-      <input type="checkbox" id="subPush" ${subDraft.pushEnabled?'checked':''} style="width:auto"> <span>${t('sub_push_on')}</span></label>
-      <p style="font-size:11px;color:var(--text-light);margin-top:4px">${t('sub_push_note')}</p>`;
-  }
-  html+=`<div style="margin-top:10px;font-size:11px"><a href="${escapeHtmlText(cfg.library||'https://scout-circulars.vercel.app')}" target="_blank" rel="noopener">${t('sub_deeplink')}</a></div>`;
-  body.innerHTML=html;
-  renderSubTopics(catalog);
-}
-
-function renderSubTopics(catalog){
-  const box=document.getElementById('subTopics'); if(!box) return;
-  const groups=window.ECSubscribe.groupTopics(catalog,subDraft.branches);
-  if(!groups.length){ box.innerHTML=`<div style="font-size:12px;color:var(--text-light);padding:8px">${t('sub_topic_hint')}</div>`; return; }
-  box.innerHTML=groups.map(g=>`
-    <div style="margin-bottom:10px">
-      <div style="font-size:12px;font-weight:700;color:#8B5A00;border-bottom:1px solid var(--border);padding-bottom:3px;margin-bottom:5px">${escapeHtmlText(g.label)}</div>
-      ${g.groups.map(sub=>`<div style="margin:5px 0 5px 4px">
-        <div style="font-size:11px;color:var(--text-light);margin-bottom:3px">${escapeHtmlText(sub.group)}</div>
-        <div style="display:flex;flex-wrap:wrap;gap:5px">
-          ${sub.topics.map(tp=>{
-            const on=subDraft.topics.indexOf(tp.id)>=0;
-            return `<button type="button" class="btn btn-sm ${on?'btn-success':'btn-secondary'}" onclick="toggleSubTopic('${escapeHtmlText(tp.id)}')">${escapeHtmlText(tp.label)}</button>`;
-          }).join('')}
-        </div></div>`).join('')}
-    </div>`).join('');
-}
-
-function toggleSubAllNew(on){
-  if(on){ if(subDraft.topics.indexOf('all:new')<0) subDraft.topics.push('all:new'); }
-  else subDraft.topics=subDraft.topics.filter(x=>x!=='all:new');
-  const detail=document.getElementById('subDetail');
-  if(detail){ detail.style.opacity=on?'.45':''; detail.style.pointerEvents=on?'none':''; }
-}
-function toggleSubBranch(id){
-  const i=subDraft.branches.indexOf(id);
-  if(i>=0){
-    subDraft.branches.splice(i,1);
-    // 收起支部 = 一併移除該支部專屬項目，避免留低孤兒訂閱
-    subDraft.topics=subDraft.topics.filter(tid=>tid==='all:new'||tid.indexOf('branch:'+id+':')!==0&&tid.indexOf('training:'+id)!==0);
-  }else subDraft.branches.push(id);
-  const btn=document.querySelector(`[data-sub-branch="${id}"]`);
-  if(btn) btn.className='btn btn-sm '+(subDraft.branches.indexOf(id)>=0?'btn-primary':'btn-secondary');
-  window.ECSubscribe.loadConfig().then(cfg=>renderSubTopics(cfg.catalog));
-}
-function toggleSubTopic(id){
-  const i=subDraft.topics.indexOf(id);
-  if(i>=0) subDraft.topics.splice(i,1); else subDraft.topics.push(id);
-  window.ECSubscribe.loadConfig().then(cfg=>renderSubTopics(cfg.catalog));
-}
-
-async function saveSubscription(){
-  if(!subDraft.topics.length){ showToast(t('sub_pick_topic'),'error'); return; }
-  const btn=document.getElementById('btnSaveSub');
-  const pushBox=document.getElementById('subPush');
-  const wantPush=!!(pushBox&&pushBox.checked);
-  btn.disabled=true;
-  try{
-    window.ECSubscribe.savePrefs({branches:subDraft.branches,topics:subDraft.topics,pushEnabled:wantPush});
-    if(wantPush){
-      await window.ECSubscribe.enablePush({branches:subDraft.branches,topics:subDraft.topics});
-      showToast(t('sub_push_enabled'),'success');
-    }else{
-      await window.ECSubscribe.disablePush();
-      showToast(t('sub_saved'),'success');
-    }
-    closeModal('subscribeModal');
-    renderNoticeTab();
-  }catch(e){
-    // 推送失敗唔應該連訂閱設定都唔保留：設定已存本機，只係推唔到
-    showToast(t('sub_push_fail')+e.message,'error');
-  }finally{ btn.disabled=false; }
-}
-
-/* ---------- 分享 (Share)：連結 + QR，永不帶 key ---------- */
-function openShareModal(kind,index){
-  const item=(kind==='notice')?noticeItems[index]:null;
-  const title=item?item.title:(currentTroopName||'');
-  // 通告來自圖書館 → 直接分享圖書館原連結（附件指返圖書館）
-  const url=item?(item.url||item.attachment):window.ECCore.shareUrl({module:kind,unit:currentTroopId});
-  document.getElementById('shareTitleLine').textContent=title;
-  document.getElementById('shareUrlInput').value=url;
-  const qrBox=document.getElementById('shareQrBox');
-  const svg=window.ECCore.qrSvg(url,{scale:4,quiet:4});
-  qrBox.innerHTML=svg||`<div style="font-size:11px;color:var(--orange);padding:12px">${t('share_qr_toolong')}</div>`;
-  const wa=document.getElementById('btnShareWa');
-  wa.onclick=()=>window.open(window.ECCore.whatsappUrl(url,title),'_blank','noopener');
-  document.getElementById('shareModal').classList.add('active');
-}
-function copyShareLink(){
-  const v=document.getElementById('shareUrlInput').value;
-  window.ECCore.copyText(v).then(()=>showToast(t('share_copied'),'success')).catch(()=>{});
-}
 
 /* Info Tab */
 function renderInfoTab(){

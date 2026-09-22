@@ -646,11 +646,10 @@ function doGet(e){
     return jsonResponse({success:true, action: action, diagnose: diag, apiKeyConfigured: !!getApiKey(), timestamp: now()});
   }
   if(action==='getLoginMode') return jsonResponse({success:true,login_mode:'standalone'});
-  // EC：生態圈唯讀入口（opsRegistry 由 Vercel server-to-server 用 apikey 讀；ecStatus 公開診斷）
-  if(action==='opsRegistry' || action==='ecStatus' || action==='ecGetModules'){
+  // EC：接入口唯讀查詢（ecStatus 公開診斷；ecGetModules 申報本 leaf 有咩模組）
+  if(action==='ecStatus' || action==='ecGetModules'){
     var ecGetRes=ecRoute(action,{
-      unit:e.parameter.unit||e.parameter.troopId||e.parameter.u||'',
-      apikey:e.parameter.apikey
+      unit:e.parameter.unit||e.parameter.troopId||e.parameter.u||''
     },null,null);
     if(ecGetRes) return ecGetRes;
   }
@@ -665,11 +664,10 @@ function doPost(e){
     // v5.2.1：公開入口接受成員／領袖申請（角色在 handleApply 內嚴格驗證，只限 member / branch_leader）
     if(action==='apply') return handleApply(body.ymis,body.name,body.email,body.requested_role||'member',body.branch);
 
-    // EC：免 token 嘅生態圈入口（BUILD.md §2 三點進入）
+    // EC：免 token 嘅接入口（BUILD.md §2 三點進入）
     //   ecSigLogin  = 上層 sig 換本 leaf token（自己用 apikey 重算驗證）
-    //   opsRegistry = server-to-server，內部自行檢查 apikey
     //   ecStatus    = 公開診斷（唔含敏感資料）
-    if(action==='ecSigLogin' || action==='opsRegistry' || action==='ecStatus' || action==='ecGetModules'){
+    if(action==='ecSigLogin' || action==='ecStatus' || action==='ecGetModules'){
       var ecPre=ecRoute(action,body,null,null);
       if(ecPre) return ecPre;
     }
@@ -1639,15 +1637,23 @@ function handleCancelLogRequest(requestId, user){
 }
 
 // ============================================================
-// ===== EC_ECOSYSTEM — 旅團生態圈接入 (BUILD.md v2026-09-22) =====
+// ===== EC_ECOSYSTEM — 本 leaf 嘅接入口 (BUILD.md v2026-09-22) =====
 //
-// 兩條公理：
-//   一切身份 = SCOUT_ID + 所在 SHEET
-//   一切接入 = 交俾邊個 + 登記邊個 registry
+// 本系統 = 幼童軍進度追蹤,係生態圈最下游嘅 leaf:
+//   一張 SHEET + 一支 Apps Script /exec = 一個 leaf。
 //
-// 本區段為「新增」性質：無新必要工作表、無改動既有 action。
-// 只覆蓋 Code.gs 並重新部署即可；若要用旅層 registry／模組開關，
-// 執行一次 ecInitSheets() 補建 3 張表。
+// 呢個區段淨係做「收上游接入」:
+//   - ecSigLogin  上游簽張飛落嚟,本 leaf 認得就俾入（BUILD.md §2 三點進入之一）
+//   - ecAccessLog 記低邊個經咩途徑入過嚟（BUILD.md §8）
+//   - ecStatus    俾人偵測本後端版本／能力
+//
+// 刻意唔做（唔關 leaf 事,唔好加返落嚟）:
+//   - 唔會做旅層 registry（EC_REGISTRY）—— 嗰個係旅系統嘅嘢;
+//   - 唔會做跨支部模組開關 —— 本 leaf 有咩功能自己話事;
+//   - 唔會主動打去上游攞嘢 —— 要接入係上游打落嚟。
+//
+// 本區段為「新增」性質:無改動既有 action。只覆蓋 Code.gs 並重新部署即可;
+// 若要記 ACCESS_LOG,執行一次 ecInitSheets() 補建。
 // ============================================================
 
 // ---------- EC_NORMID：normId 單一實現（與 api/_lib/normid.js 同一套規則）----------
@@ -1665,202 +1671,52 @@ function ecNormId(id){
 function ecSameUnit(a,b){ var na=ecNormId(a); return !!na && na===ecNormId(b); }
 
 // ---------- EC 工作表 ----------
-var EC_REGISTRY_SHEET='EC_REGISTRY';   // 旅層 registry：各支部 leaf 登記（旅長寫）
-var EC_REGISTRY_HEADERS=['unit_id','name','branch','backend','apikey','modules','status','updated_at','updated_by'];
-var EC_MODULES_SHEET='EC_MODULES';     // TROOP_MODULES 全模組開關
-var EC_MODULES_HEADERS=['module','enabled','scope','note','updated_at','updated_by'];
 var EC_ACCESS_SHEET='EC_ACCESS_LOG';   // BUILD.md §8 ACCESS_LOG
 var EC_ACCESS_HEADERS=['ts','sub','role','via','event','detail'];
 
-// 本 leaf 承載嘅模組（進度追蹤前端）。旅系統模組（行事曆／物資／財務）唔喺呢度。
-var EC_LOCAL_MODULES=['progress','overview','requests','logs','notice','forms','help','info','users'];
-var EC_CORE_MODULES=['progress','overview','requests','logs','forms','help','info','users'];
+// 本 leaf 承載嘅模組。旅系統模組（行事曆／物資／財務／通告）唔喺呢度。
+var EC_LOCAL_MODULES=['progress','overview','requests','logs','forms','help','info','users'];
 
-/** 補建 EC 三張表；重複執行安全（已存在就唔郁）。 */
+/** 補建 EC 工作表；重複執行安全（已存在就唔郁）。 */
 function ecInitSheets(){
   var ss=getSheet();
-  function ensure(name,headers,color){
-    var sh=ss.getSheetByName(name);
-    if(!sh){
-      sh=ss.insertSheet(name);
-      // 新表可能已帶表頭（視乎環境），只在真係空表時先寫，避免重複表頭
-      if(sh.getLastRow()<1 || !String(sh.getRange(1,1).getValue()||'').trim()){
-        sh.appendRow(headers);
-        sh.getRange(1,1,1,headers.length).setFontWeight('bold').setBackground(color).setFontColor('#FFFFFF');
-        sh.setFrozenRows(1);
-      }
+  var name=EC_ACCESS_SHEET, headers=EC_ACCESS_HEADERS;
+  var sh=ss.getSheetByName(name);
+  if(!sh){
+    sh=ss.insertSheet(name);
+    // 新表可能已帶表頭（視乎環境），只在真係空表時先寫，避免重複表頭
+    if(sh.getLastRow()<1 || !String(sh.getRange(1,1).getValue()||'').trim()){
+      sh.appendRow(headers);
+      sh.getRange(1,1,1,headers.length).setFontWeight('bold').setBackground('#6C757D').setFontColor('#FFFFFF');
+      sh.setFrozenRows(1);
     }
-    return sh;
   }
-  ensure(EC_REGISTRY_SHEET,EC_REGISTRY_HEADERS,'#1565C0');
-  var mod=ensure(EC_MODULES_SHEET,EC_MODULES_HEADERS,'#198754');
-  ensure(EC_ACCESS_SHEET,EC_ACCESS_HEADERS,'#6C757D');
-  // 首次建立時寫入預設開關（本 leaf 模組全開，旅系統模組預設關）
-  if(mod.getLastRow()<2){
-    var ts=now();
-    EC_LOCAL_MODULES.forEach(function(m){ mod.appendRow([m,true,'*','leaf 內建模組',ts,'system']); });
-    ['calendar','album','items','finance'].forEach(function(m){ mod.appendRow([m,false,'*','旅系統模組：接入 TROOP_OPS 後由旅長開啟',ts,'system']); });
-  }
-  return {registry:EC_REGISTRY_SHEET,modules:EC_MODULES_SHEET,access:EC_ACCESS_SHEET};
+  return [name];
 }
 
-/** ACCESS_LOG（append-only，server-side 寫入）— BUILD.md §8 */
+/** ACCESS_LOG：記低邊個、咩角色、經咩途徑、做過咩（append-only）。 */
 function ecAccessLog(sub,role,via,event,detail){
   try{
-    var sh=getSheet().getSheetByName(EC_ACCESS_SHEET);
-    if(!sh) return;
-    sh.appendRow([now(),String(sub||''),String(role||''),String(via||''),String(event||''),String(detail||'').slice(0,300)]);
-  }catch(e){}
+    var ss=getSheet();
+    var sh=ss.getSheetByName(EC_ACCESS_SHEET);
+    if(!sh) return false;   // 未 initSheets 就靜靜唔記錄，唔好因為審計失敗而阻塞登入
+    sh.appendRow([now(),String(sub||''),String(role||''),String(via||''),String(event||''),String(detail||'')]);
+    return true;
+  }catch(e){ return false; }
 }
 
-// ---------- TROOP_MODULES 開關（BUILD.md §4）----------
-/**
- * 讀模組開關。scope='*' 全旅；亦可寫某個支部 unit_id 只針對該支部。
- * 回傳 {moduleId: boolean}。
- */
+/** 本 leaf 有咩模組。唔接受外部覆蓋 —— 自己有咩功能自己最清楚。 */
 function ecGetModules(unitId){
-  var out={};
-  EC_LOCAL_MODULES.forEach(function(m){ out[m]=true; });
-  var sh=getSheet().getSheetByName(EC_MODULES_SHEET);
-  if(!sh) return out;
-  var unit=ecNormId(unitId);
-  var d=sh.getDataRange().getValues();
-  // 先套 '*'，再套指定支部（指定者覆蓋全旅設定）
-  for(var pass=0;pass<2;pass++){
-    for(var i=1;i<d.length;i++){
-      var m=String(d[i][0]||'').trim();
-      if(!m) continue;
-      var scope=String(d[i][2]||'*').trim();
-      var isAll=(scope===''||scope==='*');
-      if(pass===0 && !isAll) continue;
-      if(pass===1 && (isAll || !ecSameUnit(scope,unit))) continue;
-      var v=d[i][1];
-      out[m]=(v===true||String(v).toLowerCase()==='true'||v===1||String(v)==='1');
-    }
-  }
-  // core 模組唔可以被關掉，否則 leaf 自己都入唔到
-  EC_CORE_MODULES.forEach(function(m){ out[m]=true; });
-  return out;
+  return EC_LOCAL_MODULES.slice();
 }
-
-/** server-side 模組 gate：停用模組一律拒絕讀寫（BUILD.md §4）。 */
 function ecModuleEnabled(moduleId,unitId){
   if(!moduleId) return true;
-  var mods=ecGetModules(unitId);
-  return mods[moduleId]===true;
+  return EC_LOCAL_MODULES.indexOf(String(moduleId))>=0;
 }
 
-/** 旅長／管理員設定模組開關。 */
-function ecSetModule(moduleId,enabled,scope,actor){
-  moduleId=String(moduleId||'').trim();
-  if(!moduleId) return jsonResponse({success:false,error:'缺少 module'});
-  if(EC_CORE_MODULES.indexOf(moduleId)>=0 && enabled===false){
-    return jsonResponse({success:false,error:'核心模組不可停用：'+moduleId});
-  }
-  ecInitSheets();
-  var sh=getSheet().getSheetByName(EC_MODULES_SHEET);
-  var sc=String(scope||'*').trim()||'*';
-  if(sc!=='*') sc=ecNormId(sc);
-  var d=sh.getDataRange().getValues();
-  var ts=now();
-  for(var i=1;i<d.length;i++){
-    if(String(d[i][0]||'').trim()===moduleId && String(d[i][2]||'*').trim()===sc){
-      sh.getRange(i+1,2).setValue(!!enabled);
-      sh.getRange(i+1,5).setValue(ts);
-      sh.getRange(i+1,6).setValue(String(actor||''));
-      writeAudit(actor,'ec_set_module',moduleId,sc+'='+(!!enabled));
-      return jsonResponse({success:true,module:moduleId,enabled:!!enabled,scope:sc});
-    }
-  }
-  sh.appendRow([moduleId,!!enabled,sc,'',ts,String(actor||'')]);
-  writeAudit(actor,'ec_set_module',moduleId,sc+'='+(!!enabled)+'（新增）');
-  return jsonResponse({success:true,module:moduleId,enabled:!!enabled,scope:sc,created:true});
-}
-
-// ---------- 旅層 registry（BUILD.md §1）----------
-/**
- * opsRegistry：Vercel server-to-server 讀呢個 action 取得各支部登記。
- * 回應永不含 apikey —— 只回 hasKey 布林值。
- * 需要 apikey 驗證（本 leaf 兼任 TROOP_OPS 時用）。
- */
-function ecOpsRegistry(unitId){
-  var sh=getSheet().getSheetByName(EC_REGISTRY_SHEET);
-  var branches=[];
-  if(sh){
-    var d=sh.getDataRange().getValues();
-    for(var i=1;i<d.length;i++){
-      var id=ecNormId(d[i][0]);
-      if(!id) continue;
-      var status=String(d[i][6]||'active').trim().toLowerCase();
-      if(status==='inactive'||status==='removed') continue; // 退出 = 刪 registry entry
-      branches.push({
-        id:id,
-        name:String(d[i][1]||''),
-        branch:String(d[i][2]||''),
-        modules:String(d[i][5]||'').split(',').map(function(s){return s.trim();}).filter(String),
-        hasKey:!!String(d[i][4]||'').trim()
-        // apikey 刻意唔回傳：只存 server（registry 表），永不回前端、永不入 URL、永不入 QR
-      });
-    }
-  }
-  return jsonResponse({
-    success:true,
-    version:'ec-1.0',
-    unit:ecNormId(unitId),
-    branches:branches,
-    modules:ecGetModules(unitId),
-    generated_at:now()
-  });
-}
-
-/** 旅長登記／更新一個支部 leaf（BUILD.md §1：有旅系統 → 旅長登記入旅系統）。 */
-function ecRegisterBranch(body,actor){
-  var id=ecNormId(body.unit_id||body.branchId||'');
-  if(!id) return jsonResponse({success:false,error:'缺少 unit_id'});
-  var backend=String(body.backend||'').trim();
-  if(backend && !/^https:\/\/script\.google\.com\/macros\/s\/[A-Za-z0-9_-]+\/exec$/.test(backend)){
-    return jsonResponse({success:false,error:'backend 必須為 https://script.google.com/macros/s/.../exec'});
-  }
-  ecInitSheets();
-  var sh=getSheet().getSheetByName(EC_REGISTRY_SHEET);
-  var d=sh.getDataRange().getValues();
-  var ts=now();
-  var row=[id,String(body.name||''),String(body.branch||''),backend,String(body.apikey||''),
-           (Array.isArray(body.modules)?body.modules.join(','):String(body.modules||'')),
-           String(body.status||'active'),ts,String(actor||'')];
-  for(var i=1;i<d.length;i++){
-    if(ecSameUnit(d[i][0],id)){
-      // 留空 apikey = 唔改原有 key（避免覆蓋成空值）
-      if(!row[4]) row[4]=d[i][4];
-      sh.getRange(i+1,1,1,EC_REGISTRY_HEADERS.length).setValues([row]);
-      writeAudit(actor,'ec_register_branch',id,'更新登記');
-      return jsonResponse({success:true,unit:id,updated:true});
-    }
-  }
-  sh.appendRow(row);
-  writeAudit(actor,'ec_register_branch',id,'新增登記');
-  return jsonResponse({success:true,unit:id,created:true});
-}
-
-/** 退出 = 刪 registry entry；數據永遠留在單位自己 Sheet（BUILD.md §1）。 */
-function ecUnregisterBranch(unitId,actor){
-  var id=ecNormId(unitId);
-  var sh=getSheet().getSheetByName(EC_REGISTRY_SHEET);
-  if(!sh) return jsonResponse({success:false,error:'未有 EC_REGISTRY 表'});
-  var d=sh.getDataRange().getValues();
-  for(var i=d.length-1;i>=1;i--){
-    if(ecSameUnit(d[i][0],id)){
-      sh.deleteRow(i+1);
-      writeAudit(actor,'ec_unregister_branch',id,'刪除登記（數據保留在該單位自己 Sheet）');
-      return jsonResponse({success:true,unit:id,removed:true});
-    }
-  }
-  return jsonResponse({success:false,error:'找不到登記：'+id});
-}
-
-// ---------- EC_SIG：上層 sig 驗證（BUILD.md §2 三點進入之一）----------
-// sig = HMAC(下級apikey, childId|sub|role|children|target|exp)
-// 下級用自己 key 重算驗證，scope 簽死喺 sig 內。
+// ---------- 上層 sig 登入（BUILD.md §2 三點進入之一）----------
+// 上游（旅系統／地域）用本單位 apikey 簽一張短效飛,本 leaf 驗簽就放行。
+// 上游因此毋須知道 leaf 嘅任何密碼,leaf 亦毋須信任上游嘅網絡位置。
 function ecCanonical(p){
   var kids=[];
   if(p && Object.prototype.toString.call(p.children)==='[object Array]'){
@@ -1911,10 +1767,10 @@ function ecSigLogin(payload,sig){
   var expected=ecHmac(key,ecCanonical(payload));
   if(!ecSafeEqual(expected,sig)){ ecAccessLog(payload.sub,payload.role,'sig','FAIL','bad_sig'); return jsonResponse({success:false,error:'SIG 驗證失敗'}); }
 
-  // scope 內 target 模組要開住先放行
+  // scope 內 target 要係本 leaf 真係有嘅模組先放行
   var target=String(payload.target||'progress');
   if(!ecModuleEnabled(target,payload.childId)){
-    return jsonResponse({success:false,error:'模組未啟用：'+target});
+    return jsonResponse({success:false,error:'本系統冇此模組：'+target});
   }
 
   // sub = EMAIL / YMIS → 對返本 leaf 嘅帳號
@@ -1929,19 +1785,17 @@ function ecSigLogin(payload,sig){
   return jsonResponse({success:true,token:token,user:user,via:'sig',scope:{target:target,exp:exp}});
 }
 
-// ---------- EC 狀態（前端偵測後端版本／診斷）----------
-var EC_BACKEND_VERSION='cub-5.4.0-eco';
+// ---------- EC 狀態（俾上游／前端偵測本後端能力）----------
+var EC_BACKEND_VERSION='cub-5.4.0-leaf';
 function ecStatus(unitId){
   var ss=getSheet();
   return jsonResponse({
     success:true,
     backendVersion:EC_BACKEND_VERSION,
+    role:'leaf',
+    system:'cub-progress',
     unit:ecNormId(unitId),
-    ecSheets:{
-      registry:!!ss.getSheetByName(EC_REGISTRY_SHEET),
-      modules:!!ss.getSheetByName(EC_MODULES_SHEET),
-      accessLog:!!ss.getSheetByName(EC_ACCESS_SHEET)
-    },
+    ecSheets:{ accessLog:!!ss.getSheetByName(EC_ACCESS_SHEET) },
     modules:ecGetModules(unitId),
     sigSupported:true,
     apiKeyConfigured:!!getApiKey(),
@@ -1950,10 +1804,8 @@ function ecStatus(unitId){
 }
 
 /**
- * ecRoute — 由 doPost／doGet 轉入的生態圈 action 分派。
+ * ecRoute — 由 doPost／doGet 轉入的接入 action 分派。
  * 回傳 null 表示「唔關我事」，交返原本流程處理（完全向下兼容）。
- *
- * 注意：apikey 一律 server-to-server 傳入，永不由瀏覽器直接帶。
  */
 function ecRoute(action,body,user,ymis){
   body=body||{};
@@ -1961,30 +1813,9 @@ function ecRoute(action,body,user,ymis){
 
   if(action==='ecStatus') return ecStatus(unit);
 
-  if(action==='opsRegistry'){
-    // server-to-server：一定要 apikey
-    if(!body.apikey || body.apikey!==getApiKey()) return jsonResponse({success:false,error:'opsRegistry 需要有效 API Key（server-to-server）'});
-    return ecOpsRegistry(unit);
-  }
-
   if(action==='ecSigLogin') return ecSigLogin(body.payload||{}, body.sig||'');
 
   if(action==='ecGetModules') return jsonResponse({success:true,unit:ecNormId(unit),modules:ecGetModules(unit)});
-
-  if(action==='ecSetModule'){
-    if(!user || getRoleLevel(user.role)<60) return jsonResponse({success:false,error:'需團長以上權限設定模組開關'});
-    return ecSetModule(body.module,body.enabled===true||String(body.enabled)==='true',body.scope,ymis);
-  }
-
-  if(action==='ecRegisterBranch'){
-    if(!user || getRoleLevel(user.role)<60) return jsonResponse({success:false,error:'需團長以上權限登記支部'});
-    return ecRegisterBranch(body,ymis);
-  }
-
-  if(action==='ecUnregisterBranch'){
-    if(!user || getRoleLevel(user.role)<60) return jsonResponse({success:false,error:'需團長以上權限移除登記'});
-    return ecUnregisterBranch(body.unit_id||unit,ymis);
-  }
 
   if(action==='ecInitSheets'){
     if(!user || getRoleLevel(user.role)<80) return jsonResponse({success:false,error:'需管理員權限'});
@@ -1998,7 +1829,7 @@ function ecRoute(action,body,user,ymis){
     var sh=getSheet().getSheetByName(EC_ACCESS_SHEET);
     var out=[];
     if(sh){ var d=sh.getDataRange().getValues(); for(var i=Math.max(1,d.length-200);i<d.length;i++) out.push(d[i]); }
-    return jsonResponse({success:true,records:out});
+    return jsonResponse({success:true,headers:EC_ACCESS_HEADERS,rows:out});
   }
 
   return null;
