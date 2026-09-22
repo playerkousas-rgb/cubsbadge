@@ -12,7 +12,7 @@ const ADMIN_YMIS = '1111111111';
 // SHEEP 是隱藏維護帳戶：程式碼只有帳號名，冇密碼
 // SHEEP is the hidden maintenance account: only the NAME lives in code, never a password.
 // - 只存在於後端（getUser 虛擬帳號），不寫入 Users 表、不出現在用戶管理／成員名單
-// - 密碼（SUPER_KEY）只喺 APP ADMIN 嘅 Vercel 功能變數；本檔冇密碼可比對，只認 APP ADMIN 層嘅 sig
+// - 密碼（SUPER_KEY）只喺 APP ADMIN 嘅 Vercel 功能變數；本檔冇密碼可比對，只認 APP（Vercel）送落嚟嘅 action=superLogin
 const SUPER_ADMIN_LOGIN = 'sheep';
 // 內部電郵由帳號名衍生（唯一用途：保留帳號檢查／電郵登入兼容），唔涉及任何憑證
 const SUPER_ADMIN_EMAIL = SUPER_ADMIN_LOGIN + '@cubbadge.local';
@@ -113,7 +113,7 @@ function getApiKey() {
 // ===== 功能變數契約（後端GS ↔ Vercel 環境變數）=====
 // 後端GS 嘅 Script Properties 同 Vercel 環境變數一一對應（兩邊同一隻值）：
 // 超管密碼 ↔ SUPER_KEY（**只喺 APP ADMIN 嘅 Vercel 功能變數**；leaf 永不讀寫、永不顯示）
-// 超管登入靠：Vercel 用本單位 apikey 簽 sig → action=superLogin → 本檔驗簽發 token
+// 超管登入靠：Vercel 比對 SUPER_KEY → action=superLogin（apikey 由 registry 注入）→ 本檔驗 apikey 發 token
 // TROOP_<id>_BACKEND ↔ 部署 URL（getScriptUrl，部署為網頁應用程式後 /exec 結尾嗰條）
 // TROOP_<id>_APIKEY ↔ getApiKey Script Property 'API_KEY'（旅團 initializeSheets 生成，交 APP ADMIN）
 // TROOP_<id>_NAME ↔ getTroopName Script Property 'TROOP_NAME'（APP ADMIN 層）
@@ -127,7 +127,7 @@ const SUPER_KEY_PROP = 'SUPER_KEY';
  * 保留呢個函數只為舊呼叫點／診斷顯示用：它**永遠唔會**讀取或回傳任何值。
  */
 function superKeyConfigured() { return false; }
-/** ：leaf 永不寫入 SUPER_KEY（超管改密碼請喺 Vercel 改）。回 false 表示「唔關 leaf 事」。 */
+/** leaf 永不寫入 SUPER_KEY（超管改密碼請喺 Vercel 改）。回 false 表示「唔關 leaf 事」。 */
 function setSuperKey() { return false; }
 /**
  * 清走舊部署遺留喺 Script Properties 嘅 SUPER_KEY（值只應該存在 Vercel）。
