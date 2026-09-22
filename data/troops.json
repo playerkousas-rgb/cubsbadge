@@ -1,4 +1,4 @@
 {
-  "_deprecated": "已棄用（v5.5 功能變數契約）：旅團設定改用 Vercel 環境變數 SUPER_KEY + TROOP_<id>_BACKEND / TROOP_<id>_APIKEY / TROOP_<id>_NAME（後端GS 對應）。程式已唔再讀取此檔。",
+  "_deprecated": "已棄用：設定一律喺 Vercel 環境變數，由 APP ADMIN 設定（SUPER_KEY + TROOP_<id>_BACKEND / _APIKEY / _NAME）；旅團只交編號／部署 URL／API Key。程式已唔再讀取此檔。",
   "troops": {}
 }

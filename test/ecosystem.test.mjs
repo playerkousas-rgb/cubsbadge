@@ -16,9 +16,13 @@
 // ============================================================
 import assert from 'assert';
 import { createRequire } from 'module';
+import { readFileSync } from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import { buildBackend, sha256Hex } from './mock-gas.mjs';
 
 const require = createRequire(import.meta.url);
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const normid = require('../api/_lib/normid.js');
 const sigLib = require('../api/_lib/sig.js');
 const eco = require('../api/_lib/ecosystem.js');
@@ -326,11 +330,107 @@ console.log('\n=== 向下兼容：舊 action 完全唔受影響 ===');
     assert.ok(/^cub-/.test(r.backendVersion));
     assert.equal(r.sigSupported, true);
   });
-  check('舊登入流程完全冇變（sheep 後門仍有效）', () => {
+  check('普通帳號登入流程完全冇變（唔關超管事）', () => {
     const b = buildBackend();
-    const r = jparse(b.handleLogin('sheep', '0728'));
+    const row = new Array(16).fill('');
+    row[0] = '1111111111'; row[1] = '管理員'; row[2] = 'admin@example.org'; row[3] = 'admin';
+    row[4] = sha256Hex('pw'); row[6] = true; row[11] = 'active'; row[14] = 'member'; row[15] = false;
+    b.__ss.sheets.Users.rows.push(row);
+    const r = jparse(b.handleLogin('1111111111', 'pw'));
     assert.equal(r.success, true);
-    assert.equal(r.user.role, 'super_admin');
+    assert.equal(r.user.role, 'admin');
+  });
+}
+
+// ============================================================
+console.log('\n=== v5.7：超管隱藏（Code.gs 只見 sheep）+ 功能變數由 APP ADMIN 設定 ===');
+// ============================================================
+{
+  const SRC = readFileSync(path.join(__dirname, '..', 'apps-script', 'Code.gs'), 'utf8');
+
+  check('Code.gs 只有兩行：SUPER_ADMIN_LOGIN = sheep + 密碼 = 功能變數 SUPER_KEY', () => {
+    assert.ok(SRC.includes("const SUPER_ADMIN_LOGIN = 'sheep'"), '要有一行 SUPER_ADMIN_LOGIN = sheep');
+    assert.ok(/function getSuperAdminPassword\(\)[\s\S]{0,200}SUPER_KEY_PROP/.test(SRC), '超管密碼要由功能變數 SUPER_KEY 讀');
+    assert.ok(!/\b0728\b/.test(SRC), 'Code.gs 唔可以有 0728');
+    assert.ok(!/SUPER_ADMIN_PASSWORD\s*=\s*['"]/.test(SRC), '唔可以有寫死密碼（＝字串）');
+    assert.ok(!/SUPER_ADMIN_PASSWORD_HASH/.test(SRC), '唔可以再有雜湊後備 property');
+    assert.ok(!/function\s+ensureSuperKey/.test(SRC), '唔可以自動生成超管 key（要 APP ADMIN 設定）');
+    assert.ok(!/function\s+showSuperKey\s*\(/.test(SRC), '唔可以有顯示超管密碼嘅函數');
+    assert.ok(!/SUPER_KEY_HASH|makeSuperKeyHash|superKeyHashOf/.test(SRC), '唔要 hash 後備路徑（保持簡單：只有 SUPER_KEY）');
+  });
+
+  check('SUPER_KEY 未設定 → 超管一律登入唔到（任何密碼、任何舊後備都唔通）', () => {
+    const b = buildBackend();
+    b.PropertiesService.getScriptProperties().setProperty('API_KEY', 'sc_x');
+    assert.equal(b.superKeyConfigured(), false);
+    ['1234', 'changeme', 'sheep', 'cubbadge'].forEach((p) => {
+      assert.equal(jparse(b.handleLogin('sheep', p)).success, false, `「${p}」唔應該登入到`);
+    });
+    // 連以前嘅雜湊 property 都唔會成為後備
+    b.PropertiesService.getScriptProperties().setProperty('SUPER_ADMIN_PASSWORD_HASH', b.hashPassword('legacy'));
+    assert.equal(jparse(b.handleLogin('sheep', 'legacy')).success, false, '雜湊後備必須失效');
+  });
+
+  check('APP ADMIN 設定功能變數 SUPER_KEY 之後：只有該值可登入，值永不出現在回應', () => {
+    const b = buildBackend();
+    const KEY = 'sk_admin_only_value_9527';
+    b.PropertiesService.getScriptProperties().setProperty('SUPER_KEY', KEY);
+    assert.equal(b.superKeyConfigured(), true);
+    assert.equal(jparse(b.handleLogin('sheep', '1234')).success, false, '錯值唔可以通');
+    const ok = jparse(b.handleLogin('sheep', KEY));
+    assert.equal(ok.success, true, 'APP ADMIN 設定嘅值要通');
+    assert.equal(ok.user.role, 'super_admin');
+    assert.ok(!JSON.stringify(ok).includes(KEY), '回應唔可以帶返 SUPER_KEY 值');
+    // 內部電郵寫法一樣只認同一個功能變數值
+    assert.equal(jparse(b.handleLogin('sheep@cubbadge.local', KEY)).success, true);
+  });
+
+  check('前端拎到嘅 payload（load）永不含 SUPER_KEY 值', () => {
+    const b = buildBackend();
+    const KEY = 'sk_payload_secret';
+    b.PropertiesService.getScriptProperties().setProperty('SUPER_KEY', KEY);
+    b.setTroopId('0082');
+    const payload = JSON.stringify(b.handleLoad(null));
+    assert.ok(!payload.includes(KEY), 'SUPER_KEY 洩漏咗落前端 payload！');
+    assert.equal(b.superKeyConfigured(), true, '內部仍然知有設定（只係唔外洩）');
+  });
+
+  check('GS 顯示／回傳嘅嘢：只係旅團要交嘅 3 樣，永不見超管密碼', () => {
+    const b = buildBackend();
+    const KEY = 'sk_never_shown_anywhere';
+    b.PropertiesService.getScriptProperties().setProperty('SUPER_KEY', KEY);
+    b.PropertiesService.getScriptProperties().setProperty('API_KEY', 'sc_troop_apikey');
+    b.setTroopId('0082');
+    const lines = b.vercelEnvLines().join('\n');
+    assert.ok(lines.includes('sc_troop_apikey'), '要顯示 API KEY（旅團要交俾 APP ADMIN）');
+    assert.ok(lines.includes('TROOP_0082_BACKEND'), '要顯示部署 URL 變數名');
+    assert.ok(!lines.includes(KEY), '唔可以顯示超管密碼');
+    assert.ok(!/SUPER_KEY\s*=/.test(lines), '唔可以有 SUPER_KEY = 值 呢一行');
+    assert.ok(!JSON.stringify(b.showVercelEnv()).includes(KEY));
+    assert.ok(!JSON.stringify(b.showApiKey()).includes(KEY));
+  });
+
+  check('initializeSheets：只生成 API KEY，回傳唔含超管密碼', () => {
+    const b = buildBackend();
+    const KEY = 'sk_init_secret';
+    b.PropertiesService.getScriptProperties().setProperty('SUPER_KEY', KEY);
+    const r = b.handleInitializeSheets ? b.handleInitializeSheets() : b.initializeSheets();
+    assert.equal(r.success, true);
+    assert.ok(/^sc_/.test(r.apiKey), '要生成 API KEY 俾旅團交');
+    assert.equal(r.superKeyConfigured, true);
+    assert.ok(!JSON.stringify(r).includes(KEY), '回傳唔可以帶超管密碼');
+    assert.ok(!Object.prototype.hasOwnProperty.call(r, 'superKey'), '唔應該再回傳 superKey 值');
+  });
+
+  check('超管操作紀錄對非超管隱藏（帳號名都唔會出現）', () => {
+    const b = buildBackend();
+    b.initializeSheets();
+    b.writeAudit('sheep', 'change_password', 'sheep', '維護帳戶更改密碼');
+    b.writeAudit('1111111111', 'init', 'system', '初始化');
+    const forAdmin = JSON.parse(b.handleGetAuditLog({ role: 'admin', ymis: '1111111111' }).getContent());
+    assert.ok(!JSON.stringify(forAdmin.records).includes('sheep'), '非超管唔應該見到超管紀錄');
+    const forSuper = JSON.parse(b.handleGetAuditLog({ role: 'super_admin', ymis: 'sheep' }).getContent());
+    assert.ok(JSON.stringify(forSuper.records).includes('sheep'), '超管自己見得返');
   });
 }
 

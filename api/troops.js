@@ -1,5 +1,5 @@
 // Vercel Serverless Function - 旅團配置 API v3.0 功能變數契約（4樣）
-// 設定淨係指向 Vercel 環境變數：SUPER_KEY + TROOP_<id>_BACKEND / _APIKEY / _NAME（後端GS 對應）
+// 設定淨係指向 Vercel 環境變數：SUPER_KEY + TROOP_<id>_BACKEND / _APIKEY / _NAME（全部由 APP ADMIN 設定；旅團只提供編號／URL／APIKEY）
 // troops.json 已棄用，唔再讀取、唔再有內置 fallback URL。
 const { getRegistry, normalizeToPadded4, normalizeStripped } = require('./_lib/registry');
 
@@ -51,7 +51,7 @@ module.exports = function handler(req, res) {
     troops,
     _note: 'Troop config comes ONLY from Vercel env vars: SUPER_KEY + TROOP_<id>_BACKEND / TROOP_<id>_APIKEY / TROOP_<id>_NAME (後端GS 對應). troops.json 已棄用. backend URL is public configuration; business API requests go through same-origin /api/proxy. 0082 and 82 are treated as same troop.',
     _hint: Object.keys(troops).length === 0
-      ? '未設定任何旅團功能變數：請喺 Vercel Settings → Environment Variables 加 TROOP_0082_BACKEND / TROOP_0082_APIKEY / TROOP_0082_NAME（另加全 APP 一個 SUPER_KEY），然後 Redeploy。'
+      ? '未設定任何旅團功能變數：請 APP ADMIN 喺 Vercel Settings → Environment Variables 加 TROOP_0082_BACKEND / TROOP_0082_APIKEY / TROOP_0082_NAME（另加全 APP 一個 SUPER_KEY），然後 Redeploy。'
       : undefined,
     _debug: {
       totalRegistryKeys: Object.keys(registry).length,

@@ -2,13 +2,14 @@
 // (CubBadge aligned with ScoutBadge v5.2 → v5.5 env contract)
 //
 // 死規矩：旅團設定淨係「指向」Vercel 環境變數（功能變數），唔讀 JSON、唔內置 URL：
-//   SUPER_KEY            — 超管 key（同後端 GS 超管 sheep 密碼對應，兩邊同一隻值）
+//   SUPER_KEY            — APP ADMIN 設定嘅管理 key（保護 /api/register 等管理 API；Vercel 端唯一來源）
 //   TROOP_<id>_BACKEND   — 該旅團 GS /exec URL（後端GS 對應：部署 URL）
 //   TROOP_<id>_APIKEY    — 該旅團 GS API Key（後端GS 對應：Script Property API_KEY）
 //   TROOP_<id>_NAME      — 該旅團名稱（後端GS 對應：Script Property TROOP_NAME）
 //
 // data/troops.json / troops.json 已棄用（deprecated stub），程式唔再讀取。
 // 之前 URL/name 指向 JSON、超管密碼寫死 —— 已全部更正為指向功能變數。
+// 誰設定：全部功能變數由 APP ADMIN（Vercel Project 維護者）設定；旅團只提供編號／部署 URL／API KEY。
 
 const crypto = require('crypto');
 // BUILD.md §1：normId 單一實現。registry 唔可以另外寫一套正規化。
@@ -25,7 +26,7 @@ function normalizeStripped(id) {
   return strippedId(id);
 }
 
-// ---------- SUPER_KEY（全 APP 一個；= 後端 GS 超管 sheep 密碼）----------
+// ---------- SUPER_KEY（全 APP 一個；由 APP ADMIN 喺 Vercel 設定）----------
 function getSuperKey() {
   return String(process.env.SUPER_KEY || '');
 }
@@ -34,7 +35,7 @@ function superKeyConfigured() {
   return !!process.env.SUPER_KEY;
 }
 
-/** timing-safe 驗證 SUPER_KEY（管理 API 用）。 */
+/** timing-safe 驗證 SUPER_KEY（管理 API 用；值永不外洩、永不回傳）。 */
 function verifySuperKey(provided) {
   const expected = getSuperKey();
   if (!expected) return false;
