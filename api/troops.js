@@ -1,4 +1,6 @@
-// Vercel Serverless Function - 旅團配置 API v2.1 - deduplicate 0082/82 (CubBadge aligned with ScoutBadge v5.2)
+// Vercel Serverless Function - 旅團配置 API v3.0 功能變數契約（4樣）
+// 設定淨係指向 Vercel 環境變數：SUPER_KEY + TROOP_<id>_BACKEND / _APIKEY / _NAME（後端GS 對應）
+// troops.json 已棄用，唔再讀取、唔再有內置 fallback URL。
 const { getRegistry, normalizeToPadded4, normalizeStripped } = require('./_lib/registry');
 
 module.exports = function handler(req, res) {
@@ -42,20 +44,15 @@ module.exports = function handler(req, res) {
     }
   });
 
-  if (!troops['0082'] && !troops['82']) {
-    troops['0082'] = {
-      name: '第 82 旅',
-      backend: 'https://script.google.com/macros/s/AKfycbw81wLR5NZtRk4m1ptSAoFBueoqwIZ5hcM_apHJa2xMmlVfUvZsS8R45nTIKTOIuBB2KQ/exec',
-      _fallback: true
-    };
-  }
-
   res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
   res.setHeader('Content-Type', 'application/json; charset=utf-8');
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.status(200).json({
     troops,
-    _note: 'backend URL is public configuration; business API requests go through same-origin /api/proxy. 0082 and 82 are treated as same troop.',
+    _note: 'Troop config comes ONLY from Vercel env vars: SUPER_KEY + TROOP_<id>_BACKEND / TROOP_<id>_APIKEY / TROOP_<id>_NAME (後端GS 對應). troops.json 已棄用. backend URL is public configuration; business API requests go through same-origin /api/proxy. 0082 and 82 are treated as same troop.',
+    _hint: Object.keys(troops).length === 0
+      ? '未設定任何旅團功能變數：請喺 Vercel Settings → Environment Variables 加 TROOP_0082_BACKEND / TROOP_0082_APIKEY / TROOP_0082_NAME（另加全 APP 一個 SUPER_KEY），然後 Redeploy。'
+      : undefined,
     _debug: {
       totalRegistryKeys: Object.keys(registry).length,
       uniqueTroops: Object.keys(troops).length

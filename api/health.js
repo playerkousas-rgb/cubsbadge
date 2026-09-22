@@ -1,5 +1,5 @@
 // Health check endpoint - helps diagnose "找不到82的SHEET" issues v2.2 (CubBadge aligned with ScoutBadge v5.2)
-const { getRegistry, getTroopConfig, normalizeToPadded4 } = require('./_lib/registry');
+const { getRegistry, getTroopConfig, normalizeToPadded4, superKeyConfigured } = require('./_lib/registry');
 
 module.exports = async function handler(req, res) {
   if (!res.status) {
@@ -31,6 +31,13 @@ module.exports = async function handler(req, res) {
     requestedTroopId: troopId,
     normalizedTroopId: normalized,
     troopFound: !!config,
+    // 功能變數契約（4樣）：只回「有冇設定」boolean，永不回值（apikey／SUPER_KEY 紅線）
+    envContract: {
+      SUPER_KEY: superKeyConfigured(),
+      [`TROOP_${normalized}_BACKEND`]: !!(config && config._env && config._env.backend),
+      [`TROOP_${normalized}_APIKEY`]: !!(config && config._env && config._env.apikey),
+      [`TROOP_${normalized}_NAME`]: !!(config && config._env && config._env.name)
+    },
     config: config ? {
       name: config.name,
       backendHost: (() => { try { return new URL(config.backend).hostname; } catch(e){ return 'invalid'; } })(),
@@ -54,9 +61,9 @@ module.exports = async function handler(req, res) {
       steps: [
         '1. 檢查 /api/troops 是否包含 0082',
         '2. 檢查 /api/health?troopId=0082 的 troopFound 是否 true',
-        '3. 檢查 Vercel 環境變數 TROOP_0082_BACKEND 是否正確 (https://script.google.com/.../exec)',
+        '3. 檢查 Vercel 環境變數 TROOP_0082_BACKEND / TROOP_0082_APIKEY / TROOP_0082_NAME 是否已設定（另加全 APP 一個 SUPER_KEY）',
         '4. 在 Google Apps Script 編輯器執行 diagnoseSheets() 查看缺失表',
-        '5. 執行 initializeSheets() 重建缺失工作表',
+        '5. 執行 initializeSheets() 重建缺失工作表（會自動生成 API_KEY + SUPER_KEY）',
         '6. 重新部署 Apps Script 為新版本，確保「任何人可存取」',
         '7. 檢查 Google Sheet 是否被誤刪除或只有 admin 一人'
       ]
@@ -67,9 +74,9 @@ module.exports = async function handler(req, res) {
     return res.status(404).json({
       ...health,
       success: false,
-      error: `Troop ${troopId} not found. 可能是 data/troops.json 缺少 0082，或環境變數未設定。`,
+      error: `Troop ${troopId} not found. 可能是 Vercel 環境變數未設定 TROOP_${normalized}_BACKEND / _APIKEY / _NAME。`,
       receivedTroopId: troopId,
-      envVarHint: `檢查是否設定 TROOP_${normalized}_BACKEND 或 TROOP_${String(troopId).replace(/^0+/,'')}_BACKEND`
+      envVarHint: `檢查 Vercel 環境變數 TROOP_${normalized}_BACKEND / TROOP_${normalized}_APIKEY / TROOP_${normalized}_NAME 是否設定（另加全 APP 一個 SUPER_KEY）`
     });
   }
 
@@ -134,7 +141,7 @@ module.exports = async function handler(req, res) {
       health.backendLiveCheck = {
         reachable: false,
         error: err.message,
-        hint: '無法連到 Google Apps Script，可能是 URL 錯誤、部署未設「任何人可存取」、或網絡問題。請檢查 TROOP_0082_BACKEND 是否為正確的 /exec URL。'
+        hint: '無法連到 Google Apps Script，可能是 URL 錯誤、部署未設「任何人可存取」、或網絡問題。請檢查 TROOP_0082_BACKEND 功能變數是否為正確的 /exec URL。'
       };
     }
   }

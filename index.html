@@ -302,14 +302,14 @@ html[lang="en"] body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","No
       </div>
       <div class="info-card" style="background:var(--maroon-light);margin-bottom:12px" data-i18n-html="setup_map_card">
         <h3>🗺️ 部署地圖</h3>
-        <p style="font-size:11px">共通：下載 Code.gs → 建 Sheet → 執行 initializeSheets → 部署 → 複製 URL+API Key<br>軌道A 獨立用：交 cubbadge 管理員加入 troops.json<br>軌道B 接入主系統：同時交主系統管理員填 backend+apikey</p>
-        <p style="font-size:10px;color:var(--red);margin-top:6px">⚠️ 超管 sheep 為後端隱藏帳戶，只寫在 Code.gs，SETUP 彈窗不顯示帳號密碼（v5.2 修復）。</p>
+        <p style="font-size:11px">共通：下載 Code.gs → 建 Sheet → 執行 initializeSheets（自動生成 API Key + SUPER_KEY）→ 部署 → 跑 showVercelEnv() 複製功能變數 4 樣<br>軌道A 獨立用：交 cubbadge 管理員設入 Vercel 功能變數（SUPER_KEY、TROOP_XXXX_BACKEND / TROOP_XXXX_APIKEY / TROOP_XXXX_NAME）<br>軌道B 接入主系統：同時交主系統管理員</p>
+        <p style="font-size:10px;color:var(--red);margin-top:6px">⚠️ 超管 sheep 為後端隱藏帳戶（不在 Users 表）；其密碼 = SUPER_KEY 功能變數，同 Vercel SUPER_KEY 對應，兩邊同一隻值。SETUP 彈窗不顯示帳號密碼。</p>
       </div>
       <div class="tutorial">
         <div class="steps">
-          <div class="step"><div class="step-number">1</div><div class="step-content"><h4 data-i18n="s1h">下載後端程式碼 v5.2</h4><p data-i18n="s1p">包含活動履歷申報、待批履歷、診斷修復、超管隱藏、中英對照</p><a href="apps-script/Code.gs" download="Code.gs" class="btn btn-primary btn-sm" style="margin-top:6px" data-i18n="s1btn">⬇️ 下載 Code.gs v5.2</a></div></div>
-          <div class="step"><div class="step-number">2</div><div class="step-content"><h4 data-i18n="s2h">建立 Google Sheet 並部署</h4><p data-i18n-html="s2p">建新試算表 → 擴充功能 → Apps Script 貼上 Code.gs → 儲存 → 執行 initializeSheets 授權，複製 API Key → 部署為網頁應用程式（執行身分我，任何人可存取）複製 URL (/exec)</p></div></div>
-          <div class="step"><div class="step-number">3</div><div class="step-content"><h4 data-i18n="s3h">提交給管理員</h4><p data-i18n="s3p">將旅團編號、名稱、URL、API Key 交 cubbadge 管理員加入 troops.json</p></div></div>
+          <div class="step"><div class="step-number">1</div><div class="step-content"><h4 data-i18n="s1h">下載後端程式碼 v5.5</h4><p data-i18n="s1p">包含活動履歷申報、待批履歷、診斷修復、超管隱藏、中英對照、功能變數契約（SUPER_KEY 對應）</p><a href="apps-script/Code.gs" download="Code.gs" class="btn btn-primary btn-sm" style="margin-top:6px" data-i18n="s1btn">⬇️ 下載 Code.gs v5.5</a></div></div>
+          <div class="step"><div class="step-number">2</div><div class="step-content"><h4 data-i18n="s2h">建立 Google Sheet 並部署</h4><p data-i18n-html="s2p">建新試算表 → 擴充功能 → Apps Script 貼上 Code.gs → 儲存 → 執行 initializeSheets 授權（自動生成 API Key + SUPER_KEY）→ 部署為網頁應用程式（執行身分我，任何人可存取）→ 跑 showVercelEnv() 複製功能變數 4 樣</p></div></div>
+          <div class="step"><div class="step-number">3</div><div class="step-content"><h4 data-i18n="s3h">提交給管理員</h4><p data-i18n="s3p">將旅團編號、名稱、URL、API Key 交 cubbadge 管理員，設入 Vercel 功能變數 TROOP_XXXX_BACKEND / TROOP_XXXX_APIKEY / TROOP_XXXX_NAME（另加全 APP 一個 SUPER_KEY）</p></div></div>
         </div>
       </div>
       <div class="info-card" style="border-color:var(--blue);background:var(--blue-light)"><h3 style="color:var(--blue)" data-i18n="setup_submit_h">📧 完成後提交</h3><p style="font-size:11px" data-i18n="setup_submit_p">獨立用：交 cubbadge 管理員<br>接入主系統：同時交主系統管理員</p><button class="btn btn-blue" onclick="showContactModal()" style="width:100%" data-i18n="submit_contact">📧 提交旅團接入申請</button></div>
@@ -579,8 +579,8 @@ zh:{
   home_pick_troop:'📍 請選擇您的旅團',home_reload:'🔄 重新載入',home_demo_l:'👀 示範：領袖',home_demo_m:'👤 示範：家長/成員',loading:'載入中...',
   home_tip:'💡 提示：若您的旅團不在列表，請到「新旅團部署」查看10分鐘自助部署教學。<br>🎬 <b>未登入試用：</b>可選「示範：領袖」或「示範：家長/成員」體驗兩種角色。<br>🌐 <b>中英切換：</b>右上角按「🌐 English」全站轉英文，內容相通，後端紀錄相同，適合英語旅團。',
   setup_h2:'📋 新旅團部署指南 (10分鐘) - 超管隱藏版',setup_portal_card:'<h3 style="color:var(--blue)">🌟 主系統平台是什麼？</h3><p style="font-size:12px">本系統可獨立用，亦可接入 <b>scoutsystem-2.0 主系統平台</b>：Dashboard、考勤、財務、活動報名，單一登入。</p><p style="font-size:11px;margin-top:6px;background:#fff;padding:6px;border-radius:6px"><b>有主系統 ≠ 一定要接上</b>，兩條路並存。</p>',
-  setup_map_card:'<h3>🗺️ 部署地圖</h3><p style="font-size:11px">共通：下載 Code.gs → 建 Sheet → 執行 initializeSheets → 部署 → 複製 URL+API Key<br>軌道A 獨立用：交 cubbadge 管理員加入 troops.json<br>軌道B 接入主系統：同時交主系統管理員填 backend+apikey</p><p style="font-size:10px;color:var(--red);margin-top:6px">⚠️ 超管 sheep 為後端隱藏帳戶，只寫在 Code.gs，SETUP 彈窗不顯示帳號密碼（v5.2 修復）。</p>',
-  s1h:'下載後端程式碼 v5.2',s1p:'包含活動履歷申報、待批履歷、診斷修復、超管隱藏、中英對照',s1btn:'⬇️ 下載 Code.gs v5.2',s2h:'建立 Google Sheet 並部署',s2p:'建新試算表 → 擴充功能 → Apps Script 貼上 Code.gs → 儲存 → 執行 initializeSheets 授權，複製 API Key → 部署為網頁應用程式（執行身分我，任何人可存取）複製 URL (/exec)',s3h:'提交給管理員',s3p:'將旅團編號、名稱、URL、API Key 交 cubbadge 管理員加入 troops.json',
+  setup_map_card:'<h3>🗺️ 部署地圖</h3><p style="font-size:11px">共通：下載 Code.gs → 建 Sheet → 執行 initializeSheets（自動生成 API Key + SUPER_KEY）→ 部署 → 跑 showVercelEnv() 複製功能變數 4 樣<br>軌道A 獨立用：交 cubbadge 管理員設入 Vercel 功能變數（SUPER_KEY、TROOP_XXXX_BACKEND / TROOP_XXXX_APIKEY / TROOP_XXXX_NAME）<br>軌道B 接入主系統：同時交主系統管理員</p><p style="font-size:10px;color:var(--red);margin-top:6px">⚠️ 超管 sheep 為後端隱藏帳戶（不在 Users 表）；其密碼 = SUPER_KEY 功能變數，同 Vercel SUPER_KEY 對應，兩邊同一隻值。</p>',
+  s1h:'下載後端程式碼 v5.5',s1p:'包含活動履歷申報、待批履歷、診斷修復、超管隱藏、中英對照、功能變數契約（SUPER_KEY 對應）',s1btn:'⬇️ 下載 Code.gs v5.5',s2h:'建立 Google Sheet 並部署',s2p:'建新試算表 → 擴充功能 → Apps Script 貼上 Code.gs → 儲存 → 執行 initializeSheets 授權（自動生成 API Key + SUPER_KEY）→ 部署為網頁應用程式（執行身分我，任何人可存取）→ 跑 showVercelEnv() 複製功能變數 4 樣',s3h:'提交給管理員',s3p:'將旅團編號、名稱、URL、API Key 交 cubbadge 管理員，設入 Vercel 功能變數 TROOP_XXXX_BACKEND / TROOP_XXXX_APIKEY / TROOP_XXXX_NAME（另加全 APP 一個 SUPER_KEY）',
   setup_submit_h:'📧 完成後提交',setup_submit_p:'獨立用：交 cubbadge 管理員<br>接入主系統：同時交主系統管理員',submit_contact:'📧 提交旅團接入申請',
   guide_h2:'📖 使用教學 - 幼童軍專用',g1h:'選擇旅團',g1p:'首頁點旅團卡片',g2h:'登入',g2p:'成員/家長：YMIS 10位 + 密碼；領袖：Email + 密碼。首次登入強制改密。',g3h:'家長/成員：只看進度，可申報活動履歷',g3p:'幼童軍年紀小，所有進度由領袖填寫，家長/成員帳號只能查看。但活動履歷（服務／活動／訓練班）可由家長/成員自行申報 → 領袖審批。',g4h:'領袖：勾選+日期',g4p:'領袖直接勾選，自動填今日日期，可手改。先暫存瀏覽器，底部確認寫入雲端。',g5h:'其他功能',g5p:'全團總覽批量、按項目統計、表格列印 PT/68 金紫荊、中英切換。',
   guide_roles_h3:'👥 角色功能',guide_member_card:'<b>👤 家長/成員 member</b><ul style="font-size:11px;margin:6px 0 0 16px"><li>只能看自己進度（不可勾選）</li><li>活動履歷可自行申報（服務/活動/訓練班）</li><li>可取消待批申報</li><li>已批紀錄可申請修改（需領袖重批）</li></ul>',guide_leader_card:'<b>👨‍💼 領袖 leader</b><ul style="font-size:11px;margin:6px 0 0 16px"><li>全部功能</li><li>我的進度選任何成員</li><li>全團總覽批量一鍵剔</li><li>審批中心：用戶+活動履歷申報</li><li>活動履歷可直接新增/編輯/刪除+批量</li><li>用戶管理、批量開戶 YMIS PDF</li></ul>',
@@ -669,8 +669,8 @@ en:{
   home_pick_troop:'📍 Pick your Troop',home_reload:'🔄 Reload',home_demo_l:'👀 Demo: Leader',home_demo_m:'👤 Demo: Parent/Member',loading:'Loading...',
   home_tip:'💡 If your troop not in list, see \"Setup\" for 10-min guide.<br>🎬 <b>Demo without login:</b> choose Leader or Parent/Member.<br>🌐 <b>Bilingual:</b> tap \"🌐 中文\" top-right to switch; records stay same, suitable for English troops.',
   setup_h2:'📋 New Troop Setup (10 min) - Super-admin hidden',setup_portal_card:'<h3 style="color:var(--blue)">🌟 What is main system?</h3><p style="font-size:12px">This is a Tier 3 plugin, can be standalone or linked to <b>scoutsystem-2.0</b>: Dashboard, attendance, finance, events, SSO.</p><p style="font-size:11px;margin-top:6px;background:#fff;padding:6px;border-radius:6px"><b>Main system ≠ must link</b>, both routes co-exist.</p>',
-  setup_map_card:'<h3>🗺️ Deployment Map</h3><p style="font-size:11px">Common: download Code.gs → create Sheet → run initializeSheets → deploy → copy URL+API Key<br>Track A standalone: give to cubbadge admin to add to troops.json<br>Track B portal: also give to main system admin to fill backend+apikey</p><p style="font-size:10px;color:var(--red);margin-top:6px">⚠️ Super-admin sheep is hidden backend-only, only in Code.gs, SETUP popup does not show credentials (v5.2 fix).</p>',
-  s1h:'Download backend v5.2',s1p:'Includes activity log claims, pending logs, diagnose, hidden super-admin, bilingual',s1btn:'⬇️ Download Code.gs v5.2',s2h:'Create Google Sheet & Deploy',s2p:'New spreadsheet → Extensions → Apps Script paste Code.gs → Save → run initializeSheets authorize, copy API Key → Deploy as web app (Me, Anyone) copy URL (/exec)',s3h:'Submit to admin',s3p:'Give troop ID, name, URL, API Key to cubbadge admin to add to troops.json',
+  setup_map_card:'<h3>🗺️ Deployment Map</h3><p style="font-size:11px">Common: download Code.gs → create Sheet → run initializeSheets (auto-generates API Key + SUPER_KEY) → deploy → run showVercelEnv() to copy the 4 env vars<br>Track A standalone: give to cubbadge admin to set Vercel env vars (SUPER_KEY, TROOP_XXXX_BACKEND / TROOP_XXXX_APIKEY / TROOP_XXXX_NAME)<br>Track B portal: also give to main system admin</p><p style="font-size:10px;color:var(--red);margin-top:6px">⚠️ Super-admin sheep is hidden backend-only (never in the Users sheet); its password = SUPER_KEY env var, same value as Vercel SUPER_KEY.</p>',
+  s1h:'Download backend v5.5',s1p:'Includes activity log claims, pending logs, diagnose, hidden super-admin, bilingual, env-var contract (SUPER_KEY)',s1btn:'⬇️ Download Code.gs v5.5',s2h:'Create Google Sheet & Deploy',s2p:'New spreadsheet → Extensions → Apps Script paste Code.gs → Save → run initializeSheets authorize (auto-generates API Key + SUPER_KEY) → Deploy as web app (Me, Anyone) → run showVercelEnv() to copy the 4 env vars',s3h:'Submit to admin',s3p:'Give troop ID, name, URL, API Key to cubbadge admin to set Vercel env vars TROOP_XXXX_BACKEND / TROOP_XXXX_APIKEY / TROOP_XXXX_NAME (plus one app-wide SUPER_KEY)',
   setup_submit_h:'📧 After setup submit',setup_submit_p:'Standalone: to cubbadge admin<br>Portal: also to main system admin',submit_contact:'📧 Submit troop join request',
   guide_h2:'📖 Guide - Cub Specific',g1h:'Pick Troop',g1p:'Tap troop card',g2h:'Login',g2p:'Members/parents: YMIS 10 digits + password; Leaders: Email + password. Force change on first login.',g3h:'Parents/Members: view progress, can claim activity logs',g3p:'Cubs young: leaders fill all progress, parents/members view only. But activity logs (service/activity/training) can be claimed by parents/members → leader approves.',g4h:'Leaders: tick + date',g4p:'Leaders tick directly, auto today date, editable. Cached in browser, confirm to write to cloud.',g5h:'Other features',g5p:'Troop overview batch, by-item stats, PT/68 Golden Bauhinia forms, bilingual.',
   guide_roles_h3:'👥 Roles',guide_member_card:'<b>👤 Parent/Member</b><ul style="font-size:11px;margin:6px 0 0 16px"><li>View own progress only (no tick)</li><li>Can claim activity logs (service/activity/training)</li><li>Can cancel pending claims</li><li>Approved records can request edit (leader re-approves)</li></ul>',guide_leader_card:'<b>👨‍💼 Leader</b><ul style="font-size:11px;margin:6px 0 0 16px"><li>All functions</li><li>My progress: any member</li><li>Troop overview batch tick</li><li>Approval centre: users + log claims</li><li>Activity logs direct add/edit/delete + batch</li><li>User management, bulk onboard YMIS PDF</li></ul>',
@@ -799,7 +799,7 @@ async function apiRequest(gasData, opts={}){
       const isHtml = /<!DOCTYPE|<html/i.test(text);
       const isVercel404 = resp.status===404 && isHtml;
       if(isVercel404){
-        throw new Error(`${t('api_bad_response')} (HTTP 404) - Vercel 未部署 API / Vercel API not deployed。請檢查 vercel.json 是否為 {\"version\":2} 且已重新部署，另檢查 /api/health?troopId=${troopId} 和 /api/troops 是否 404。若 /api/troops 404 屬正常靜態部署，請直接使用內置 0082，但 /api/proxy 必須存在，否則需等待 Vercel 重新部署完成。原始: ${text.slice(0,120)}`);
+        throw new Error(`${t('api_bad_response')} (HTTP 404) - Vercel 未部署 API / Vercel API not deployed。請檢查 vercel.json 是否為 {\"version\":2} 且已重新部署，另檢查 /api/health?troopId=${troopId} 和 /api/troops 是否 404。旅團設定喺 Vercel 功能變數（4樣）：SUPER_KEY、TROOP_${troopId}_BACKEND、TROOP_${troopId}_APIKEY、TROOP_${troopId}_NAME。原始: ${text.slice(0,120)}`);
       }
       if(isHtml){
         throw new Error(`${t('api_bad_response')} (HTTP ${resp.status}) - 後端返回非 JSON，可能是 Google Sheet 缺少工作表或 Apps Script 未部署為「任何人可存取」。請執行 diagnoseSheets() / initializeSheets()。預覽: ${text.slice(0,200)}`);
@@ -964,13 +964,8 @@ async function handlePortalParams(){
   if(u){
     currentTroopId=u; currentTroopName=troopNameParam;
     {
-      try{
-        const r=await fetch('data/troops.json?_='+Date.now());
-        if(r.ok){ const d=await r.json(); const t=d.troops[u]||d.troops[String(u).padStart(4,'0')]; if(t){ currentBackend=t.backend||''; currentTroopName=t.name||troopNameParam; } }
-      }catch(e){}
-      if(!currentBackend){
-        try{ const r2=await fetch('/api/troops?_='+Date.now()); if(r2.ok){ const d2=await r2.json(); const t2=d2.troops[u]||d2.troops[String(u).padStart(4,'0')]; if(t2){ currentBackend=t2.backend||''; currentTroopName=t2.name||troopNameParam; } } }catch(e){}
-      }
+      // v5.5：旅團設定淨係來自 /api/troops（Vercel 功能變數），唔再讀 data/troops.json
+      try{ const r2=await fetch('/api/troops?_='+Date.now()); if(r2.ok){ const d2=await r2.json(); const t2=d2.troops[u]||d2.troops[String(u).padStart(4,'0')]; if(t2){ currentBackend=t2.backend||''; currentTroopName=t2.name||troopNameParam; } } }catch(e){}
     }
   }
   if(from==='portal' && ymis && role){
@@ -1012,14 +1007,12 @@ function backToHome(){
 async function loadTroops(){
   const grid=document.getElementById('troopGrid');
   grid.innerHTML=`<p style="grid-column:1/-1;text-align:center;color:var(--text-light);padding:20px">${t('loading')}</p>`;
-  const fallbackTroops={"0082":{name:"第 82 旅",backend:"https://script.google.com/macros/s/AKfycbw81wLR5NZtRk4m1ptSAoFBueoqwIZ5hcM_apHJa2xMmlVfUvZsS8R45nTIKTOIuBB2KQ/exec"}};
   try{
-    let data=null;
-    try{ const r=await fetch('data/troops.json?_='+Date.now()); if(r.ok) data=await r.json(); else throw new Error('data 404'); }catch(e){ console.warn('data/troops.json failed',e); data={troops:{}}; }
-    try{ const r2=await fetch('/api/troops?_='+Date.now()); if(r2.ok){ const d2=await r2.json(); if(d2.troops && Object.keys(d2.troops).length>0){ data.troops={...data.troops,...d2.troops}; } } }catch(e){ console.warn('api/troops failed',e); }
-    let troops=data.troops||{};
-    if(Object.keys(troops).length===0){ troops=fallbackTroops; }
-    troops={...fallbackTroops, ...troops};
+    // v5.5 功能變數契約：旅團清單淨係來自 /api/troops（= Vercel 功能變數 TROOP_*_BACKEND/_APIKEY/_NAME）。
+    // 唔再讀 data/troops.json、唔再有內置 URL fallback。
+    const r=await fetch('/api/troops?_='+Date.now());
+    const d=r.ok?await r.json():null;
+    let troops=(d&&d.troops)||{};
     // deduplicate 0082/82 for display: prefer padded
     const displayMap={}; const seenPadded=new Set();
     for(const id in troops){
@@ -1028,21 +1021,17 @@ async function loadTroops(){
       if(seenPadded.has(canonical)) continue;
       if(troops[id]&&troops[id].backend){ displayMap[canonical]=troops[id]; seenPadded.add(canonical); }
     }
-    if(Object.keys(displayMap).length===0){ grid.innerHTML=`<div style="grid-column:1/-1;text-align:center;padding:20px;color:var(--text-light)"><p>暫無旅團資料 / No troops</p></div>`; return; }
+    if(Object.keys(displayMap).length===0){ grid.innerHTML=`<div style="grid-column:1/-1;text-align:center;padding:20px;color:var(--text-light)"><p>暫無旅團資料 / No troops</p><p style="font-size:10px;margin-top:8px">請喺 Vercel 設定功能變數（4樣）：SUPER_KEY、TROOP_0082_BACKEND、TROOP_0082_APIKEY、TROOP_0082_NAME</p></div>`; return; }
     grid.innerHTML=Object.entries(displayMap).map(([id,t])=>`<div class="troop-card" onclick="selectTroop('${id}')"><div class="troop-id">${id}</div><div class="troop-name">${t.name||'第'+id+'旅'}</div><div style="font-size:9px;color:var(--text-light);margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${(t.backend||'').substring(0,28)}...</div></div>`).join('');
-    if(Object.keys(data.troops||{}).length===0){
-      grid.innerHTML+=`<div style="grid-column:1/-1;text-align:center;padding:8px;background:#FFF3CD;border-radius:8px;font-size:11px;margin-top:8px">⚠️ ${t('troop_sync_fail')}</div>`;
-    }
   }catch(e){
     console.error(e);
-    grid.innerHTML=Object.entries(fallbackTroops).map(([id,t])=>`<div class="troop-card" onclick="selectTroop('${id}')"><div class="troop-id">${id}</div><div class="troop-name">${t.name}</div></div>`).join('') + `<p style="grid-column:1/-1;text-align:center;color:var(--red);font-size:11px">載入出錯 / Load error: ${e.message}</p>`;
+    grid.innerHTML=`<div style="grid-column:1/-1;text-align:center;padding:20px"><p style="color:var(--red);font-size:11px">載入出錯 / Load error: ${e.message}</p><p style="font-size:10px;margin-top:8px;color:var(--text-light)">請檢查 /api/troops 及 Vercel 功能變數（SUPER_KEY、TROOP_0082_BACKEND、TROOP_0082_APIKEY、TROOP_0082_NAME）</p></div>`;
   }
 }
 async function selectTroop(id){
   try{
     let t=null;
-    try{ const r=await fetch('data/troops.json'); const d=await r.json(); t=d.troops[id]||d.troops[String(id).padStart(4,'0')]||d.troops[String(id).replace(/^0+/,'')]; }catch(e){}
-    if(!t){ try{ const r2=await fetch('/api/troops'); const d2=await r2.json(); t=d2.troops[id]||d2.troops[String(id).padStart(4,'0')]||d2.troops[String(id).replace(/^0+/,'')]; }catch(e){} }
+    try{ const r2=await fetch('/api/troops'); const d2=await r2.json(); t=d2.troops[id]||d2.troops[String(id).padStart(4,'0')]||d2.troops[String(id).replace(/^0+/,'')]; }catch(e){}
     if(!t||!t.backend){ showToast(t('troop_pick_fail'),'error'); return; }
     currentTroopId=String(id).padStart(4,'0'); currentTroopName=t.name||('第'+id+'旅'); currentBackend=t.backend||'';
     document.getElementById('loginTroopInfo').textContent=`📍 ${currentTroopName} (ID: ${currentTroopId})`;

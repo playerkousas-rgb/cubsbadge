@@ -1,6 +1,6 @@
 {
-  "_doc": "本 leaf 嘅平台 registry — 公開 metadata only。apikey 只存 Vercel env TROOP_<id>_APIKEY，永不寫入此檔。",
-  "version": "1.0.0",
+  "_doc": "本 leaf 嘅平台 registry — 公開 metadata only。設定指向 Vercel 功能變數（4樣）：SUPER_KEY、TROOP_<id>_BACKEND、TROOP_<id>_APIKEY、TROOP_<id>_NAME（後端GS 對應）；apikey／SUPER_KEY 值只存功能變數，永不寫入此檔。",
+  "version": "1.1.0",
   "updated_at": "2026-09-22",
   "platform": {
     "id": "cubbadge",
@@ -17,6 +17,8 @@
       "sheet": "cub-progress",
       "backend_env": "TROOP_0082_BACKEND",
       "apikey_env": "TROOP_0082_APIKEY",
+      "name_env": "TROOP_0082_NAME",
+      "super_key_env": "SUPER_KEY",
       "modules": [
         "progress",
         "overview",

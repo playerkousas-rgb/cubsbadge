@@ -63,7 +63,7 @@ function freshModule(p) {
   return require(p);
 }
 function clearEnv() {
-  Object.keys(process.env).filter((k) => /^TROOP_|^EC_|^CIRCULAR_/.test(k)).forEach((k) => delete process.env[k]);
+  Object.keys(process.env).filter((k) => /^TROOP_|^EC_|^CIRCULAR_|^SUPER_/.test(k)).forEach((k) => delete process.env[k]);
 }
 
 // ============================================================
@@ -294,6 +294,111 @@ await check('proxy：apikey 未設定但唔敏感的 action 照行（唔會整�
     assert.equal(res.statusCode, 200);
     assert.ok(called);
   } finally { restoreFetch(); }
+});
+
+// ============================================================
+console.log('\n=== 功能變數契約（4樣）：SUPER_KEY + TROOP_*_BACKEND/_APIKEY/_NAME ===');
+// ============================================================
+await check('registry：NAME 指向功能變數 TROOP_<id>_NAME（唔讀 JSON）', async () => {
+  clearEnv();
+  process.env.TROOP_0082_BACKEND = 'https://script.google.com/macros/s/AKfycbTESTKEYXXXXXXXX/exec';
+  process.env.TROOP_0082_APIKEY = 'sc_key_82';
+  process.env.TROOP_0082_NAME = '第 82 旅（來自功能變數）';
+  const reg = freshModule('../api/_lib/registry.js');
+  const cfg = reg.getTroopConfig('0082');
+  assert.ok(cfg, '0082 應該搵到');
+  assert.equal(cfg.name, '第 82 旅（來自功能變數）');
+  assert.equal(cfg._env.name, true, 'name 應該來自功能變數');
+  assert.equal(cfg._env.backend, true);
+  assert.equal(cfg._env.apikey, true);
+  // 82 / 0082 同步
+  assert.equal(reg.getTroopConfig('82').name, '第 82 旅（來自功能變數）');
+});
+
+await check('registry：設定淨係指向功能變數 — 冇 env 就冇旅團（唔讀 JSON、冇內置 URL）', async () => {
+  clearEnv();
+  const reg = freshModule('../api/_lib/registry.js');
+  assert.equal(reg.getTroopConfig('0082'), null, '唔應該再有內置 URL fallback');
+  assert.equal(Object.keys(reg.getRegistry()).length, 0, 'troops.json 已棄用，唔應該影響 registry');
+  const troopsHandler = freshModule('../api/troops.js');
+  const res = mockRes();
+  troopsHandler(mockReq({}), res);
+  assert.equal(Object.keys(res.body.troops).length, 0);
+  assert.ok(res.body._hint && res.body._hint.includes('SUPER_KEY'), '空 registry 要提示設定功能變數 4 樣');
+});
+
+await check('registry：SUPER_KEY 指向功能變數，verifySuperKey 驗證（值永不外洩）', async () => {
+  clearEnv();
+  process.env.SUPER_KEY = 'sk_SUPER_SECRET';
+  const reg = freshModule('../api/_lib/registry.js');
+  assert.equal(reg.superKeyConfigured(), true);
+  assert.equal(reg.verifySuperKey('sk_SUPER_SECRET'), true);
+  assert.equal(reg.verifySuperKey('wrong'), false);
+  delete process.env.SUPER_KEY;
+  assert.equal(reg.superKeyConfigured(), false);
+  assert.equal(reg.verifySuperKey('sk_SUPER_SECRET'), false, '未設 SUPER_KEY 一律唔過');
+});
+
+await check('register：SUPER_KEY 未設定 → 503（管理 API 停用）', async () => {
+  clearEnv();
+  const handler = freshModule('../api/register.js');
+  const res = mockRes();
+  await handler(mockReq({ method: 'POST', body: {
+    troopId: '0082',
+    scriptUrl: 'https://script.google.com/macros/s/AKfycbTESTXXXXXX/exec',
+    apiKey: 'sc_x'
+  } }), res);
+  assert.equal(res.statusCode, 503);
+});
+
+await check('register：SUPER_KEY 錯 → 403；啱 → 轉發俾後端 GS 並帶 superKey（對應）', async () => {
+  clearEnv();
+  process.env.SUPER_KEY = 'sk_admin';
+  let forwarded = null;
+  stubFetch([['script.google.com', async (u, o) => { forwarded = JSON.parse(o.body); return { body: { success: true } }; }]]);
+  try {
+    const handler = freshModule('../api/register.js');
+    const bad = mockRes();
+    await handler(mockReq({ method: 'POST', body: {
+      troopId: '0082',
+      scriptUrl: 'https://script.google.com/macros/s/AKfycbTESTXXXXXX/exec',
+      apiKey: 'sc_x',
+      superKey: 'nope'
+    } }), bad);
+    assert.equal(bad.statusCode, 403);
+    assert.equal(forwarded, null, '驗證失敗唔應該打上游');
+
+    const ok = mockRes();
+    await handler(mockReq({ method: 'POST', headers: { 'x-super-key': 'sk_admin' }, body: {
+      troopId: '0082',
+      scriptUrl: 'https://script.google.com/macros/s/AKfycbTESTXXXXXX/exec',
+      apiKey: 'sc_x',
+      troopName: '第 82 旅'
+    } }), ok);
+    assert.equal(ok.statusCode, 200, JSON.stringify(ok.body));
+    assert.ok(forwarded, '應該轉發註冊');
+    assert.equal(forwarded.superKey, 'sk_admin', '後端GS 對應：superKey 要跟埋過去');
+    assert.equal(forwarded.troopName, '第 82 旅');
+  } finally { restoreFetch(); }
+});
+
+await check('health：envContract 回 4 樣 boolean，apikey／SUPER_KEY 值永不回傳', async () => {
+  clearEnv();
+  process.env.TROOP_0082_BACKEND = 'https://script.google.com/macros/s/AKfycbTESTKEYXXXXXXXX/exec';
+  process.env.TROOP_0082_APIKEY = 'sc_secret_hp';
+  process.env.TROOP_0082_NAME = '第 82 旅';
+  process.env.SUPER_KEY = 'sk_secret_hp';
+  const handler = freshModule('../api/health.js');
+  const res = mockRes();
+  await handler(mockReq({ query: { troopId: '0082', checkBackend: '0' } }), res);
+  assert.equal(res.statusCode, 200);
+  assert.equal(res.body.envContract.SUPER_KEY, true);
+  assert.equal(res.body.envContract['TROOP_0082_BACKEND'], true);
+  assert.equal(res.body.envContract['TROOP_0082_APIKEY'], true);
+  assert.equal(res.body.envContract['TROOP_0082_NAME'], true);
+  const raw = JSON.stringify(res.body);
+  assert.ok(!raw.includes('sc_secret_hp'), 'apikey 洩漏咗！');
+  assert.ok(!raw.includes('sk_secret_hp'), 'SUPER_KEY 洩漏咗！');
 });
 
 console.log(`\n== api 結果：${passed} 通過，${failed} 失敗 ==`);

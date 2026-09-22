@@ -1,17 +1,18 @@
-// Shared registry loader for multi-troop system - v2.1 robust 0082/82 handling (CubBadge aligned with ScoutBadge v5.2)
-// Loads troops from data/troops.json, troops.json, and env vars
+// Shared registry loader for multi-troop system - v3.0 功能變數契約（4樣）
+// (CubBadge aligned with ScoutBadge v5.2 → v5.5 env contract)
+//
+// 死規矩：旅團設定淨係「指向」Vercel 環境變數（功能變數），唔讀 JSON、唔內置 URL：
+//   SUPER_KEY            — 超管 key（同後端 GS 超管 sheep 密碼對應，兩邊同一隻值）
+//   TROOP_<id>_BACKEND   — 該旅團 GS /exec URL（後端GS 對應：部署 URL）
+//   TROOP_<id>_APIKEY    — 該旅團 GS API Key（後端GS 對應：Script Property API_KEY）
+//   TROOP_<id>_NAME      — 該旅團名稱（後端GS 對應：Script Property TROOP_NAME）
+//
+// data/troops.json / troops.json 已棄用（deprecated stub），程式唔再讀取。
+// 之前 URL/name 指向 JSON、超管密碼寫死 —— 已全部更正為指向功能變數。
 
-const fs = require('fs');
-const path = require('path');
+const crypto = require('crypto');
 // BUILD.md §1：normId 單一實現。registry 唔可以另外寫一套正規化。
 const { normId, strippedId } = require('./normid');
-
-const DEFAULT_TROOPS = {
-  "0082": {
-    name: "第 82 旅",
-    backend: "https://script.google.com/macros/s/AKfycbw81wLR5NZtRk4m1ptSAoFBueoqwIZ5hcM_apHJa2xMmlVfUvZsS8R45nTIKTOIuBB2KQ/exec"
-  }
-};
 
 // 以下兩個只係 normId 的別名，保留舊名以免散落各處的呼叫點要一次過改。
 function normalizeToPadded4(id) {
@@ -24,98 +25,73 @@ function normalizeStripped(id) {
   return strippedId(id);
 }
 
-function loadFileTroops() {
-  let fileTroops = {};
-  const candidates = [
-    path.join(process.cwd(), 'data', 'troops.json'),
-    path.join(process.cwd(), 'troops.json'),
-    path.join(__dirname, '..', '..', 'data', 'troops.json'),
-    path.join(__dirname, '..', '..', 'troops.json'),
-    path.join(__dirname, '..', 'data', 'troops.json'),
-    path.join(__dirname, '..', '..', 'api', '..', 'data', 'troops.json'),
-  ];
-  const seen = new Set();
-  for (const p of candidates) {
-    if (seen.has(p)) continue;
-    seen.add(p);
-    try {
-      if (fs.existsSync(p)) {
-        const raw = fs.readFileSync(p, 'utf8');
-        const json = JSON.parse(raw);
-        if (json.troops && typeof json.troops === 'object') {
-          fileTroops = { ...fileTroops, ...json.troops };
-        }
-      }
-    } catch (e) {}
-  }
-  return fileTroops;
+// ---------- SUPER_KEY（全 APP 一個；= 後端 GS 超管 sheep 密碼）----------
+function getSuperKey() {
+  return String(process.env.SUPER_KEY || '');
+}
+
+function superKeyConfigured() {
+  return !!process.env.SUPER_KEY;
+}
+
+/** timing-safe 驗證 SUPER_KEY（管理 API 用）。 */
+function verifySuperKey(provided) {
+  const expected = getSuperKey();
+  if (!expected) return false;
+  const a = crypto.createHash('sha256').update(String(provided || '')).digest();
+  const b = crypto.createHash('sha256').update(expected).digest();
+  return crypto.timingSafeEqual(a, b);
+}
+
+// ---------- TROOP_<id>_* 功能變數讀取（server-only）----------
+function readTroopEnv(idUpper, suffix) {
+  const idNoZero = normalizeStripped(idUpper);
+  const idPadded = normalizeToPadded4(idUpper);
+  return process.env[`TROOP_${idUpper}_${suffix}`] ||
+         process.env[`TROOP_${idNoZero}_${suffix}`] ||
+         process.env[`TROOP_${idPadded}_${suffix}`] || '';
 }
 
 function getRegistry() {
-  const fileTroops = loadFileTroops();
-  const combined = { ...DEFAULT_TROOPS, ...fileTroops };
-
-  const envKeys = Object.keys(process.env);
-  const idsFromEnv = new Set();
-  envKeys.forEach(k => {
-    let m = k.match(/^TROOP_(\d+[A-Z]?)_BACKEND$/i);
-    if (m) idsFromEnv.add(m[1].toUpperCase());
-    let m2 = k.match(/^TROOP_(\d+[A-Z]?)_APIKEY$/i);
-    if (m2) idsFromEnv.add(m2[1].toUpperCase());
-  });
-
-  const allIds = new Set([
-    ...Object.keys(combined).map(id => id.toUpperCase()),
-    ...idsFromEnv
-  ]);
-
   const registry = {};
 
-  allIds.forEach(idUpper => {
-    const origKey = Object.keys(combined).find(k => k.toUpperCase() === idUpper) || idUpper;
-    const fileEntry = combined[origKey] || combined[Object.keys(combined).find(k => normalizeToPadded4(k) === normalizeToPadded4(idUpper)) || ''] || {};
+  // 淨係掃功能變數：TROOP_<id>_BACKEND / _APIKEY / _NAME（大小寫兼容、0082/82 兼容）
+  const idsFromEnv = new Set();
+  Object.keys(process.env).forEach(k => {
+    const m = k.match(/^TROOP_(\d+[A-Z]?)_(BACKEND|APIKEY|NAME)$/i);
+    if (m) idsFromEnv.add(m[1].toUpperCase());
+  });
+
+  idsFromEnv.forEach(idUpper => {
+    const backendEnv = readTroopEnv(idUpper, 'BACKEND');
+    const apikeyEnv = readTroopEnv(idUpper, 'APIKEY');
+    const nameEnv = readTroopEnv(idUpper, 'NAME');
+
+    const backend = backendEnv;
+    const apikey = apikeyEnv;
+    const name = nameEnv || `第 ${normalizeStripped(idUpper)} 旅`;
+
+    // 有 backend 先算有效旅團（backend = 後端GS 嘅 /exec URL）
+    if (!backend) return;
+
+    const entry = {
+      name,
+      backend,
+      apikey,
+      _env: { backend: !!backendEnv, apikey: !!apikeyEnv, name: !!nameEnv }
+    };
 
     const idNoZero = normalizeStripped(idUpper);
     const idPadded = normalizeToPadded4(idUpper);
-
-    const backendEnv = process.env[`TROOP_${idUpper}_BACKEND`] ||
-                       process.env[`TROOP_${idNoZero}_BACKEND`] ||
-                       process.env[`TROOP_${idPadded}_BACKEND`];
-
-    const apikeyEnv = process.env[`TROOP_${idUpper}_APIKEY`] ||
-                      process.env[`TROOP_${idNoZero}_APIKEY`] ||
-                      process.env[`TROOP_${idPadded}_APIKEY`];
-
-    const backend = backendEnv || fileEntry.backend || '';
-    const apikey = apikeyEnv || fileEntry.apikey || '';
-    const name = fileEntry.name || `第 ${origKey} 旅`;
-
-    if (backend) {
-      const variants = new Set([
-        origKey,
-        idUpper,
-        idNoZero,
-        idPadded,
-        idUpper.toLowerCase(),
-        origKey.toUpperCase(),
-        origKey.toLowerCase()
-      ]);
-      variants.forEach(v => {
-        if (v) registry[v] = { name, backend, apikey };
-      });
-      if (idNoZero) registry[idNoZero] = { name, backend, apikey };
-      if (idPadded) registry[idPadded] = { name, backend, apikey };
-    }
-  });
-
-  Object.keys(DEFAULT_TROOPS).forEach(defId => {
-    const def = DEFAULT_TROOPS[defId];
-    const padded = normalizeToPadded4(defId);
-    const stripped = normalizeStripped(defId);
-    [defId, padded, stripped, defId.toUpperCase()].forEach(k => {
-      if (k && !registry[k]) {
-        registry[k] = { name: def.name, backend: def.backend, apikey: def.apikey || '' };
-      }
+    const variants = new Set([
+      idUpper,
+      idNoZero,
+      idPadded,
+      idUpper.toLowerCase(),
+      String(idUpper).replace(/^0+/, '') || idUpper
+    ]);
+    variants.forEach(v => {
+      if (v) registry[v] = entry;
     });
   });
 
@@ -188,5 +164,7 @@ module.exports = {
   isValidGasUrl,
   normalizeToPadded4,
   normalizeStripped,
-  loadFileTroops
+  getSuperKey,
+  verifySuperKey,
+  superKeyConfigured
 };
