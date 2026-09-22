@@ -401,6 +401,29 @@ await check('health：envContract 回 4 樣 boolean，apikey／SUPER_KEY 值永�
   assert.ok(!raw.includes('sk_secret_hp'), 'SUPER_KEY 洩漏咗！');
 });
 
+await check('B/D 唔入前端：/api/troops 同 /api/health 回應零部署 URL、零 apikey', async () => {
+  clearEnv();
+  process.env.TROOP_0082_BACKEND = 'https://script.google.com/macros/s/AKfycbSECRETID000000000000000/exec';
+  process.env.TROOP_0082_APIKEY = 'sc_front_secret';
+  process.env.TROOP_0082_NAME = '第 82 旅';
+  process.env.SUPER_KEY = 'sk_front_secret';
+  const troops = freshModule('../api/troops.js');
+  const tRes = mockRes();
+  troops(mockReq({ method: 'GET', query: {} }), tRes);
+  const tRaw = JSON.stringify(tRes.body);
+  assert.ok(!tRaw.includes('script.google.com'), 'B（部署 URL）唔可以落前端：' + tRaw.slice(0, 200));
+  assert.ok(!tRaw.includes('sc_front_secret'), 'D（apikey）唔可以落前端');
+  assert.equal(tRes.body.troops['0082'].connected, true, '前端只需要知「掛咗未」');
+  const health = freshModule('../api/health.js');
+  const hRes = mockRes();
+  await health(mockReq({ query: { troopId: '0082', checkBackend: '0' } }), hRes);
+  const hRaw = JSON.stringify(hRes.body);
+  assert.ok(!hRaw.includes('AKfycb'), 'health 唔可以回部署 ID（連片段都唔可以）');
+  assert.ok(!hRaw.includes('sc_front_secret'), 'health 唔可以回 apikey');
+  assert.equal(hRes.body.config.backendConfigured, true, '只講「有冇設定」');
+  clearEnv();
+});
+
 // ============================================================
 console.log('\n=== v5.8 隱藏超管：SUPER_KEY 只存在 Vercel，密碼永不落 GS ===');
 // ============================================================

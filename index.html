@@ -754,7 +754,7 @@ function applyStaticI18n(){
 }
 
 /* ================== 全局狀態 ================== */
-let currentTroopId='',currentTroopName='',currentBackend='';
+let currentTroopId='',currentTroopName='',troopConnected=false;   // B（部署 URL）唔會落前端，只需知掛咗未
 /* BUILD.md §1：apikey 只存 server。前端由頭到尾都唔會持有、唔會入 LocalStorage、唔會入 URL、唔會入 QR。 */
 let currentUser=null,currentToken='',loginType='member';
 let itemsData=null,itemsEnData=null,progressFlat={},progressRich={},members=[],pendingChanges=[],pendingRequestsQueue=[],otherBadgesMap={},currentRequestItem=null;
@@ -966,7 +966,7 @@ async function handlePortalParams(){
     currentTroopId=u; currentTroopName=troopNameParam;
     {
       // 旅團設定淨係來自 /api/troops（Vercel 功能變數），唔再讀 data/troops.json
-      try{ const r2=await fetch('/api/troops?_='+Date.now()); if(r2.ok){ const d2=await r2.json(); const t2=d2.troops[u]||d2.troops[String(u).padStart(4,'0')]; if(t2){ currentBackend=t2.backend||''; currentTroopName=t2.name||troopNameParam; } } }catch(e){}
+      try{ const r2=await fetch('/api/troops?_='+Date.now()); if(r2.ok){ const d2=await r2.json(); const t2=d2.troops[u]||d2.troops[String(u).padStart(4,'0')]; if(t2){ troopConnected=!!t2.connected; currentTroopName=t2.name||troopNameParam; } } }catch(e){}
     }
   }
   if(from==='portal' && ymis && role){
@@ -976,12 +976,12 @@ async function handlePortalParams(){
     document.getElementById('loginPage').style.display='none';
     document.getElementById('mainApp').style.display='block';
     refreshAppTitle(); refreshUserInfoChip(); setupTabsByRole();
-    if(currentBackend){ loadItemsAndProgress(); }else{ document.getElementById('tab-progress').innerHTML=`<div style="padding:20px;text-align:center;color:var(--red)"><p>⚠️ Portal 模式：未找到旅團後端設定</p></div>`; }
+    if(troopConnected){ loadItemsAndProgress(); }else{ document.getElementById('tab-progress').innerHTML=`<div style="padding:20px;text-align:center;color:var(--red)"><p>⚠️ Portal 模式：未找到旅團後端設定</p></div>`; }
     return;
   }
   if(u){
     try{
-      if(currentBackend){
+      if(troopConnected){
         document.getElementById('loginTroopInfo').textContent=`📍 ${currentTroopName} (ID: ${currentTroopId}) - Portal預選`;
         document.getElementById('homePage').style.display='none'; document.getElementById('loginPage').style.display='block';
         if(ymis) document.getElementById('loginId').value=ymis;
@@ -1020,10 +1020,10 @@ async function loadTroops(){
       const padded=String(id).padStart(4,'0');
       const canonical=/^\d{4}$/.test(padded)?padded:id;
       if(seenPadded.has(canonical)) continue;
-      if(troops[id]&&troops[id].backend){ displayMap[canonical]=troops[id]; seenPadded.add(canonical); }
+      if(troops[id]&&troops[id].connected){ displayMap[canonical]=troops[id]; seenPadded.add(canonical); }
     }
     if(Object.keys(displayMap).length===0){ grid.innerHTML=`<div style="grid-column:1/-1;text-align:center;padding:20px;color:var(--text-light)"><p>暫無旅團資料 / No troops</p><p style="font-size:10px;margin-top:8px">請 APP ADMIN 喺 Vercel 設定功能變數：SUPER_KEY、TROOP_0082_BACKEND、TROOP_0082_APIKEY、TROOP_0082_NAME（旅團毋須設定）</p></div>`; return; }
-    grid.innerHTML=Object.entries(displayMap).map(([id,t])=>`<div class="troop-card" onclick="selectTroop('${id}')"><div class="troop-id">${id}</div><div class="troop-name">${t.name||'第'+id+'旅'}</div><div style="font-size:9px;color:var(--text-light);margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${(t.backend||'').substring(0,28)}...</div></div>`).join('');
+    grid.innerHTML=Object.entries(displayMap).map(([id,t])=>`<div class="troop-card" onclick="selectTroop('${id}')"><div class="troop-id">${id}</div><div class="troop-name">${t.name||'第'+id+'旅'}</div><div style="font-size:9px;color:var(--text-light);margin-top:4px">✅</div></div>`).join('');
   }catch(e){
     console.error(e);
     grid.innerHTML=`<div style="grid-column:1/-1;text-align:center;padding:20px"><p style="color:var(--red);font-size:11px">載入出錯 / Load error: ${e.message}</p><p style="font-size:10px;margin-top:8px;color:var(--text-light)">請檢查 /api/troops 及 Vercel 功能變數（由 APP ADMIN 設定：SUPER_KEY、TROOP_0082_BACKEND、TROOP_0082_APIKEY、TROOP_0082_NAME）</p></div>`;
@@ -1033,8 +1033,8 @@ async function selectTroop(id){
   try{
     let t=null;
     try{ const r2=await fetch('/api/troops'); const d2=await r2.json(); t=d2.troops[id]||d2.troops[String(id).padStart(4,'0')]||d2.troops[String(id).replace(/^0+/,'')]; }catch(e){}
-    if(!t||!t.backend){ showToast(t('troop_pick_fail'),'error'); return; }
-    currentTroopId=String(id).padStart(4,'0'); currentTroopName=t.name||('第'+id+'旅'); currentBackend=t.backend||'';
+    if(!t||!t.connected){ showToast(t('troop_pick_fail'),'error'); return; }
+    currentTroopId=String(id).padStart(4,'0'); currentTroopName=t.name||('第'+id+'旅'); troopConnected=true;
     document.getElementById('loginTroopInfo').textContent=`📍 ${currentTroopName} (ID: ${currentTroopId})`;
     document.getElementById('homePage').style.display='none'; document.getElementById('loginPage').style.display='block';
     document.getElementById('loginMsg').className='login-msg'; document.getElementById('loginId').value=''; document.getElementById('loginPassword').value='';
@@ -1079,7 +1079,7 @@ async function doLogin(){
 }
 function finishLogin(){
   const msg=document.getElementById('loginMsg');
-  localStorage.setItem(LS.session, JSON.stringify({troopId:currentTroopId,troopName:currentTroopName,backend:currentBackend,token:currentToken,user:currentUser,savedAt:Date.now(),lang:currentLang}));
+  localStorage.setItem(LS.session, JSON.stringify({troopId:currentTroopId,troopName:currentTroopName,troopConnected:troopConnected,token:currentToken,user:currentUser,savedAt:Date.now(),lang:currentLang}));
   msg.textContent=t('login_ok_sync'); msg.className='login-msg success';
   setTimeout(()=>{
     document.getElementById('loginPage').style.display='none';
@@ -1098,7 +1098,7 @@ function checkSavedSession(){
   try{
     const ss=JSON.parse(s);
     if(Date.now()-ss.savedAt>30*24*3600000) return;
-    currentTroopId=ss.troopId; currentTroopName=ss.troopName; currentBackend=ss.backend||''; currentToken=ss.token; currentUser=ss.user;
+    currentTroopId=ss.troopId; currentTroopName=ss.troopName; troopConnected=(ss.troopConnected!==undefined)?!!ss.troopConnected:!!ss.backend; currentToken=ss.token; currentUser=ss.user;
     if(ss.lang){ currentLang=ss.lang; localStorage.setItem('cubbadge_lang',currentLang); document.documentElement.lang=currentLang==='en'?'en':'zh-Hant'; }
     document.getElementById('homePage').style.display='none'; document.getElementById('mainApp').style.display='block';
     refreshAppTitle(); refreshUserInfoChip(); setupTabsByRole(); loadItemsAndProgress();
@@ -2327,7 +2327,7 @@ async function enterDemoMode(demoRole='leader'){
     const data=await fetchMockData(); const mockMembers=data.members; const mockProgress=data.progress_mock;
     members=mockMembers.map(m=>({ymis:m.ymis,name:m.name,squad:t('mock_squad')}));
     progressFlat={}; for(const ymis in mockProgress){ progressFlat[ymis]={}; for(const itemId in mockProgress[ymis]) progressFlat[ymis][itemId]=mockProgress[ymis][itemId]; }
-    currentTroopId='DEMO'; currentTroopName=t('demo_troop_name'); currentBackend=''; 
+    currentTroopId='DEMO'; currentTroopName=t('demo_troop_name'); troopConnected=true; 
     const demoMember=mockMembers[0]||{ymis:'9000000001',name:t('demo_member_name')};
     currentUser=demoRole==='member'?{ymis:demoMember.ymis,name:demoMember.name,role:'member',can_tick:false,allowed_badges:'',squad:t('mock_squad'),squad_role:'member'}:{ymis:'DEMO_LEADER',name:t('demo_leader_name'),role:'group_leader',can_tick:true,allowed_badges:'*'};
     currentToken='demo-token'; appConfig={allow_member_view_others:demoRole==='leader'?'true':'false',member_progress_scope:demoRole==='leader'?'troop':'private',allow_squad_comparison:'false',allow_member_requests:'false'};
@@ -2370,7 +2370,7 @@ async function reviewApp(id,dec){
 
 /* Bulk Onboard */
 let _lastTempPw='';
-function bulkGuard(){ if(isDemoMode()||!currentTroopId||currentTroopId==='DEMO'||!currentBackend){ showToast(inEn()?'DEMO mode cannot onboard / DEMO無法開戶':'⚠️ DEMO/試用模式無法開戶，請先登入正式旅團','warning'); return true; } return false; }
+function bulkGuard(){ if(isDemoMode()||!currentTroopId||currentTroopId==='DEMO'||!troopConnected){ showToast(inEn()?'DEMO mode cannot onboard / DEMO無法開戶':'⚠️ DEMO/試用模式無法開戶，請先登入正式旅團','warning'); return true; } return false; }
 function openBulkOnboardModal(){ if(bulkGuard()) return; const prog=document.getElementById('bulkProgress'); prog.style.display='none'; prog.innerHTML=''; ymisImportRows=[]; renderYmisPreview(); const pasted=document.getElementById('ymisPasteText'); if(pasted) pasted.value=''; document.getElementById('bulkOnboardModal').classList.add('active'); applyStaticI18n(); }
 function downloadMembersTemplate(){
   const csv='ymis,name,email,squad,squad_role,role,can_tick,password,note\n1234560001,陳大文,chan@example.org,紅隊,member,member,false,,新團員\n1234560002,黃小英,wong@example.org,藍隊,member,member,false,,轉隊\n,李領袖,leader@example.org,,,branch_leader,true,1234,領袖免填YMIS用電郵登入\n';

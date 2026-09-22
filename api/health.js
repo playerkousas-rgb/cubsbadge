@@ -42,7 +42,7 @@ module.exports = async function handler(req, res) {
     superLogin: {
       verifiedAt: 'vercel',
       verifies: 'SUPER_KEY（Vercel 功能變數；GS 永不持有）',
-      leafHandshake: 'POST <TROOP_BACKEND> {action:"superLogin", payload, sig} — sig = HMAC-SHA256(旅團 apikey, canonical)',
+      leafHandshake: 'POST /api/proxy {action:"login", login_id:"sheep", password:<SUPER_KEY>} → 代理就地比對 → 只送 {action:"superLogin"}（apikey 由 server 端注入）俾 leaf',
       requiresConfigured: {
         SUPER_KEY: superKeyConfigured(),
         [`TROOP_${normalized}_APIKEY`]: !!(config && config._env && config._env.apikey)
@@ -53,8 +53,7 @@ module.exports = async function handler(req, res) {
       name: config.name,
       backendHost: (() => { try { return new URL(config.backend).hostname; } catch(e){ return 'invalid'; } })(),
       hasApikey: !!config.apikey,
-      backendPreview: config.backend.substring(0, 100) + '...',
-      fullBackend: config.backend
+      backendConfigured: !!config.backend       // B/D 值唔回前端：只講「有冇設定」
     } : null,
     registry: {
       totalKeys: Object.keys(registry).length,

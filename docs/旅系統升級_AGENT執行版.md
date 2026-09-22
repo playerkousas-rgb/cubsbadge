@@ -1,51 +1,59 @@
 # 旅系統升級清單（AGENT 執行版）＋現況
 
 > 本檔 = 呢輪升級嘅**版號／規格唯一記錄**（程式碼內唔寫版號註解）。
-> 現況：**下游 leaf（本倉 cubsbadge）** 逐條核對結果如下；上游「旅系統 / TROOP_OPS」項目唔喺本倉。
 > 後端版本字串：`cub-leaf`
 
 ## 原文清單（照抄，唔改字）
 
-變數 ABCD（勿改名）
-A = SUPER_KEY（超管隱藏，勿動）
-B = TROOP_(id)_BACKEND
-C = TROOP_(id)_NAME
-D = TROOP_(id)_APIKEY
-id = 旅團代號。B/D 只存 Vercel env / TROOP_OPS server 端，禁入 SHEET 儲存格/前端/URL
+進度追蹤旅系統升級版 — 跟住改。舊進度已完成，現升級旅系統。照做就得。
 
-🚫 禁止
-禁將 SHEEP 改 SHEET
-禁 SHEET 寫 B/D URL/KEY
-禁加 onEdit / callback / trigger 回調
+變數 ABCD（唔入 SHEET）
+A = SUPER_KEY（超管隱藏，與旅無關）
+B = TROOP_(id)_BACKEND（部署後抄 URL）
+C = TROOP_(id)_NAME（交 ADMIN 時填）
+D = TROOP_(id)_APIKEY（生成後交 ADMIN 轉登記）
+B/D 由 GS 生成，C 自填，A 隱藏。四個唔寫入 SHEET，經收件匣交 ADMIN。
 
-執行清單（按序）
-1. 建表：每團補一張支部 SHEET（A），與現有進度 SHEET（B）成對；旅 SHEET（C）TROOP_OPS 加表：每團一行 | 團ID | B | D |（追加，不改 Vercel env）
-2. 後端 Code.gs（下游）：加 ScriptProperties ALLOW_LOCAL_LOGIN（預設 true）；加接口 setDownstreamAccess（只收上游 sig 驗證先可改旗）；doPost 登入/開戶開頭：若 ALLOW_LOCAL_LOGIN==false 且非 sig 則回 403
-3. 前端：支部「進度」頁經後端代理讀 B（B模式），支部 SHEET 不直存進度；支部前端加「關閉進度直接入口」掣（僅支部領袖見，調 setDownstreamAccess 寫進度 GS）；旅前端加「關閉團直接入口」掣（僅旅長見，寫團 GS）＋「揀團開戶」選單（讀 TROOP_OPS 行，經 sig 落團寫，AUDIT via=sig）
-4. 開戶：閂口後新戶一律上游揀團開，寫入仍在下游
-5. 清理：刪 GS 內所有版號註解，版號只留本 MD
+上下游接入
+部署 GS，抄 B 的 URL，生成 D 填 C，連 B/D 經收件匣交 ADMIN
+每團補一張支部 SHEET，與現有進度 SHEET 成對
+上游控下游寫：掣在上游（旅控團、團控進度），旗 ALLOW_LOCAL_LOGIN 寫在下游 ScriptProperties，閂後只收 sig
+開戶：閂口後新戶在上游揀團開戶，經 sig 落下游寫
 
-驗收
-- SHEET 搜 APIKEY/BACKEND/sheep 零儲存格命中，無 onEdit
-- 未掛接前兩邊可登入；掛後上游可一鍵閂，下游本地 403 只收 sig，上游揀團開戶成功
+吐 JSON（搬舊數）
+舊進度有數，新支部空 → 在舊進度按「匯出 JSON（含 hash）」
+在新支部按「匯入」，逐個 upsertUser 直插 hash（保留舊密碼）
+匯完可閂下游直接入口
 
-## 現況：逐條核對（下游 leaf = 本倉）
+唔做
+不在 SHEET 寫 ABCD
+不改 A
+不設回調
+
+清理
+GS 內 // vX.X 註解全拆，版號只留本 MD
+
+## 現況：逐條核對（本倉 = 下游 leaf；支部 SHEET／旅前端屬旅系統，唔喺本倉）
 
 | 清單項 | 現況 | 證據 |
 |---|---|---|
-| A/B/C/D 命名 | ✅ 一致 | `api/_lib/registry.js`：讀 `SUPER_KEY` / `TROOP_<id>_BACKEND` / `_NAME` / `_APIKEY`，冇 JSON、冇寫死 URL |
-| 🚫 SHEEP 唔可以變 SHEET 帳號 | ✅ | `isSuperAdminReserved()` 擋註冊；`removeSuperAdminRows()` 每次 `initializeSheets()` 掃走 Users／成員名單殘留列 |
-| 🚫 SHEET 禁寫 B/D URL/KEY | ✅ 全部表零命中 | 測試「SHEET 驗收：全表零 APIKEY／BACKEND／sheep／URL 儲存格」 |
-| 🚫 禁 onEdit / callback / trigger | ✅ 零命中 | 全倉掃描 `onEdit|newTrigger|callback|postMessage` 冇結果 |
-| 1. 建表（支部 SHEET＋TROOP_OPS 加表） | ❌ 未做（本倉） | 本倉 12 張表：Users／Applications／成員名單／Tokens／SystemConfig／進度追蹤／待批完成／其他獎章／服務紀錄／操作紀錄／活動履歷／待批履歷。v5.6 已定：TROOP_OPS 係**旅系統職責**，leaf 只需被登記 |
-| 2. ALLOW_LOCAL_LOGIN 預設 true | ✅ | `getAllowLocalLogin()`；`initializeSheets()` 未設就寫 `'true'`；`showDownstreamAccess()` 可查 |
-| 2. setDownstreamAccess 只收上游 sig | ✅ | `handleSetDownstreamAccess()`：`isSigRequest()` 唔過 → `NEED_SIG`；成功寫旗 + 審計 `via=sig` |
-| 2. 閂口後本地登入/開戶 → 403，只收 sig | ✅（今次補齊） | GS 側已有 `DOWNSTREAM_CLOSED` 閘（login／apply／本地寫入）；**`api/proxy.js` 今次加咗把 `DOWNSTREAM_CLOSED` 轉 HTTP 403**，之前一律回 200 |
-| 3. 支部「進度」頁經後端代理讀 B（B模式） | ✅ | 前端只打 `/api/proxy`；`backend` 等參數一律被刪（SSRF 防線），B 由 server 端 env 讀 |
-| 3. 支部前端「關閉進度直接入口」掣 | ❌ 未加 | v5.6 當時刻意唔加（「進度前端唔使加掣、唔會誤閂」）；今次清單要求加 → 等指示 |
-| 3. 旅前端「關閉團直接入口」掣＋「揀團開戶」選單 | ❌ 唔喺本倉 | 屬旅系統／TROOP_OPS 前端 |
-| 4. 閂口後一律上游揀團開、寫入仍在下游 | ✅ leaf 側 | 上游 sig 可過閘（`ecSigLogin`）；「揀團開戶」UI 屬上游 |
-| 5. 清走版號註解 | ✅ | `apps-script/Code.gs`、`api/**`、`index.html` 已零 `// vX.X` 註解；版號只留 MD |
+| A 超管隱藏、與旅無關 | ✅ | `SUPER_KEY` 只喺 Vercel env；leaf 零讀寫（`superKeyConfigured()` 永遠 false） |
+| B/D 由 GS 生成 | ✅ | `initializeSheets()` 生成 D（`API_KEY` Script Property）；B = 部署 `/exec` URL，由 `ScriptURL`／`showVercelEnv()` 顯示 |
+| C 自填 | ✅ | `setTroopId()` / `showVercelEnv()`（`TROOP_NAME` Script Property） |
+| ABCD 唔寫入 SHEET | ✅ 12 張表全部儲存格零命中 | 測試「SHEET 驗收：全表零 APIKEY／BACKEND／sheep／URL 儲存格」 |
+| ABCD 唔入前端 | ✅（今次補齊） | 今次之前 `/api/troops` 會回 `backend` URL、`/api/health` 會回 `fullBackend` → 已改為只回 `connected:true` / `backendConfigured:true`；測試「B/D 唔入前端：/api/troops 同 /api/health 回應零部署 URL、零 apikey」 |
+| 經收件匣交 ADMIN | ✅ | 前端表單（旅團編號／部署 URL／API Key）→ `POST /api/register`（**body**，唔落 URL）→ 後端管理 GS；`SUPER_KEY` 驗證 |
+| 每團補一張支部 SHEET | — 旅系統 | 你已答：屬旅系統，本倉唔建（v5.6 定案一致：leaf 只需被登記） |
+| 上游控下游寫、掣在上游 | ✅ | 本倉**冇**加掣（你已答維持）；旗由上游經 sig 寫 |
+| `ALLOW_LOCAL_LOGIN` 寫在下游 ScriptProperties | ✅ 預設 true | `getAllowLocalLogin()`；`initializeSheets()` 未設就寫 `'true'`；`showDownstreamAccess()` 可查 |
+| `setDownstreamAccess` 只收上游 sig | ✅ | `handleSetDownstreamAccess()`：`isSigRequest()` 唔過 → `NEED_SIG`；成功寫旗 + 審計 `via=sig` |
+| 閂後只收 sig、本地 403 | ✅（今次補齊） | GS 側 `DOWNSTREAM_CLOSED` 閘（login／apply／本地寫入）；**`api/proxy.js` 今次把 `DOWNSTREAM_CLOSED` 轉 HTTP 403**（之前一律 200） |
+| 開戶：閂口後上游揀團開、經 sig 落下游寫 | ✅ leaf 側 | 上游 sig 可過閘（`ecSigLogin` / `isSigRequest`）；「揀團開戶」UI 屬旅系統 |
+| 吐 JSON：舊進度「匯出（含 hash）」 | ✅ | `handleExportAll({includeHash:true})`（需領袖 token／apikey／sig） |
+| 新支部「匯入」→ `upsertUser` 直插 hash（保留舊密碼） | ✅ | `handleImportAll()` / `handleUpsertUser()`；匯入後舊密碼照用（測試覆蓋） |
+| 匯完可閂下游直接入口 | ✅ | 同一支旗 `ALLOW_LOCAL_LOGIN=false` |
+| 不在 SHEET 寫 ABCD / 不改 A / 不設回調 | ✅ | 全倉掃描 `onEdit|newTrigger|callback|postMessage` 零命中；A 冇被讀寫 |
+| 清理 `// vX.X` 註解 | ✅ | `apps-script/Code.gs`、`api/**`、`index.html` 零註解版號；版號只留 MD |
 
 ### 驗收對照
 
@@ -55,22 +63,23 @@ id = 旅團代號。B/D 只存 Vercel env / TROOP_OPS server 端，禁入 SHEET 
 | 無 onEdit | ✅ |
 | 未掛接前兩邊可登入 | ✅ `ALLOW_LOCAL_LOGIN` 預設 `true` |
 | 掛後上游一鍵閂、下游本地 403、只收 sig | ✅（今次補返 HTTP 403） |
-| 上游揀團開戶成功 | ⏳ 上游側，唔喺本倉 |
+| 上游揀團開戶成功 | ⏳ 上游側 |
 
 ## 今次改動（本倉）
 
-1. **超管寫表一律用中性代號 `APP_ADMIN`**（Sheet 儲存格永不寫 `sheep`）
+1. **SHEET 零 `sheep`**：超管寫表一律用中性代號 `APP_ADMIN`
    - 新增 `SUPER_STORAGE_ID='APP_ADMIN'`；`createToken()`／`writeAudit()` 超管相關寫入全部用佢
-   - `isSuperAdminId()` 認得中性代號（新舊 token 一樣解得返超管身份）；`isSuperAdminReserved()` 亦保留 `APP_ADMIN`，外面註冊唔到
-   - 新增 `purgeSuperAdminLabels()`：舊部署已經寫落表嘅 `sheep`／`sheep@cubbadge.local` 儲存格改成中性代號（只改值，唔刪紀錄）；`initializeSheets()` 自動跑，回報 `superLabelRowsFixed`
+   - `isSuperAdminId()` 認得中性代號（新舊 token 一樣解得返超管身份）；`isSuperAdminReserved()` 保留 `APP_ADMIN`，外面註冊唔到
+   - 新增 `purgeSuperAdminLabels()`：舊部署已經寫落表嘅 `sheep` / `sheep@cubbadge.local` 儲存格改成中性代號（只改值，唔刪紀錄）；`initializeSheets()` 自動跑，回報 `superLabelRowsFixed`
    - 非超管睇審計照舊睇唔到超管紀錄（過濾邏輯現在同時蓋中性代號）
-2. **`api/proxy.js`：`DOWNSTREAM_CLOSED` → HTTP 403**（清單第 2 條「回 403」）
-3. 測試：新增「SHEET 驗收：全表零 APIKEY／BACKEND／sheep／URL 儲存格」、「超管寫表一律用中性代號 APP_ADMIN…」、「proxy：下游入口關閉 → 回 HTTP 403」；修正一條冇 `await` 令計數唔準嘅舊測試
-4. `npm test` → api **29** / ecosystem **55** / e2e **72**，全綠
+2. **B/D 唔入前端**：`/api/troops` 由回 `backend:<URL>` 改為 `connected:true`；`/api/health` 由回 `fullBackend`/`backendPreview` 改為 `backendHost` + `backendConfigured`（只講有冇設定）；前端改用 `troopConnected` 旗（`currentBackend` 全清，session 唔再儲 URL）
+3. **`api/proxy.js`：`DOWNSTREAM_CLOSED` → HTTP 403**
+4. **`api/health.js`**：修返過時文案（唔再寫 `payload, sig`，改為講 `action=superLogin` + apikey 由 server 端注入）
+5. 測試：+2 生態圈檢查（全表零 APIKEY／BACKEND／sheep／URL；中性代號寫表）＋2 api 檢查（403 映射；B/D 唔入前端）；修正一條冇 `await` 令計數唔準嘅舊測試
+6. `npm test` → api **30** / ecosystem **55** / e2e **72**，全綠
 
-## 未做／要你決定
+## 仲要你決定／交去旅系統
 
-1. **支部 SHEET**：清單第 1 條要「每團補一張支部 SHEET，與進度 SHEET 成對」——本倉冇，亦唔知「支部 SHEET」要存咩欄。要唔要喺本倉建？（要嘅話請講欄位）
-2. **TROOP_OPS 表寫 B／D**：清單 1 話「旅 SHEET TROOP_OPS 加表：每團一行 ｜團ID｜B｜D｜」，但 🚫 又話「禁 SHEET 寫 B/D URL/KEY」——兩條互相矛盾。本倉現況：B／D 只喺 Vercel env，Sheet 零命中（已達 🚫 要求）。
-3. **「關閉進度直接入口」掣**：要加喺本倉前端（僅支部領袖見，叫 `setDownstreamAccess`）嗎？加咗之後支部領袖可以自己閂掉本地登入入口（會影響自己旅團用家）。
-4. **旅前端兩個掣＋揀團開戶選單**：要改就要去旅系統／TROOP_OPS 嗰邊；如果佢喺另一個 repo，話我知係邊個。
+1. 旅前端兩個掣（關閉團直接入口）＋「揀團開戶」選單 → 你已答：喺另一個 repo
+2. 每團一張「支部 SHEET」→ 你已答：屬旅系統
+3. 上游側未做：TROOP_OPS 每團一行登記（只登記 `團ID` + 名稱，唔寫 B/D）、揀團開戶 UI、旅長「關入口」掣
