@@ -14,6 +14,8 @@
 //   - 唔會代其他 leaf 決定佢哋有咩模組。
 //
 // 唯一紅線: apikey 只存 server（env）,永不回前端、永不入 URL、永不入 QR。
+// 功能變數契約（4樣）: SUPER_KEY + TROOP_<id>_BACKEND / TROOP_<id>_APIKEY / TROOP_<id>_NAME
+//   —— 設定全部指向 Vercel 功能變數（唔讀 JSON）；後端GS 對應 Script Properties。
 // ============================================================
 
 const fs = require('fs');
@@ -70,7 +72,9 @@ function getPlatformUnits() {
       registered_via: u.registered_via || 'admin',
       registered_at: u.registered_at || '',
       _backendEnv: u.backend_env || `TROOP_${id}_BACKEND`,
-      _apikeyEnv: u.apikey_env || `TROOP_${id}_APIKEY`
+      _apikeyEnv: u.apikey_env || `TROOP_${id}_APIKEY`,
+      _nameEnv: u.name_env || `TROOP_${id}_NAME`,
+      _superKeyEnv: u.super_key_env || 'SUPER_KEY'
     };
   });
   return out;

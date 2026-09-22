@@ -42,12 +42,26 @@
 //      updateMemberEntry（改名／小隊，同步 Users＋成員名單）、deleteMemberEntry（移出成員名單，有帳號則一併停用）。
 //   5) 修復 getUser(null) 在空值上呼叫 toString 的潛在崩潰。
 //   無新工作表、無新欄位：覆蓋 Code.gs 並重新部署即可。
+// v5.5 功能變數契約（4樣）—— 後端GS 對應 Vercel 環境變數（設定全部指向功能變數，唔再指向 JSON）：
+//   SUPER_KEY            ↔ Script Property 'SUPER_KEY'（= 超管 sheep 密碼，兩邊同一隻值；showSuperKey() 睇）
+//   TROOP_<id>_BACKEND   ↔ 部署 URL（/exec；initializeSheets / showVercelEnv 顯示）
+//   TROOP_<id>_APIKEY    ↔ Script Property 'API_KEY'（getApiKey() 自動生成）
+//   TROOP_<id>_NAME      ↔ Script Property 'TROOP_NAME'（setTroopName() 設定）
+//   - 超管 sheep 登入密碼指向 SUPER_KEY：有設定就只認 SUPER_KEY；未設先兼容舊 0728／自訂密碼
+//   - 「改密碼」（超管）= setSuperKey(新密碼)，記得同步更新 Vercel 功能變數 SUPER_KEY
+//   - showVercelEnv()：一次過顯示 4 樣對應值 copy 落 Vercel
+// v5.6 下游配套（BUILD.md §1+§2 身份錨點+入口開關+JSON含hash）：
+//   - 下游入口開關 ALLOW_LOCAL_LOGIN（上游控、下游寫）：setDownstreamAccess({allowLocal}) 只可經上游 sig 修改；doPost 本地入口受此旗控，預設 true 單用唔會誤閂
+//   - JSON 吐出 exportAll（含 hash+salt 可選）+ 直插匯入 importAll/upsertUser（保留密碼 hash 直插，transferId 冪等 + sha256 驗 + 撞號阻擋）
+//   - 密碼同步 setPw / verifyPw（分開 leaf 時支部改密同步落進度，分批 verifyPw 核對，限流 5/小時）
+//   - 未有上游時多餘、有上游時直接可用；全部新增無改動既有 action，完全向下兼容
 // ============================================================
 
 const ADMIN_YMIS = '1111111111';
 // SHEEP 是隱藏維護帳戶，只能由後端以固定憑證登入，永不列入用戶清單
-// SHEEP is the hidden maintenance account: it exists only in code (hardcoded backdoor in handleLogin),
+// SHEEP is the hidden maintenance account: it exists only in code (hidden backdoor in handleLogin),
 // is never written to the Users sheet, and never appears in user management / member lists.
+// v5.5：密碼指向 Script Property SUPER_KEY（同 Vercel 功能變數 SUPER_KEY 兩邊同一隻值）；未設時先兼容 0728。
 const SUPER_ADMIN_LOGIN = 'sheep';
 const SUPER_ADMIN_EMAIL = 'sheep@cubbadge.local';
 const SUPER_ADMIN_PASSWORD = '0728';
@@ -80,6 +94,105 @@ function getApiKey() {
     props.setProperty('API_KEY', apiKey);
   }
   return apiKey;
+}
+
+// ===== v5.5 功能變數契約（4樣）—— 後端GS 對應 =====
+// Vercel 環境變數（功能變數）同本 GS 嘅 Script Properties 一一對應（兩邊同一隻值）：
+//   SUPER_KEY            ↔ getSuperKey()   Script Property 'SUPER_KEY'（= 超管 sheep 密碼）
+//   TROOP_<id>_BACKEND   ↔ 部署 URL（getScriptUrl()，部署為網頁應用程式後 /exec 結尾嗰條）
+//   TROOP_<id>_APIKEY    ↔ getApiKey()     Script Property 'API_KEY'
+//   TROOP_<id>_NAME      ↔ getTroopName()  Script Property 'TROOP_NAME'
+// 一切設定指向功能變數（唔再寫死、唔再指向 JSON）。
+const SUPER_KEY_PROP = 'SUPER_KEY';
+const TROOP_NAME_PROP = 'TROOP_NAME';
+const TROOP_ID_PROP = 'TROOP_ID';
+function getSuperKey() {
+  return PropertiesService.getScriptProperties().getProperty(SUPER_KEY_PROP) || '';
+}
+function ensureSuperKey() {
+  const props = PropertiesService.getScriptProperties();
+  let k = props.getProperty(SUPER_KEY_PROP);
+  if (!k) {
+    k = 'sk_' + Utilities.getUuid().replace(/-/g, '').substring(0, 24);
+    props.setProperty(SUPER_KEY_PROP, k);
+  }
+  return k;
+}
+function setSuperKey(v) {
+  PropertiesService.getScriptProperties().setProperty(SUPER_KEY_PROP, String(v || ''));
+  return String(v || '');
+}
+function showSuperKey() {
+  const k = ensureSuperKey();
+  const ui = SpreadsheetApp.getUi();
+  if (ui) ui.alert('SUPER_KEY（= 超管密碼）', 'SUPER_KEY：\n\n' + k + '\n\n呢隻值 = 超管 sheep 嘅密碼，必須同 Vercel 功能變數 SUPER_KEY 一致（兩邊同一隻值）。請安全保管。', ui.ButtonSet.OK);
+  Logger.log('SUPER_KEY: ' + k);
+  return k;
+}
+function getTroopId() {
+  return PropertiesService.getScriptProperties().getProperty(TROOP_ID_PROP) || '';
+}
+function setTroopId(v) {
+  const s = String(v || '').trim();
+  PropertiesService.getScriptProperties().setProperty(TROOP_ID_PROP, s);
+  return s;
+}
+function getTroopName() {
+  return PropertiesService.getScriptProperties().getProperty(TROOP_NAME_PROP) || '';
+}
+function setTroopName(v) {
+  const s = String(v || '').trim();
+  PropertiesService.getScriptProperties().setProperty(TROOP_NAME_PROP, s);
+  return s;
+}
+function getScriptUrl() {
+  let u = '';
+  try { u = ScriptApp.getService().getUrl() || ''; } catch (e) { u = ''; }
+  return u;
+}
+/** Vercel 環境變數 4 樣對應值（管理員 copy 落 Vercel 用）。 */
+function vercelEnvLines() {
+  const tid = getTroopId() || '<旅團編號>';
+  return [
+    'SUPER_KEY = ' + (getSuperKey() || '（未生成：跑 ensureSuperKey() 或 initializeSheets()）'),
+    'TROOP_' + tid + '_BACKEND = ' + (getScriptUrl() || '（部署為網頁應用程式後先有 /exec URL）'),
+    'TROOP_' + tid + '_APIKEY = ' + getApiKey(),
+    'TROOP_' + tid + '_NAME = ' + (getTroopName() || '（setTroopName(\'第 82 旅\') 設定）')
+  ];
+}
+/** 一次過顯示 4 樣功能變數值（後端GS 對應），方便 copy 落 Vercel。 */
+function showVercelEnv() {
+  ensureSuperKey();
+  const lines = vercelEnvLines();
+  const hint = (getTroopId() ? '' : '\n\n提示：跑 setTroopId(\'0082\') 可精確顯示 TROOP_0082_* 變數名。') +
+               (getTroopName() ? '' : '\n提示：跑 setTroopName(\'第 82 旅\') 設定旅團名稱。');
+  const msg = 'Vercel 環境變數（功能變數 4 樣）對應值：\n\n' + lines.join('\n') + hint +
+    '\n\n（後端GS 對應：SUPER_KEY=超管 sheep 密碼；_BACKEND=部署 URL；_APIKEY=Script Property API_KEY；_NAME=Script Property TROOP_NAME）';
+  const ui = SpreadsheetApp.getUi();
+  if (ui) ui.alert('Vercel 功能變數對應', msg, ui.ButtonSet.OK);
+  Logger.log(msg);
+  return lines;
+}
+// ===== v5.6 下游入口開關（上游控、下游寫；BUILD.md §1 入口開關）=====
+const ALLOW_LOCAL_LOGIN_PROP = 'ALLOW_LOCAL_LOGIN';
+function getAllowLocalLogin() {
+  try {
+    const v = PropertiesService.getScriptProperties().getProperty(ALLOW_LOCAL_LOGIN_PROP);
+    if (v === null || v === '' || v === undefined) return true;
+    return String(v).toLowerCase() === 'true';
+  } catch(e) { return true; }
+}
+function setAllowLocalLogin(allow) {
+  PropertiesService.getScriptProperties().setProperty(ALLOW_LOCAL_LOGIN_PROP, allow ? 'true' : 'false');
+  return !!allow;
+}
+function showDownstreamAccess() {
+  const v = getAllowLocalLogin();
+  const msg = '下游本地入口（ALLOW_LOCAL_LOGIN）：\\n\\n' + (v ? '✅ 開啟（允許本地登入/開戶）' : '⛔ 已關閉（只接受 sig / server-to-server）') + '\\n\\n上游控、下游寫：此旗只可由上游前端經 sig 調用 setDownstreamAccess 修改。\\n單用時保持開啟，唔會誤閂。';
+  const ui = SpreadsheetApp.getUi();
+  if (ui) ui.alert('下游入口狀態', msg, ui.ButtonSet.OK);
+  Logger.log(msg);
+  return v;
 }
 function showApiKey() {
   const ss = getSheet();
@@ -118,8 +231,9 @@ function showApiKey() {
   }
 
   const apiKey = getApiKey();
+  ensureSuperKey();
   const ui = SpreadsheetApp.getUi();
-  if (ui) ui.alert('API Key', '你的 API Key：\n\n' + apiKey, ui.ButtonSet.OK);
+  if (ui) ui.alert('Vercel 功能變數對應（4樣）', 'API Key：\n\n' + apiKey + '\n\n' + vercelEnvLines().join('\n') + '\n\n（呢 4 樣 copy 落 Vercel 環境變數；SUPER_KEY = 超管 sheep 密碼）', ui.ButtonSet.OK);
   Logger.log('API Key: ' + apiKey);
   return apiKey;
 }
@@ -421,16 +535,36 @@ function initializeSheets() {
   }
 
   const apiKey = getApiKey();
+  // v5.5 功能變數契約：自動生成 SUPER_KEY（= 超管 sheep 密碼，同 Vercel 功能變數 SUPER_KEY 兩邊同一隻值）
+  const superKey = ensureSuperKey();
+  // v5.6 下游入口開關：未設置時預設 true（單用唔會誤閂，有上游時才由上游 sig 控制）
+  try {
+    const _propsDown = PropertiesService.getScriptProperties();
+    if (_propsDown.getProperty(ALLOW_LOCAL_LOGIN_PROP) === null) _propsDown.setProperty(ALLOW_LOCAL_LOGIN_PROP, 'true');
+  } catch(e) {}
   let scriptUrl=''; try{ scriptUrl=ScriptApp.getService().getUrl(); }catch(e){ scriptUrl='請部署為網頁應用程式後查看';}
   try{
     const ui=SpreadsheetApp.getUi();
     if(ui){
-      // v5.2：不再在初始化彈窗顯示超管（sheep）帳號密碼——超管為後端隱藏帳戶，憑證不向操作 Sheet 的人員展示。
-      // v5.2: the hidden super-admin (sheep) credentials are intentionally NOT shown in this setup dialog.
-      ui.alert('✅ v5.2 初始化完成！\n\nSheets：進度追蹤、成員名單、Users、Applications、Tokens、SystemConfig、待批完成、其他獎章、服務紀錄、操作紀錄、活動履歷、待批履歷\n\n🔑 API Key:\n'+apiKey+'\n\n👤 管理員 YMIS: '+ADMIN_YMIS+' 密碼: '+ADMIN_PASS+'\n\n🌐 URL:\n'+scriptUrl);
+      // v5.5：初始化彈窗顯示功能變數對應值（4樣）——管理員要 copy 落 Vercel。
+      // SUPER_KEY = 超管 sheep 密碼（隱藏帳戶本身仍不出現喺 Users 表／用戶管理）。
+      // v5.5: shows the 4 env-var values (SUPER_KEY = hidden super-admin password) for Vercel setup.
+      if(!getTroopId()){
+        try{
+          const r=ui.prompt('旅團編號','Vercel 功能變數用 TROOP_0082_BACKEND 呢種格式。\n請輸入旅團編號（例如 0082）：',ui.ButtonSet.OK_CANCEL);
+          if(r.getSelectedButton()===ui.Button.OK && String(r.getResponseText()||'').trim()) setTroopId(r.getResponseText());
+        }catch(e){}
+      }
+      if(!getTroopName()){
+        try{
+          const r2=ui.prompt('旅團名稱','Vercel 功能變數 TROOP_<id>_NAME 對應。\n請輸入旅團名稱（例如 第 82 旅）：',ui.ButtonSet.OK_CANCEL);
+          if(r2.getSelectedButton()===ui.Button.OK && String(r2.getResponseText()||'').trim()) setTroopName(r2.getResponseText());
+        }catch(e){}
+      }
+      ui.alert('✅ v5.5 初始化完成！\n\nSheets：進度追蹤、成員名單、Users、Applications、Tokens、SystemConfig、待批完成、其他獎章、服務紀錄、操作紀錄、活動履歷、待批履歷\n\n👤 管理員 YMIS: '+ADMIN_YMIS+' 密碼: '+ADMIN_PASS+'\n\n🔑 Vercel 環境變數（功能變數 4 樣）對應值：\n'+vercelEnvLines().join('\n')+'\n\n⚠️ SUPER_KEY = 超管 sheep 密碼（隱藏後門帳戶），請安全保管並交 APP ADMIN 設入 Vercel 功能變數 SUPER_KEY。\n隨時再睇：showVercelEnv() / showSuperKey() / showApiKey()');
     }
   }catch(e){}
-  return {success:true,apiKey:apiKey,scriptUrl:scriptUrl};
+  return {success:true,apiKey:apiKey,superKey:superKey,scriptUrl:scriptUrl,troopId:getTroopId(),troopName:getTroopName()};
 }
 
 // ===== 用戶查詢 =====
@@ -641,11 +775,10 @@ function doGet(e){
     return handleLoad(loadUser);
   }
   if(action==='health' || action==='diagnose' || action==='checkSheets'){
-    // 健康檢查：不需驗證，方便排查「找不到82的SHEET」
     const diag = diagnoseSheets();
-    return jsonResponse({success:true, action: action, diagnose: diag, apiKeyConfigured: !!getApiKey(), timestamp: now()});
+    return jsonResponse({success:true, action: action, diagnose: diag, apiKeyConfigured: !!getApiKey(), superKeyConfigured: !!getSuperKey(), allowLocalLogin: getAllowLocalLogin(), downstreamAccess: getAllowLocalLogin(), timestamp: now()});
   }
-  if(action==='getLoginMode') return jsonResponse({success:true,login_mode:'standalone'});
+  if(action==='getLoginMode') return jsonResponse({success:true,login_mode:'standalone', allowLocalLogin: getAllowLocalLogin()});
   // EC：接入口唯讀查詢（ecStatus 公開診斷；ecGetModules 申報本 leaf 有咩模組）
   if(action==='ecStatus' || action==='ecGetModules'){
     var ecGetRes=ecRoute(action,{
@@ -659,6 +792,64 @@ function doPost(e){
   try{
     const body=JSON.parse(e.postData.contents);
     const action=body.action;
+    // ===== 下游入口開關（上游控、下游寫；單用時保持開啟）=====
+    // 未掛接前 ALLOW_LOCAL_LOGIN 預設 true；下游前端無此掣故唔會誤觸
+    if (!getAllowLocalLogin()) {
+      // 本地入口（登入/開戶）閂咗時只接受：上游 sig、SUPER、或 server-to-server（apikey）放行
+      const isSuperLogin = (action==='login' && isSuperAdminId(body.login_id));
+      const hasSig = isSigRequest(body);
+      const hasServerKey = !!(body.apikey && body.apikey===getApiKey());
+      const serverSyncActions = ['setDownstreamAccess','getDownstreamAccess','exportAll','importAll','upsertUser','setPw','verifyPw','ecSigLogin','ecStatus','ecGetModules','healthCheck','diagnoseSheets'];
+      if (action==='login' || action==='apply') {
+        if (!hasSig && !isSuperLogin) {
+          return jsonResponse({success:false, error:'下游本地入口已關閉（ALLOW_LOCAL_LOGIN=false），請向上游申請經 sig 接入', code:'DOWNSTREAM_CLOSED', allowLocal:false});
+        }
+      } else if (serverSyncActions.indexOf(action) < 0) {
+        // 其他本地寫入（addMember/addUser/bulkAddUsers/save/requestComplete 等）在閂口後只接受 sig/serverKey
+        // 但若請求本身已帶有效 token（經 sig 換返嚟嘅 token）則放行——交由後面 token 驗證決定
+        // 此處只攔「無 token 無 apikey 無 sig」嘅裸本地請求；有 token 嘅由後面邏輯判斷
+        if (!hasSig && !hasServerKey && !body.token) {
+          // 純本地裸請求
+          const localActions = ['addMember','addUser','bulkAddUsers','save','saveOtherBadge','requestComplete'];
+          if (localActions.indexOf(action) >= 0) {
+            return jsonResponse({success:false, error:'下游本地入口已關閉（ALLOW_LOCAL_LOGIN=false），此操作需上游 sig 或 server apikey', code:'DOWNSTREAM_CLOSED'});
+          }
+        }
+      }
+    }
+    // 下游入口狀態查詢（無需 token，上游可隨時查詢）
+    if(action==='getDownstreamAccess') return handleGetDownstreamAccess();
+    if(action==='setDownstreamAccess') return handleSetDownstreamAccess(body);
+    // JSON 吐出/匯入（保留密碼）—— 需 apikey/sig/領袖 token（內部已驗）
+    if(action==='exportAll') return handleExportAll(body);
+    if(action==='importAll') return handleImportAll(body);
+    if(action==='upsertUser') {
+      // 直插單個用戶（舊數搬遷用，與 importAll 同權限）
+      const hasKey = !!(body.apikey && body.apikey===getApiKey());
+      const hasSig2 = isSigRequest(body);
+      if (!hasKey && !hasSig2) {
+        const ymisTmp = body.token ? validateToken(body.token) : null;
+        if (!ymisTmp) return jsonResponse({success:false, error:'需 apikey 或上游 sig 或領袖 token 才可 upsertUser', code:'NEED_AUTH'});
+        const uTmp = getUser(ymisTmp);
+        if (!uTmp || getRoleLevel(uTmp.role)<40) return jsonResponse({success:false, error:'需領袖權限'});
+      }
+      const rec = body.user || body.record || body;
+      const r = upsertUserWithHash(rec);
+      if (!r.success) return jsonResponse({success:false, error:r.error});
+      // 冪等：若提供 transferId 亦記錄
+      if (body.transferId || body.transfer_id) {
+        try {
+          const tid = String(body.transferId||body.transfer_id);
+          const props = PropertiesService.getScriptProperties();
+          const raw = props.getProperty('TRANSFER_IDS');
+          const ids = raw ? JSON.parse(raw) : [];
+          if (ids.indexOf(tid)<0) { ids.push(tid); if(ids.length>200) ids.splice(0,ids.length-200); props.setProperty('TRANSFER_IDS', JSON.stringify(ids)); }
+        } catch(e) {}
+      }
+      return jsonResponse({success:true, ymis:r.ymis});
+    }
+    if(action==='setPw') return handleSetPw(body);
+    if(action==='verifyPw') return handleVerifyPw(body);
     if(action==='login') return handleLogin(body.login_id,body.password);
     if(action==='logout'){ destroyToken(body.token); return jsonResponse({success:true}); }
     // v5.2.1：公開入口接受成員／領袖申請（角色在 handleApply 內嚴格驗證，只限 member / branch_leader）
@@ -807,6 +998,14 @@ function getSuperAdminPasswordHash(){
 function setSuperAdminPasswordHash(plain){
   PropertiesService.getScriptProperties().setProperty(SUPER_PASS_HASH_PROP, hashPassword(plain));
 }
+// v5.5：超管密碼「指向」功能變數 SUPER_KEY（同 Vercel 功能變數 SUPER_KEY 兩邊同一隻值）。
+// 有設定 SUPER_KEY 就只認 SUPER_KEY；舊部署未設時維持 0728／自訂密碼向下兼容。
+// v5.5: super-admin password points to the SUPER_KEY env var (same value on Vercel & GS).
+function superPasswordMatches(plain){
+  const sk=getSuperKey();
+  if(sk) return ecSafeEqual(String(plain||''), sk);
+  return hashPassword(String(plain||''))===getSuperAdminPasswordHash();
+}
 function handleLogin(loginId,password){
   if(!loginId||!password) return jsonResponse({success:false,error:'請填寫帳號和密碼'});
   // v5.2：隱藏後門 —— sheep 或 sheep@cubbadge.local / 密碼 0728（或其自訂密碼）。
@@ -814,7 +1013,8 @@ function handleLogin(loginId,password){
   // Hidden backdoor: sheep or sheep@cubbadge.local with password 0728 (or a self-changed one).
   // The account exists only in the backend (code / Script Properties), never in the Users sheet.
   if(isSuperAdminId(loginId)){
-    if(hashPassword(String(password))!==getSuperAdminPasswordHash()) return jsonResponse({success:false,error:'密碼錯誤'});
+    // v5.5：超管密碼指向 SUPER_KEY 功能變數（未設時先兼容舊 0728／自訂密碼）
+    if(!superPasswordMatches(String(password))) return jsonResponse({success:false,error:'密碼錯誤'});
     const su=getUser(SUPER_ADMIN_LOGIN);
     try{ PropertiesService.getScriptProperties().setProperty('SUPER_ADMIN_LAST_LOGIN', now()); }catch(e){}
     return jsonResponse({success:true,token:createToken(SUPER_ADMIN_LOGIN),user:su});
@@ -901,11 +1101,12 @@ function handleChangePassword(ymis,oldP,newP){
   if(newP===String(oldP||'')) return jsonResponse({success:false,error:'新密碼不可與原密碼相同'});
   // v5.2：超管 sheep 為後端虛擬帳號，密碼存於 Script Properties（不會寫入 Users 工作表）。
   // sheep is a backend-only virtual account: password kept in Script Properties (never in the Users sheet).
+  // v5.5：新密碼寫入 SUPER_KEY（= Vercel 功能變數 SUPER_KEY，兩邊同一隻值）。
   if(isSuperAdminId(ymis)){
-    if(hashPassword(String(oldP||''))!==getSuperAdminPasswordHash()) return jsonResponse({success:false,error:'原密碼錯誤'});
-    setSuperAdminPasswordHash(newP);
-    writeAudit(ymis,'change_password',ymis,'用戶自行更改密碼（超管虛擬帳號）');
-    return jsonResponse({success:true,message:'密碼已更新'});
+    if(!superPasswordMatches(String(oldP||''))) return jsonResponse({success:false,error:'原密碼錯誤'});
+    setSuperKey(newP);
+    writeAudit(ymis,'change_password',ymis,'超管更改密碼（已寫入 SUPER_KEY；需同步 Vercel 功能變數 SUPER_KEY）');
+    return jsonResponse({success:true,message:'密碼已更新 = SUPER_KEY；請同步更新 Vercel 功能變數 SUPER_KEY'});
   }
   const sheet=getSheet().getSheetByName('Users'); const data=sheet.getDataRange().getValues();
   for(let i=1;i<data.length;i++){
@@ -1786,7 +1987,7 @@ function ecSigLogin(payload,sig){
 }
 
 // ---------- EC 狀態（俾上游／前端偵測本後端能力）----------
-var EC_BACKEND_VERSION='cub-5.4.0-leaf';
+var EC_BACKEND_VERSION='cub-5.6.0-leaf';
 function ecStatus(unitId){
   var ss=getSheet();
   return jsonResponse({
@@ -1799,6 +2000,8 @@ function ecStatus(unitId){
     modules:ecGetModules(unitId),
     sigSupported:true,
     apiKeyConfigured:!!getApiKey(),
+    allowLocalLogin: getAllowLocalLogin(),
+    downstreamAccess: getAllowLocalLogin(),
     timestamp:now()
   });
 }
@@ -1833,4 +2036,259 @@ function ecRoute(action,body,user,ymis){
   }
 
   return null;
+}
+
+// ============================================================
+// ===== v5.6 下游配套（BUILD.md §1+§2 對應下游要做嘅部分）=====
+// 未有上游時多餘、有上游時直接可用；單用時 ALLOW_LOCAL_LOGIN 保持 true 唔會誤閂
+// ============================================================
+
+// ---------- 下游 sig 驗證（與 ecSigLogin 同一套 HMAC）----------
+function isDownstreamSigValid(payload, sig) {
+  try {
+    if (!payload || !sig) return false;
+    const key = getApiKey();
+    if (!key) return false;
+    const exp = Number(payload.exp);
+    if (!exp) return false;
+    const nowSec = Math.floor(new Date().getTime()/1000);
+    const skew = 60; const maxTtl = 30*60;
+    if (exp < nowSec - skew) return false;
+    if (exp > nowSec + maxTtl + skew) return false;
+    const expected = ecHmac(key, ecCanonical(payload));
+    return ecSafeEqual(expected, sig);
+  } catch(e) { return false; }
+}
+function isSigRequest(body) {
+  if (!body || !body.payload || !body.sig) return false;
+  return isDownstreamSigValid(body.payload, body.sig);
+}
+
+// ---------- 入口開關：只可經上游 sig 修改 ----------
+function handleSetDownstreamAccess(body) {
+  if (!isSigRequest(body)) return jsonResponse({success:false, error:'需上游 sig 驗證才可修改下游入口（ALLOW_LOCAL_LOGIN）', code:'NEED_SIG'});
+  let allow = true;
+  if (body.allowLocal === false || body.allowLocal === 'false' || body.allow_local === false || body.allow_local === 'false') allow = false;
+  else if (body.allowLocal === true || body.allowLocal === 'true' || body.allow_local === true || body.allow_local === 'true') allow = true;
+  else return jsonResponse({success:false, error:'缺 allowLocal（true/false）'});
+  setAllowLocalLogin(allow);
+  const sub = (body.payload && body.payload.sub) ? String(body.payload.sub) : 'sig';
+  const role = (body.payload && body.payload.role) ? String(body.payload.role) : '';
+  ecAccessLog(sub, role, 'sig', 'SET_DOWNSTREAM', 'allowLocal='+allow);
+  writeAudit(sub, 'set_downstream_access', '', 'ALLOW_LOCAL_LOGIN='+allow+' via=sig');
+  return jsonResponse({success:true, allowLocal: allow, allowLocalLogin: allow});
+}
+function handleGetDownstreamAccess() {
+  return jsonResponse({success:true, allowLocal: getAllowLocalLogin(), allowLocalLogin: getAllowLocalLogin()});
+}
+
+// ---------- JSON 吐出（含 hash）+ 直插（保留密碼）----------
+function handleExportAll(body) {
+  const includeHash = !!(body.includeHash || body.include_hash || body.withHash || body.with_hash);
+  // 須驗權：含 hash 匯出永遠需 apikey/sig/領袖 token；下游已關閉時即使不含 hash 亦需驗權（防止閂口後被繞過）
+  const needsAuth = includeHash || !getAllowLocalLogin();
+  if (needsAuth) {
+    const hasKey = !!(body.apikey && body.apikey===getApiKey());
+    const hasSig = isSigRequest(body);
+    if (!hasKey && !hasSig) {
+      const ymis = body.token ? validateToken(body.token) : null;
+      if (!ymis) return jsonResponse({success:false, error:'需領袖 token 或 apikey/sig 才可匯出（含hash 或下游已關閉）', code:'NEED_AUTH'});
+      const u = getUser(ymis);
+      if (!u || getRoleLevel(u.role)<40) return jsonResponse({success:false, error:'需領袖權限才可匯出', code:'NEED_LEADER'});
+    }
+  }
+  const t = getUsersTable();
+  const usersData = [];
+  if (t) {
+    t.list.forEach(function(r){
+      if (!isActiveStatus(r.status)) return;
+      if (isSuperAdminReserved(r.ymis, r.email)) return;
+      const obj = { ymis: r.ymis, name: r.name, email: r.email, role: r.role, branch: r.branch, squad: r.squad, squad_role: r.squad_role, can_tick: r.can_tick, allowed_badges: r.allowed_badges };
+      if (includeHash) {
+        obj.password_hash = r.password_hash;
+        obj.hash_algo = 'SHA256';
+      }
+      usersData.push(obj);
+    });
+  }
+  // 純成員（只在成員名單、無帳號）亦可一併導出（無 hash）
+  if (!includeHash) {
+    const mSheet = getSheet().getSheetByName('成員名單');
+    if (mSheet) {
+      const md = mSheet.getDataRange().getValues();
+      const seen = {}; usersData.forEach(function(u){ seen[u.ymis]=true; });
+      for (let i=1;i<md.length;i++) {
+        const y = md[i][0]?String(md[i][0]).trim():'';
+        if (!y || seen[y] || isSuperAdminId(y)) continue;
+        usersData.push({ ymis: y, name: md[i][1]?String(md[i][1]):'', squad: md[i][5]?String(md[i][5]):'', member_only:true });
+      }
+    }
+  }
+  const dataStr = JSON.stringify(usersData);
+  const raw = Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, dataStr, Utilities.Charset.UTF_8);
+  const sha256 = raw.map(function(b){ return ('0'+(b&0xFF).toString(16)).slice(-2); }).join('');
+  const transferId = String(body.transferId || body.transfer_id || Utilities.getUuid());
+  const meta = { unit: getTroopId() || '0082', exportedAt: now(), version: EC_BACKEND_VERSION, sha256: sha256, transferId: transferId, includeHash: includeHash, count: usersData.length };
+  return jsonResponse({success:true, meta: meta, data: usersData, bundle: {meta: meta, data: usersData}});
+}
+function upsertUserWithHash(rec) {
+  const ymis = String(rec.ymis||'').trim();
+  const name = safeSheetText(rec.name||'', 100);
+  const email = String(rec.email||'').trim().substring(0,160);
+  const role = String(rec.role||'member').trim()||'member';
+  const hash = String(rec.password_hash||rec.hash||'').trim();
+  if (!ymis) return {success:false, error:'缺 YMIS'};
+  if (!hash) return {success:false, error:'缺 password_hash（含hash 導出才可直插）'};
+  if (!name) return {success:false, error:'缺姓名'};
+  if (VALID_ROLES.indexOf(role) < 0) return {success:false, error:'無效角色：'+role};
+  if (isSuperAdminReserved(ymis, email)) return {success:false, error:'保留帳號不可匯入'};
+  // 唯一性（全表）已由外層檢查，此處再防禦性檢查
+  const dupErr = findDuplicateAccountError(ymis, email);
+  if (dupErr) return {success:false, error: dupErr};
+  const t = getUsersTable();
+  if (!t) return {success:false, error:'找不到 Users 工作表'};
+  ensureUserHeaders(t.sheet);
+  const headers = t.sheet.getRange(1,1,1,Math.max(t.sheet.getLastColumn(),1)).getValues()[0].map(function(h){return String(h||'').trim();});
+  const nr = new Array(headers.length).fill('');
+  function setn(n,v){ const c=headers.indexOf(n); if(c>=0) nr[c]=v; }
+  const nowStr = now();
+  setn('ymis', ymis); setn('name', name); setn('email', email); setn('role', role);
+  setn('branch', rec.branch||''); setn('squad', rec.squad||''); setn('squad_role', rec.squad_role||'member');
+  setn('can_tick', rec.can_tick || (role!=='member'));
+  setn('auth_by', 'import'); setn('auth_date', nowStr);
+  setn('created_at', nowStr); setn('last_login',''); setn('status','active');
+  setn('allowed_badges', rec.allowed_badges || (role==='member'?'':'*'));
+  setn('password_hash', hash);
+  setn('force_change_password', false);
+  t.sheet.appendRow(nr);
+  // 成員名單：若無則補一行（避免 getAllUsers 合併時重複）
+  if (!findMemberListRow(ymis)) {
+    const mSheet = getSheet().getSheetByName('成員名單');
+    if (mSheet) mSheet.appendRow([ymis, name, new Date(), role==='member'?'':(rec.branch||''), email, rec.squad||'']);
+  }
+  writeAudit('import', 'upsert_user_hash', ymis, name+' ('+role+') hash直插');
+  return {success:true, ymis: ymis};
+}
+function handleImportAll(body) {
+  // 同時接受 {bundle:{meta,data}} 或 {meta,data} 或 {data: [...] } 扁平
+  let bundle = body.bundle || null;
+  let meta = null; let data = null;
+  if (bundle && bundle.meta && bundle.data) { meta=bundle.meta; data=bundle.data; }
+  else if (body.meta && body.data) { meta=body.meta; data=body.data; }
+  else if (Array.isArray(body.data)) { meta=body.meta||{}; data=body.data; }
+  else if (Array.isArray(body.bundle)) { meta={}; data=body.bundle; }
+  else if (Array.isArray(body.users)) { meta=body.meta||{}; data=body.users; }
+  else return jsonResponse({success:false, error:'缺 bundle（{meta,data}）或 data 陣列'});
+  if (!Array.isArray(data)) return jsonResponse({success:false, error:'data 須為陣列'});
+  const transferId = String((meta && meta.transferId) || body.transferId || body.transfer_id || '');
+  if (!transferId) return jsonResponse({success:false, error:'缺 transferId（冪等要求）'});
+  // 驗證權限：需 apikey 或 sig 或領袖 token
+  const hasKey = !!(body.apikey && body.apikey===getApiKey());
+  const hasSig = isSigRequest(body);
+  let hasLeaderToken = false; let actor='import';
+  if (!hasKey && !hasSig) {
+    const ymis = body.token ? validateToken(body.token) : null;
+    if (ymis) { const u=getUser(ymis); if (u && getRoleLevel(u.role)>=40) { hasLeaderToken=true; actor=ymis; } }
+  } else if (hasSig) { actor = body.payload && body.payload.sub ? String(body.payload.sub) : 'sig'; }
+  else if (hasKey) { actor='apikey'; }
+  if (!hasKey && !hasSig && !hasLeaderToken) return jsonResponse({success:false, error:'需 apikey 或上游 sig 或領袖 token 才可匯入', code:'NEED_AUTH'});
+  // 冪等：同一 transferId 不可重複
+  try {
+    const props = PropertiesService.getScriptProperties();
+    const raw = props.getProperty('TRANSFER_IDS');
+    const ids = raw ? JSON.parse(raw) : [];
+    if (ids.indexOf(transferId) >= 0) return jsonResponse({success:false, error:'transferId 已處理（冪等）', code:'DUPLICATE_TRANSFER', transferId: transferId});
+  } catch(e) {}
+  // sha256 驗證（若 meta 有提供）
+  if (meta && meta.sha256) {
+    const dataStr = JSON.stringify(data);
+    const raw2 = Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, dataStr, Utilities.Charset.UTF_8);
+    const calc = raw2.map(function(b){ return ('0'+(b&0xFF).toString(16)).slice(-2); }).join('');
+    if (calc !== String(meta.sha256)) return jsonResponse({success:false, error:'sha256 校驗失敗', code:'BAD_SHA256', expected: String(meta.sha256), got: calc});
+  }
+  // 逐個直插
+  let ok=0; const failed=[];
+  const batchCap = 200;
+  if (data.length > batchCap) return jsonResponse({success:false, error:'一次最多 '+batchCap+' 筆，請分批匯入'});
+  for (let i=0;i<data.length;i++) {
+    const rec = data[i]||{};
+    // 撞號阻擋：已存在時直接記為失敗（人手處理），不覆蓋
+    if (rec.ymis && findUserRowByYmis(getUsersTable(), String(rec.ymis).trim())) {
+      failed.push({ymis:String(rec.ymis), error:'YMIS 已存在（撞號阻擋）'});
+      continue;
+    }
+    if (rec.email && String(rec.email).trim() && findUserRowByEmail(getUsersTable(), String(rec.email).trim())) {
+      failed.push({ymis:String(rec.ymis||''), error:'Email 已存在（撞號阻擋）'});
+      continue;
+    }
+    const r = upsertUserWithHash(rec);
+    if (r.success) ok++; else failed.push({ymis:String(rec.ymis||''), error:r.error});
+  }
+  // 記錄 transferId（只要有嘗試就記錄，避免重放；若全部失敗亦記錄防止重試轟炸——改為僅 ok>0 時記錄，失敗可重試不記）
+  if (ok > 0) {
+    try {
+      const props2 = PropertiesService.getScriptProperties();
+      const raw2 = props2.getProperty('TRANSFER_IDS');
+      const ids2 = raw2 ? JSON.parse(raw2) : [];
+      ids2.push(transferId);
+      if (ids2.length>200) ids2.splice(0, ids2.length-200);
+      props2.setProperty('TRANSFER_IDS', JSON.stringify(ids2));
+    } catch(e) {}
+    writeAudit(actor, 'import_all', transferId, 'ok='+ok+' failed='+failed.length+' via='+(hasSig?'sig':(hasKey?'apikey':'token')));
+    ecAccessLog(actor, '', hasSig?'sig':'apikey', 'IMPORT_ALL', 'transferId='+transferId+' ok='+ok);
+  }
+  return jsonResponse({success:true, ok: ok, failed: failed, transferId: transferId, meta: meta});
+}
+
+// ---------- 密碼同步：setPw / verifyPw（分開 leaf 時支部改密同步落進度）----------
+function handleSetPw(body) {
+  const ymis = String(body.ymis||body.target_ymis||'').trim();
+  const hash = String(body.password_hash||body.hash||body.passwordHash||'').trim();
+  if (!ymis) return jsonResponse({success:false, error:'缺 ymis'});
+  if (!hash) return jsonResponse({success:false, error:'缺 password_hash'});
+  const hasKey = !!(body.apikey && body.apikey===getApiKey());
+  const hasSig = isSigRequest(body);
+  if (!hasKey && !hasSig) return jsonResponse({success:false, error:'需 apikey 或上游 sig 才可 setPw', code:'NEED_AUTH'});
+  // hash 格式校驗：須為 64 hex（SHA256）或已含 hash
+  if (!/^[a-f0-9]{64}$/i.test(hash)) return jsonResponse({success:false, error:'password_hash 須為 64 位 hex（SHA256）'});
+  const t = getUsersTable();
+  if (!t) return jsonResponse({success:false, error:'找不到 Users 工作表'});
+  const row = findUserRowByYmis(t, ymis);
+  if (!row) return jsonResponse({success:false, error:'找不到用戶：'+ymis});
+  t.sheet.getRange(row.rowIndex, t.col.password_hash+1).setValue(hash);
+  // 同步後強制改密標記清除（因已同步為最新）
+  try{ t.sheet.getRange(row.rowIndex, t.col.force_change_password+1).setValue(false); }catch(e){}
+  const actor = hasSig ? (body.payload.sub||'sig') : 'apikey';
+  writeAudit(actor, 'set_pw', ymis, 'via='+(hasSig?'sig':'apikey'));
+  ecAccessLog(actor, '', hasSig?'sig':'apikey', 'SET_PW', ymis);
+  return jsonResponse({success:true, ymis: ymis});
+}
+function handleVerifyPw(body) {
+  const ymis = String(body.ymis||body.target_ymis||'').trim();
+  if (!ymis) return jsonResponse({success:false, error:'缺 ymis'});
+  const hasKey = !!(body.apikey && body.apikey===getApiKey());
+  const hasSig = isSigRequest(body);
+  if (!hasKey && !hasSig) return jsonResponse({success:false, error:'需 apikey 或上游 sig 才可 verifyPw', code:'NEED_AUTH'});
+  // 限流：每 ymis 每小時最多 5 次（BUILD.md §2）
+  try {
+    const nowSec = Math.floor(new Date().getTime()/1000);
+    const key = 'VERIFY_PW_'+ymis;
+    const props = PropertiesService.getScriptProperties();
+    const raw = props.getProperty(key);
+    let times = raw ? JSON.parse(raw) : [];
+    times = times.filter(function(ts){ return (nowSec - Number(ts)) < 3600; });
+    if (times.length >= 5) return jsonResponse({success:false, error:'verifyPw 限流：每小時最多 5 次', code:'RATE_LIMIT'});
+    times.push(nowSec);
+    props.setProperty(key, JSON.stringify(times));
+  } catch(e) {}
+  const t = getUsersTable();
+  if (!t) return jsonResponse({success:false, error:'找不到 Users 工作表'});
+  const row = findUserRowByYmis(t, ymis);
+  if (!row) return jsonResponse({success:false, error:'找不到用戶：'+ymis});
+  // 提供的 hash 可能是 plain 或 hash；若非 64 hex 則視為 plain 先 hash 再比
+  let provided = String(body.password_hash||body.hash||body.password||body.passwordHash||'').trim();
+  if (!provided) return jsonResponse({success:false, error:'缺 password_hash / password'});
+  if (!/^[a-f0-9]{64}$/i.test(provided)) provided = hashPassword(provided);
+  const match = ecSafeEqual(String(row.password_hash||''), provided);
+  return jsonResponse({success:true, ymis: ymis, match: match, via: hasSig?'sig':'apikey'});
 }

@@ -78,7 +78,7 @@ module.exports = async function handler(req, res) {
           normalizedPadded: normalizeToPadded4(troopId),
           normalizedStripped: normalizeStripped(troopId),
           availableTroops: available,
-          hint: '若你看到「找不到82的SHEET」，請確認 data/troops.json 或 Vercel 環境變數 TROOP_0082_BACKEND 已正確設定，並且 Apps Script 已執行 initializeSheets()'
+          hint: '若你看到「找不到82的SHEET」，請確認 Vercel 環境變數 TROOP_0082_BACKEND 已正確設定，並且 Apps Script 已執行 initializeSheets()'
         }
       });
     }

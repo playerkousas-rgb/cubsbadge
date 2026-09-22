@@ -1,13 +1,4 @@
 {
-  "troops": {
-    "0082": {
-      "name": "第 82 旅",
-      "backend": "https://script.google.com/macros/s/AKfycbw81wLR5NZtRk4m1ptSAoFBueoqwIZ5hcM_apHJa2xMmlVfUvZsS8R45nTIKTOIuBB2KQ/exec"
-    },
-    "82": {
-      "name": "第 82 旅",
-      "backend": "https://script.google.com/macros/s/AKfycbw81wLR5NZtRk4m1ptSAoFBueoqwIZ5hcM_apHJa2xMmlVfUvZsS8R45nTIKTOIuBB2KQ/exec",
-      "_aliasOf": "0082"
-    }
-  }
+  "_deprecated": "已棄用（v5.5 功能變數契約）：旅團設定改用 Vercel 環境變數 SUPER_KEY + TROOP_<id>_BACKEND / TROOP_<id>_APIKEY / TROOP_<id>_NAME（後端GS 對應）。程式已唔再讀取此檔。",
+  "troops": {}
 }

@@ -15,7 +15,7 @@
 ```
 
 - 前端只提交 `troopId` 識別碼
-- Proxy 從可信 Registry（`data/troops.json`, `troops.json`, `TROOP_*_BACKEND` 環境變數）查找 GAS URL
+- Proxy 從可信 Registry（Vercel 環境變數 `TROOP_*_BACKEND` / `_APIKEY` / `_NAME`；v8.0 起唔再讀 `troops.json`）查找 GAS URL
 - 不接受前端提交任意 `backendUrl`，防止 SSRF / Open Proxy
 - 僅允許 `https://script.google.com/macros/s/.../exec`，拒絕不存在旅團及不受信任 URL
 - `redirect: "follow"` 自動處理 GAS 重定向
@@ -26,7 +26,7 @@
 
 ### 新增
 - `api/_lib/registry.js` - 共用 Registry 載入與 URL 驗證
-  - 讀取 `data/troops.json` / `troops.json` / env var `TROOP_XXX_BACKEND` / `TROOP_XXX_APIKEY`
+  - 讀取 env var `TROOP_XXX_BACKEND` / `TROOP_XXX_APIKEY` / `TROOP_XXX_NAME`（+ 全 APP `SUPER_KEY`）；v8.0 起淨係讀功能變數，唔讀 JSON
   - 支援 `0082` / `82` / `82` 前導零互轉
   - `isValidGasUrl()` 驗證 HTTPS + `script.google.com` + `/macros/s/.../exec`
 
@@ -142,10 +142,11 @@
 
 ## Vercel 是否需要新增環境變數？
 
-- 不需要新增。沿用現有：
-  - `TROOP_0082_BACKEND`, `TROOP_0082_APIKEY` 等 (或 `TROOP_82_*` 去零變體)
+- 功能變數契約（4樣，全部必需）：
+  - `SUPER_KEY`（全 APP 一個）：超管 key（同後端 GS 超管 sheep 密碼對應）；`/api/register` 要帶 `x-super-key`
+  - 每旅團 3 個：`TROOP_XXXX_BACKEND` / `TROOP_XXXX_APIKEY` / `TROOP_XXXX_NAME`（或 `TROOP_82_*` 去零變體）
   - 可選 `SCOUT_ADMIN_API` 用於 `/api/register` 轉發目標，預設已 hardcode 為現有 admin GAS，無 env 時仍可用。
-- 若新增旅團，按原流程：管理員在 `data/troops.json` 增加條目 + Vercel 環境變數 `TROOP_XXXX_APIKEY` (可選) + redeploy。
+- 若新增旅團，按流程：旅團交 4 樣 → 管理員喺 Vercel 加 `TROOP_XXXX_BACKEND` / `_APIKEY` / `_NAME` 功能變數 + redeploy（唔使改任何 JSON；`troops.json` 已棄用）。詳見 `VERCEL_ENV_SETUP.md`。
 
 ## 部署及合併步驟
 

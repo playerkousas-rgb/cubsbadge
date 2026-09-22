@@ -14,7 +14,7 @@
 // ============================================================
 
 const { normId, strippedId, isValidUnitId } = require('./_lib/normid');
-const { getTroopConfig } = require('./_lib/registry');
+const { getTroopConfig, superKeyConfigured } = require('./_lib/registry');
 const eco = require('./_lib/ecosystem');
 const { verifySig } = require('./_lib/sig');
 
@@ -127,11 +127,20 @@ module.exports = async function handler(req, res) {
       system: 'cub-progress',
       platform: {
         registered: !!meta || !!cfg,
-        name: (meta && meta.name) || (cfg && cfg.name) || `第 ${strippedId(unit)} 旅`,
+        // v3.0：NAME 指向功能變數 TROOP_<id>_NAME（registry cfg 先行；units.json 只係後備）
+        name: (cfg && cfg.name) || (meta && meta.name) || `第 ${strippedId(unit)} 旅`,
         branch: (meta && meta.branch) || '幼童軍',
         sheet: (meta && meta.sheet) || '',
         backendConfigured: !!(cfg && cfg.backend),
         apikeyConfigured: !!(cfg && cfg.apikey),
+        superKeyConfigured: superKeyConfigured(),
+        // 後端GS 對應：Vercel 功能變數名（只有名，永無值）
+        envNames: {
+          superKey: (meta && meta._superKeyEnv) || 'SUPER_KEY',
+          backend: (meta && meta._backendEnv) || `TROOP_${unit}_BACKEND`,
+          apikey: (meta && meta._apikeyEnv) || `TROOP_${unit}_APIKEY`,
+          name: (meta && meta._nameEnv) || `TROOP_${unit}_NAME`
+        },
         registeredVia: (meta && meta.registered_via) || (cfg ? 'env' : null)
       },
       modules: enabled,
