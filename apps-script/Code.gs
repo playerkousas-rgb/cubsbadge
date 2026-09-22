@@ -646,6 +646,13 @@ function doGet(e){
     return jsonResponse({success:true, action: action, diagnose: diag, apiKeyConfigured: !!getApiKey(), timestamp: now()});
   }
   if(action==='getLoginMode') return jsonResponse({success:true,login_mode:'standalone'});
+  // EC：接入口唯讀查詢（ecStatus 公開診斷；ecGetModules 申報本 leaf 有咩模組）
+  if(action==='ecStatus' || action==='ecGetModules'){
+    var ecGetRes=ecRoute(action,{
+      unit:e.parameter.unit||e.parameter.troopId||e.parameter.u||''
+    },null,null);
+    if(ecGetRes) return ecGetRes;
+  }
   return jsonResponse({success:false,error:'Unknown action: ' + action});
 }
 function doPost(e){
@@ -656,6 +663,14 @@ function doPost(e){
     if(action==='logout'){ destroyToken(body.token); return jsonResponse({success:true}); }
     // v5.2.1：公開入口接受成員／領袖申請（角色在 handleApply 內嚴格驗證，只限 member / branch_leader）
     if(action==='apply') return handleApply(body.ymis,body.name,body.email,body.requested_role||'member',body.branch);
+
+    // EC：免 token 嘅接入口（BUILD.md §2 三點進入）
+    //   ecSigLogin  = 上層 sig 換本 leaf token（自己用 apikey 重算驗證）
+    //   ecStatus    = 公開診斷（唔含敏感資料）
+    if(action==='ecSigLogin' || action==='ecStatus' || action==='ecGetModules'){
+      var ecPre=ecRoute(action,body,null,null);
+      if(ecPre) return ecPre;
+    }
 
     // save & addMember 需要 apikey (v4 向下兼容：若無 apikey 但有有效 token 也允許)
     if(action==='save' || action==='addMember' || action==='addUser' || action==='bulkAddUsers' || action==='saveOtherBadge'){
@@ -757,6 +772,11 @@ function doPost(e){
       return handleReviewLogRequest(body.request_id, body.decision, body.review_note, user);
     }
     if(action==='cancelLogRequest') return handleCancelLogRequest(body.request_id, user);
+
+    // EC：需登入嘅生態圈 action（模組開關、旅層 registry 登記、ACCESS_LOG）
+    var ecRes=ecRoute(action,body,user,ymis);
+    if(ecRes) return ecRes;
+
     if(action==='healthCheck' || action==='diagnoseSheets'){
       // 需要 apikey 或 token
       const reqKey=body.apikey;
@@ -1614,4 +1634,203 @@ function handleCancelLogRequest(requestId, user){
     }
   }
   return jsonResponse({success:false,error:'找不到申報'});
+}
+
+// ============================================================
+// ===== EC_ECOSYSTEM — 本 leaf 嘅接入口 (BUILD.md v2026-09-22) =====
+//
+// 本系統 = 幼童軍進度追蹤,係生態圈最下游嘅 leaf:
+//   一張 SHEET + 一支 Apps Script /exec = 一個 leaf。
+//
+// 呢個區段淨係做「收上游接入」:
+//   - ecSigLogin  上游簽張飛落嚟,本 leaf 認得就俾入（BUILD.md §2 三點進入之一）
+//   - ecAccessLog 記低邊個經咩途徑入過嚟（BUILD.md §8）
+//   - ecStatus    俾人偵測本後端版本／能力
+//
+// 刻意唔做（唔關 leaf 事,唔好加返落嚟）:
+//   - 唔會做旅層 registry（EC_REGISTRY）—— 嗰個係旅系統嘅嘢;
+//   - 唔會做跨支部模組開關 —— 本 leaf 有咩功能自己話事;
+//   - 唔會主動打去上游攞嘢 —— 要接入係上游打落嚟。
+//
+// 本區段為「新增」性質:無改動既有 action。只覆蓋 Code.gs 並重新部署即可;
+// 若要記 ACCESS_LOG,執行一次 ecInitSheets() 補建。
+// ============================================================
+
+// ---------- EC_NORMID：normId 單一實現（與 api/_lib/normid.js 同一套規則）----------
+// 82 / 082 / 0082 / 00082 = 同一單位：trim → 大寫 → 數字補零至 4 位 + 字母尾
+function ecNormId(id){
+  if(id===undefined||id===null) return '';
+  var s=String(id).trim().toUpperCase();
+  if(!s) return '';
+  var m=s.match(/^0*(\d+)([A-Z]*)$/);
+  if(!m) return s;
+  var digits=m[1];
+  while(digits.length<4) digits='0'+digits;
+  return digits+(m[2]||'');
+}
+function ecSameUnit(a,b){ var na=ecNormId(a); return !!na && na===ecNormId(b); }
+
+// ---------- EC 工作表 ----------
+var EC_ACCESS_SHEET='EC_ACCESS_LOG';   // BUILD.md §8 ACCESS_LOG
+var EC_ACCESS_HEADERS=['ts','sub','role','via','event','detail'];
+
+// 本 leaf 承載嘅模組。旅系統模組（行事曆／物資／財務／通告）唔喺呢度。
+var EC_LOCAL_MODULES=['progress','overview','requests','logs','forms','help','info','users'];
+
+/** 補建 EC 工作表；重複執行安全（已存在就唔郁）。 */
+function ecInitSheets(){
+  var ss=getSheet();
+  var name=EC_ACCESS_SHEET, headers=EC_ACCESS_HEADERS;
+  var sh=ss.getSheetByName(name);
+  if(!sh){
+    sh=ss.insertSheet(name);
+    // 新表可能已帶表頭（視乎環境），只在真係空表時先寫，避免重複表頭
+    if(sh.getLastRow()<1 || !String(sh.getRange(1,1).getValue()||'').trim()){
+      sh.appendRow(headers);
+      sh.getRange(1,1,1,headers.length).setFontWeight('bold').setBackground('#6C757D').setFontColor('#FFFFFF');
+      sh.setFrozenRows(1);
+    }
+  }
+  return [name];
+}
+
+/** ACCESS_LOG：記低邊個、咩角色、經咩途徑、做過咩（append-only）。 */
+function ecAccessLog(sub,role,via,event,detail){
+  try{
+    var ss=getSheet();
+    var sh=ss.getSheetByName(EC_ACCESS_SHEET);
+    if(!sh) return false;   // 未 initSheets 就靜靜唔記錄，唔好因為審計失敗而阻塞登入
+    sh.appendRow([now(),String(sub||''),String(role||''),String(via||''),String(event||''),String(detail||'')]);
+    return true;
+  }catch(e){ return false; }
+}
+
+/** 本 leaf 有咩模組。唔接受外部覆蓋 —— 自己有咩功能自己最清楚。 */
+function ecGetModules(unitId){
+  return EC_LOCAL_MODULES.slice();
+}
+function ecModuleEnabled(moduleId,unitId){
+  if(!moduleId) return true;
+  return EC_LOCAL_MODULES.indexOf(String(moduleId))>=0;
+}
+
+// ---------- 上層 sig 登入（BUILD.md §2 三點進入之一）----------
+// 上游（旅系統／地域）用本單位 apikey 簽一張短效飛,本 leaf 驗簽就放行。
+// 上游因此毋須知道 leaf 嘅任何密碼,leaf 亦毋須信任上游嘅網絡位置。
+function ecCanonical(p){
+  var kids=[];
+  if(p && Object.prototype.toString.call(p.children)==='[object Array]'){
+    kids=p.children.map(function(c){return String(c).trim();}).filter(String).sort();
+  }
+  return [
+    ecNormId(p.childId),
+    String(p.sub||'').trim().toLowerCase(),
+    String(p.role||'').trim(),
+    kids.join(','),
+    String(p.target||'').trim(),
+    String(p.exp),
+    String(p.jti||'')
+  ].join('|');
+}
+function ecBase64Url(bytes){
+  var b64=Utilities.base64Encode(bytes);
+  return b64.replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+}
+function ecHmac(key,msg){
+  var raw=Utilities.computeHmacSha256Signature(msg,String(key),Utilities.Charset.UTF_8);
+  return ecBase64Url(raw);
+}
+/** timing-safe 比較（避免逐字元早退洩露資訊）。 */
+function ecSafeEqual(a,b){
+  a=String(a||''); b=String(b||'');
+  if(a.length!==b.length) return false;
+  var diff=0;
+  for(var i=0;i<a.length;i++) diff|=(a.charCodeAt(i)^b.charCodeAt(i));
+  return diff===0;
+}
+var EC_SIG_MAX_TTL=30*60;   // BUILD.md §2：exp 15-30 分鐘
+var EC_SIG_SKEW=60;
+
+/**
+ * 驗 sig 並換本 leaf 嘅 token。
+ * 唔傳密碼、唔傳 apikey 落嚟；scope 簽死喺 sig 內，唔可以事後加料。
+ */
+function ecSigLogin(payload,sig){
+  payload=payload||{};
+  var key=getApiKey();
+  if(!key) return jsonResponse({success:false,error:'SIG 未啟用：此單位未設定 API Key'});
+  var exp=Number(payload.exp);
+  if(!exp) return jsonResponse({success:false,error:'SIG 缺少 exp'});
+  var nowSec=Math.floor(new Date().getTime()/1000);
+  if(exp < nowSec-EC_SIG_SKEW){ ecAccessLog(payload.sub,payload.role,'sig','FAIL','sig_expired'); return jsonResponse({success:false,error:'SIG 已過期'}); }
+  if(exp > nowSec+EC_SIG_MAX_TTL+EC_SIG_SKEW) return jsonResponse({success:false,error:'SIG exp 超出容許範圍（最多 30 分鐘）'});
+  var expected=ecHmac(key,ecCanonical(payload));
+  if(!ecSafeEqual(expected,sig)){ ecAccessLog(payload.sub,payload.role,'sig','FAIL','bad_sig'); return jsonResponse({success:false,error:'SIG 驗證失敗'}); }
+
+  // scope 內 target 要係本 leaf 真係有嘅模組先放行
+  var target=String(payload.target||'progress');
+  if(!ecModuleEnabled(target,payload.childId)){
+    return jsonResponse({success:false,error:'本系統冇此模組：'+target});
+  }
+
+  // sub = EMAIL / YMIS → 對返本 leaf 嘅帳號
+  var sub=String(payload.sub||'').trim();
+  var user=(/^\d{10}$/.test(sub)||/^L\d+/i.test(sub))? getUser(sub) : getUserByEmail(sub);
+  if(!user) user=getUser(sub)||getUserByEmail(sub);
+  if(!user){ ecAccessLog(sub,payload.role,'sig','FAIL','no_such_account'); return jsonResponse({success:false,error:'本單位找不到此帳號（sub='+sub+'）'}); }
+
+  var token=createToken(user.ymis);
+  ecAccessLog(sub,user.role,'sig','LOGIN_OK','jti='+String(payload.jti||''));
+  writeAudit('SIG:'+sub,'ec_sig_login',user.ymis,'target='+target);
+  return jsonResponse({success:true,token:token,user:user,via:'sig',scope:{target:target,exp:exp}});
+}
+
+// ---------- EC 狀態（俾上游／前端偵測本後端能力）----------
+var EC_BACKEND_VERSION='cub-5.4.0-leaf';
+function ecStatus(unitId){
+  var ss=getSheet();
+  return jsonResponse({
+    success:true,
+    backendVersion:EC_BACKEND_VERSION,
+    role:'leaf',
+    system:'cub-progress',
+    unit:ecNormId(unitId),
+    ecSheets:{ accessLog:!!ss.getSheetByName(EC_ACCESS_SHEET) },
+    modules:ecGetModules(unitId),
+    sigSupported:true,
+    apiKeyConfigured:!!getApiKey(),
+    timestamp:now()
+  });
+}
+
+/**
+ * ecRoute — 由 doPost／doGet 轉入的接入 action 分派。
+ * 回傳 null 表示「唔關我事」，交返原本流程處理（完全向下兼容）。
+ */
+function ecRoute(action,body,user,ymis){
+  body=body||{};
+  var unit=body.unit||body.troopId||body.unit_id||'';
+
+  if(action==='ecStatus') return ecStatus(unit);
+
+  if(action==='ecSigLogin') return ecSigLogin(body.payload||{}, body.sig||'');
+
+  if(action==='ecGetModules') return jsonResponse({success:true,unit:ecNormId(unit),modules:ecGetModules(unit)});
+
+  if(action==='ecInitSheets'){
+    if(!user || getRoleLevel(user.role)<80) return jsonResponse({success:false,error:'需管理員權限'});
+    var r=ecInitSheets();
+    writeAudit(ymis,'ec_init_sheets','','補建 EC 工作表');
+    return jsonResponse({success:true,sheets:r});
+  }
+
+  if(action==='ecAccessLog'){
+    if(!user || getRoleLevel(user.role)<60) return jsonResponse({success:false,error:'需團長以上權限查看'});
+    var sh=getSheet().getSheetByName(EC_ACCESS_SHEET);
+    var out=[];
+    if(sh){ var d=sh.getDataRange().getValues(); for(var i=Math.max(1,d.length-200);i<d.length;i++) out.push(d[i]); }
+    return jsonResponse({success:true,headers:EC_ACCESS_HEADERS,rows:out});
+  }
+
+  return null;
 }

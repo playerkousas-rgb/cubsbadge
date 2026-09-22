@@ -1,0 +1,15 @@
+# 體積治理 (BUILD.md)：唔關 runtime 事嘅嘢一律唔上傳，dist 保持 <5MB。
+.git
+test/
+docs/
+apps-script/
+assets/batch-onboard/
+*.patch
+*.tar.gz
+BUILD.md
+EXTERNAL.md
+APP_ADMIN_WORKFLOW.md
+VERCEL_ENV_SETUP.md
+data/members_template.xlsx
+data/members_template.csv
+data/mock_import.csv

@@ -42,6 +42,10 @@ function makeCellRange(sheet, r, c, nr, nc) {
       }
       return out;
     },
+    // 格式化 API 在 mock 中為可鏈結的 no-op（Code.gs 建表時會呼叫）
+    setFontWeight() { return this; },
+    setBackground() { return this; },
+    setFontColor() { return this; },
     setValues(vals) {
       vals.forEach((line, i) => {
         line.forEach((v, j) => {
@@ -70,6 +74,7 @@ function makeSheet(name, header) {
       return sheet;
     },
     deleteRow(index) { rows.splice(index - 1, 1); return sheet; },
+    setFrozenRows() { return sheet; },
     getLastRow() { return rows.length; },
     getLastColumn() {
       let m = 0;
@@ -118,6 +123,7 @@ function newSpreadsheet() {
     getSheets() { return Object.values(sheets); },
     insertSheet(n) {
       const h = {
+        'EC_ACCESS_LOG': ['ts','sub','role','via','event','detail'],
         'Users': USERS_HEADER,
         'Applications': ['app_id','ymis','name','email','role','branch','status','applied_at','reviewed_by','reviewed_at','note'],
         '成員名單': ['YMIS','姓名','加入日期','支部','聯絡','小隊'],
@@ -157,21 +163,33 @@ function buildBackend() {
       Charset: { UTF_8: 'UTF_8' },
       getUuid: () => crypto.randomUUID().replace(/-/g, ''),
       formatDate(d, tz, fmt) { return String(fmt || ''); },
+      // EC_SIG：HMAC-SHA256 + base64（回傳 signed byte array，同 Apps Script 一致）
+      computeHmacSha256Signature(msg, key) {
+        return [...crypto.createHmac('sha256', String(key)).update(String(msg), 'utf8').digest()]
+          .map(b => (b > 127 ? b - 256 : b));
+      },
+      base64Encode(bytes) {
+        const buf = Buffer.from((bytes || []).map(b => (b < 0 ? b + 256 : b)));
+        return buf.toString('base64');
+      },
     },
     Logger: { log: () => {}, },
     SpreadsheetApp: {
       getActiveSpreadsheet: () => ss,
       getUi: () => null,
     },
-    PropertiesService: {
-      getScriptProperties: () => {
-        const store = {};
-        return {
-          getProperty: k => store[k] ?? null,
-          setProperty: (k, v) => { store[k] = String(v); },
-        };
-      },
-    },
+    PropertiesService: (() => {
+      // 同一個 backend 實例內必須持久：舊版每次 getScriptProperties() 都新建
+      // 一個 store，令 API_KEY / 超管密碼雜湊寫完即失，EC_SIG 驗簽永遠失敗。
+      const store = {};
+      const props = {
+        getProperty: k => (k in store ? store[k] : null),
+        setProperty: (k, v) => { store[k] = String(v); return props; },
+        deleteProperty: k => { delete store[k]; return props; },
+        getProperties: () => ({ ...store }),
+      };
+      return { getScriptProperties: () => props, getUserProperties: () => props, __store: store };
+    })(),
     ContentService: service,
     ScriptApp: { getService: () => ({ getUrl: () => 'https://mock.example/exec' }) },
     // 讓 doPost/handleLogin 等用到時不致中斷

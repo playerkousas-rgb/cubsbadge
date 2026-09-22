@@ -3,6 +3,8 @@
 
 const fs = require('fs');
 const path = require('path');
+// BUILD.md §1：normId 單一實現。registry 唔可以另外寫一套正規化。
+const { normId, strippedId } = require('./normid');
 
 const DEFAULT_TROOPS = {
   "0082": {
@@ -11,22 +13,15 @@ const DEFAULT_TROOPS = {
   }
 };
 
+// 以下兩個只係 normId 的別名，保留舊名以免散落各處的呼叫點要一次過改。
 function normalizeToPadded4(id) {
   if (!id) return id;
-  const s = String(id).trim().toUpperCase();
-  if (/^\d+$/.test(s)) return s.padStart(4, '0');
-  const m = s.match(/^(\d+)([A-Z]*)$/);
-  if (m) return m[1].padStart(4, '0') + m[2];
-  return s;
+  return normId(id);
 }
 
 function normalizeStripped(id) {
   if (!id) return id;
-  const s = String(id).trim().toUpperCase();
-  const m = s.match(/^(0+)(\d+)([A-Z]*)$/);
-  if (m) return m[2] + (m[3] || '');
-  const stripped = s.replace(/^0+/, '');
-  return stripped || s;
+  return strippedId(id);
 }
 
 function loadFileTroops() {

@@ -1,0 +1,34 @@
+{
+  "_doc": "本 leaf 嘅平台 registry — 公開 metadata only。apikey 只存 Vercel env TROOP_<id>_APIKEY，永不寫入此檔。",
+  "version": "1.0.0",
+  "updated_at": "2026-09-22",
+  "platform": {
+    "id": "cubbadge",
+    "name": "幼童軍進度追蹤系統",
+    "branch": "幼童軍",
+    "role": "leaf-frontend",
+    "note": "本系統 = 幼童軍進度追蹤,生態圈最下游 leaf。保留自己嗰套 UI（BUILD.md §4 豁免條款）,只向上游開接入口。"
+  },
+  "units": {
+    "0082": {
+      "name": "第 82 旅",
+      "branch": "幼童軍",
+      "troop": "0082",
+      "sheet": "cub-progress",
+      "backend_env": "TROOP_0082_BACKEND",
+      "apikey_env": "TROOP_0082_APIKEY",
+      "modules": [
+        "progress",
+        "overview",
+        "requests",
+        "logs",
+        "forms",
+        "help",
+        "info",
+        "users"
+      ],
+      "registered_via": "admin",
+      "registered_at": "2026-09-12"
+    }
+  }
+}

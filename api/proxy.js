@@ -1,6 +1,20 @@
 // Vercel Serverless Function - Same-origin Proxy for Google Apps Script v2.1 (CubBadge aligned with ScoutBadge v5.2)
 const { getTroopConfig, getRegistry, normalizeToPadded4, normalizeStripped } = require('./_lib/registry');
 
+/**
+ * 敏感 action：一定要有 server 端 apikey 先可以轉發（BUILD.md §10 施工次序 1）。
+ * 匿名可寫面（§3 白名單）唔喺呢度，佢哋本身就設計成無 key 都可以寫入待批表。
+ */
+const SENSITIVE_ACTIONS = new Set([
+  'save', 'saveDbPart', 'saveDbCommit', 'loadDbPart',
+  'addUser', 'addMember', 'updateUser', 'deleteUser', 'resetPassword',
+  'saveOtherBadge', 'approveRequest', 'rejectRequest',
+  'setConfig', 'saveConfig', 'initializeSheets',
+  'exportAll', 'importAll', 'transferOut', 'transferIn',
+  'ecSetModule', 'ecRegisterBranch', 'ecUnregisterBranch', 'ecInitSheets', 'ecAccessLog',
+  'opsRegistry'
+]);
+
 module.exports = async function handler(req, res) {
   if (!res.status) {
     res.status = function(code) { res.statusCode = code; return res; };
@@ -71,9 +85,35 @@ module.exports = async function handler(req, res) {
 
     const gasUrl = troopConfig.backend;
 
-    if (troopConfig.apikey && !payload.apikey) {
-      payload.apikey = troopConfig.apikey;
+    // ── BUILD.md §1 + §10 施工次序 1：apikey 只存 server ──────────────────
+    // 前端送乜 apikey 都一律丟棄，再由 registry 注入。咁樣就算 index.html
+    // 舊 code 仲喺度帶 apikey，或者有人手砌 request，都改變唔到用邊條 key。
+    delete payload.apikey;
+    delete payload.apiKey;
+    delete payload.api_key;
+    delete payload.backend;   // 前端永遠唔可以自帶 backend URL（SSRF 防線）
+    delete payload.scriptUrl;
+
+    // key 未設定 + 連 token 都冇 = 真係零認證，擺明唔做好過無聲無息行落去。
+    //
+    // 注意：唔可以淨係見到「冇 apikey」就攔。GAS 本身有向下兼容設計
+    // （Code.gs：「若無 apikey 但有有效 token 也允許」），好多旅團部署咗
+    // 但未喺 Vercel 設 TROOP_<id>_APIKEY，佢哋一直靠 session token 正常運作。
+    // 喺呢度一刀切攔截，會即刻整死勾進度／開戶／批量加人。
+    // 認證與否最終由 GAS 判斷，proxy 只負責擋「乜都冇」嗰種。
+    if (!troopConfig.apikey && !payload.token && SENSITIVE_ACTIONS.has(action)) {
+      console.error(`[PROXY] refuse action=${action} troop=${troopId}: no apikey and no token`);
+      return res.status(401).json({
+        success: false,
+        code: 'no_credentials',
+        error: `敏感操作 (${action}) 需要登入。請重新登入後再試。`,
+        troubleshooting: {
+          hint: `若此單位長期靠 API Key 運作，請喺 Vercel 設定環境變數 TROOP_${normalizeToPadded4(troopId)}_APIKEY。`,
+          action
+        }
+      });
     }
+    if (troopConfig.apikey) payload.apikey = troopConfig.apikey;
 
     const controller = new AbortController();
     const timeoutMs = 25000;
