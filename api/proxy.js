@@ -1,6 +1,20 @@
 // Vercel Serverless Function - Same-origin Proxy for Google Apps Script v2.1 (CubBadge aligned with ScoutBadge v5.2)
 const { getTroopConfig, getRegistry, normalizeToPadded4, normalizeStripped } = require('./_lib/registry');
 
+/**
+ * 敏感 action：一定要有 server 端 apikey 先可以轉發（BUILD.md §10 施工次序 1）。
+ * 匿名可寫面（§3 白名單）唔喺呢度，佢哋本身就設計成無 key 都可以寫入待批表。
+ */
+const SENSITIVE_ACTIONS = new Set([
+  'save', 'saveDbPart', 'saveDbCommit', 'loadDbPart',
+  'addUser', 'addMember', 'updateUser', 'deleteUser', 'resetPassword',
+  'saveOtherBadge', 'approveRequest', 'rejectRequest',
+  'setConfig', 'saveConfig', 'initializeSheets',
+  'exportAll', 'importAll', 'transferOut', 'transferIn',
+  'ecSetModule', 'ecRegisterBranch', 'ecUnregisterBranch', 'ecInitSheets', 'ecAccessLog',
+  'opsRegistry'
+]);
+
 module.exports = async function handler(req, res) {
   if (!res.status) {
     res.status = function(code) { res.statusCode = code; return res; };
@@ -71,9 +85,29 @@ module.exports = async function handler(req, res) {
 
     const gasUrl = troopConfig.backend;
 
-    if (troopConfig.apikey && !payload.apikey) {
-      payload.apikey = troopConfig.apikey;
+    // ── BUILD.md §1 + §10 施工次序 1：apikey 只存 server ──────────────────
+    // 前端送乜 apikey 都一律丟棄，再由 registry 注入。咁樣就算 index.html
+    // 舊 code 仲喺度帶 apikey，或者有人手砌 request，都改變唔到用邊條 key。
+    delete payload.apikey;
+    delete payload.apiKey;
+    delete payload.api_key;
+    delete payload.backend;   // 前端永遠唔可以自帶 backend URL（SSRF 防線）
+    delete payload.scriptUrl;
+
+    if (!troopConfig.apikey && SENSITIVE_ACTIONS.has(action)) {
+      // key 未設定即拒絕敏感 action：寧可擺明唔做，都好過無聲無息行一個冇認證嘅上游。
+      console.error(`[PROXY] refuse action=${action} troop=${troopId}: apikey not configured`);
+      return res.status(503).json({
+        success: false,
+        code: 'apikey_not_configured',
+        error: `單位 ${troopId} 未設定 API Key，敏感操作 (${action}) 已被拒絕。`,
+        troubleshooting: {
+          hint: `請喺 Vercel 設定環境變數 TROOP_${normalizeToPadded4(troopId)}_APIKEY，或喺 data/troops.json 補上 apikey。`,
+          action
+        }
+      });
     }
+    if (troopConfig.apikey) payload.apikey = troopConfig.apikey;
 
     const controller = new AbortController();
     const timeoutMs = 25000;
