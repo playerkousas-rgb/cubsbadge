@@ -57,6 +57,16 @@
 重點測試：超管密碼錯 → 唔會打 leaf；正確 → 前端只送 `action=superLogin`（冇密碼、冇帳號）；
 普通帳號登入完全唔變；leaf 冇 apikey 唔會發超管 token。
 
+## 5b. 上游一時嘅 HTML（登入忽然「後端服務響應異常」）
+
+Google 偶爾會回一頁 HTML 錯誤頁（唔係本系統 script 出嘅 JSON），登入就會無啦啦失敗。
+`api/proxy.js` 而家遇到呢種 HTML 會**自動重試一次**，成功就當無事；真係壞先回 502。
+另外兩個安全修正：
+
+- **前端唔可以直接叫 `action=superLogin`**：舊 proxy 會幫任何請求注入 apikey，
+  leaf 見 apikey 啱就派超管 token。而家 proxy 只准「驗過 SUPER_KEY 嘅超管登入流程」觸發呢個 action，其他一律 403。
+- **錯誤訊息唔再漏部署 URL**：502 嘅 `troubleshooting.gasUrl` 已改成 `backendHost`（只講 host）。
+
 ## 6. 已知取捨（老實講，唔繞圈）
 
 leaf 分唔清「APP 打嚟」定「旅團自己打嚟」—— 但如果加簽名／白名單去分，就要旅團多跑步驟、多設功能變數，

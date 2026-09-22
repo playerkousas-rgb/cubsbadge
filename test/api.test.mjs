@@ -502,6 +502,62 @@ await check('proxy：超管登入 → Vercel 比對 SUPER_KEY，之後只送 act
   } finally { restoreFetch(); }
 });
 
+await check('proxy：前端自己叫 action=superLogin → 403（唔會派超管 token 出去）', async () => {
+  clearEnv();
+  process.env.TROOP_0082_BACKEND = 'https://script.google.com/macros/s/AKfycbTESTKEYXXXXXXXX/exec';
+  process.env.TROOP_0082_APIKEY = 'sc_key_82_secret';
+  process.env.SUPER_KEY = 'sk_admin_only_value';
+  let forwarded = null;
+  stubFetch([['script.google.com', async (u, o) => { forwarded = JSON.parse(o.body); return { body: { success: true, token: 'tok_super', user: { role: 'super_admin' } } }; }]]);
+  try {
+    const handler = freshModule('../api/proxy.js');
+    const res = mockRes();
+    await handler(mockReq({ method: 'POST', body: { troopId: '0082', action: 'superLogin' } }), res);
+    assert.equal(res.statusCode, 403, JSON.stringify(res.body));
+    assert.equal(res.body.code, 'SUPER_LOGIN_INTERNAL');
+    assert.equal(forwarded, null, '唔應該轉發去 leaf（唔係經超管登入流程）');
+  } finally { restoreFetch(); clearEnv(); }
+});
+
+await check('proxy：上游偶發 HTML 錯誤頁 → 自動重試一次（第二次成功就當無事）', async () => {
+  clearEnv();
+  process.env.TROOP_0082_BACKEND = 'https://script.google.com/macros/s/AKfycbTESTKEYXXXXXXXX/exec';
+  process.env.TROOP_0082_APIKEY = 'sc_key_82_secret';
+  let calls = 0;
+  stubFetch([['script.google.com', async () => {
+    calls++;
+    if (calls === 1) return { body: '<!DOCTYPE html><html><head><script>window["ppConfig"]={};</script></head><body>Sorry</body></html>' };
+    return { body: { success: true, token: 'tok_after_retry', user: { ymis: '1111111111', role: 'admin' } } };
+  }]]);
+  try {
+    const handler = freshModule('../api/proxy.js');
+    const res = mockRes();
+    await handler(mockReq({ method: 'POST', body: { troopId: '0082', action: 'login', login_id: '1111111111', password: '1234' } }), res);
+    assert.equal(res.statusCode, 200, JSON.stringify(res.body));
+    assert.equal(res.body.success, true, '重試後應該成功');
+    assert.equal(res.body.token, 'tok_after_retry');
+    assert.equal(calls, 2, '應該試兩次（一次重試）');
+  } finally { restoreFetch(); clearEnv(); }
+});
+
+await check('proxy：上游一路回 HTML（真係壞）→ 照樣 502，唔會無限重試', async () => {
+  clearEnv();
+  process.env.TROOP_0082_BACKEND = 'https://script.google.com/macros/s/AKfycbTESTKEYXXXXXXXX/exec';
+  process.env.TROOP_0082_APIKEY = 'sc_key_82_secret';
+  let calls = 0;
+  stubFetch([['script.google.com', async () => { calls++; return { body: '<html><body>Sorry, unable to open the file at this time.</body></html>' }; }]]);
+  try {
+    const handler = freshModule('../api/proxy.js');
+    const res = mockRes();
+    await handler(mockReq({ method: 'POST', body: { troopId: '0082', action: 'login', login_id: '1111111111', password: '1234' } }), res);
+    assert.equal(res.statusCode, 502);
+    assert.equal(res.body.success, false);
+    assert.ok(String(res.body.error).includes('GAS Upstream Error'));
+    assert.equal(calls, 2, '只會試兩次');
+    assert.ok(!JSON.stringify(res.body).includes('AKfycbTESTKEY'), '錯誤訊息唔可以漏部署 URL／ID');
+  } finally { restoreFetch(); clearEnv(); }
+});
+
 await check('proxy：下游入口關閉（DOWNSTREAM_CLOSED）→ 回 HTTP 403，訊息照樣帶到前端', async () => {
   clearEnv();
   process.env.TROOP_0082_BACKEND = 'https://script.google.com/macros/s/AKfycbTESTKEYXXXXXXXX/exec';
