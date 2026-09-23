@@ -125,12 +125,9 @@ function getTroopConfig(troopId) {
     const entry = reg[cand];
     if (entry) {
       if (!entry.backend || typeof entry.backend !== 'string') continue;
-      try {
-        const url = new URL(entry.backend);
-        if (url.protocol !== 'https:') continue;
-        if (url.hostname !== 'script.google.com') continue;
-        if (!url.pathname.endsWith('/exec')) continue;
-      } catch (e) { continue; }
+      // 同一條 URL 規則（isValidGasUrl）：生產只認 GAS /exec；
+      // 非生產環境（本機／沙盒預覽）容許 localhost mock 後端，方便 devserver 預覽。
+      if (!isValidGasUrl(entry.backend)) continue;
       return entry;
     }
   }
