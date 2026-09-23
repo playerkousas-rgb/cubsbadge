@@ -16,6 +16,8 @@ const ADMIN_YMIS = '1111111111';
 const SUPER_ADMIN_LOGIN = 'sheep';
 // 內部電郵由帳號名衍生（唯一用途：保留帳號檢查／電郵登入兼容），唔涉及任何憑證
 const SUPER_ADMIN_EMAIL = SUPER_ADMIN_LOGIN + '@cubbadge.local';
+// 中央登入票據只向本應用程式的固定受信端點驗證；不接受請求自帶 URL。
+const SUPER_VERIFY_URL = 'https://cubsbadge.vercel.app/api/super';
 // 表內儲存用嘅中性代號：Sheet 儲存格永遠唔會寫 'sheep'（驗收：SHEET 搜 "sheep" 零儲存格命中）
 const SUPER_STORAGE_ID = 'APP_ADMIN';
 // 保留帳號檢查：任何申請／開戶／改角色都不可佔用 sheep 或佢嘅內部電郵
@@ -196,20 +198,18 @@ function showVercelEnv() {
 }
 // ===== 下游入口開關（上游控、下游寫；BUILD.md §1 入口開關）=====
 const ALLOW_LOCAL_LOGIN_PROP = 'ALLOW_LOCAL_LOGIN';
-function getAllowLocalLogin() {
-  try {
-    const v = PropertiesService.getScriptProperties().getProperty(ALLOW_LOCAL_LOGIN_PROP);
-    if (v === null || v === '' || v === undefined) return true;
-    return String(v).toLowerCase() === 'true';
-  } catch(e) { return true; }
+function localLoginFlagValue(){
+  try { return String(PropertiesService.getScriptProperties().getProperty(ALLOW_LOCAL_LOGIN_PROP)||'').trim().toLowerCase(); }
+  catch(e) { return ''; }
 }
-function setAllowLocalLogin(allow) {
-  PropertiesService.getScriptProperties().setProperty(ALLOW_LOCAL_LOGIN_PROP, allow ? 'true' : 'false');
+function getAllowLocalLogin(){ return localLoginAllowed(); }
+function setAllowLocalLogin(allow){
+  PropertiesService.getScriptProperties().setProperty(ALLOW_LOCAL_LOGIN_PROP,allow?'true':'false');
   return !!allow;
 }
 function showDownstreamAccess() {
   const v = getAllowLocalLogin();
-  const msg = '下游本地入口（ALLOW_LOCAL_LOGIN）：\\n\\n' + (v ? '✅ 開啟（允許本地登入/開戶）' : '⛔ 已關閉（只接受 sig / server-to-server）') + '\\n\\n上游控、下游寫：此旗只可由上游前端經 sig 調用 setDownstreamAccess 修改。\\n單用時保持開啟，唔會誤閂。';
+  const msg = '下游本地入口（ALLOW_LOCAL_LOGIN）：\\n\\n' + (v ? '✅ 開啟（允許本地登入/開戶）' : '⛔ 已關閉（只接受 sig / server-to-server）') + '\\n\\n上游控、下游寫：此旗只可由上游經 sig 調用 setLocalLogin 修改。\\n單用時保持開啟，唔會誤閂。';
   const ui = SpreadsheetApp.getUi();
   if (ui) ui.alert('下游入口狀態', msg, ui.ButtonSet.OK);
   Logger.log(msg);
@@ -470,10 +470,7 @@ function initializeSheets() {
   const superLabelRowsFixed = purgeSuperAdminLabels();   // 舊部署寫過 'sheep' 就改成中性代號
   if (superLabelRowsFixed) removeSuperAdminRows();       // 順手再確保 Users／成員名單冇超管列
   setConfigDefaults(cfgSheet);                  // allow_member_requests／view_others／progress_scope 等預設值
-  try {
-    const _propsDown = PropertiesService.getScriptProperties();
-    if (_propsDown.getProperty(ALLOW_LOCAL_LOGIN_PROP) === null) _propsDown.setProperty(ALLOW_LOCAL_LOGIN_PROP, 'true');
-  } catch(e) {}
+  // ALLOW_LOCAL_LOGIN 故意不在初始化時寫入；未設定本身就代表開啟。
   let scriptUrl=''; try{ scriptUrl=ScriptApp.getService().getUrl(); }catch(e){ scriptUrl='請部署為網頁應用程式後查看'; }
   try{
     const ui=SpreadsheetApp.getUi();
@@ -684,10 +681,17 @@ function destroyToken(token){
 
 // ===== API =====
 function doGet(e){
-  const action=e.parameter.action;
+  e=e||{};
+  const params=e.parameter||{};
+  const action=String(params.action||'');
+  // 旅系統所有簽名請求一律 POST；GET 帶 sig 不可繞過此規則。
+  if(params.sig||params.sts||params.snonce){
+    return jsonResponse({success:false,error:'簽名請求必須使用 POST',code:'SIG_POST_ONLY'});
+  }
+  if(!localLoginAllowed()) return jsonResponse(linkClosedResponse(action));
   if(action==='load'){
-    const reqKey=e.parameter.apikey;
-    const reqToken=e.parameter.token;
+    const reqKey=params.apikey;
+    const reqToken=params.token;
     if(reqKey && reqKey!==getApiKey()) return jsonResponse({success:false,error:'Invalid API Key'});
     if(reqToken && !validateToken(reqToken)) return jsonResponse({success:false,error:'Token 無效或過期'});
     // 有 token 時，待批履歷只回傳該登入者可見範圍（領袖全部；團員只見自己的申報）
@@ -696,63 +700,36 @@ function doGet(e){
     return handleLoad(loadUser);
   }
   if(action==='health' || action==='diagnose' || action==='checkSheets'){
-    const diag = diagnoseSheets();
-    // leaf 永不持有 SUPER_KEY —— superKeyConfigured 永遠 false；真正嘅開關喺 Vercel（/api/health envContract）。
-    return jsonResponse({success:true, action: action, diagnose: diag, apiKeyConfigured: !!getApiKey(), superKeyConfigured: superKeyConfigured(), superKeyHeldBy: 'vercel-env', superAdminLoginVia: 'app', allowLocalLogin: getAllowLocalLogin(), downstreamAccess: getAllowLocalLogin(), timestamp: now()});
+    const diag=diagnoseSheets();
+    return jsonResponse({success:true,action:action,diagnose:diag,apiKeyConfigured:!!getApiKey(),superKeyConfigured:superKeyConfigured(),superKeyHeldBy:'vercel-env',superAdminLoginVia:'app',allowLocalLogin:localLoginAllowed(),downstreamAccess:localLoginAllowed(),timestamp:now()});
   }
-  if(action==='getLoginMode') return jsonResponse({success:true,login_mode:'standalone', allowLocalLogin: getAllowLocalLogin()});
-  // EC：接入口唯讀查詢（ecStatus 公開診斷；ecGetModules 申報本 leaf 有咩模組）
+  if(action==='getLoginMode') return jsonResponse({success:true,login_mode:'standalone',allowLocalLogin:localLoginAllowed(),local_login:localLoginAllowed(),upstream_only:!localLoginAllowed()});
   if(action==='ecStatus' || action==='ecGetModules'){
-    var ecGetRes=ecRoute(action,{
-      unit:e.parameter.unit||e.parameter.troopId||e.parameter.u||''
-    },null,null);
-    if(ecGetRes) return ecGetRes;
+    const r=ecRoute(action,{unit:params.unit||params.troopId||params.u||''},null,null);
+    if(r) return r;
   }
-  return jsonResponse({success:false,error:'Unknown action: ' + action});
+  return jsonResponse({success:false,error:'Unknown action: '+action});
 }
 function doPost(e){
   try{
-    const body=JSON.parse(e.postData.contents);
-    const action=body.action;
-    // ===== 下游入口開關（上游控、下游寫；單用時保持開啟）=====
-    // 未掛接前 ALLOW_LOCAL_LOGIN 預設 true；下游前端無此掣故唔會誤觸
-    if (!getAllowLocalLogin()) {
-      // 本地入口（登入/開戶）閂咗時只接受：上游 sig、或 server-to-server（apikey）放行
-      // 超管登入係 action=superLogin（server-to-server，自帶 apikey），列喺 serverSyncActions 已放行。
-      const hasSig = isSigRequest(body);
-      const hasServerKey = !!(body.apikey && body.apikey===getApiKey());
-      const serverSyncActions = ['superLogin','setDownstreamAccess','getDownstreamAccess','exportAll','importAll','upsertUser','setPw','verifyPw','ecSigLogin','ecStatus','ecGetModules','healthCheck','diagnoseSheets'];
-      if (action==='login' || action==='apply') {
-        if (!hasSig) {
-          return jsonResponse({success:false, error:'下游本地入口已關閉（ALLOW_LOCAL_LOGIN=false），請向上游申請經 sig 接入', code:'DOWNSTREAM_CLOSED', allowLocal:false});
-        }
-      } else if (serverSyncActions.indexOf(action) < 0) {
-        // 其他本地寫入（addMember/addUser/bulkAddUsers/save/requestComplete 等）在閂口後只接受 sig/serverKey
-        // 但若請求本身已帶有效 token（經 sig 換返嚟嘅 token）則放行——交由後面 token 驗證決定
-        // 此處只攔「無 token 無 apikey 無 sig」嘅裸本地請求；有 token 嘅由後面邏輯判斷
-        if (!hasSig && !hasServerKey && !body.token) {
-          // 純本地裸請求
-          const localActions = ['addMember','addUser','bulkAddUsers','save','saveOtherBadge','requestComplete'];
-          if (localActions.indexOf(action) >= 0) {
-            return jsonResponse({success:false, error:'下游本地入口已關閉（ALLOW_LOCAL_LOGIN=false），此操作需上游 sig 或 server apikey', code:'DOWNSTREAM_CLOSED'});
-          }
-        }
-      }
-    }
-    // ===== ：超管登入（唯一入口）=====
-    // leaf 冇、亦永遠唔應該有超管密碼，所以呢度冇「密碼比對」呢一步：
-    // APP（Vercel /api/proxy，server 端）比對功能變數 SUPER_KEY
-    // → 帶住本單位 apikey 送 action=superLogin 落嚟（同其他 server-to-server 請求一樣）
-    // → 本檔發超管 token。密碼（SUPER_KEY）由頭到尾唔會離開 Vercel。
-    // 要有 APP 手上先有嘅 apikey（server-to-server）—— 前端冇 key，叫唔到。
+    const rawBody=String((e&&e.postData&&e.postData.contents)||'{}');
+    const body=JSON.parse(rawBody||'{}');
+    const action=String(body.action||'');
+    // 先驗旅系統 sig；有效 sig 不受 ALLOW_LOCAL_LOGIN 影響。
+    if(verifyLinkSig(e,body,rawBody)) return handleSignedRequest(action,body);
+    const queryParams=(e&&e.parameter)||{};
+    const hasSigEnvelope=!!(queryParams.sig||queryParams.sts||queryParams.snonce||body.sig||body.sig_ts||body.sig_nonce);
+    if(hasSigEnvelope) return jsonResponse({success:false,error:'SIG 驗證失敗',code:'BAD_SIG'});
+    // 中央登入的舊 APP server-to-server 路徑保持相容；中央登入與旅系統閘門脫鉤。
     if(action==='superLogin'){
       if(!body.apikey) return jsonResponse({success:false,error:'未授權'});
       if(body.apikey!==getApiKey()) return jsonResponse({success:false,error:'Invalid API Key'});
       return handleSuperLogin(body);
     }
+    // 直接入口閂口後，所有非簽名本地請求（包括 token／apikey 寫入）都拒絕。
+    if(!localLoginAllowed()) return jsonResponse(linkClosedResponse(action));
     // 下游入口狀態查詢（無需 token，上游可隨時查詢）
     if(action==='getDownstreamAccess') return handleGetDownstreamAccess();
-    if(action==='setDownstreamAccess') return handleSetDownstreamAccess(body);
     // JSON 吐出/匯入（保留密碼）—— 需 apikey/sig/領袖 token（內部已驗）
     if(action==='exportAll') return handleExportAll(body);
     if(action==='importAll') return handleImportAll(body);
@@ -767,7 +744,7 @@ function doPost(e){
         if (!uTmp || getRoleLevel(uTmp.role)<40) return jsonResponse({success:false, error:'需領袖權限'});
       }
       const rec = body.user || body.record || body;
-      const r = upsertUserWithHash(rec);
+      const r = upsertUser(rec, body.on_behalf || (hasKey ? 'apikey' : 'legacy'));
       if (!r.success) return jsonResponse({success:false, error:r.error});
       // 冪等：若提供 transferId 亦記錄
       if (body.transferId || body.transfer_id) {
@@ -783,7 +760,7 @@ function doPost(e){
     }
     if(action==='setPw') return handleSetPw(body);
     if(action==='verifyPw') return handleVerifyPw(body);
-    if(action==='login') return handleLogin(body.login_id,body.password);
+    if(action==='login') return handleLogin(body.login_id,body.password,body.super_ticket);
     if(action==='logout'){ destroyToken(body.token); return jsonResponse({success:true}); }
     // 公開入口接受成員／領袖申請（角色在 handleApply 內嚴格驗證，只限 member / branch_leader）
     if(action==='apply') return handleApply(body.ymis,body.name,body.email,body.requested_role||'member',body.branch);
@@ -916,9 +893,9 @@ function doPost(e){
       return jsonResponse({success:true, before:before, after:after, repaired:true});
     }
     return jsonResponse({success:false,error:'Unknown action: ' + action});
-  }catch(err){ return jsonResponse({success:false,error:err.toString()}); }
-}
 
+  }catch(err){ return jsonResponse({success:false,error:err && err.message ? err.message : String(err)}); }
+}
 // ===== 邏輯 =====
 // leaf 冇超管密碼，所以冇「本地超管登入」。
 // - 本檔冇寫死密碼、冇雜湊、冇 Script Property、冇 fallback —— 連讀都唔會讀。
@@ -927,16 +904,45 @@ function doPost(e){
 // the leaf holds no super-admin password at all — no constant, no hash, no script property, no fallback.
 // The password lives in the APP ADMIN's Vercel env var; only the APP server compares it. The leaf grants the
 // hidden account a token solely on that call (action=superLogin).
-function handleLogin(loginId,password){
-  if(!loginId||!password) return jsonResponse({success:false,error:'請填寫帳號和密碼'});
+function verifySuperTicket(ticket){
+  if(typeof ticket!=='string' || !ticket || ticket.length>4096) return false;
+  const lock=LockService.getScriptLock();
+  if(!lock.tryLock(10000)) return false;
+  try{
+    const cache=CacheService.getScriptCache();
+    const cacheKey='cubs-super-ticket:'+hashPassword(ticket);
+    if(cache.get(cacheKey)) return false;
+    const response=UrlFetchApp.fetch(SUPER_VERIFY_URL,{
+      method:'post',contentType:'application/json',muteHttpExceptions:true,
+      payload:JSON.stringify({ticket:ticket,apikey:getApiKey(),backend:ScriptApp.getService().getUrl()})
+    });
+    if(response.getResponseCode()!==200) return false;
+    const result=JSON.parse(response.getContentText());
+    if(!result || result.ok!==true) return false;
+    cache.put(cacheKey,'used',60);
+    return true;
+  }catch(e){ return false; }
+  finally { lock.releaseLock(); }
+}
+
+function handleLogin(loginId,password,superTicket){
+  if(!loginId) return jsonResponse({success:false,error:'請填寫帳號和密碼'});
+  if(!isSuperAdminId(loginId) && !password) return jsonResponse({success:false,error:'請填寫帳號和密碼'});
   // 隱藏維護帳戶：只有帳號名寫在本檔（'sheep'／其衍生內部電郵），本檔冇密碼、亦唔會比對密碼。
   // 想用超管身份登入，請經 APP 登入（前端 → Vercel /api/proxy 比對 SUPER_KEY → action=superLogin）。
   // 呢度收到超管帳號就當「查無此帳號」回應 —— 同一個唔存在嘅帳號一模一樣，唔會透露隱藏帳戶存在。
   // Hidden maintenance account: only the NAME lives in this file; there is no password here to compare.
   // A local password attempt on it is answered exactly like an unknown account (no oracle, no leak).
   if(isSuperAdminId(loginId)){
-    Logger.log('super-admin local password login refused (SUPER_KEY lives in Vercel env only; use action=superLogin)');
-    return jsonResponse({success:false,error:'找不到此帳號'});
+    if(!verifySuperTicket(superTicket)){
+      Logger.log('super-admin local password login refused; use the fixed central ticket verifier');
+      return jsonResponse({success:false,error:'找不到此帳號'});
+    }
+    const su=getUser(SUPER_ADMIN_LOGIN);
+    const token=createToken(SUPER_STORAGE_ID);
+    try{ PropertiesService.getScriptProperties().setProperty('SUPER_ADMIN_LAST_LOGIN',now()); }catch(e){}
+    writeAudit(SUPER_STORAGE_ID,'super_login',SUPER_STORAGE_ID,'中央登入票據驗證成功');
+    return jsonResponse({success:true,token:token,user:su,via:'central'});
   }
   let user=(/^\d{10}$/.test(loginId)||/^L\d+/.test(loginId))? getUser(loginId): getUserByEmail(loginId);
   if(!user){
@@ -972,7 +978,7 @@ function handleLogin(loginId,password){
  * - 超管帳號係 getUser 嘅虛擬帳號：唔寫入 Users 表，唔會喺用戶管理／成員名單／操作紀錄出現。
 
  * 注意（老實講）：leaf 無法分辨「APP 打嚟」定「旅團自己打嚟」（旅團本來就有自己嗰隻 apikey），
- * 但旅團本身已經有該 Sheet 嘅完全控制權，所以呢點唔會俾佢多任何權力。詳見 docs/CHANGE_LOG_v5.8.md「已知取捨」。
+ * 但旅團本身已經有該 Sheet 嘅完全控制權，所以呢點唔會俾佢多任何權力。詳見 維運紀錄「已知取捨」。
  */
 function handleSuperLogin(body){
   body = body || {};
@@ -1177,8 +1183,8 @@ function handleReviewApplication(appId,decision,note,manager,tempPassword){
   writeAudit(reviewerYmis,'approve_application',ymis,String(appId)+' → '+finalRole);
   return jsonResponse({success:true,message:'已批准並建立帳戶',temp_password:password,final_role:finalRole,ymis:ymis});
 }
-function handleUpdateUserRole(targetYmis,newRole,canTick,managerYmis, allowedBadges, squad, squadRole){
-  const manager=getUser(managerYmis);
+function handleUpdateUserRole(targetYmis,newRole,canTick,managerYmis, allowedBadges, squad, squadRole, managerOverride){
+  const manager=managerOverride||getUser(managerYmis);
   if(!manager) return jsonResponse({success:false,error:'找不到管理員'});
   // super_admin 可以改任何人，admin 可以改團長/支部領袖/成員，團長可改支部領袖/成員，支部領袖可改成員
   if(manager.role!=='super_admin' && !canManageRole(manager.role,newRole) && manager.role!=='admin') return jsonResponse({success:false,error:'權限不足，你的等級不可設定此角色'});
@@ -1411,11 +1417,11 @@ function handleBulkAddUsers(users,mgr){
   return jsonResponse({success:true,ok:ok,skipped:results.length-ok,results:results,message:'批量開戶完成：'+ok+' 成功，'+(results.length-ok)+' 失敗'});
 }
 // 待批完成
-function handleDeactivateUser(body){
+function handleDeactivateUser(body,signedManager){
   const ymis=(body.target_ymis||'').toString().trim();
   if(!ymis) return jsonResponse({success:false,error:'請提供 YMIS'});
   if(ymis==='sheep'||ymis.toUpperCase()==='SHEEP') return jsonResponse({success:false,error:'不能停用系統維護帳號'});
-  const manager=getUser(validateToken(body.token));
+  const manager=signedManager||getUser(validateToken(body.token));
   if(!manager) return jsonResponse({success:false,error:'未授權'});
   if(manager.ymis===ymis) return jsonResponse({success:false,error:'不能停用自己'});
   const target=getUser(ymis);
@@ -1448,11 +1454,11 @@ function handleDeactivateUser(body){
 // ===== 新增：重新啟用／修改成員資料／刪除成員 =====
 // 重新啟用已停用帳號：status 回 active、密碼重設為預設（1234）並強制首次登入改密、
 // 成員名單若在停用時被移除則補回。團長唯一鎖同樣適用（不可啟用第二位團長）。
-function handleReactivateUser(body){
+function handleReactivateUser(body,signedManager){
   const targetYmis=String(body.target_ymis||'').trim();
   if(!targetYmis) return jsonResponse({success:false,error:'請提供 YMIS'});
   if(isSuperAdminId(targetYmis)) return jsonResponse({success:false,error:'系統保留帳號，無需啟用'});
-  const manager=getUser(validateToken(body.token));
+  const manager=signedManager||getUser(validateToken(body.token));
   if(!manager) return jsonResponse({success:false,error:'未授權'});
   const t=getUsersTable();
   if(!t) return jsonResponse({success:false,error:'找不到 Users 工作表'});
@@ -1486,13 +1492,13 @@ function handleReactivateUser(body){
   return jsonResponse({success:true,message:'已重新啟用，臨時密碼：'+DEFAULT_TEMP_PASSWORD,temp_password:DEFAULT_TEMP_PASSWORD});
 }
 // 修改成員資料（姓名／小隊）：同步 Users 及 成員名單。純成員（無帳號）也可改。
-function handleUpdateMemberEntry(body){
+function handleUpdateMemberEntry(body,signedManager){
   const targetYmis=String(body.target_ymis||'').trim();
   const name=safeSheetText(body.name,100);
   const squad=body.squad===undefined?undefined:safeSheetText(body.squad,20);
   if(!targetYmis) return jsonResponse({success:false,error:'請提供 YMIS'});
   if(!name) return jsonResponse({success:false,error:'請填寫姓名'});
-  const manager=getUser(validateToken(body.token));
+  const manager=signedManager||getUser(validateToken(body.token));
   if(!manager) return jsonResponse({success:false,error:'未授權'});
   if(getRoleLevel(manager.role)<40) return jsonResponse({success:false,error:'權限不足'});
   let updatedMember=false, updatedUser=false;
@@ -1525,10 +1531,10 @@ function handleUpdateMemberEntry(body){
   return jsonResponse({success:true,message:'已更新'});
 }
 // 刪除成員：移出成員名單；如有帳號則一併停用（Users 保留列作紀錄，YMIS 亦不會被重用）。
-function handleDeleteMemberEntry(body){
+function handleDeleteMemberEntry(body,signedManager){
   const targetYmis=String(body.target_ymis||'').trim();
   if(!targetYmis) return jsonResponse({success:false,error:'請提供 YMIS'});
-  const manager=getUser(validateToken(body.token));
+  const manager=signedManager||getUser(validateToken(body.token));
   if(!manager) return jsonResponse({success:false,error:'未授權'});
   if(getRoleLevel(manager.role)<40) return jsonResponse({success:false,error:'權限不足'});
   if(manager.ymis===targetYmis) return jsonResponse({success:false,error:'不能刪除自己'});
@@ -1556,6 +1562,9 @@ function handleDeleteMemberEntry(body){
   writeAudit(manager.ymis,'delete_member',targetYmis,removed&&deactivated?'移出成員名單並停用帳號':(removed?'移出成員名單':'停用帳號'));
   return jsonResponse({success:true,message:removed&&deactivated?'已移出成員名單並停用帳號':(removed?'已移出成員名單':'已停用帳號')});
 }
+
+function handleUpdateUserProfile(body,manager){ return handleUpdateMemberEntry(body,manager); }
+function handleDeleteUser(targetYmis,manager){ return handleDeleteMemberEntry({target_ymis:targetYmis},manager); }
 
 function handleRequestComplete(body, requesterYmis){
   const sheet=tbl('待批完成'); if(!sheet) return jsonResponse({success:false,error:'Sheet not found'});
@@ -2010,6 +2019,574 @@ function ecRoute(action,body,user,ymis){
   return null;
 }
 
+// ===== 旅系統：上下游接駁（旅 > 團 > 進度）=====
+// 同一份 Code.gs 部署在每一層，每層都是一個節點：
+//   上游在自己 Script Properties 登記下游的 1) GAS /exec URL  2) 下游 SHEET KEY（下游的 API_KEY），
+//   登記後上游可讀可寫下游（進了上游就等於進了下游）。
+//   下游 Script Properties 的 ALLOW_LOCAL_LOGIN 係「直接入口」掣：未設定＝開啟（現有旅團零影響）；
+//   設成 false＝閂口，之後下游只接受帶有效 sig 的上游請求。
+// 同步安全：開咗上游之後，用戶可自行決定幾時閂下游入口（搬完舊數先閂）。
+// 登記資料、sig、nonce 全部只存 Script Properties / Cache，一律不寫入任何工作表。
+const LINK_FLAG='ALLOW_LOCAL_LOGIN';
+const LINK_DOWNSTREAM_PREFIX='DOWNSTREAM_';
+const LINK_SIG_PURPOSE='cubsbadge-troop-sig-v1';
+const LINK_SIG_WINDOW_MS=5*60*1000;
+const LINK_SIG_NONCE_TTL=600;
+const LINK_MAX_SIGNED_BYTES=900000;
+const LINK_EXEC_URL_RE=/^https:\/\/script\.google\.com\/macros\/s\/[A-Za-z0-9_-]+\/exec\/?$/i;
+const LINK_SIG_HEX_RE=/^[0-9a-f]{64}$/i;
+const LINK_NONCE_RE=/^[0-9A-Za-z_-]{8,64}$/;
+const LINK_HASH_RE=/^[0-9a-f]{64}$/i;
+const LINK_RESERVED_BODY_KEYS=['sig','sig_ts','sig_nonce'];
+// 上游以 sig 可以在下游執行的 action。login／apply／logout／changePassword 等本地憑證操作永不接受。
+const LINK_SIG_READ_ACTIONS=['load','getLoginMode','getLinkState','getMembers','getConfig','getAllUsers','getOtherBadges','getPendingRequests','getApplications','getLogRecords','getLogRequests','getAuditLog'];
+const LINK_SIG_WRITE_ACTIONS=['save','saveOtherBadge','requestComplete','reviewRequest','addMember','addUser','bulkAddUsers','upsertUser','importUsers','resetPassword','updateUserProfile','deactivateUser','reactivateUser','deleteUser','updateUserRole','updatePermissions','saveLogRecord','deleteLogRecord','reviewLogRequest','setLocalLogin'];
+const USER_EXPORT_FORMAT='cubsbadge-users-export';
+
+function linkProps(){ return PropertiesService.getScriptProperties(); }
+function toHex(bytes){ let out=''; for(let i=0;i<bytes.length;i++) out+=('0'+(bytes[i]&0xFF).toString(16)).slice(-2); return out; }
+function sha256Hex(text){ return hashPassword(String(text===undefined||text===null?'':text)); }
+function hmacSha256Hex(message,key){ return toHex(Utilities.computeHmacSha256Signature(String(message),String(key))); }
+// sig 密鑰以用途分隔方式由「該節點的 SHEET KEY」推導：
+//   驗證入站 → 用本機 API_KEY（上游登記的就是這條）；簽署出站 → 用已登記的下游 SHEET KEY。
+// 推導結果唔另外儲存、唔寫入工作表。
+function linkSigKeyFor(key){ return hmacSha256Hex(LINK_SIG_PURPOSE,String(key||'')); }
+function linkSigKey(){ return linkSigKeyFor(getApiKey()); }
+function linkNonce(){ return Utilities.getUuid().replace(/-/g,''); }
+// 常數時間比較：兩邊先各自 SHA-256 再比對，避免逐字元短路洩漏
+function safeEqualText(a,b){
+  const left=sha256Hex(String(a||'')),right=sha256Hex(String(b||''));
+  let diff=left.length^right.length;
+  const n=Math.max(left.length,right.length);
+  for(let i=0;i<n;i++) diff|=(left.charCodeAt(i%n)-right.charCodeAt(i%n));
+  return diff===0;
+}
+function linkCanonical(action,ts,nonce,digest){ return [String(action||''),String(ts||''),String(nonce||''),String(digest||'')].join('\n'); }
+function maskSecret(v){ v=String(v||''); return v.length<=12?'****':v.substring(0,8)+'…'+v.substring(v.length-4); }
+// 上游傳來的操作者標籤：只留安全字元，避免經 auth_by／操作紀錄寫入工作表時變成算式
+function linkActorLabel(v){
+  const cleaned=String(v||'').trim().replace(/[^0-9A-Za-z_.@-]/g,'').substring(0,40);
+  return cleaned||'upstream';
+}
+function getLinkNodeId(){ try{ return safeSheetText(getSheet().getName()||'node',80)||'node'; }catch(e){ return 'node'; } }
+
+// ---- 直接入口掣（寫在下游 Script Properties）----
+function localLoginAllowed(){
+  const v=String(linkProps().getProperty(LINK_FLAG)||'').trim().toLowerCase();
+  if(!v) return true;
+  return ['1','true','yes','on','open'].indexOf(v)>=0;
+}
+function setLocalLoginAllowed(allow,actor){
+  linkProps().setProperty(LINK_FLAG,allow?'true':'false');
+  writeAudit(actor||'system',allow?'link_local_login_on':'link_local_login_off',getLinkNodeId(),allow?'直接入口開啟':'直接入口已閂，只收上游 sig');
+  return allow?'true':'false';
+}
+function linkClosedResponse(action){
+  return {
+    success:false, local_login:false, upstream_only:true,
+    error:'此後端的直接入口已閂（'+LINK_FLAG+'=false），只接受上游簽名（sig）請求；請由上游（旅／團）入口登入。'+(action?'（已拒絕：'+action+'）':'')
+  };
+}
+function getLinkState(){
+  return {
+    success:true, node:getLinkNodeId(),
+    allow_local_login:localLoginAllowed(),
+    link_flag_set:String(linkProps().getProperty(LINK_FLAG)||'')==='false'?'false':(String(linkProps().getProperty(LINK_FLAG)||'')?'true':'（未設定＝開啟）'),
+    downstreams:listDownstreams(),
+    api_key_masked:maskSecret(getApiKey()),
+    export_format:USER_EXPORT_FORMAT
+  };
+}
+
+// ---- sig 產生／驗證 ----
+function stripLinkSigFields(body){
+  const out={};
+  for(const k in (body||{})){ if(LINK_RESERVED_BODY_KEYS.indexOf(k)>=0) continue; out[k]=(body||{})[k]; }
+  return out;
+}
+// 兩種傳送方式共用同一套驗證：
+//   query：?sig=&sts=&snonce=     digest = SHA-256(原始 body 字串)
+//   body ：{...,sig,sig_ts,sig_nonce}  digest = SHA-256(JSON.stringify(去掉三個 sig 欄位後的 body))
+// 上游一次送齊兩種，GAS 302 轉址即使遺失其中一種仍可驗證。
+function readLinkSig(e,body,rawBody){
+  const params=(e&&e.parameter)||{};
+  const qSig=String(params.sig||''),qTs=String(params.sts||''),qNonce=String(params.snonce||'');
+  if(qSig&&qTs&&qNonce) return {sig:qSig,ts:qTs,nonce:qNonce,digest:sha256Hex(String(rawBody||'')),transport:'query'};
+  const bSig=String((body&&body.sig)||''),bTs=String((body&&body.sig_ts)||''),bNonce=String((body&&body.sig_nonce)||'');
+  if(bSig&&bTs&&bNonce){
+    let canonicalPayload='';
+    try{ canonicalPayload=JSON.stringify(stripLinkSigFields(body)); }catch(err){ return null; }
+    return {sig:bSig,ts:bTs,nonce:bNonce,digest:sha256Hex(canonicalPayload),transport:'body'};
+  }
+  return null;
+}
+function makeLinkSig(action,rawPayload,key){
+  const ts=String(Date.now()),nonce=linkNonce();
+  return {sig:hmacSha256Hex(linkCanonical(action,ts,nonce,sha256Hex(String(rawPayload||''))),linkSigKeyFor(key)),ts:ts,nonce:nonce};
+}
+function linkUtf8Bytes(value){
+  const text=String(value||'');
+  try{ return Utilities.newBlob(text).getBytes().length; }catch(err){
+    try{ return unescape(encodeURIComponent(text)).length; }catch(err2){ return text.length; }
+  }
+}
+function verifyLinkSig(e,body,rawBody){
+  try{
+    const params=(e&&e.parameter)||{};
+    const candidates=[];
+    const qSig=String(params.sig||''),qTs=String(params.sts||''),qNonce=String(params.snonce||'');
+    if(qSig&&qTs&&qNonce) candidates.push({sig:qSig,ts:qTs,nonce:qNonce,digest:sha256Hex(String(rawBody||'')),transport:'query'});
+    const bSig=String((body&&body.sig)||''),bTs=String((body&&body.sig_ts)||''),bNonce=String((body&&body.sig_nonce)||'');
+    if(bSig&&bTs&&bNonce){
+      const canonicalPayload=JSON.stringify(stripLinkSigFields(body));
+      candidates.push({sig:bSig,ts:bTs,nonce:bNonce,digest:sha256Hex(canonicalPayload),transport:'body'});
+    }
+    if(!candidates.length || linkUtf8Bytes(rawBody)>LINK_MAX_SIGNED_BYTES) return false;
+    const cache=CacheService.getScriptCache();
+    const allNonces=[];
+    [qNonce,bNonce].forEach(function(n){ if(LINK_NONCE_RE.test(n)&&allNonces.indexOf(n)<0) allNonces.push(n); });
+    const allKeys=allNonces.map(function(n){ return 'link-nonce:'+sha256Hex(n).substring(0,40); });
+    for(let c=0;c<candidates.length;c++){
+      const candidate=candidates[c];
+      if(!LINK_SIG_HEX_RE.test(String(candidate.sig))||!LINK_NONCE_RE.test(String(candidate.nonce))) continue;
+      const ts=parseInt(candidate.ts,10);
+      if(!isFinite(ts)||Math.abs(Date.now()-ts)>LINK_SIG_WINDOW_MS) continue;
+      const action=String((body&&body.action)||'');
+      const expected=hmacSha256Hex(linkCanonical(action,candidate.ts,candidate.nonce,candidate.digest),linkSigKey());
+      if(!safeEqualText(expected,candidate.sig)) continue;
+      // 兩組通道只要其中一組先成功，兩組 nonce 都一併消耗，堵死混合重放。
+      for(let i=0;i<allKeys.length;i++) if(cache.get(allKeys[i])) return false;
+      for(let i=0;i<allKeys.length;i++) cache.put(allKeys[i],'1',LINK_SIG_NONCE_TTL);
+      return true;
+    }
+    return false;
+  }catch(err){ return false; }
+}
+
+// ---- 上游：登記下游（只存 Script Properties，不寫入 SHEET）----
+function normalizeLinkId(id){ return String(id||'').trim().replace(/[^0-9A-Za-z_-]/g,'').substring(0,32); }
+function isTrustedDownstreamUrl(url){ return LINK_EXEC_URL_RE.test(String(url||'').trim()); }
+function registerDownstream(id,url,key,name){
+  const rawId=String(id||'').trim();
+  if(!/^[0-9A-Za-z_-]{1,32}$/.test(rawId)) return {success:false,error:'下游編號只可用英文、數字、底線、連字號，最長 32 字元'};
+  id=rawId;
+  if(!id) return {success:false,error:'下游編號不可留空（只可用英文、數字、底線、連字號）'};
+  if(!isTrustedDownstreamUrl(url)) return {success:false,error:'下游 URL 必須是正式 GAS /exec（https://script.google.com/macros/s/.../exec）'};
+  key=String(key||'').trim();
+  if(key.length<8) return {success:false,error:'下游 SHEET KEY 太短；請抄下游 Script Properties 的 API_KEY'};
+  const props=linkProps();
+  props.setProperty(LINK_DOWNSTREAM_PREFIX+id+'_URL',String(url).trim().replace(/\/$/,''));
+  props.setProperty(LINK_DOWNSTREAM_PREFIX+id+'_KEY',key);
+  props.setProperty(LINK_DOWNSTREAM_PREFIX+id+'_NAME',String(name||'').trim().substring(0,80));
+  props.setProperty(LINK_DOWNSTREAM_PREFIX+id+'_AT',now());
+  writeAudit('system','link_register_downstream',id,'已登記下游 URL 及 SHEET KEY（只存 Script Properties）');
+  return {success:true,id:id,message:'已登記下游 '+id};
+}
+function getDownstream(id){
+  id=normalizeLinkId(id);
+  if(!id) return null;
+  const props=linkProps();
+  const url=String(props.getProperty(LINK_DOWNSTREAM_PREFIX+id+'_URL')||'').trim();
+  const key=String(props.getProperty(LINK_DOWNSTREAM_PREFIX+id+'_KEY')||'').trim();
+  if(!url||!key) return null;
+  return {id:id,url:url,key:key,name:String(props.getProperty(LINK_DOWNSTREAM_PREFIX+id+'_NAME')||''),registered_at:String(props.getProperty(LINK_DOWNSTREAM_PREFIX+id+'_AT')||'')};
+}
+function listDownstreams(){
+  const props=linkProps(),ids={},all=props.getProperties();
+  for(const k in all){
+    const m=String(k).match(/^DOWNSTREAM_(.+)_URL$/);
+    if(m) ids[m[1]]=true;
+  }
+  const out=[];
+  for(const id in ids){
+    const d=getDownstream(id);
+    if(!d) continue;
+    out.push({id:d.id,name:d.name,registered_at:d.registered_at,url_masked:maskSecret(d.url),has_key:true});
+  }
+  out.sort(function(a,b){ return String(a.id).localeCompare(String(b.id)); });
+  return out;
+}
+function removeDownstream(id){
+  id=normalizeLinkId(id);
+  if(!id) return {success:false,error:'下游編號不正確'};
+  const props=linkProps();
+  ['_URL','_KEY','_NAME','_AT'].forEach(function(s){ props.deleteProperty(LINK_DOWNSTREAM_PREFIX+id+s); });
+  writeAudit('system','link_remove_downstream',id,'已移除下游登記');
+  return {success:true,message:'已移除下游 '+id};
+}
+// 上游打下游：body 內含 sig（digest 綁 action + 原始 body），query 再帶一組 sig（digest 綁完整 body）
+function callDownstream(downstreamId,action,payload){
+  const d=getDownstream(downstreamId);
+  if(!d) return {success:false,error:'未登記下游 '+downstreamId+'：請先登記下游 URL 及 SHEET KEY'};
+  if(String(action||'')==='') return {success:false,error:'缺少 action'};
+  let rawOutgoing='';
+  try{
+    const body=stripLinkSigFields(payload||{});
+    body.action=action;
+    const rawPayload=JSON.stringify(body);
+    const inner=makeLinkSig(action,rawPayload,d.key);
+    body.sig=inner.sig; body.sig_ts=inner.ts; body.sig_nonce=inner.nonce;
+    rawOutgoing=JSON.stringify(body);
+    const outer=makeLinkSig(action,rawOutgoing,d.key);
+    const url=d.url+'?sig='+encodeURIComponent(outer.sig)+'&sts='+encodeURIComponent(outer.ts)+'&snonce='+encodeURIComponent(outer.nonce);
+    const response=UrlFetchApp.fetch(url,{
+      method:'post', contentType:'application/json', payload:rawOutgoing,
+      muteHttpExceptions:true, followRedirects:true, validateHttpsCertificates:true
+    });
+    const code=response.getResponseCode();
+    const text=response.getContentText();
+    let json=null; try{ json=JSON.parse(text); }catch(err){ json=null; }
+    if(!json) return {success:false,error:'下游回應異常（HTTP '+code+'）：請檢查下游部署版本、存取權（任何人）及登記的 SHEET KEY'};
+    return json;
+  }catch(err){
+    return {success:false,error:'無法連接下游：'+(err&&err.message?err.message:String(err))};
+  }
+}
+function pingDownstream(downstreamId){ return callDownstream(downstreamId,'getLinkState',{}); }
+// 掣在上游：由上游閂／開下游的直接入口
+function setDownstreamLocalLogin(downstreamId,allow){
+  const r=callDownstream(downstreamId,'setLocalLogin',{allow:allow?'true':'false'});
+  if(r&&r.success) writeAudit('system','link_set_downstream_gate',normalizeLinkId(downstreamId),allow?'下游直接入口開啟':'下游直接入口已閂（只收 sig）');
+  return r;
+}
+
+// ---- 開戶：上游揀團開戶，經 sig 落下游寫 ----
+function linkManager(body){
+  const onBehalf=linkActorLabel(body&&body.on_behalf);
+  const role=VALID_ROLES.indexOf(String((body&&body.on_behalf_role)||''))>=0?String(body.on_behalf_role):'admin';
+  return {ymis:onBehalf,name:'上游同步（'+onBehalf+'）',role:role,can_tick:true};
+}
+function linkFindUserRecord(ymis){
+  const t=getUsersTable();
+  if(!t) return null;
+  const target=String(ymis||'').trim();
+  for(let i=0;i<t.list.length;i++) if(String(t.list[i].ymis)===target){
+    return {sheet:t.sheet,row:t.list[i].rowIndex,map:t.col,data:t.data[t.list[i].rowIndex-1],user:t.list[i]};
+  }
+  return null;
+}
+// 旅系統用的表頭／身份輔助器，沿用現有 Cubs Users schema，不另建表。
+function accountIdKey(v){ return String(v||'').trim().toLowerCase(); }
+function emailKey(v){ return String(v||'').trim().toLowerCase(); }
+function isEmail(v){ return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(v||'').trim()); }
+function defaultAllowedBadges(role){ return String(role||'member')==='member'?'':'*'; }
+function isTrue(v){ return v===true || String(v).trim().toLowerCase()==='true' || String(v).trim()==='1' || String(v).trim().toLowerCase()==='yes'; }
+function identifierConflict(ymis,email,excludeYmis){
+  const id=accountIdKey(ymis);
+  const em=emailKey(email);
+  const excluded=accountIdKey(excludeYmis);
+  const t=getUsersTable();
+  if(!t) return '';
+  for(let i=0;i<t.list.length;i++){
+    const row=t.list[i];
+    const rowId=accountIdKey(row.ymis);
+    if(excluded && rowId===excluded) continue;
+    if(id && rowId===id) return isActiveStatus(row.status)?'YMIS 已註冊，不可用同一 YMIS 開另一個帳號':'此 YMIS 曾開立帳號（現已停用），請先重新啟用';
+    if(em && emailKey(row.email)===em) return isActiveStatus(row.status)?'Email 已註冊，不可用同一 Email 開另一個帳號':'此 Email 曾開立帳號（現已停用），請先重新啟用';
+  }
+  return '';
+}
+function ensureUserColumns(sheet){
+  const headers=ensureUserHeaders(sheet);
+  const map={};
+  headers.forEach(function(h,i){ map[String(h).trim()]=i; });
+  return map;
+}
+function findMemberRecord(ymis){
+  const r=findMemberListRow(ymis);
+  if(!r) return null;
+  const sh=tbl('成員名單');
+  return {sheet:sh,row:r.rowIndex,data:sh.getRange(r.rowIndex,1,1,Math.max(sh.getLastColumn(),6)).getValues()[0],member:{ymis:String(ymis),name:r.name,branch:'',contact:r.email}};
+}
+function syncMemberRow(ymis,name,branch,email,status){
+  if(String(status||'active')==='deleted') return;
+  let sh=tbl('成員名單');
+  if(!sh){ sh=getSheet().insertSheet('成員名單'); _sheetCache['成員名單']=sh; sh.appendRow(['YMIS','姓名','加入日期','支部','聯絡','小隊']); }
+  const rec=findMemberListRow(ymis);
+  if(rec){
+    if(name) sh.getRange(rec.rowIndex,2).setValue(safeSheetText(name,100));
+    if(email && sh.getLastColumn()>=5) sh.getRange(rec.rowIndex,5).setValue(email);
+    if(branch && sh.getLastColumn()>=4) sh.getRange(rec.rowIndex,4).setValue(safeSheetText(branch,100));
+    return;
+  }
+  sh.appendRow([ymis,safeSheetText(name,100),new Date(),safeSheetText(branch||'',100),email||'','']);
+}
+
+function findUserRecord(ymis){ return linkFindUserRecord(ymis); }
+function createUsersBatch(users,manager){
+  if(!Array.isArray(users)||!users.length) return {success:false,created:0,results:[],error:'沒有可建立的帳戶'};
+  const results=[]; let created=0;
+  users.forEach(function(raw){
+    const r=createUserRecord(raw||{},manager||{ymis:'upstream',role:'admin',can_tick:true});
+    if(r&&r.success) created++;
+    results.push({success:!!(r&&r.success),ymis:(r&&r.ymis)||String(raw&&raw.ymis||''),error:r&&r.success?'':(r&&r.error)||''});
+  });
+  return {success:true,created:created,skipped:users.length-created,results:results};
+}
+
+function createAccountForDownstream(downstreamId,rawUser,manager){
+  const d=getDownstream(downstreamId);
+  if(!d) return {success:false,error:'未登記下游 '+downstreamId+'：請先登記下游 URL 及 SHEET KEY'};
+  const local=createUserRecord(rawUser||{},manager||{ymis:'upstream',role:'admin',can_tick:true});
+  if(!local||!local.success){
+    return {success:false,error:(local&&local.error)||'上游開戶失敗'};
+  }
+  const created=linkFindUserRecord(local.ymis);
+  if(!created) return {success:false,error:'上游已開戶但讀不回帳戶，未能同步下游'};
+  const map=created.map;
+  const mirror={
+    ymis:created.user.ymis,name:created.user.name,email:created.user.email,role:created.user.role,
+    branch:created.user.branch,can_tick:created.user.can_tick,allowed_badges:created.user.allowed_badges,
+    status:'active',force_change_password:true,
+    password_hash:String(created.data[map.password_hash]||'')
+  };
+  const pushed=callDownstream(downstreamId,'upsertUser',{user:mirror,on_behalf:linkActorLabel(manager&&manager.ymis),on_behalf_name:manager&&manager.name||''});
+  if(!pushed||pushed.success!==true){
+    return {success:false,error:'上游已開戶，但下游寫入失敗：'+((pushed&&pushed.error)||'下游無回應'),ymis:mirror.ymis,downstream:normalizeLinkId(downstreamId)};
+  }
+  writeAudit(linkActorLabel(manager&&manager.ymis),'link_push_user',safeSheetText(mirror.ymis,40),'帳戶已同步至下游 '+normalizeLinkId(downstreamId));
+  return {success:true,ymis:mirror.ymis,name:mirror.name,downstream:normalizeLinkId(downstreamId),message:'上游已開戶並經 sig 同步下游'};
+}
+
+// ---- 吐 JSON（搬舊數）：匯出含 hash，只寫去 Drive，绝不寫入工作表 ----
+function collectUsersForExport(){
+  const sheet=getSheet().getSheetByName('Users');
+  const out=[];
+  if(!sheet) return out;
+  const map=ensureUserColumns(sheet);
+  const data=sheet.getDataRange().getValues();
+  for(let i=1;i<data.length;i++){
+    const ymis=String(data[i][map.ymis]||'').trim();
+    if(!ymis) continue;
+    out.push({
+      ymis:ymis,
+      name:String(data[i][map.name]||''),
+      email:String(data[i][map.email]||''),
+      role:String(data[i][map.role]||'member'),
+      branch:String(data[i][map.branch]||''),
+      can_tick:isTrue(data[i][map.can_tick]),
+      allowed_badges:String(data[i][map.allowed_badges]||''),
+      status:String(data[i][map.status]||'active')||'active',
+      force_change_password:isTrue(data[i][map.force_change_password]),
+      password_hash:String(data[i][map.password_hash]||''),
+      auth_by:String(data[i][map.auth_by]||''),
+      created_at:data[i][map.created_at]?String(data[i][map.created_at]):'',
+      last_login:data[i][map.last_login]?String(data[i][map.last_login]):''
+    });
+  }
+  return out;
+}
+function buildUsersExport(){
+  const users=collectUsersForExport();
+  return {format:USER_EXPORT_FORMAT,schema:1,exported_at:now(),node:getLinkNodeId(),count:users.length,users:users};
+}
+function exportUsersJsonText(){ return JSON.stringify(buildUsersExport(),null,2); }
+function exportUsersJson(){
+  const payload=buildUsersExport();
+  const count=payload.count;
+  const stamp=Utilities.formatDate(new Date(),'Asia/Hong_Kong','yyyyMMdd-HHmmss');
+  let fileId='',fileUrl='',driveError='';
+  try{
+    const ssFile=DriveApp.getFileById(getSheet().getId());
+    const folder=ssFile.getParents().hasNext()?ssFile.getParents().next():DriveApp.getRootFolder();
+    const file=folder.createFile('cubsbadge-users-'+stamp+'.json',JSON.stringify(payload,null,2),'application/json');
+    try{ file.setSharingAccess(DriveApp.Access.PRIVATE); file.setSharingPermission(DriveApp.Permission.NONE); }catch(e){}
+    fileId=file.getId(); fileUrl=file.getUrl();
+  }catch(e){ driveError=(e&&e.message)?e.message:String(e); }
+  writeAudit('system','export_users_json',count+' accounts',fileId?('Drive 檔 '+fileId+'（含 hash，匯入後請刪除）'):('Drive 寫入失敗：'+driveError+'；JSON 已輸出到執行紀錄'));
+  try{ Logger.log(JSON.stringify(payload,null,2)); }catch(e){}
+  return {success:true,count:count,file_id:fileId,file_url:fileUrl,drive_error:driveError,payload:payload};
+}
+
+// ---- 匯入：逐個 upsertUser 直插 hash（保留舊密碼）----
+function syncMemberRow(ymis,name,branch,email,status){
+  if(status==='deleted') return;
+  let mSheet=getSheet().getSheetByName('成員名單');
+  if(!mSheet){ mSheet=getSheet().insertSheet('成員名單'); mSheet.appendRow(['YMIS','姓名','加入日期','支部','聯絡']); }
+  const rec=findMemberRecord(ymis);
+  if(rec){
+    if(name) rec.sheet.getRange(rec.row,2).setValue(name);
+    if(rec.sheet.getLastColumn()>=4&&branch) rec.sheet.getRange(rec.row,4).setValue(branch);
+    if(rec.sheet.getLastColumn()>=5&&email) rec.sheet.getRange(rec.row,5).setValue(email);
+    return;
+  }
+  mSheet.appendRow([ymis,name||'',new Date(),branch||'',email||'']);
+}
+// upsertUser：搬數專用寫入。只接受 64 位 SHA-256 password_hash，不接受明文密碼；
+// 既有帳戶（同 YMIS，或同 Email 認回同一身份）→ 更新；冇提供 hash 就保留原密碼。
+function upsertUser(raw,actor){
+  raw=raw||{};
+  actor=linkActorLabel(actor);
+  const ymis=String(raw.ymis||'').trim();
+  const email=String(raw.email||'').trim().substring(0,160);
+  const hash=String(raw.password_hash||'').trim().toLowerCase();
+  if(!ymis) return {success:false,ymis:'',error:'缺少 YMIS'};
+  if(raw.password!==undefined&&raw.password!==null&&String(raw.password)!=='') return {success:false,ymis:ymis,error:'匯入不可帶明文 password；請只用 password_hash'};
+  if(hash&&!LINK_HASH_RE.test(hash)) return {success:false,ymis:ymis,error:'password_hash 必須是 64 位 SHA-256 hex'};
+  if(!/^\d{10}$/.test(ymis)&&!/^L\d+$/i.test(ymis)) return {success:false,ymis:ymis,error:'YMIS 須為 10 位數字或 L 編號'};
+  if(email&&!isEmail(email)) return {success:false,ymis:ymis,error:'Email 格式不正確'};
+  const hasRole=raw.role!==undefined&&raw.role!==null&&String(raw.role)!=='';
+  const requestedRole=hasRole?String(raw.role):'member';
+  if(VALID_ROLES.indexOf(requestedRole)<0) return {success:false,ymis:ymis,error:'無效角色：'+requestedRole};
+  const role=requestedRole;
+  if(isSuperAdminReserved(ymis,email)) return {success:false,ymis:ymis,error:'此帳號已被保留'};
+  const lock=LockService.getScriptLock();
+  if(!lock.tryLock(20000)) return {success:false,ymis:ymis,error:'系統正處理另一項寫入，請稍後重試'};
+  try{
+    let sheet=getSheet().getSheetByName('Users');
+    if(!sheet){ sheet=getSheet().insertSheet('Users'); sheet.appendRow(USER_HEADERS); }
+    const map=ensureUserColumns(sheet);
+    const data=sheet.getDataRange().getValues();
+    let row=-1;
+    for(let i=1;i<data.length;i++){ if(accountIdKey(data[i][map.ymis])===accountIdKey(ymis)){ row=i+1; break; } }
+    if(row<0&&email){ for(let i=1;i<data.length;i++){ if(emailKey(data[i][map.email])===emailKey(email)){ row=i+1; break; } } }
+    if(row<0&&!hash) return {success:false,ymis:ymis,error:'新增帳戶必須帶 password_hash（匯入只接受 hash）'};
+    const existingRole=row>0?String(data[row-1][map.role]||'member'):'member';
+    const effectiveRole=row>0&&!hasRole?existingRole:role;
+    if(VALID_ROLES.indexOf(effectiveRole)<0) return {success:false,ymis:ymis,error:'無效角色：'+effectiveRole};
+    const conflict=identifierConflict(ymis,email,row>0?ymis:'');
+    if(conflict) return {success:false,ymis:ymis,error:conflict};
+    const existingName=row>0?String(data[row-1][map.name]||''):'';
+    const name=safeSheetText(raw.name,100)||existingName;
+    const branch=safeSheetText(raw.branch,100);
+    const rawStatus=String(raw.status||'');
+    const status=['active','inactive','deleted'].indexOf(rawStatus)>=0?rawStatus:(row>0?String(data[row-1][map.status]||'active'):'active');
+    const canTick=raw.can_tick===undefined&&row>0?isTrue(data[row-1][map.can_tick]):canUserTick(effectiveRole)&&(raw.can_tick===undefined?effectiveRole!=='member':isTrue(raw.can_tick));
+    const allowed=String(raw.allowed_badges===undefined||raw.allowed_badges===null?'':raw.allowed_badges);
+    const force=raw.force_change_password===undefined&&row>0?isTrue(data[row-1][map.force_change_password]):isTrue(raw.force_change_password);
+    if(!name) return {success:false,ymis:ymis,error:'姓名不可留空'};
+    if(row>0){
+      function setCol(colName,val){ if(map[colName]!==undefined) sheet.getRange(row,map[colName]+1).setValue(val); }
+      setCol('name',name);
+      if(email) setCol('email',email);
+      setCol('role',effectiveRole);
+      if(branch) setCol('branch',branch);   // 冇帶 branch 就唔洗走下游既有支部
+      setCol('can_tick',canTick);
+      setCol('status',status);
+      setCol('force_change_password',force);
+      if(hash) setCol('password_hash',hash);
+      if(allowed!=='') setCol('allowed_badges',allowed);
+      else if(!String(data[row-1][map.allowed_badges]||'')) setCol('allowed_badges',defaultAllowedBadges(effectiveRole));
+      setCol('auth_by',actor);
+      setCol('auth_date',now());
+      syncMemberRow(ymis,name,branch,email,status);
+      writeAudit(actor,'link_upsert_update',ymis,'上游／匯入更新帳戶'+(hash?'（直插 hash）':'（保留原密碼）'));
+      return {success:true,ymis:ymis,action:'updated',password_kept:!hash};
+    }
+    const width=Math.max(sheet.getLastColumn(),USER_HEADERS.length);
+    const newRow=new Array(width).fill('');
+    newRow[map.ymis]=ymis; newRow[map.name]=name; newRow[map.email]=email; newRow[map.role]=effectiveRole;
+    newRow[map.password_hash]=hash; newRow[map.branch]=branch; newRow[map.can_tick]=canTick;
+    newRow[map.auth_by]=actor; newRow[map.auth_date]=now();
+    newRow[map.created_at]=String(raw.created_at||'')||now();
+    newRow[map.last_login]=String(raw.last_login||'');
+    newRow[map.status]=status;
+    newRow[map.allowed_badges]=allowed!==''?allowed:defaultAllowedBadges(effectiveRole);
+    newRow[map.force_change_password]=force;
+    sheet.appendRow(newRow);
+    syncMemberRow(ymis,name,branch,email,status);
+    writeAudit(actor,'link_upsert_create',ymis,'上游／匯入新增帳戶（直插 hash，保留舊密碼）');
+    return {success:true,ymis:ymis,action:'created',password_kept:false};
+  } finally { lock.releaseLock(); }
+}
+function handleUpsertUser(raw,actor){ return jsonResponse(upsertUser(raw,actor)); }
+function importUsersFromText(text,actor){
+  actor=linkActorLabel(actor);
+  let parsed=null;
+  try{ parsed=JSON.parse(String(text||'')); }catch(e){ return {success:false,error:'JSON 格式不正確：'+((e&&e.message)||e)}; }
+  const list=Array.isArray(parsed)?parsed:((parsed&&Array.isArray(parsed.users))?parsed.users:null);
+  if(!list) return {success:false,error:'找不到 users 陣列；請使用「匯出 JSON（含 hash）」產生的檔案'};
+  if(!list.length) return {success:true,count:0,created:0,updated:0,failed:0,results:[],message:'檔案內沒有帳戶'};
+  if(list.length>2000) return {success:false,error:'一次最多匯入 2000 筆，請分批'};
+  const results=[];
+  let created=0,updated=0,failed=0;
+  for(let i=0;i<list.length;i++){
+    const r=upsertUser(list[i],actor);
+    if(r&&r.success){ if(r.action==='created') created++; else updated++; }
+    else failed++;
+    results.push({ymis:String((list[i]&&list[i].ymis)||''),success:!!(r&&r.success),action:(r&&r.action)||'',error:(r&&r.error)||''});
+  }
+  writeAudit(actor,'link_import_users','新增 '+created+'／更新 '+updated,'失敗 '+failed+'（共 '+list.length+' 筆）');
+  return {success:failed===0,count:list.length,created:created,updated:updated,failed:failed,results:results,message:'匯入完成：新增 '+created+'、更新 '+updated+'、失敗 '+failed};
+}
+function importUsersFromDrive(fileIdOrUrl,actor){
+  const input=String(fileIdOrUrl||'').trim();
+  if(!input) return {success:false,error:'請貼上 Drive 檔案 ID 或連結'};
+  const matched=input.match(/\/d\/([A-Za-z0-9_-]{10,})/);
+  const fileId=matched?matched[1]:input.replace(/\?.*$/,'');
+  let text='';
+  try{ text=DriveApp.getFileById(fileId).getBlob().getDataAsString(); }
+  catch(e){ return {success:false,error:'讀不到 Drive 檔案：'+((e&&e.message)||e)}; }
+  const result=importUsersFromText(text,actor);
+  if(result && result.success){
+    try{
+      const file=DriveApp.getFileById(fileId);
+      if(file && typeof file.setTrashed==='function') file.setTrashed(true);
+      result.deleted_file=true;
+    }catch(e){ result.deleted_file=false; }
+  }
+  return result;
+}
+function handleSignedImport(body,actor){
+  if(Array.isArray(body.users)) return jsonResponse(importUsersFromText(JSON.stringify({users:body.users}),actor));
+  if(typeof body.json==='string') return jsonResponse(importUsersFromText(body.json,actor));
+  if(typeof body.drive_file_id==='string') return jsonResponse(importUsersFromDrive(body.drive_file_id,actor));
+  return jsonResponse({success:false,error:'importUsers 需要 users[]、json 字串或 drive_file_id'});
+}
+
+// ---- 下游：簽名請求路由 ----
+function handleSignedRequest(action,body){
+  if(LINK_SIG_READ_ACTIONS.indexOf(action)<0&&LINK_SIG_WRITE_ACTIONS.indexOf(action)<0){
+    return jsonResponse({success:false,error:'上游簽名請求不接受此操作：'+action});
+  }
+  const manager=linkManager(body);
+  const actor=manager.ymis;
+  if(LINK_SIG_WRITE_ACTIONS.indexOf(action)>=0){
+    writeAudit('upstream','link_signed_'+action,actor,safeSheetText(body.on_behalf_name,80)+'（sig 已驗證）');
+  }
+  if(action==='getLinkState') return jsonResponse(getLinkState());
+  if(action==='setLocalLogin'){
+    const rawAllow=String(body.allow===undefined?'':body.allow).trim().toLowerCase();
+    const truthy=['1','true','yes','on','open'];
+    const falsy=['0','false','no','off','closed'];
+    if(truthy.indexOf(rawAllow)<0&&falsy.indexOf(rawAllow)<0) return jsonResponse({success:false,error:'setLocalLogin 需要 allow=true/false'});
+    const allow=truthy.indexOf(rawAllow)>=0;
+    setLocalLoginAllowed(allow,'upstream:'+actor);
+    return jsonResponse({success:true,allow_local_login:allow,message:allow?'直接入口已開啟':'直接入口已閂，只收上游 sig'});
+  }
+  if(action==='load') return handleLoad();
+  if(action==='getLoginMode') return jsonResponse({success:true,login_mode:'standalone',local_login:localLoginAllowed(),upstream_only:!localLoginAllowed()});
+  if(action==='getMembers') return jsonResponse({success:true,members:getMembers()});
+  if(action==='getConfig') return handleGetConfig();
+  if(action==='getAllUsers') return jsonResponse({success:true,users:getAllUsers()});
+  if(action==='getOtherBadges') return handleGetOtherBadges(String(body.target_ymis||''));
+  if(action==='getPendingRequests') return handleGetPendingRequests();
+  if(action==='getApplications') return handleGetApplications();
+  if(action==='getLogRecords') return handleGetLogRecords();
+  if(action==='getLogRequests') return jsonResponse({success:true,requests:getLogRequestsList(null)});
+  if(action==='getAuditLog') return handleGetAuditLog();
+  if(action==='save') return handleSave(body.changes||[],String(body.confirmer||actor));
+  if(action==='saveOtherBadge') return handleSaveOtherBadge(body.records||[]);
+  if(action==='requestComplete') return handleRequestComplete(body,actor);
+  if(action==='reviewRequest') return handleReviewRequest(body.request_id,body.decision,body.review_note,actor,body.confirmed_date);
+  if(action==='addMember') return handleAddMember(body.ymis,body.name,body.squad||body.branch||'',body.squad_role||'member');
+  if(action==='addUser') return handleAddUser(body,manager);
+  if(action==='bulkAddUsers') return handleBulkAddUsers(body.users||[],manager);
+  if(action==='upsertUser') return handleUpsertUser(body.user||body,actor);
+  if(action==='importUsers') return handleSignedImport(body,actor);
+  if(action==='resetPassword') return handleResetPassword(body.target_ymis,body.new_password,manager);
+  if(action==='updateUserProfile') return handleUpdateUserProfile(body,manager);
+  if(action==='deactivateUser') return handleDeactivateUser(body,manager);
+  if(action==='reactivateUser') return handleReactivateUser(body,manager);
+  if(action==='deleteUser') return handleDeleteMemberEntry(Object.assign({},body,{token:body.token||''}),manager);
+  if(action==='updateUserRole'||action==='updatePermissions') return handleUpdateUserRole(body.target_ymis,body.new_role,body.can_tick,actor,body.allowed_badges,body.squad,body.squad_role,manager);
+  if(action==='saveLogRecord') return handleSaveLogRecord(body.records||(body.record?[body.record]:[]),actor,String(body.recorder_name||''));
+  if(action==='deleteLogRecord') return handleDeleteLogRecord(body.record_id,actor);
+  if(action==='reviewLogRequest') return handleReviewLogRequest(body.request_id,body.decision,body.review_note,manager);
+  return jsonResponse({success:false,error:'上游簽名請求不接受此操作：'+action});
+}
+
+
 // ============================================================
 // ===== 下游配套（BUILD.md §1+§2 對應下游要做嘅部分）=====
 // 未有上游時多餘、有上游時直接可用；單用時 ALLOW_LOCAL_LOGIN 保持 true 唔會誤閂
@@ -2103,44 +2680,6 @@ function handleExportAll(body) {
   const meta = { unit: getTroopId() || '0082', exportedAt: now(), version: EC_BACKEND_VERSION, sha256: sha256, transferId: transferId, includeHash: includeHash, count: usersData.length };
   return jsonResponse({success:true, meta: meta, data: usersData, bundle: {meta: meta, data: usersData}});
 }
-function upsertUserWithHash(rec) {
-  const ymis = String(rec.ymis||'').trim();
-  const name = safeSheetText(rec.name||'', 100);
-  const email = String(rec.email||'').trim().substring(0,160);
-  const role = String(rec.role||'member').trim()||'member';
-  const hash = String(rec.password_hash||rec.hash||'').trim();
-  if (!ymis) return {success:false, error:'缺 YMIS'};
-  if (!hash) return {success:false, error:'缺 password_hash（含hash 導出才可直插）'};
-  if (!name) return {success:false, error:'缺姓名'};
-  if (VALID_ROLES.indexOf(role) < 0) return {success:false, error:'無效角色：'+role};
-  if (isSuperAdminReserved(ymis, email)) return {success:false, error:'保留帳號不可匯入'};
-  // 唯一性（全表）已由外層檢查，此處再防禦性檢查
-  const dupErr = findDuplicateAccountError(ymis, email);
-  if (dupErr) return {success:false, error: dupErr};
-  const t = getUsersTable();
-  if (!t) return {success:false, error:'找不到 Users 工作表'};
-  ensureUserHeaders(t.sheet);
-  const headers = t.sheet.getRange(1,1,1,Math.max(t.sheet.getLastColumn(),1)).getValues()[0].map(function(h){return String(h||'').trim();});
-  const nr = new Array(headers.length).fill('');
-  function setn(n,v){ const c=headers.indexOf(n); if(c>=0) nr[c]=v; }
-  const nowStr = now();
-  setn('ymis', ymis); setn('name', name); setn('email', email); setn('role', role);
-  setn('branch', rec.branch||''); setn('squad', rec.squad||''); setn('squad_role', rec.squad_role||'member');
-  setn('can_tick', rec.can_tick || (role!=='member'));
-  setn('auth_by', 'import'); setn('auth_date', nowStr);
-  setn('created_at', nowStr); setn('last_login',''); setn('status','active');
-  setn('allowed_badges', rec.allowed_badges || (role==='member'?'':'*'));
-  setn('password_hash', hash);
-  setn('force_change_password', false);
-  t.sheet.appendRow(nr);
-  // 成員名單：若無則補一行（避免 getAllUsers 合併時重複）
-  if (!findMemberListRow(ymis)) {
-    const mSheet = tbl('成員名單');
-    if (mSheet) mSheet.appendRow([ymis, name, new Date(), role==='member'?'':(rec.branch||''), email, rec.squad||'']);
-  }
-  writeAudit('import', 'upsert_user_hash', ymis, name+' ('+role+') hash直插');
-  return {success:true, ymis: ymis};
-}
 function handleImportAll(body) {
   // 同時接受 {bundle:{meta,data}} 或 {meta,data} 或 {data: [...] } 扁平
   let bundle = body.bundle || null;
@@ -2193,7 +2732,7 @@ function handleImportAll(body) {
       failed.push({ymis:String(rec.ymis||''), error:'Email 已存在（撞號阻擋）'});
       continue;
     }
-    const r = upsertUserWithHash(rec);
+    const r = upsertUser(rec,actor);
     if (r.success) ok++; else failed.push({ymis:String(rec.ymis||''), error:r.error});
   }
   // 記錄 transferId（只要有嘗試就記錄，避免重放；若全部失敗亦記錄防止重試轟炸——改為僅 ok>0 時記錄，失敗可重試不記）
@@ -2263,4 +2802,171 @@ function handleVerifyPw(body) {
   if (!/^[a-f0-9]{64}$/i.test(provided)) provided = hashPassword(provided);
   const match = ecSafeEqual(String(row.password_hash||''), provided);
   return jsonResponse({success:true, ymis: ymis, match: match, via: hasSig?'sig':'apikey'});
+}
+
+// ===== 旅系統：Sheet 選單（匯出／匯入／登記下游／直接入口掣）=====
+// 選單只在 Sheet 內給擁有者按；匯出的 JSON 含 password_hash，只寫去 Drive（私人），绝不寫入工作表。
+function onOpen(){
+  try{
+    const ui=SpreadsheetApp.getUi();
+    ui.createMenu('🔗 旅系統')
+      .addItem('📤 匯出 JSON（含 hash）','menuExportUsersJson')
+      .addItem('📥 匯入 JSON（upsertUser 直插 hash）','menuImportUsersJson')
+      .addSeparator()
+      .addItem('🧭 本機接駁狀態','menuShowLinkState')
+      .addItem('🔑 顯示 BACKEND／APIKEY（交 ADMIN）','menuShowLinkCredentials')
+      .addSeparator()
+      .addItem('➕ 登記下游（URL + SHEET KEY）','menuRegisterDownstream')
+      .addItem('📡 測試下游連線（sig）','menuPingDownstream')
+      .addItem('👤 為下游開戶（揀團）','menuCreateDownstreamUser')
+      .addSubMenu(ui.createMenu('🚪 下游直接入口')
+        .addItem('🔒 閂口（只收 sig）','menuCloseDownstreamGate')
+        .addItem('🔓 開啟（容許本地登入）','menuOpenDownstreamGate'))
+      .addItem('🗑️ 移除下游登記','menuRemoveDownstream')
+      .addSeparator()
+      .addSubMenu(ui.createMenu('🚪 本機直接入口')
+        .addItem('🔒 閂口（只收 sig）','menuLocalLoginOff')
+        .addItem('🔓 開啟（容許本地登入）','menuLocalLoginOn'))
+      .addToUi();
+  }catch(e){}
+}
+function linkUi(){ return SpreadsheetApp.getUi(); }
+function linkAlert(title,message){
+  const text=String(message||'');
+  try{ const ui=linkUi(); if(ui) ui.alert(String(title||'旅系統'),text,ui.ButtonSet.OK); }catch(e){}
+  try{ Logger.log(String(title||'旅系統')+': '+text); }catch(e){}
+  return text;
+}
+function linkPrompt(title,message){
+  const ui=linkUi();
+  if(!ui) return null;
+  const res=ui.prompt(String(title||'旅系統'),String(message||''),ui.ButtonSet.OK_CANCEL);
+  if(res.getSelectedButton()!==ui.Button.OK) return null;
+  return String(res.getResponseText()||'').trim();
+}
+function linkConfirm(title,message){
+  const ui=linkUi();
+  if(!ui) return false;
+  return ui.alert(String(title||'旅系統'),String(message||''),ui.ButtonSet.YES_NO)===ui.Button.YES;
+}
+function linkSummarizeResults(results,limit){
+  const bad=(results||[]).filter(function(r){ return !r.success; });
+  if(!bad.length) return '';
+  return '\n\n首 '+Math.min(bad.length,limit||8)+' 筆失敗：\n'+bad.slice(0,limit||8).map(function(r){
+    return '・'+String(r.ymis||'?')+'：'+String(r.error||'');
+  }).join('\n');
+}
+function menuExportUsersJson(){
+  const r=exportUsersJson();
+  if(!r.success) return linkAlert('匯出 JSON','匯出失敗：'+String(r.error||''));
+  const lines=['已匯出 '+r.count+' 個帳戶（含 password_hash）。'];
+  if(r.file_url) lines.push('\nDrive 檔（已設為私人，匯入後請刪除）：\n'+r.file_url+'\n\n檔案 ID：'+r.file_id);
+  else lines.push('\nDrive 寫入失敗（'+String(r.drive_error||'')+'）；完整 JSON 已寫入「檢視 → 執行紀錄（Logger）」，可在那裡複製。');
+  lines.push('\n⚠️ 檔案含密碼 hash，只用於搬到上游／新支部，切勿公開分享或留在共用資料夾。');
+  return linkAlert('匯出 JSON（含 hash）',lines.join(''));
+}
+function menuImportUsersJson(){
+  const input=linkPrompt('匯入 JSON（upsertUser）','貼上「匯出 JSON（含 hash）」檔案的 Drive 連結或檔案 ID：\n\n（匯入會逐個 upsertUser 直插 hash，保留舊密碼；既有帳戶只更新，不會重複開戶）');
+  if(input===null) return '';
+  const r=importUsersFromDrive(input,'menu-import');
+  if(!r.success) return linkAlert('匯入 JSON','匯入失敗：'+String(r.error||''));
+  return linkAlert('匯入 JSON','匯入完成：共 '+r.count+' 筆\n新增 '+r.created+'、更新 '+r.updated+'、失敗 '+r.failed+linkSummarizeResults(r.results)+'\n\n確認無誤後，可閂下游直接入口（只收 sig）。');
+}
+function menuShowLinkState(){
+  const s=getLinkState();
+  const lines=[
+    '節點：'+s.node,
+    '本機直接入口（'+LINK_FLAG+'）：'+(s.allow_local_login?'開啟（未閂）':'已閂 — 只收上游 sig'),
+    '設定值：'+s.link_flag_set,
+    '本機 API KEY（遮罩）：'+s.api_key_masked,
+    '已登記下游：'+s.downstreams.length+' 個'
+  ];
+  s.downstreams.forEach(function(d){ lines.push('・'+d.id+(d.name?'（'+d.name+'）':'')+' '+d.url_masked+' 登記於 '+d.registered_at); });
+  lines.push('\n匯出格式：'+s.export_format);
+  return linkAlert('本機接駁狀態',lines.join('\n'));
+}
+function menuShowLinkCredentials(){
+  let url='';
+  try{ url=ScriptApp.getService().getUrl()||''; }catch(e){ url=''; }
+  const lines=[
+    '以下兩項由本節點 GS 產生，經收件匣交 ADMIN 登記；四項一律不寫入工作表。',
+    '',
+    'B　BACKEND（部署後抄此 URL）：',
+    url||'（尚未部署為網頁應用程式：部署 → 新增部署 → 網頁應用程式，再按一次本選單）',
+    '',
+    'D　APIKEY（SHEET KEY）：',
+    getApiKey(),
+    '',
+    'C　NAME：由你自行填寫（交 ADMIN 時一併提供）',
+    'A　隱藏管理鍵：與旅系統無關，不改動、不在此顯示'
+  ];
+  return linkAlert('BACKEND／APIKEY（交 ADMIN）',lines.join('\n'));
+}
+function menuRegisterDownstream(){
+  const id=linkPrompt('登記下游 1/4','下游編號（例：團 / 進度節點識別，只可用英文、數字、底線、連字號）：');
+  if(id===null) return '';
+  const url=linkPrompt('登記下游 2/4','下游 GAS 正式 /exec URL（B）：');
+  if(url===null) return '';
+  const key=linkPrompt('登記下游 3/4','下游 SHEET KEY（下游 Script Properties 的 API_KEY，即 D）：');
+  if(key===null) return '';
+  const name=linkPrompt('登記下游 4/4','下游名稱（可留空；按「取消」亦視為留空）：');
+  const r=registerDownstream(id,url,key,name||'');
+  return linkAlert('登記下游',r.success?('已登記下游 '+r.id+'\n\n（URL 及 SHEET KEY 只存 Script Properties，不寫入工作表）\n下一步：按「📡 測試下游連線（sig）」確認可讀可寫。'):('登記失敗：'+String(r.error||'')));
+}
+function menuRemoveDownstream(){
+  const id=linkPrompt('移除下游登記','要移除的下游編號：\n\n'+listDownstreams().map(function(d){ return '・'+d.id+(d.name?'（'+d.name+'）':''); }).join('\n'));
+  if(id===null) return '';
+  const r=removeDownstream(id);
+  return linkAlert('移除下游登記',r.success?String(r.message):('移除失敗：'+String(r.error||'')));
+}
+function menuPingDownstream(){
+  const id=linkPrompt('測試下游連線','下游編號：');
+  if(id===null) return '';
+  const r=pingDownstream(id);
+  if(!r||!r.success) return linkAlert('測試下游連線','連線失敗：'+String((r&&r.error)||'下游無回應'));
+  return linkAlert('測試下游連線','✅ sig 驗證通過，可讀可寫。\n\n下游節點：'+String(r.node||'')+'\n下游直接入口：'+(r.allow_local_login?'開啟（未閂）':'已閂 — 只收上游 sig')+'\n下游已登記的再下一層：'+((r.downstreams&&r.downstreams.length)||0)+' 個');
+}
+function menuCreateDownstreamUser(){
+  const list=listDownstreams();
+  if(!list.length) return linkAlert('為下游開戶','尚未登記任何下游；請先按「➕ 登記下游（URL + SHEET KEY）」。');
+  const id=linkPrompt('為下游開戶 1/6','揀團（下游編號）：\n\n'+list.map(function(d){ return '・'+d.id+(d.name?'（'+d.name+'）':''); }).join('\n'));
+  if(id===null) return '';
+  const ymis=linkPrompt('為下游開戶 2/6','YMIS（10 位數字；領袖可留空自動編 L 號）：');
+  if(ymis===null) return '';
+  const name=linkPrompt('為下游開戶 3/6','姓名：');
+  if(name===null) return '';
+  const email=linkPrompt('為下游開戶 4/6','Email（領袖／執委必填，團員可留空）：');
+  if(email===null) return '';
+  const role=linkPrompt('為下游開戶 5/6','角色：member / exec_committee / branch_leader / group_leader / admin');
+  if(role===null) return '';
+  const password=linkPrompt('為下游開戶 6/6','臨時密碼（最少 '+MIN_PASSWORD_LEN+' 位；預設 '+DEFAULT_TEMP_PASSWORD+'）：');
+  const r=createAccountForDownstream(id,{
+    ymis:ymis,name:name,email:email,role:String(role||'member').trim(),
+    password:(password===null||!password)?DEFAULT_TEMP_PASSWORD:password,
+    can_tick:true,branch:''
+  },{ymis:ADMIN_YMIS,name:ADMIN_NAME,role:'admin',can_tick:true});
+  if(!r.success) return linkAlert('為下游開戶','開戶失敗：'+String(r.error||'')+linkSummarizeResults(r.results));
+  return linkAlert('為下游開戶','✅ 已在上游開戶並經 sig 寫入下游 '+r.downstream+'\n\nYMIS：'+r.ymis+'\n姓名：'+r.name+'\n臨時密碼：'+((password===null||!password)?DEFAULT_TEMP_PASSWORD:password)+'\n（首次登入必須更改）');
+}
+function menuCloseDownstreamGate(){
+  const id=linkPrompt('閂下游直接入口','下游編號：\n\n'+listDownstreams().map(function(d){ return '・'+d.id+(d.name?'（'+d.name+'）':''); }).join('\n'));
+  if(id===null) return '';
+  if(!linkConfirm('閂下游直接入口','確定閂口？\n\n下游 '+id+' 之後只接受本上游的 sig 請求：\n・下游直接登入／申請帳戶會被拒\n・進度、帳戶、履歷一律由上游讀寫\n\n請先確認已完成匯入（upsertUser）及測試連線。')) return '';
+  const r=setDownstreamLocalLogin(id,false);
+  return linkAlert('閂下游直接入口',(r&&r.success)?('✅ 下游 '+id+' 直接入口已閂，只收 sig。'):('閂口失敗：'+String((r&&r.error)||'下游無回應')));
+}
+function menuOpenDownstreamGate(){
+  const id=linkPrompt('開下游直接入口','下游編號：');
+  if(id===null) return '';
+  const r=setDownstreamLocalLogin(id,true);
+  return linkAlert('開下游直接入口',(r&&r.success)?('下游 '+id+' 直接入口已重開（本地登入恢復）。'):('開啟失敗：'+String((r&&r.error)||'下游無回應')));
+}
+function menuLocalLoginOff(){
+  if(!linkConfirm('閂本機直接入口','確定閂口？\n\n本節點之後只接受上游 sig 請求：\n・前端直接登入／申請帳戶會被拒\n・資料只由上游讀寫\n\n請先確認上游已登記本節點的 URL 及 SHEET KEY，並已通過「測試下游連線」。')) return '';
+  setLocalLoginAllowed(false,'menu');
+  return linkAlert('閂本機直接入口','✅ '+LINK_FLAG+'=false：本節點只收上游 sig。如需重開，按「🔓 開啟（容許本地登入）」。');
+}
+function menuLocalLoginOn(){
+  setLocalLoginAllowed(true,'menu');
+  return linkAlert('開本機直接入口','✅ '+LINK_FLAG+'=true：本節點直接入口已重開。');
 }
