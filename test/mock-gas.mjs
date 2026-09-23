@@ -118,6 +118,11 @@ function newSpreadsheet() {
   add('活動履歷', ['record_id','type','ymis','name','date','title','role','hours','cert_no','detail','recorder','recorded_at','updated_at']);
   add('待批履歷', ['request_id','kind','target_record_id','type','ymis','name','date','title','role','hours','cert_no','detail','status','created_at','reviewed_by','reviewed_at','review_note']);
   return {
+    // Spreadsheet 層 API（diagnoseSheets / getSpreadsheetInfo 會用）
+    name: 'CubBadgePreview',
+    getName() { return this.name; },
+    getId() { return 'mock-spreadsheet-id'; },
+    getUrl() { return 'https://docs.google.com/spreadsheets/d/mock-spreadsheet-id'; },
     sheets,
     add,
     getSheetByName(n) { return sheets[n] || null; },
