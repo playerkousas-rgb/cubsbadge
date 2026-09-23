@@ -56,9 +56,8 @@ async function ensurePreviewTroop() {
     const mrows = sandbox.__ss.sheets['成員名單'].rows;
     mrows.push([ymis, name, '2026-09-01', '幼童軍', '', squad || '']);
   };
-  // initializeSheets 已建預設管理員（1111111111 / admin@example.com / changeme / 強制改密）——預覽改成 1234 免改密
-  const adminRow = sandbox.__ss.sheets.Users.rows[1];
-  if (adminRow) { adminRow[4] = sha256Hex('1234'); adminRow[15] = false; }
+  // 預設管理員（同 initializeSheets 首建時一致；mock 預建咗 Users 表所以喺度補種）——預覽密碼 1234 免改密
+  seedUser('1111111111', '管理員', 'admin@example.com', 'admin', true, '*', '', 'admin');
   seedUser('L0001', '陳大文', 'leader@troop82.hk', 'group_leader', true, '*', '', 'leader');
   seedUser('1234560001', '王小一', '', 'member', false, '', '紅隊', 'member');
   seedUser('1234560002', '李小二', '', 'member', false, '', '紅隊', 'member');
