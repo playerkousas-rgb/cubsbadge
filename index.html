@@ -97,8 +97,12 @@ html[lang="en"] body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","No
 .user-info{font-size:12px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 .user-chip{background:rgba(0,0,0,0.08);padding:4px 10px;border-radius:999px;font-size:11px}
 .nav-tabs{display:flex;background:var(--card);border-bottom:2px solid var(--border);overflow-x:auto;scrollbar-width:none;position:sticky;top:54px;z-index:99;box-shadow:0 2px 6px rgba(0,0,0,0.04)}
-.nav-tabs::-webkit-scrollbar{display:none}
+.nav-tabs::-webkit-scrollbar,.nav-tab-row::-webkit-scrollbar{display:none}
+.nav-tab-row{display:contents}
 .nav-tab{flex:0 0 auto;min-width:100px;padding:14px 16px;text-align:center;cursor:pointer;border:none;background:none;font-size:13.5px;font-weight:600;color:var(--text-light);border-bottom:3px solid transparent;transition:.2s;white-space:nowrap}
+/* Keep the original desktop tab order while mobile uses role-based rows. */
+#btn-tab-progress{order:1}#btn-tab-overview{order:2}#btn-tab-requests{order:3}#btn-tab-logs{order:4}
+#btn-tab-forms{order:5}#btn-tab-help{order:6}#btn-tab-info{order:7}#btn-tab-users{order:8}
 .nav-tab:hover{background:var(--bg);color:var(--text)}
 .nav-tab.active{color:#8B5A00;border-bottom-color:var(--maroon);background:var(--maroon-light)}
 .tab-content{display:none;padding:18px}.tab-content.active{display:block;animation:fadeIn .25s ease}
@@ -205,7 +209,14 @@ html[lang="en"] body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","No
   .main-app-header h1{font-size:14px;line-height:1.35;white-space:normal}
   .user-info{width:100%;justify-content:space-between}
   .user-chip{max-width:calc(100% - 82px);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-  .nav-tabs{top:0;z-index:120}.nav-tab{min-width:92px;min-height:48px;padding:11px 10px;font-size:12px}
+  /* Mobile: member/main destinations stay in the first row; leader tools use a second row. */
+  .nav-tabs{top:0;z-index:120;display:flex;flex-direction:column;overflow:visible}
+  .nav-tab-row{display:flex;width:100%;overflow-x:auto;scrollbar-width:none}
+  .nav-tab-row+.nav-tab-row{border-top:1px solid var(--border)}
+  .nav-tabs:not(.has-leader-tabs) .nav-leader{display:none}
+  .nav-tab-row .nav-tab{order:initial;flex:1 1 0;min-width:0;min-height:48px;padding:8px 4px;font-size:11.5px;line-height:1.25;white-space:normal}
+  .nav-primary .nav-tab{min-width:0}
+  .nav-leader .nav-tab{min-width:120px}
   .tab-content{padding:12px}
   .badge-header{padding:12px;align-items:flex-start;gap:8px}.badge-header h3{font-size:14px;line-height:1.45;display:block}
   .segment-header{padding:10px 12px;align-items:flex-start;gap:8px;min-height:44px}
@@ -378,14 +389,18 @@ html[lang="en"] body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","No
     </div>
   </div>
   <div class="nav-tabs" id="mainNavTabs">
-    <button class="nav-tab active" id="btn-tab-progress" onclick="switchTab('progress', this)" data-i18n="nav_progress">📊 我的進度</button>
-    <button class="nav-tab" id="btn-tab-overview" onclick="switchTab('overview', this)" data-i18n="nav_overview">👥 全團總覽</button>
-    <button class="nav-tab" id="btn-tab-requests" onclick="switchTab('requests', this)"><span data-i18n="nav_requests">✅ 審批中心</span> <span id="badgeRequestsCount" style="background:var(--red);color:#fff;border-radius:999px;padding:1px 6px;font-size:10px;display:none">0</span></button>
-    <button class="nav-tab" id="btn-tab-logs" onclick="switchTab('logs', this)" data-i18n="nav_logs">📅 活動履歷</button>
-    <button class="nav-tab" id="btn-tab-forms" onclick="switchTab('forms', this)" data-i18n="nav_forms">🏅 金紫荊申請</button>
-    <button class="nav-tab" id="btn-tab-help" onclick="switchTab('help', this)" data-i18n="nav_help">❓ 教學</button>
-    <button class="nav-tab" id="btn-tab-info" onclick="switchTab('info', this)" data-i18n="nav_info">📚 資料庫</button>
-    <button class="nav-tab" id="btn-tab-users" onclick="switchTab('users', this)" style="display:none" data-i18n="nav_users">👥 用戶管理</button>
+    <div class="nav-tab-row nav-primary" aria-label="主要功能">
+      <button class="nav-tab active" id="btn-tab-progress" onclick="switchTab('progress', this)" data-i18n="nav_progress">📊 我的進度</button>
+      <button class="nav-tab" id="btn-tab-requests" onclick="switchTab('requests', this)"><span data-i18n="nav_requests">✅ 審批中心</span> <span id="badgeRequestsCount" style="background:var(--red);color:#fff;border-radius:999px;padding:1px 6px;font-size:10px;display:none">0</span></button>
+      <button class="nav-tab" id="btn-tab-logs" onclick="switchTab('logs', this)" data-i18n="nav_logs">📅 活動履歷</button>
+      <button class="nav-tab" id="btn-tab-forms" onclick="switchTab('forms', this)" data-i18n="nav_forms">🏅 金紫荊申請</button>
+      <button class="nav-tab" id="btn-tab-help" onclick="switchTab('help', this)" data-i18n="nav_help">❓ 教學</button>
+      <button class="nav-tab" id="btn-tab-info" onclick="switchTab('info', this)" data-i18n="nav_info">📚 資料庫</button>
+    </div>
+    <div class="nav-tab-row nav-leader" aria-label="領袖功能">
+      <button class="nav-tab" id="btn-tab-overview" onclick="switchTab('overview', this)" data-i18n="nav_overview">👥 全團總覽</button>
+      <button class="nav-tab" id="btn-tab-users" onclick="switchTab('users', this)" style="display:none" data-i18n="nav_users">👥 用戶管理</button>
+    </div>
   </div>
   <div id="tab-progress" class="tab-content active"></div>
   <div id="tab-overview" class="tab-content"></div>
@@ -1131,6 +1146,7 @@ function setupTabsByRole(){
   }
   document.getElementById('btn-tab-overview').style.display=canViewOverview?'block':'none';
   document.getElementById('btn-tab-users').style.display=isManage?'block':'none';
+  document.getElementById('mainNavTabs').classList.toggle('has-leader-tabs',canViewOverview||isManage);
   try{
     const p=localStorage.getItem(LS.pending(currentTroopId));
     if(p){ pendingChanges=JSON.parse(p); updateSaveBar(); }
