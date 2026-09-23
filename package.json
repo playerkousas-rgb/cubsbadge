@@ -4,11 +4,12 @@
     "node": ">=18"
   },
   "scripts": {
-    "test": "node test/ymis_parse.test.js && node test/api.test.mjs && node test/ecosystem.test.mjs && node test/e2e.mjs",
+    "test": "node test/ymis_parse.test.js && node test/api.test.mjs && node test/ecosystem.test.mjs && npm run test:link && node test/e2e.mjs",
     "test:unit": "node test/ymis_parse.test.js",
     "test:e2e": "node test/e2e.mjs",
     "test:api": "node test/api.test.mjs",
     "test:eco": "node test/ecosystem.test.mjs",
-    "dev": "node test/devserver.mjs"
+    "dev": "node test/devserver.mjs",
+    "test:link": "node --test test/troop_link.test.mjs"
   }
 }
