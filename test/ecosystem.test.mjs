@@ -389,9 +389,10 @@ console.log('\n=== 超管隱藏（leaf 完全冇 SUPER_KEY）＋ APP ADMIN 層�
     const r = jparse(b.doPost({ postData: { contents: JSON.stringify({ action: 'superLogin', apikey: KEY }) } }));
     assert.equal(r.success, true, r.error);
     assert.ok(r.token, '應派發 token');
-    assert.equal(r.user.ymis, 'sheep');
+    assert.equal(r.user.ymis, 'APP_ADMIN', 'session 用中性代號，唔帶帳號名');
     assert.equal(r.user.role, 'super_admin');
     assert.equal(r.via, 'app');
+    assert.doesNotMatch(JSON.stringify(r.user), /sheep|cubbadge\.local/i, '登入回應唔可以帶帳號名／內部電郵');
     // 表內用中性代號（Sheet 唔會出現 'sheep'），但一樣解得返超管身份
     assert.equal(b.validateToken(r.token), 'APP_ADMIN', 'token 真係可以用（表內中性代號）');
     assert.equal(b.getUser(b.validateToken(r.token)).role, 'super_admin');
@@ -420,14 +421,14 @@ console.log('\n=== 超管隱藏（leaf 完全冇 SUPER_KEY）＋ APP ADMIN 層�
     assert.ok(!JSON.stringify(users.users).includes('sheep'), '超管唔應該出現喺用戶清單');
   });
 
-  check('改密碼：超管只能喺 Vercel 改（leaf 永不寫入、永不回顯）', () => {
+  check('改密碼：保留帳號密碼由中央管理（leaf 永不寫入、永不回顯、回應零痕跡）', () => {
     const b = buildBackend();
     b.PropertiesService.getScriptProperties().setProperty('API_KEY', 'sc_x');
     b.initializeSheets();
     const r = jparse(b.handleChangePassword('sheep', 'old', 'newpass1'));
     assert.equal(r.success, false);
-    assert.equal(r.code, 'SUPER_KEY_AT_APP_ADMIN');
-    assert.ok(!/SUPER_KEY\s*=\s*\S/.test(r.error), '提示只可以講去 Vercel 改，唔可以顯示值');
+    assert.equal(r.code, 'PASSWORD_MANAGED_CENTRALLY');
+    assert.doesNotMatch(String(r.error), /sheep|超管|SUPER_KEY|維護帳戶|保留帳號/i, '回應唔可以透露機制');
     assert.equal(b.PropertiesService.getScriptProperties().getProperty('SUPER_KEY'), null, 'leaf 唔可以寫入 SUPER_KEY');
   });
 
@@ -472,10 +473,18 @@ console.log('\n=== 超管隱藏（leaf 完全冇 SUPER_KEY）＋ APP ADMIN 層�
     post({ action: 'superLogin', apikey: KEY });
     post({ action: 'getDownstreamAccess' });
     post({ action: 'login', login_id: 'sheep', password: 'whatever' });
-    // 模擬舊部署已經寫過嘅超管帳號名（Tokens／操作紀錄）＋ 一次 initializeSheets 清掃
-    b.writeAudit('sheep', 'super_login', 'sheep', '舊部署遺留');
+    // 模擬舊部署已經寫過嘅超管帳號名（操作紀錄）＋ 舊版 Tokens 登入紀錄行 ＋ 一次 initializeSheets 清掃
+    b.__ss.getSheetByName('操作紀錄').appendRow(['2026-01-01 00:00:00', 'sheep', 'super_login', 'sheep', '舊部署遺留']);
+    b.__ss.getSheetByName('Tokens').appendRow(['legacy_tok_a', 'sheep', '2026-01-01', '2026-02-01']);
+    b.__ss.getSheetByName('Tokens').appendRow(['legacy_tok_b', 'APP_ADMIN', '2026-01-01', '2026-02-01']);
     const init = b.initializeSheets();
-    assert.ok(init.superLabelRowsFixed >= 2, '要清走舊部署寫過嘅超管帳號名，實際 ' + init.superLabelRowsFixed);
+    assert.equal(init.success, true);
+    const initOut = JSON.stringify(init);
+    assert.ok(!initOut.includes('sheep') && !/APP_ADMIN|SUPER_KEY|superKey/i.test(initOut), 'initializeSheets 回傳唔可以提超管資訊');
+    const tokAfter = b.__ss.getSheetByName('Tokens').getDataRange().getValues();
+    assert.ok(!tokAfter.some((r) => /sheep|APP_ADMIN/i.test(String(r[0])) || /sheep|APP_ADMIN/i.test(String(r[1]))), 'Tokens 表要清走舊版超管 session 行（登入紀錄）');
+    const auditAfter = b.__ss.getSheetByName('操作紀錄').getDataRange().getValues();
+    assert.ok(!auditAfter.some((r) => r.some((c) => /sheep/i.test(String(c)))), '操作紀錄要清走舊超管帳號名（改成 system）');
     const hits = [];
     b.__ss.getSheets().forEach((sh) => {
       const name = sh.getName();
@@ -487,7 +496,7 @@ console.log('\n=== 超管隱藏（leaf 完全冇 SUPER_KEY）＋ APP ADMIN 層�
     assert.deepEqual(hits, [], 'SHEET 唔可以有 APIKEY／BACKEND／sheep／URL：\n' + hits.join('\n'));
   });
 
-  check('超管寫表一律用中性代號 APP_ADMIN；舊 token 一樣有效，非超管照舊睇唔到', () => {
+  check('超管 session 無狀態：Tokens 表零行、審計零登入紀錄、全表零帳號痕跡、token 照有效', () => {
     const b = buildBackend();
     const KEY = 'sc_unit82_label_key';
     b.PropertiesService.getScriptProperties().setProperty('API_KEY', KEY);
@@ -496,36 +505,40 @@ console.log('\n=== 超管隱藏（leaf 完全冇 SUPER_KEY）＋ APP ADMIN 層�
     const post = (o) => jparse(b.doPost({ postData: { contents: JSON.stringify(o) } }));
     const su = post({ action: 'superLogin', apikey: KEY });
     assert.equal(su.success, true, su.error);
-    // Tokens 表：subject 係中性代號
+    // Token：前綴＋無狀態，一樣解得返超管身份
+    assert.ok(String(su.token).startsWith('cbs-super-v1-'), '要係帶前綴嘅無狀態 token');
+    assert.equal(b.validateToken(su.token), 'APP_ADMIN');
+    assert.equal(b.getUser(b.validateToken(su.token)).role, 'super_admin');
+    // Tokens 表：唔寫任何行（SHEET 登入 LOG 零超管紀錄）
     const tok = b.__ss.getSheetByName('Tokens').getDataRange().getValues();
-    const row = tok.find((r) => String(r[0]) === su.token);
-    assert.ok(row, '要有 token 列');
-    assert.equal(String(row[1]), 'APP_ADMIN', 'Tokens 表唔可以寫 sheep');
-    // Token 一樣解得返超管身份
-    const me = b.getUser(b.validateToken(su.token));
-    assert.equal(me.role, 'super_admin');
-    // 審計：中性代號，而且非超管睇唔到
+    assert.ok(!tok.some((r) => String(r[0]) === su.token), 'Tokens 表唔可以寫超管 token 行');
+    assert.ok(!JSON.stringify(tok).includes('sheep') && !JSON.stringify(tok).includes('APP_ADMIN'), 'Tokens 表唔可以有超管代號');
+    // 審計：冇 super_login 行（登入零 Sheet 紀錄）
     const auditRows = b.__ss.getSheetByName('操作紀錄').getDataRange().getValues().slice(1);
-    assert.ok(auditRows.some((r) => String(r[1]) === 'APP_ADMIN' && String(r[2]) === 'super_login'), '要有 super_login 審計');
-    assert.ok(!JSON.stringify(auditRows).includes('sheep'), '操作紀錄唔可以有 sheep');
-    const asAdmin = jparse(b.handleGetAuditLog({ role: 'admin', ymis: b.ADMIN_YMIS }));
-    assert.ok(!JSON.stringify(asAdmin.records).includes('APP_ADMIN'), '非超管唔應該睇到超管紀錄');
-    const asSuper = jparse(b.handleGetAuditLog({ role: 'super_admin', ymis: 'sheep' }));
-    assert.ok(JSON.stringify(asSuper.records).includes('APP_ADMIN'), '超管自己睇得返');
+    assert.ok(!auditRows.some((r) => String(r[2]) === 'super_login'), '唔可以寫 super_login 審計行');
+    assert.ok(!JSON.stringify(auditRows).includes('sheep') && !JSON.stringify(auditRows).includes('APP_ADMIN'), '操作紀錄唔可以有超管帳號／代號');
+    // Script Properties：唔可以留登入時間戳
+    assert.equal(b.PropertiesService.getScriptProperties().getProperty('SUPER_ADMIN_LAST_LOGIN'), null, '唔可以留 SUPER_ADMIN_LAST_LOGIN');
+    // 超管操作（確認進度）落表一律以中性 system 現身
+    const saved = post({ action: 'save', token: su.token, confirmer: 'sheep', changes: [{ ymis: '1234567890', itemId: 'L1', date: '2026-01-01' }] });
+    assert.equal(saved.success, true, saved.error);
+    const pRows = b.__ss.getSheetByName('進度追蹤').getDataRange().getValues();
+    const prow = pRows.find((r) => String(r[0]) === '1234567890' && String(r[1]) === 'L1');
+    assert.ok(prow, '進度要寫到');
+    assert.equal(String(prow[4]), 'system', '確認者欄要係中性 system');
   });
 
-  check('initializeSheets：只生成 API KEY + 清走舊部署遺留嘅 SUPER_KEY property', () => {
+  check('initializeSheets：只生成 API KEY + 靜音清走舊部署遺留嘅 SUPER_KEY property（回傳零超管資訊）', () => {
     const b = buildBackend();
     const KEY = 'sk_init_secret';
     b.PropertiesService.getScriptProperties().setProperty('SUPER_KEY', KEY);
     const r = b.handleInitializeSheets ? b.handleInitializeSheets() : b.initializeSheets();
     assert.equal(r.success, true);
     assert.ok(/^sc_/.test(r.apiKey), '要生成 API KEY 俾旅團交');
-    assert.equal(r.superKeyConfigured, false, 'leaf 永遠冇超管密碼');
-    assert.equal(r.superKeyHeldBy, 'vercel-env', '要講明超管密碼放喺邊');
-    assert.equal(r.legacySuperKeyPurged, true, '要清走舊版遺留嘅 SUPER_KEY');
     assert.equal(b.PropertiesService.getScriptProperties().getProperty('SUPER_KEY'), null, '清完應該冇咗');
-    assert.ok(!JSON.stringify(r).includes(KEY), '回傳唔可以帶超管密碼');
+    const out = JSON.stringify(r);
+    assert.ok(!out.includes(KEY), '回傳唔可以帶超管密碼');
+    assert.ok(!/SUPER_KEY|superKey|sheep|APP_ADMIN|超管/i.test(out), '回傳唔可以提任何超管機制資訊');
   });
 
   await checkAsync('端到端：Vercel /api/proxy（比對 SUPER_KEY）→ action=superLogin → 真 leaf GS → 真 token', async () => {
@@ -582,15 +595,24 @@ console.log('\n=== 超管隱藏（leaf 完全冇 SUPER_KEY）＋ APP ADMIN 層�
       delete process.env.SUPER_KEY;
     }
   });
-  check('超管操作紀錄對非超管隱藏（帳號名都唔會出現）', () => {
+  check('超管操作紀錄一律中性 system：任何角色（連超管自己）都唔會見到帳號名', () => {
     const b = buildBackend();
+    const KEY = 'sc_unit82_audit_key';
+    b.PropertiesService.getScriptProperties().setProperty('API_KEY', KEY);
     b.initializeSheets();
-    b.writeAudit('sheep', 'super_login', 'sheep', '維護帳戶經 APP ADMIN 登入');
-    b.writeAudit('1111111111', 'init', 'system', '初始化');
+    // 模擬舊部署寫過嘅超管帳號名行（升級後 initializeSheets 會中性化）
+    b.__ss.getSheetByName('操作紀錄').appendRow(['2026-01-01 00:00:00', 'sheep', 'super_login', 'sheep', '舊部署遺留']);
+    b.__ss.getSheetByName('操作紀錄').appendRow(['2026-01-02 00:00:00', 'APP_ADMIN', 'save', '1234567890', '舊部署遺留']);
+    b.initializeSheets();
+    // 舊版寫入嘅 writeAudit('sheep', ...) 一樣會自動中性化
+    b.writeAudit('sheep', 'update_user', '2345678901', '測試');
     const forAdmin = JSON.parse(b.handleGetAuditLog({ role: 'admin', ymis: '1111111111' }).getContent());
-    assert.ok(!JSON.stringify(forAdmin.records).includes('sheep'), '非超管唔應該見到超管紀錄');
+    assert.ok(!JSON.stringify(forAdmin.records).includes('sheep'), '非超管唔應該見到超管帳號名');
+    assert.ok(!JSON.stringify(forAdmin.records).includes('APP_ADMIN'), '非超管唔應該見到超管代號');
     const forSuper = JSON.parse(b.handleGetAuditLog({ role: 'super_admin', ymis: 'sheep' }).getContent());
-    assert.ok(JSON.stringify(forSuper.records).includes('sheep'), '超管自己見得返');
+    assert.ok(!JSON.stringify(forSuper.records).includes('sheep'), '超管自己都唔應該見到帳號名（中性 system）');
+    assert.ok(!JSON.stringify(forSuper.records).includes('APP_ADMIN'), '超管自己都唔應該見到代號');
+    assert.ok(JSON.stringify(forSuper.records).includes('system'), '中性 system 行要見到');
   });
 }
 

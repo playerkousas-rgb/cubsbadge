@@ -2,26 +2,33 @@
 // 童軍支部進度及行政平台 — Apps Script 後端（一個 leaf = 一張 SHEET + 一支 /exec）
 // 合約（邊個做啲乜）：
 // 旅團只做 3 樣：① 部署本檔 ② 跑 initializeSheets 拎 API Key ③ 交「旅團編號 + 部署 URL + API Key」俾 APP ADMIN
-// APP ADMIN 喺 Vercel 設定全部功能變數：SUPER_KEY + TROOP_<編號>_BACKEND / _APIKEY / _NAME
-// 超管（維護帳戶 'sheep'）：本檔只有帳號名，冇密碼。密碼只喺 APP ADMIN 嘅 Vercel 功能變數；
-// 登入 = APP 比對密碼後送 action=superLogin 落嚟（apikey 由 server 端注入），本檔只發 token。
+// APP ADMIN 喺 Vercel 設定全部功能變數：TROOP_<編號>_BACKEND / _APIKEY / _NAME
+// 保留帳號：本檔只有帳號名，冇密碼。登入只認 APP 送落嚟嘅 action=superLogin（apikey 由 server 端注入）；
+// 本檔唔會比對密碼，只發 token。
 // 本檔永不生成、永不顯示、永不回傳任何密碼；initializeSheets／showApiKey 只顯示旅團自己嗰隻 API Key。
 // 版本同改動紀錄一律寫喺 docs/CHANGE_LOG_*.md —— 本檔唔寫版號。
 // ============================================================
 const ADMIN_YMIS = '1111111111';
-// SHEEP 是隱藏維護帳戶：程式碼只有帳號名，冇密碼
-// SHEEP is the hidden maintenance account: only the NAME lives in code, never a password.
+// 保留帳號：程式碼只有帳號名，冇密碼
+// Reserved account: only the NAME lives in code, never a password.
 // - 只存在於後端（getUser 虛擬帳號），不寫入 Users 表、不出現在用戶管理／成員名單
-// - 密碼（SUPER_KEY）只喺 APP ADMIN 嘅 Vercel 功能變數；本檔冇密碼可比對，只認 APP（Vercel）送落嚟嘅 action=superLogin
+// - 本檔冇密碼可比對，只認 APP（Vercel）送落嚟嘅 action=superLogin
 const SUPER_ADMIN_LOGIN = 'sheep';
 // 內部電郵由帳號名衍生（唯一用途：保留帳號檢查／電郵登入兼容），唔涉及任何憑證
 const SUPER_ADMIN_EMAIL = SUPER_ADMIN_LOGIN + '@cubbadge.local';
 // 中央登入票據只向本應用程式的固定受信端點驗證；不接受請求自帶 URL。
 const SUPER_VERIFY_URL = 'https://cubsbadge.vercel.app/api/super';
-// 表內儲存用嘅中性代號：Sheet 儲存格永遠唔會寫 'sheep'（驗收：SHEET 搜 "sheep" 零儲存格命中）
+// 表內儲存用嘅中性代號：Sheet 儲存格永遠唔會寫保留帳號識別字（驗收：SHEET 搜帳號名／電郵零儲存格命中）
 const SUPER_STORAGE_ID = 'APP_ADMIN';
-// 保留帳號檢查：任何申請／開戶／改角色都不可佔用 sheep 或佢嘅內部電郵
-// Reserved-account guard: no apply / addUser / bulk / role-edit may take over sheep or its email.
+// 保留帳號顯示名稱（只用於登入回應／角色顯示，唔會寫入任何工作表）
+const SUPER_ADMIN_NAME = '系統管理員';
+// 舊版寫入過嘅 actor 標籤：只供舊資料正規化（見 sheetActor），不再寫入
+const LEGACY_SUPER_ADMIN_LABEL = 'SHEEP 系統管理員';
+// 保留帳號 session token 前綴：無狀態 token（前綴＋HMAC(用途字串, 本節點 API_KEY)），
+// 唔寫 Tokens 表 —— 旅團 Sheet 完全冇保留帳號嘅登入紀錄；偽造前綴一律無效。
+const SUPER_TOKEN_PREFIX = 'cbs-super-v1-';
+// 保留帳號檢查：任何申請／開戶／改角色都不可佔用保留帳號或其內部電郵
+// Reserved-account guard: no apply / addUser / bulk / role-edit may take over the reserved account or its email.
 function isSuperAdminId(id){
   const v=String(id||'').trim().toLowerCase();
   return v===SUPER_ADMIN_LOGIN || v===SUPER_ADMIN_EMAIL || v===SUPER_STORAGE_ID.toLowerCase();
@@ -117,22 +124,22 @@ function getApiKey() {
 
 // ===== 功能變數契約（後端GS ↔ Vercel 環境變數）=====
 // 後端GS 嘅 Script Properties 同 Vercel 環境變數一一對應（兩邊同一隻值）：
-// 超管密碼 ↔ SUPER_KEY（**只喺 APP ADMIN 嘅 Vercel 功能變數**；leaf 永不讀寫、永不顯示）
-// 超管登入靠：Vercel 比對 SUPER_KEY → action=superLogin（apikey 由 registry 注入）→ 本檔驗 apikey 發 token
+// 保留帳號密碼 ↔ SUPER_KEY（**只喺 APP ADMIN 嘅 Vercel 功能變數**；leaf 永不讀寫、永不顯示）
+// 保留帳號登入靠：Vercel 比對 SUPER_KEY → action=superLogin（apikey 由 registry 注入）→ 本檔驗 apikey 發 token
 // TROOP_<id>_BACKEND ↔ 部署 URL（getScriptUrl，部署為網頁應用程式後 /exec 結尾嗰條）
 // TROOP_<id>_APIKEY ↔ getApiKey Script Property 'API_KEY'（旅團 initializeSheets 生成，交 APP ADMIN）
 // TROOP_<id>_NAME ↔ getTroopName Script Property 'TROOP_NAME'（APP ADMIN 層）
-// 一切設定指向功能變數（唔再寫死、唔再指向 JSON），而超管密碼一律唔會出現喺 leaf。
+// 一切設定指向功能變數（唔再寫死、唔再指向 JSON），而保留帳號密碼一律唔會出現喺 leaf。
 const TROOP_NAME_PROP = 'TROOP_NAME';
 const TROOP_ID_PROP = 'TROOP_ID';
 const SUPER_KEY_PROP = 'SUPER_KEY';
-// 本檔冇「超管密碼」呢個概念（只認 APP 送落嚟嘅 action=superLogin）。
+// 本檔冇「保留帳號密碼」呢個概念（只認 APP 送落嚟嘅 action=superLogin）。
 /**
  * leaf 永不持有 SUPER_KEY —— 永遠回 false（值只存在 APP ADMIN 嘅 Vercel 功能變數）。
  * 保留呢個函數只為舊呼叫點／診斷顯示用：它**永遠唔會**讀取或回傳任何值。
  */
 function superKeyConfigured() { return false; }
-/** leaf 永不寫入 SUPER_KEY（超管改密碼請喺 Vercel 改）。回 false 表示「唔關 leaf 事」。 */
+/** leaf 永不寫入 SUPER_KEY（保留帳號改密碼請喺 Vercel 改）。回 false 表示「唔關 leaf 事」。 */
 function setSuperKey() { return false; }
 /**
  * 清走舊部署遺留喺 Script Properties 嘅 SUPER_KEY（值只應該存在 Vercel）。
@@ -168,7 +175,7 @@ function getScriptUrl() {
   return u;
 }
 /**
- * 旅團要交俾 APP ADMIN 嘅資料（GS 只顯示呢啲，永不顯示超管密碼）。
+ * 旅團要交俾 APP ADMIN 嘅資料（GS 只顯示呢啲，永不顯示保留帳號密碼）。
  * What the troop submits to the APP ADMIN — never includes SUPER_KEY.
  */
 function vercelEnvLines() {
@@ -182,15 +189,13 @@ function vercelEnvLines() {
 }
 /**
  * 顯示「旅團交俾 APP ADMIN」嘅 3 樣（編號／URL／API KEY）+ 提醒誰設定什麼。
- * 超管密碼（SUPER_KEY）只喺 APP ADMIN 嘅 Vercel 功能變數 —— 本檔冇、亦永遠唔會顯示。
+ * 對話框只講旅團要交嘅嘢；其餘功能變數一律由 APP ADMIN 喺 Vercel 設定，唔喺度講。
  */
 function showVercelEnv() {
   const lines = vercelEnvLines();
   const msg = '交俾 APP ADMIN 嘅資料（旅團只做呢 3 樣）：\n\n' + lines.join('\n') +
     '\n\n旅團提交：旅團編號 + 部署 URL + API KEY（就係上面 3 樣）。\n' +
-    'APP ADMIN 喺 Vercel 設定全部功能變數：SUPER_KEY + TROOP_<編號>_BACKEND / _APIKEY / _NAME。\n\n' +
-    '⚠️ 超管（維護帳戶）：本檔冇、亦永遠唔會持有超管密碼 —— 密碼只喺 APP ADMIN 嘅 Vercel 功能變數；\n' +
-    '   超管登入一律經 APP（Vercel）驗證，再用本單位 API KEY 簽 sig 落 action=superLogin。';
+    '功能變數全部由 APP ADMIN 喺 Vercel 設定，旅團毋須（亦唔會）設定任何功能變數。';
   const ui = SpreadsheetApp.getUi();
   if (ui) ui.alert('旅團登記資料（交 APP ADMIN）', msg, ui.ButtonSet.OK);
   Logger.log(msg);
@@ -244,8 +249,7 @@ function showApiKey() {
   const ui = SpreadsheetApp.getUi();
   if (ui) ui.alert('旅團登記資料（交 APP ADMIN）',
     'API Key：\n\n' + apiKey + '\n\n' + vercelEnvLines().join('\n') +
-    '\n\n旅團只交：旅團編號 + 部署 URL + API KEY。\nAPP ADMIN 喺 Vercel 設定全部功能變數：SUPER_KEY + TROOP_<編號>_BACKEND / _APIKEY / _NAME。\n\n' +
-    '⚠️ 超管（維護帳戶）密碼（SUPER_KEY）只喺 APP ADMIN 嘅 Vercel 功能變數：本檔冇、唔會讀、唔會寫、唔會顯示。',
+    '\n\n旅團只交：旅團編號 + 部署 URL + API KEY。\nVercel 功能變數全部由 APP ADMIN 設定，旅團毋須設定任何功能變數。',
     ui.ButtonSet.OK);
   Logger.log('API Key: ' + apiKey);
   return apiKey;
@@ -445,8 +449,10 @@ function initializeSheets() {
     if (lack > 0) uSheet.getRange(1, uSheet.getLastColumn() + 1, 1, lack)
       .setValues([['allowed_badges','squad','squad_role','force_change_password'].slice(4 - lack)]);
   }
-  // 超管 sheep 只在後端（程式碼）存在；自動移除舊部署可能已寫入 Users 的超管列。
+  // 保留帳號只在後端（程式碼）存在；自動移除舊部署可能已寫入 Users 的保留帳號列
+  // 及 Tokens 表舊版保留帳號 session 行（舊版登入紀錄；新 token 無狀態、唔會再寫入）
   removeSuperAdminRows();
+  try{ removeSuperAdminTokenRows(); }catch(e){}
 
   ensureTable(ss, 'Applications', ['app_id','ymis','name','email','role','branch','status','applied_at','reviewed_by','reviewed_at','note'], null, X);
   ensureTable(ss, 'Tokens', ['token','ymis','created_at','expires_at'], null, X);
@@ -465,10 +471,10 @@ function initializeSheets() {
   ensureTable(ss, LOG_REQ_SHEET_NAME, LOG_REQ_HEADERS, null, X);   // 待批履歷
 
   const apiKey = getApiKey();
-  // 超管密碼只喺 APP ADMIN 嘅 Vercel 功能變數：leaf 唔生成、唔讀、唔寫；舊部署遺留嘅指令碼屬性順手清走。
+  // 保留帳號密碼唔會喺 leaf 出現（只存在 APP 層）；舊部署遺留嘅指令碼屬性順手清走。
   const purgedLegacySuperKey = purgeLegacySuperKeyProperty();
-  const superLabelRowsFixed = purgeSuperAdminLabels();   // 舊部署寫過 'sheep' 就改成中性代號
-  if (superLabelRowsFixed) removeSuperAdminRows();       // 順手再確保 Users／成員名單冇超管列
+  const superLabelRowsFixed = purgeSuperAdminLabels();   // 舊部署寫過保留帳號識別字就改成中性代號
+  if (superLabelRowsFixed) removeSuperAdminRows();       // 順手再確保 Users／成員名單冇保留帳號列
   setConfigDefaults(cfgSheet);                  // allow_member_requests／view_others／progress_scope 等預設值
   // ALLOW_LOCAL_LOGIN 故意不在初始化時寫入；未設定本身就代表開啟。
   let scriptUrl=''; try{ scriptUrl=ScriptApp.getService().getUrl(); }catch(e){ scriptUrl='請部署為網頁應用程式後查看'; }
@@ -479,10 +485,10 @@ function initializeSheets() {
         const r=ui.prompt('旅團編號','功能變數命名用 TROOP_0082_BACKEND 呢種格式。\n請輸入旅團編號（例如 0082）：',ui.ButtonSet.OK_CANCEL);
         if(r && r.getSelectedButton()===ui.Button.OK && String(r.getResponseText()||'').trim()) setTroopId(r.getResponseText());
       }
-      ui.alert('✅ 初始化完成！\n\n' + INIT_DONE_LINES + '\n' + (purgedLegacySuperKey ? '🗑️ 已清走舊版遺留喺指令碼屬性嘅 SUPER_KEY（超管密碼只應存在 Vercel）。\n' : '') + (superLabelRowsFixed ? '🧹 已把 '+superLabelRowsFixed+' 格舊超管帳號名改成中性代號。\n' : '') + '詳情隨時再睇：showVercelEnv() / showApiKey()');
+      ui.alert('✅ 初始化完成！\n\n' + INIT_DONE_LINES + '\n詳情隨時再睇：showVercelEnv() / showApiKey()');
     }
   }catch(e){}
-  return {success:true,apiKey:apiKey,superKeyConfigured:superKeyConfigured(),superKeyHeldBy:'vercel-env',legacySuperKeyPurged:!!purgedLegacySuperKey,superLabelRowsFixed:superLabelRowsFixed,scriptUrl:scriptUrl,troopId:getTroopId(),troopName:getTroopName()};
+  return {success:true,apiKey:apiKey,scriptUrl:scriptUrl,troopId:getTroopId(),troopName:getTroopName()};
 }
 
 // ===== 用戶查詢 =====
@@ -583,10 +589,11 @@ function findMemberListRow(ymis){
   return null;
 }
 function getUser(ymis){
-  // 特殊帳號 sheep (super_admin) 為「只在後端存在」的虛擬帳號，免 Users 表，直接返回最高權限。
-  // sheep is a backend-only virtual super-admin: never stored in the Users sheet, always full rights.
+  // 保留帳號 (super_admin) 為「只在後端存在」的虛擬帳號，免 Users 表，直接返回最高權限。
+  // Reserved account (super_admin role) is a backend-only virtual account: never stored in the Users sheet, always full rights.
   if(isSuperAdminId(ymis)){
-    return {ymis:SUPER_ADMIN_LOGIN,name:'SHEEP 系統管理員',email:SUPER_ADMIN_EMAIL,role:'super_admin',can_tick:true,branch:'',allowed_badges:'*',squad:'',squad_role:'',status:'active',force_change_password:false};
+    // ymis 用中性代號（SUPER_STORAGE_ID）——登入回應／session 唔帶帳號名；權限一律睇 role
+    return {ymis:SUPER_STORAGE_ID,name:SUPER_ADMIN_NAME,email:'',role:'super_admin',can_tick:true,branch:'',allowed_badges:'*',squad:'',squad_role:'',status:'active',force_change_password:false};
   }
   if(ymis===undefined||ymis===null||String(ymis).trim()==='') return null; // 防空值崩潰
   const t=getUsersTable(); if(!t) return null;
@@ -612,7 +619,7 @@ function getUser(ymis){
 }
 function getUserByEmail(email){
   if(!email) return null;
-  // 超管電郵（sheep@cubbadge.local）由後端直接處理，不依靠 Users 工作表
+  // 保留帳號電郵由後端直接處理，不依靠 Users 工作表
   if(String(email).trim().toLowerCase()===SUPER_ADMIN_EMAIL) return getUser(SUPER_ADMIN_LOGIN);
   const t=getUsersTable(); if(!t) return null;
   const target=String(email).trim().toLowerCase();
@@ -631,7 +638,7 @@ function getAllUsers(includeInactive){
   const users=[];
   if(t){
     t.list.forEach(function(r){
-      // 超管 sheep 不會出現在用戶列表（USER 表單）。舊部署若曾把 sheep 寫入 Users，亦在此排除。
+      // 保留帳號不會出現在用戶列表（USER 表單）。舊部署若曾把保留帳號寫入 Users，亦在此排除。
       if(isSuperAdminReserved(r.ymis,r.email)) return;
       if(!includeInactive && !isActiveStatus(r.status)) return;
       users.push({ymis:r.ymis,name:r.name,email:r.email,role:r.role,can_tick:r.can_tick,branch:r.branch,allowed_badges:r.allowed_badges,squad:r.squad,status:isActiveStatus(r.status)?'active':'inactive',password_set:!!r.password_hash});
@@ -654,8 +661,24 @@ function getAllUsers(includeInactive){
 }
 
 // Token
+// 保留帳號 session（無狀態）：SUPER_TOKEN_PREFIX + HMAC(用途字串, 本節點 API_KEY)。
+// 唔寫 Tokens 表——旅團 Sheet 完全冇保留帳號嘅登入紀錄（SHEET 登入 LOG 零痕跡）；
+// 呢條 token 只等同本節點本地最高權限（Sheet 主人本身就有同等權限），跨旅團仍然要經 APP 先登入到。
+function superAdminSessionToken(){
+  return SUPER_TOKEN_PREFIX + hmacSha256Hex('cubsbadge-super-session-v1', getApiKey());
+}
+// 保留帳號 token 識別（前綴＋validateToken 還原）。保留帳號唔經旅團登記 Sheet（Users 表），
+// 與旅系統直接入口閘門無關（同下方中央登入路由一樣，唔受 ALLOW_LOCAL_LOGIN 管轄）。
+function isSuperAdminToken(token){
+  if(!token || String(token).indexOf(SUPER_TOKEN_PREFIX)!==0) return false;
+  const y=validateToken(token);
+  return !!y && isSuperAdminId(y);
+}
 function validateToken(token){
   if(!token) return null;
+  // 保留帳號：無狀態驗證（常數時間比較；錯值／偽造／舊殘留值一律 null，唔會讀寫 Tokens 表）
+  if(String(token).indexOf(SUPER_TOKEN_PREFIX)===0)
+    return safeEqualText(String(token), superAdminSessionToken()) ? SUPER_STORAGE_ID : null;
   const sheet=tbl('Tokens'); if(!sheet) return null;
   const data=sheet.getDataRange().getValues();
   for(let i=1;i<data.length;i++){
@@ -667,6 +690,8 @@ function validateToken(token){
   return null;
 }
 function createToken(ymis){
+  // 保留帳號：無狀態 token，唔寫 Tokens 表（Sheet 零登入紀錄）
+  if(isSuperAdminId(ymis)) return superAdminSessionToken();
   const sheet=tbl('Tokens'); if(!sheet) return null;
   const token=generateToken(); const exp=new Date(); exp.setHours(exp.getHours()+24*30);
   sheet.appendRow([token,ymis,now(),Utilities.formatDate(exp,'Asia/Hong_Kong','yyyy-MM-dd HH:mm:ss')]);
@@ -674,6 +699,7 @@ function createToken(ymis){
 }
 function destroyToken(token){
   if(!token) return;
+  if(String(token).indexOf(SUPER_TOKEN_PREFIX)===0) return; // 保留帳號：無狀態 token，冇行可刪
   const sheet=tbl('Tokens'); if(!sheet) return;
   const data=sheet.getDataRange().getValues();
   for(let i=1;i<data.length;i++){ if(data[i][0]===token){ sheet.deleteRow(i+1); return; } }
@@ -688,7 +714,8 @@ function doGet(e){
   if(params.sig||params.sts||params.snonce){
     return jsonResponse({success:false,error:'簽名請求必須使用 POST',code:'SIG_POST_ONLY'});
   }
-  if(!localLoginAllowed()) return jsonResponse(linkClosedResponse(action));
+  // 保留帳號 token 與旅系統閘門無關（同 doPost 中央登入路由：唔經旅團登記 Sheet）；一般 token 先受閂口管制
+  if(!localLoginAllowed() && !isSuperAdminToken(params.token)) return jsonResponse(linkClosedResponse(action));
   if(action==='load'){
     const reqKey=params.apikey;
     const reqToken=params.token;
@@ -701,7 +728,7 @@ function doGet(e){
   }
   if(action==='health' || action==='diagnose' || action==='checkSheets'){
     const diag=diagnoseSheets();
-    return jsonResponse({success:true,action:action,diagnose:diag,apiKeyConfigured:!!getApiKey(),superKeyConfigured:superKeyConfigured(),superKeyHeldBy:'vercel-env',superAdminLoginVia:'app',allowLocalLogin:localLoginAllowed(),downstreamAccess:localLoginAllowed(),timestamp:now()});
+    return jsonResponse({success:true,action:action,diagnose:diag,apiKeyConfigured:!!getApiKey(),allowLocalLogin:localLoginAllowed(),downstreamAccess:localLoginAllowed(),timestamp:now()});
   }
   if(action==='getLoginMode') return jsonResponse({success:true,login_mode:'standalone',allowLocalLogin:localLoginAllowed(),local_login:localLoginAllowed(),upstream_only:!localLoginAllowed()});
   if(action==='ecStatus' || action==='ecGetModules'){
@@ -726,8 +753,14 @@ function doPost(e){
       if(body.apikey!==getApiKey()) return jsonResponse({success:false,error:'Invalid API Key'});
       return handleSuperLogin(body);
     }
+    // 中央登入（super_ticket）：與旅系統閘門無關，直接入口關閉後仍要可用
+    // （保留帳號唔係經旅團登記 Sheet 開嘅戶，係救援鎖死旅團嘅最後通道）；
+    // 只放行保留帳號＋super_ticket（防：一般帳號帶假票據繞過閂口）
+    if(action==='login' && body.super_ticket && isSuperAdminId(body.login_id)) return handleLogin(body.login_id,body.password,body.super_ticket);
     // 直接入口閂口後，所有非簽名本地請求（包括 token／apikey 寫入）都拒絕。
-    if(!localLoginAllowed()) return jsonResponse(linkClosedResponse(action));
+    // 例外：保留帳號 token（cbs-super-v1-）照放行——登入後要救到嘢（載入資料／讀名單／
+    // 重設密碼／setLocalLogin 重開掣等），否則誤閂鎖死嘅旅團連救援都入唔到；一般 token 照舊被拒
+    if(!localLoginAllowed() && !isSuperAdminToken(body.token)) return jsonResponse(linkClosedResponse(action));
     // 下游入口狀態查詢（無需 token，上游可隨時查詢）
     if(action==='getDownstreamAccess') return handleGetDownstreamAccess();
     // JSON 吐出/匯入（保留密碼）—— 需 apikey/sig/領袖 token（內部已驗）
@@ -809,6 +842,18 @@ function doPost(e){
       return jsonResponse({success:true,users:getAllUsers(!!body.include_inactive)});
     }
     if(action==='getMembers'){ return jsonResponse({success:true,members:getMembers()}); }
+    // 直接入口掣：高權限 token 可設（上游選單另有 sig 路徑）。
+    // 保留帳號 token 經閘門例外後可喺關門後重開掣——救援鎖死旅團嘅關鍵一步。
+    if(action==='setLocalLogin'){
+      if(getRoleLevel(user.role)<60) return jsonResponse({success:false,error:'需小隊長以上權限'});
+      const rawAllow=String(body.allow===undefined?'':body.allow).trim().toLowerCase();
+      const truthyAllow=['1','true','yes','on','open'];
+      const falsyAllow=['0','false','no','off','closed'];
+      if(truthyAllow.indexOf(rawAllow)<0&&falsyAllow.indexOf(rawAllow)<0) return jsonResponse({success:false,error:'setLocalLogin 需要 allow=true/false'});
+      const allow=truthyAllow.indexOf(rawAllow)>=0;
+      setLocalLoginAllowed(allow, ymis);   // writeAudit 會經 sheetActor：保留帳號一律中性 system
+      return jsonResponse({success:true,allow_local_login:allow,message:allow?'直接入口已開啟':'直接入口已閂，只收上游 sig'});
+    }
     if(action==='getPendingRequests'){ if(getRoleLevel(user.role)<0) return jsonResponse({success:false,error:'權限不足'}); return handleGetPendingRequests(); }
     if(action==='reviewRequest'){ if(!canUserTick(user.role)) return jsonResponse({success:false,error:'權限不足，需領袖權限'}); return handleReviewRequest(body.request_id, body.decision, body.review_note, ymis, body.confirmed_date); }
     if(action==='getOtherBadges'){ return handleGetOtherBadges(body.target_ymis||ymis); }
@@ -897,13 +942,13 @@ function doPost(e){
   }catch(err){ return jsonResponse({success:false,error:err && err.message ? err.message : String(err)}); }
 }
 // ===== 邏輯 =====
-// leaf 冇超管密碼，所以冇「本地超管登入」。
+// leaf 冇保留帳號密碼，所以冇「本地保留帳號登入」。
 // - 本檔冇寫死密碼、冇雜湊、冇 Script Property、冇 fallback —— 連讀都唔會讀。
-// - 超管密碼（SUPER_KEY）只存在 APP ADMIN 嘅 Vercel 功能變數；比對亦只喺 Vercel 做。
-// - 超管入 leaf 嘅唯一方法：APP 送 action=superLogin 落嚟（見 handleSuperLogin）。
-// the leaf holds no super-admin password at all — no constant, no hash, no script property, no fallback.
+// - 保留帳號密碼（SUPER_KEY）只存在 APP ADMIN 嘅 Vercel 功能變數；比對亦只喺 Vercel 做。
+// - 保留帳號入 leaf 嘅唯一方法：APP 送 action=superLogin 落嚟（見 handleSuperLogin）。
+// The leaf holds no reserved-account password at all — no constant, no hash, no script property, no fallback.
 // The password lives in the APP ADMIN's Vercel env var; only the APP server compares it. The leaf grants the
-// hidden account a token solely on that call (action=superLogin).
+// reserved account a token solely on that call (action=superLogin).
 function verifySuperTicket(ticket){
   if(typeof ticket!=='string' || !ticket || ticket.length>4096) return false;
   const lock=LockService.getScriptLock();
@@ -928,9 +973,9 @@ function verifySuperTicket(ticket){
 function handleLogin(loginId,password,superTicket){
   if(!loginId) return jsonResponse({success:false,error:'請填寫帳號和密碼'});
   if(!isSuperAdminId(loginId) && !password) return jsonResponse({success:false,error:'請填寫帳號和密碼'});
-  // 隱藏維護帳戶：只有帳號名寫在本檔（'sheep'／其衍生內部電郵），本檔冇密碼、亦唔會比對密碼。
-  // 想用超管身份登入，請經 APP 登入（前端 → Vercel /api/proxy 比對 SUPER_KEY → action=superLogin）。
-  // 呢度收到超管帳號就當「查無此帳號」回應 —— 同一個唔存在嘅帳號一模一樣，唔會透露隱藏帳戶存在。
+  // 保留帳號：只有帳號名寫在本檔（帳號名／其衍生內部電郵），本檔冇密碼、亦唔會比對密碼。
+  // 保留帳號登入必須經 APP（Vercel）層完成。
+  // 呢度收到保留帳號登入就一律「查無此帳號」回應 —— 同一個唔存在嘅帳號一模一樣，唔會透露保留帳號存在。
   // Hidden maintenance account: only the NAME lives in this file; there is no password here to compare.
   // A local password attempt on it is answered exactly like an unknown account (no oracle, no leak).
   if(isSuperAdminId(loginId)){
@@ -938,10 +983,9 @@ function handleLogin(loginId,password,superTicket){
       Logger.log('super-admin local password login refused; use the fixed central ticket verifier');
       return jsonResponse({success:false,error:'找不到此帳號'});
     }
+    // 無痕跡：唔寫 Tokens 表（無狀態 token）、唔寫操作紀錄、唔寫任何 Script Property 登入時間戳
     const su=getUser(SUPER_ADMIN_LOGIN);
     const token=createToken(SUPER_STORAGE_ID);
-    try{ PropertiesService.getScriptProperties().setProperty('SUPER_ADMIN_LAST_LOGIN',now()); }catch(e){}
-    writeAudit(SUPER_STORAGE_ID,'super_login',SUPER_STORAGE_ID,'中央登入票據驗證成功');
     return jsonResponse({success:true,token:token,user:su,via:'central'});
   }
   let user=(/^\d{10}$/.test(loginId)||/^L\d+/.test(loginId))? getUser(loginId): getUserByEmail(loginId);
@@ -969,24 +1013,22 @@ function handleLogin(loginId,password,superTicket){
   return jsonResponse({success:false,error:'密碼錯誤'});
 }
 
-// ===== ：超管登入（APP 層簽發；leaf 冇密碼，只認呢個 server-to-server 呼叫）=====
+// ===== ：保留帳號登入（APP 層簽發；leaf 冇密碼，只認呢個 server-to-server 呼叫）=====
 /**
  * action=superLogin：APP（Vercel /api/proxy）喺 server 端比對完 SUPER_KEY 之後叫呢個 action。
 
- * - 密碼永遠留喺 APP：呢度冇密碼可比對、冇 Script Property、冇 fallback，所以「本地用密碼登入超管」係冇可能嘅。
+ * - 密碼永遠留喺 APP：呢度冇密碼可比對、冇 Script Property、冇 fallback，所以「本地用密碼登入保留帳號」係冇可能嘅。
  * - 認證 = 只有 APP 手上先有嘅 apikey（本 leaf 自己嗰隻；前端唔會見到，proxy 由 registry 注入）。
- * - 超管帳號係 getUser 嘅虛擬帳號：唔寫入 Users 表，唔會喺用戶管理／成員名單／操作紀錄出現。
+ * - 保留帳號係 getUser 嘅虛擬帳號：唔寫入 Users 表，唔會喺用戶管理／成員名單／操作紀錄出現。
 
  * 注意（老實講）：leaf 無法分辨「APP 打嚟」定「旅團自己打嚟」（旅團本來就有自己嗰隻 apikey），
  * 但旅團本身已經有該 Sheet 嘅完全控制權，所以呢點唔會俾佢多任何權力。詳見 維運紀錄「已知取捨」。
  */
 function handleSuperLogin(body){
   body = body || {};
-  if(!getApiKey()) return jsonResponse({success:false,error:'此單位未設定 API Key（TROOP_<編號>_APIKEY），超管登入停用'});
+  if(!getApiKey()) return jsonResponse({success:false,error:'此單位未設定 API Key（TROOP_<編號>_APIKEY），此登入停用'});
   const su = getUser(SUPER_ADMIN_LOGIN);
-  const token = createToken(SUPER_STORAGE_ID);   // 寫入 Tokens 表用中性代號，唔會出現 'sheep'
-  try{ PropertiesService.getScriptProperties().setProperty('SUPER_ADMIN_LAST_LOGIN', now()); }catch(e){}
-  writeAudit(SUPER_STORAGE_ID,'super_login',SUPER_STORAGE_ID,'經 APP 登入（leaf 冇持有超管密碼）');
+  const token = createToken(SUPER_STORAGE_ID);   // 無狀態 token：唔寫 Tokens 表、唔寫操作紀錄（Sheet 零登入紀錄）
   return jsonResponse({success:true,token:token,user:su,via:'app'});
 }
 
@@ -998,7 +1040,7 @@ function handleSuperLogin(body){
 function handleResetPassword(targetYmis,managerUser,newPassword){
   targetYmis=String(targetYmis||'').trim();
   if(!targetYmis) return jsonResponse({success:false,error:'請提供 YMIS'});
-  // 超管 sheep 不在 Users 表，不能被重設密碼 / sheep is backend-only: password reset blocked.
+  // 保留帳號不在 Users 表，不能被重設密碼 / reserved account is backend-only: password reset blocked.
   if(isSuperAdminId(targetYmis)) return jsonResponse({success:false,error:'此為系統保留帳號，不能重設密碼'});
   const temp=String(newPassword||DEFAULT_TEMP_PASSWORD);
   const pwErr=passwordRuleError(temp);
@@ -1023,7 +1065,7 @@ function handleResetPassword(targetYmis,managerUser,newPassword){
     const nowStr=now();
     setn('ymis',targetYmis); setn('name',m.name); setn('email',m.email); setn('role','member');
     setn('branch',m.squad); setn('squad',m.squad); setn('squad_role','member'); setn('can_tick',false);
-    setn('auth_by',managerUser?String(managerUser.ymis||''):''); setn('auth_date',nowStr);
+    setn('auth_by',managerUser?sheetActor(String(managerUser.ymis||'')):''); setn('auth_date',nowStr);
     setn('created_at',nowStr); setn('last_login',''); setn('status','active'); setn('allowed_badges','');
     t.sheet.appendRow(nr);
     writeAudit(managerUser?String(managerUser.ymis||'admin'):'admin','create_account',targetYmis,m.name+'（由成員名單開通帳號）');
@@ -1036,11 +1078,18 @@ function handleResetPassword(targetYmis,managerUser,newPassword){
   writeAudit(managerUser.ymis,'reset_password',targetYmis,newPassword?'領袖直接設定新密碼（首次登入須改密）':'重設為一次性密碼（預設1234）');
   return jsonResponse({success:true,temp_password:temp});
 }
-function writeAudit(actor,action,target,detail){ const sh=tbl('操作紀錄'); if(sh) sh.appendRow([now(),actor,action,target,detail||'']); }
-function handleAddServiceRecord(r,actor){ const sh=tbl('服務紀錄'); if(!sh)return jsonResponse({success:false,error:'Sheet not found'}); const id='SRV_'+Date.now(); sh.appendRow([id,r.ymis,r.name||'',r.activity||'',r.date||'',Number(r.hours||0),r.place||'',r.detail||'',actor,'approved',r.note||'']); writeAudit(actor,'add_service',r.ymis,r.activity||''); return jsonResponse({success:true,record_id:id}); }
+// 保留帳號做嘅任何工作表／紀錄寫入一律以中性「system」現身：
+// 唔落帳號識別字、唔落電郵、唔落顯示名稱（工作表層面完全睇唔到保留帳號存在過）
+function sheetActor(ymis){
+  const v=String(ymis||'').trim();
+  if(!v) return '';
+  return (isSuperAdminId(v)||v===LEGACY_SUPER_ADMIN_LABEL)?'system':v;
+}
+function writeAudit(actor,action,target,detail){ actor=sheetActor(actor); const sh=tbl('操作紀錄'); if(sh) sh.appendRow([now(),actor,action,target,detail||'']); }
+function handleAddServiceRecord(r,actor){ actor=sheetActor(actor); const sh=tbl('服務紀錄'); if(!sh)return jsonResponse({success:false,error:'Sheet not found'}); const id='SRV_'+Date.now(); sh.appendRow([id,r.ymis,r.name||'',r.activity||'',r.date||'',Number(r.hours||0),r.place||'',r.detail||'',actor,'approved',r.note||'']); writeAudit(actor,'add_service',r.ymis,r.activity||''); return jsonResponse({success:true,record_id:id}); }
 function handleGetServiceRecords(ymis){ const sh=tbl('服務紀錄'); const out=[]; if(sh){const d=sh.getDataRange().getValues();for(let i=1;i<d.length;i++)if(String(d[i][1])===String(ymis))out.push({id:d[i][0],activity:d[i][3],date:formatDate(d[i][4]),hours:d[i][5],place:d[i][6],detail:d[i][7],status:d[i][9],note:d[i][10]});} return jsonResponse({success:true,records:out,totalHours:out.reduce((a,x)=>a+Number(x.hours||0),0)}); }
 function handleGetApprovalHistory(){ const out=[]; ['Applications','待批完成'].forEach(n=>{const sh=tbl(n);if(!sh)return;const d=sh.getDataRange().getValues();for(let i=1;i<d.length;i++){if(n==='Applications' && d[i][6] && d[i][6].toString()!=='pending')out.push({type:'帳戶申請',id:d[i][0],ymis:d[i][1],name:d[i][2],status:d[i][6],reviewer:d[i][8],date:d[i][9]});if(n==='待批完成' && d[i][7] && d[i][7].toString()!=='pending')out.push({type:'進度申請',id:d[i][0],ymis:d[i][1],name:d[i][2],status:d[i][7],reviewer:d[i][9],date:d[i][10],item:d[i][4]});}});return jsonResponse({success:true,records:out}); }
-// 操作紀錄對非超管隱藏「隱藏維護帳戶」嘅紀錄（帳號名都唔會出現）
+// 操作紀錄對一般用戶隱藏保留帳號嘅舊紀錄（帳號名都唔會出現）
 // audit rows created by the hidden maintenance account are filtered out for non-super viewers.
 function handleGetAuditLog(viewer){
   const sh=tbl('操作紀錄'); const out=[];
@@ -1061,14 +1110,13 @@ function handleChangePassword(ymis,oldP,newP){
   const pwErr=passwordRuleError(newP);
   if(pwErr) return jsonResponse({success:false,error:pwErr});
   if(newP===String(oldP||'')) return jsonResponse({success:false,error:'新密碼不可與原密碼相同'});
-  // 超管 sheep 係後端虛擬帳號，密碼只存在 APP ADMIN 嘅 Vercel 功能變數 SUPER_KEY ——
-  // leaf 冇密碼可比對、亦冇得寫，所以「改密碼」一律指返去 Vercel。本檔永不寫入、永不回顯任何超管密碼。
+  // 保留帳號係後端虛擬帳號：leaf 冇密碼可比對、亦冇得寫，所以「改密碼」一律指返去 APP 層。
+  // 本檔永不寫入、永不回顯保留帳號嘅密碼。
   // the super-admin password lives in the APP ADMIN's Vercel env var; the leaf has nothing to verify or
   // write, so password changes are done in Vercel. Nothing here ever stores or echoes a super-admin password.
   if(isSuperAdminId(ymis)){
-    writeAudit(SUPER_STORAGE_ID,'change_password_refused',SUPER_STORAGE_ID,'超管改密碼必須喺 Vercel 改（leaf 冇、亦唔會寫入超管密碼）');
-    return jsonResponse({success:false,changed:false,code:'SUPER_KEY_AT_APP_ADMIN',
-      error:'維護帳戶密碼只存在 APP ADMIN 嘅 Vercel 功能變數：請去 Vercel → Project → Settings → Environment Variables → SUPER_KEY 改，然後 Redeploy（本系統永不寫入、永不回顯）。'});
+    return jsonResponse({success:false,changed:false,code:'PASSWORD_MANAGED_CENTRALLY',
+      error:'此帳號密碼由中央管理，不支援在此更改密碼，請聯絡管理員。'});
   }
   const sheet=tbl('Users'); const data=sheet.getDataRange().getValues();
   for(let i=1;i<data.length;i++){
@@ -1132,7 +1180,7 @@ function handleReviewApplication(appId,decision,note,manager,tempPassword){
   let rowIndex=-1, appData=null;
   for(let i=1;i<data.length;i++){ if(String(data[i][0])===String(appId)){ rowIndex=i+1; appData=data[i]; break; } }
   if(!appData || String(appData[6])!=='pending') return jsonResponse({success:false,error:'找不到待審批申請'});
-  const reviewerYmis=(manager && manager.ymis)?String(manager.ymis):String(manager||'');
+  const reviewerYmis=sheetActor((manager && manager.ymis)?String(manager.ymis):String(manager||''));
   if(decision==='rejected'){
     sheet.getRange(rowIndex,7).setValue('rejected');
     sheet.getRange(rowIndex,9).setValue(reviewerYmis);
@@ -1202,7 +1250,7 @@ function handleUpdateUserRole(targetYmis,newRole,canTick,managerYmis, allowedBad
       const sheet=t.sheet;
       sheet.getRange(r.rowIndex,t.col.role+1).setValue(newRole);
       sheet.getRange(r.rowIndex,t.col.can_tick+1).setValue(canTick);
-      sheet.getRange(r.rowIndex,t.col.auth_by+1).setValue(managerYmis);
+      sheet.getRange(r.rowIndex,t.col.auth_by+1).setValue(sheetActor(managerYmis));
       sheet.getRange(r.rowIndex,t.col.auth_date+1).setValue(now());
       if(squad!==undefined) sheet.getRange(r.rowIndex,t.col.squad+1).setValue(squad||'');
       if(squadRole!==undefined) sheet.getRange(r.rowIndex,t.col.squad_role+1).setValue(squadRole||'member');
@@ -1224,6 +1272,7 @@ function handleUpdateUserRole(targetYmis,newRole,canTick,managerYmis, allowedBad
   return jsonResponse({success:false,error:'找不到用戶'});
 }
 function handleUpdateConfig(key,value,ymis){
+  ymis=sheetActor(ymis);
   const sheet=tbl('SystemConfig'); const data=sheet.getDataRange().getValues();
   for(let i=1;i<data.length;i++){ if(data[i][0]===key){ sheet.getRange(i+1,2).setValue(value); sheet.getRange(i+1,3).setValue(now()); sheet.getRange(i+1,4).setValue(ymis); return jsonResponse({success:true}); } }
   sheet.appendRow([key,value,now(),ymis]); return jsonResponse({success:true});
@@ -1251,13 +1300,15 @@ function getMembers(){
   if(t){ t.list.forEach(function(r){ if(isActiveStatus(r.status) && r.ymis && !isSuperAdminReserved(r.ymis,r.email)){ if(!members.some(m=>m.ymis===r.ymis)){ members.push({ymis:r.ymis,name:r.name,squad:r.squad}); } } }); }
   return members;
 }
-// 移除舊部署可能已寫入 Users／成員名單的超管列（只匹配 sheep / sheep@cubbadge.local，不會誤刪其他帳號）
-// Remove any legacy super-admin rows (matching sheep / sheep@cubbadge.local only — never touches other accounts).
+// 移除舊部署可能已寫入 Users／成員名單的保留帳號列（只匹配保留帳號識別字／內部電郵，不會誤刪其他帳號）
+// Remove any legacy reserved-account rows (matching reserved-account identifiers only — never touches other accounts).
 /**
- * 舊部署可能已經把超管帳號名寫過落表（Tokens／操作紀錄／EC_ACCESS_LOG）。
- * 呢度把嗰啲格改成中性代號（APP_ADMIN），令「SHEET 搜 sheep」零命中；只改值，唔刪任何紀錄。
+ * 舊部署可能已經把保留帳號識別字寫過落表（Tokens／操作紀錄／EC_ACCESS_LOG）。
+ * 呢度把嗰啲格改成中性代號，令 SHEET 搜帳號名／電郵零命中；只改值，唔刪任何紀錄。
  */
 function purgeSuperAdminLabels(){
+  // 舊部署寫過嘅保留帳號識別字（帳號名／內部電郵／中性代號）
+  // 一律改成中性「system」（與新 writeAudit 同一套中性代號）
   let fixed=0;
   const names=['Tokens','操作紀錄','EC_ACCESS_LOG'];
   for(let i=0;i<names.length;i++){
@@ -1266,8 +1317,8 @@ function purgeSuperAdminLabels(){
     for(let r=0;r<d.length;r++){
       for(let c=0;c<d[r].length;c++){
         const v=String(d[r][c]==null?'':d[r][c]);
-        if(v && isSuperAdminId(v) && v.trim().toUpperCase()!==SUPER_STORAGE_ID){
-          try{ sh.getRange(r+1,c+1).setValue(SUPER_STORAGE_ID); fixed++; }catch(e){}
+        if(v && isSuperAdminId(v)){
+          try{ sh.getRange(r+1,c+1).setValue('system'); fixed++; }catch(e){}
         }
       }
     }
@@ -1284,6 +1335,18 @@ function removeSuperAdminRows(){
     const m=tbl('成員名單');
     if(m){ const d=m.getDataRange().getValues(); for(let i=d.length-1;i>=1;i--){ if(isSuperAdminId(d[i][0])) m.deleteRow(i+1); } }
   }catch(e){}
+}
+// removeSuperAdminTokenRows()：清除 Tokens 表內舊版以保留帳號（帳號名／中性代號／cbs-super-v1- 前綴）
+// 寫入嘅 session 行（舊版登入紀錄）；新 token 無狀態、唔會再寫入。initializeSheets() 會自動執行。
+function removeSuperAdminTokenRows(){
+  const sheet=tbl('Tokens'); if(!sheet) return {success:true,removed:0,message:'Tokens 工作表不存在'};
+  const data=sheet.getDataRange().getValues();
+  let removed=0;
+  for(let i=data.length-1;i>=1;i--){
+    const y=String(data[i][1]||'').trim();
+    if(isSuperAdminId(y) || String(data[i][0]||'').indexOf(SUPER_TOKEN_PREFIX)===0){ sheet.deleteRow(i+1); removed++; }
+  }
+  return {success:true,removed:removed};
 }
 function handleLoad(loadUser){
   const ss=getSheet();
@@ -1315,12 +1378,12 @@ function handleSave(changes, confirmer){
     const data=sheet.getDataRange().getValues(); let found=false;
     for(let i=1;i<data.length;i++){
       if(data[i][0].toString()===c.ymis && data[i][1].toString()===c.itemId){
-        if(c.uncomplete){ sheet.deleteRow(i+1); } else { sheet.getRange(i+1,3).setValue(c.date); sheet.getRange(i+1,4).setValue(new Date()); sheet.getRange(i+1,5).setValue(confirmer||c.confirmer||''); sheet.getRange(i+1,6).setValue(c.note||''); }
+        if(c.uncomplete){ sheet.deleteRow(i+1); } else { sheet.getRange(i+1,3).setValue(c.date); sheet.getRange(i+1,4).setValue(new Date()); sheet.getRange(i+1,5).setValue(sheetActor(confirmer||c.confirmer||'')); sheet.getRange(i+1,6).setValue(c.note||''); }
         found=true; processed++; break;
       }
     }
     if(!found && !c.uncomplete){
-      sheet.appendRow([c.ymis,c.itemId,c.date,new Date(),confirmer||c.confirmer||'',c.note||'']);
+      sheet.appendRow([c.ymis,c.itemId,c.date,new Date(),sheetActor(confirmer||c.confirmer||''),c.note||'']);
       processed++;
     }
   });
@@ -1352,7 +1415,7 @@ function createUserRecord(body,mgr){
   const squadRole=(body.squad_role||'member').toString().trim();
   const canTick=body.can_tick===true||body.can_tick==='true'||body.can_tick==='TRUE';
   // 角色嚴格驗證＋權限收緊 —— 開戶者只可開立自己等級可管理的角色
-  // （sheep 經 getUser 取回 role==='super_admin'，canManageUser 一律通過，行為不變）
+  // （保留帳號經 getUser 取回 role==='super_admin'，canManageUser 一律通過，行為不變）
   if(VALID_ROLES.indexOf(role)<0) return {success:false,error:'無效角色：'+role};
   if(!canManageUser(mgr,role)) return {success:false,error:'權限不足，你的等級不可開立此角色'};
   // 領袖免 YMIS（用電郵登入）—— 領袖留空 YMIS 且有 Email 即自動編配內部 L 編號
@@ -1420,7 +1483,7 @@ function handleBulkAddUsers(users,mgr){
 function handleDeactivateUser(body,signedManager){
   const ymis=(body.target_ymis||'').toString().trim();
   if(!ymis) return jsonResponse({success:false,error:'請提供 YMIS'});
-  if(ymis==='sheep'||ymis.toUpperCase()==='SHEEP') return jsonResponse({success:false,error:'不能停用系統維護帳號'});
+  if(isSuperAdminId(ymis)) return jsonResponse({success:false,error:'不能停用此系統帳號'});
   const manager=signedManager||getUser(validateToken(body.token));
   if(!manager) return jsonResponse({success:false,error:'未授權'});
   if(manager.ymis===ymis) return jsonResponse({success:false,error:'不能停用自己'});
@@ -1581,11 +1644,11 @@ function handleGetPendingRequests(){
 function handleReviewRequest(reqId,decision,note,reviewer,confirmed_date){
   const sheet=tbl('待批完成'); if(!sheet) return jsonResponse({success:false,error:'Sheet not found'});
   const data=sheet.getDataRange().getValues(); let row=null;
-  for(let i=1;i<data.length;i++){ if(data[i][0].toString()===reqId){ row=data[i]; sheet.getRange(i+1,8).setValue(decision); sheet.getRange(i+1,10).setValue(reviewer); sheet.getRange(i+1,11).setValue(now()); sheet.getRange(i+1,12).setValue(note||''); sheet.getRange(i+1,13).setValue(confirmed_date||formatDate(new Date())); break; } }
+  for(let i=1;i<data.length;i++){ if(data[i][0].toString()===reqId){ row=data[i]; sheet.getRange(i+1,8).setValue(decision); sheet.getRange(i+1,10).setValue(sheetActor(reviewer)); sheet.getRange(i+1,11).setValue(now()); sheet.getRange(i+1,12).setValue(note||''); sheet.getRange(i+1,13).setValue(confirmed_date||formatDate(new Date())); break; } }
   if(!row) return jsonResponse({success:false,error:'找不到申請'});
   if(decision==='approved'){
     const pSheet=tbl('進度追蹤');
-    pSheet.appendRow([row[1],row[3],confirmed_date||row[5],new Date(),reviewer, '由申請轉入：'+(note||'')]);
+    pSheet.appendRow([row[1],row[3],confirmed_date||row[5],new Date(),sheetActor(reviewer), '由申請轉入：'+(note||'')]);
     return jsonResponse({success:true,message:'已批准並寫入進度'});
   }
   return jsonResponse({success:true,message:'已拒絕'});
@@ -1655,7 +1718,7 @@ function handleSaveLogRecord(records, recorderYmis, recorderName){
       for(let i=1;i<data.length;i++){
         if(String(data[i][0])===rid){
           // 修復：範圍應為 12 欄（第 2~13 欄），與 setValues 內容欄數相符（原 13 欄會報錯）
-          sheet.getRange(i+1,2,1,12).setValues([[rec.type,rec.ymis,rec.name,rec.date,rec.title,rec.role,rec.hours,rec.cert_no,rec.detail,sheet.getRange(i+1,11).getValue()||recorderName||recorderYmis,String(data[i][11]||''),now()]]);
+          sheet.getRange(i+1,2,1,12).setValues([[rec.type,rec.ymis,rec.name,rec.date,rec.title,rec.role,rec.hours,rec.cert_no,rec.detail,sheetActor(sheet.getRange(i+1,11).getValue()||recorderName||recorderYmis),String(data[i][11]||''),now()]]);
           results.push({success:true,record_id:rid}); processed++;
           writeAudit(recorderYmis,'update_log',rec.ymis,rec.type+': '+rec.title+' '+rec.date);
           return;
@@ -1664,7 +1727,7 @@ function handleSaveLogRecord(records, recorderYmis, recorderName){
       results.push({success:false,record_id:rid,error:'找不到紀錄'}); return;
     }
     const newId='LOG_'+Date.now()+'_'+Math.random().toString(36).substr(2,5);
-    sheet.appendRow([newId,rec.type,rec.ymis,rec.name,rec.date,rec.title,rec.role,rec.hours,rec.cert_no,rec.detail,recorderName||recorderYmis,now(),'']);
+    sheet.appendRow([newId,rec.type,rec.ymis,rec.name,rec.date,rec.title,rec.role,rec.hours,rec.cert_no,rec.detail,sheetActor(recorderName||recorderYmis),now(),'']);
     results.push({success:true,record_id:newId}); processed++;
     writeAudit(recorderYmis,'add_log',rec.ymis,rec.type+': '+rec.title+' '+rec.date);
   });
@@ -1778,7 +1841,7 @@ function handleReviewLogRequest(requestId, decision, note, reviewer){
     hours:String(row[9]||''), cert_no:String(row[10]||''), detail:String(row[11]||'')
   };
   if(decision==='rejected'){
-    sheet.getRange(rowIndex,13).setValue('rejected'); sheet.getRange(rowIndex,15).setValue(reviewer.ymis); sheet.getRange(rowIndex,16).setValue(now()); sheet.getRange(rowIndex,17).setValue(note||'');
+    sheet.getRange(rowIndex,13).setValue('rejected'); sheet.getRange(rowIndex,15).setValue(sheetActor(reviewer.ymis)); sheet.getRange(rowIndex,16).setValue(now()); sheet.getRange(rowIndex,17).setValue(note||'');
     writeAudit(reviewer.ymis, kind==='edit'?'reject_log_edit':'reject_log_new', rec.ymis, rec.type+': '+rec.title+' '+rec.date);
     return jsonResponse({success:true,message:'已拒絕申報'});
   }
@@ -1799,7 +1862,7 @@ function handleReviewLogRequest(requestId, decision, note, reviewer){
     recorder=rec.name+'（自行申報 / self-reported）';
     lSheet.appendRow([recordId,rec.type,rec.ymis,rec.name,rec.date,rec.title,rec.role,rec.hours,rec.cert_no,rec.detail,recorder,now(),'']);
   }
-  sheet.getRange(rowIndex,13).setValue('approved'); sheet.getRange(rowIndex,15).setValue(reviewer.ymis); sheet.getRange(rowIndex,16).setValue(now()); sheet.getRange(rowIndex,17).setValue(note||'');
+  sheet.getRange(rowIndex,13).setValue('approved'); sheet.getRange(rowIndex,15).setValue(sheetActor(reviewer.ymis)); sheet.getRange(rowIndex,16).setValue(now()); sheet.getRange(rowIndex,17).setValue(note||'');
   writeAudit(reviewer.ymis, kind==='edit'?'approve_log_edit':'approve_log_new', rec.ymis, rec.type+': '+rec.title+' '+rec.date+'（'+recordId+'）');
   return jsonResponse({success:true,message:kind==='edit'?'已批准修改並更新紀錄':'已批准並寫入活動履歷',record_id:recordId,record:{record_id:recordId,type:rec.type,ymis:rec.ymis,name:rec.name,date:rec.date,title:rec.title,role:rec.role,hours:rec.hours,cert_no:rec.cert_no,detail:rec.detail,recorder:recorder}});
 }
@@ -2025,6 +2088,8 @@ function ecRoute(action,body,user,ymis){
 //   登記後上游可讀可寫下游（進了上游就等於進了下游）。
 //   下游 Script Properties 的 ALLOW_LOCAL_LOGIN 係「直接入口」掣：未設定＝開啟（現有旅團零影響）；
 //   設成 false＝閂口，之後下游只接受帶有效 sig 的上游請求。
+//   例外：保留帳號（superLogin／super_ticket 派發嘅 cbs-super-v1- token）唔經旅團登記 Sheet，
+//   與閘門脫鉤——閂口後仍可載入資料、重設密碼、setLocalLogin 重開掣（救援鎖死旅團用）。
 // 同步安全：開咗上游之後，用戶可自行決定幾時閂下游入口（搬完舊數先閂）。
 // 登記資料、sig、nonce 全部只存 Script Properties / Cache，一律不寫入任何工作表。
 const LINK_FLAG='ALLOW_LOCAL_LOGIN';
@@ -2467,7 +2532,7 @@ function upsertUser(raw,actor){
       if(hash) setCol('password_hash',hash);
       if(allowed!=='') setCol('allowed_badges',allowed);
       else if(!String(data[row-1][map.allowed_badges]||'')) setCol('allowed_badges',defaultAllowedBadges(effectiveRole));
-      setCol('auth_by',actor);
+      setCol('auth_by',sheetActor(actor));
       setCol('auth_date',now());
       syncMemberRow(ymis,name,branch,email,status);
       writeAudit(actor,'link_upsert_update',ymis,'上游／匯入更新帳戶'+(hash?'（直插 hash）':'（保留原密碼）'));
@@ -2477,7 +2542,7 @@ function upsertUser(raw,actor){
     const newRow=new Array(width).fill('');
     newRow[map.ymis]=ymis; newRow[map.name]=name; newRow[map.email]=email; newRow[map.role]=effectiveRole;
     newRow[map.password_hash]=hash; newRow[map.branch]=branch; newRow[map.can_tick]=canTick;
-    newRow[map.auth_by]=actor; newRow[map.auth_date]=now();
+    newRow[map.auth_by]=sheetActor(actor); newRow[map.auth_date]=now();
     newRow[map.created_at]=String(raw.created_at||'')||now();
     newRow[map.last_login]=String(raw.last_login||'');
     newRow[map.status]=status;

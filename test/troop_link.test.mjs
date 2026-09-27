@@ -494,3 +494,87 @@ test('GS 程式內不留版號註解（版號只留 MD）', () => {
     assert.equal(/\bv\d+\.\d+(\.\d+)?\b/.test(text), false, file + ' 仍有版號字樣');
   }
 });
+
+test('救援通道：關門後保留帳號仍可登入（load／讀名單／重設密碼／setLocalLogin 重開掣），SHEET 零痕跡', () => {
+  const { down } = buildPair();
+  const g = down.context;
+
+  // 開門時一般登入照舊
+  assert.equal(g.doPost({ parameter: {}, postData: { contents: JSON.stringify({ action: 'login', login_id: '1111111111', password: 'changeme' }) } }).success, true);
+
+  // 關門
+  g.setLocalLoginAllowed(false, 'test');
+  assert.equal(g.localLoginAllowed(), false);
+
+  // 1) superLogin（APP 層注入 apikey）係關門後唯一入得去嘅通道
+  assert.equal(g.doPost({ parameter: {}, postData: { contents: JSON.stringify({ action: 'superLogin' }) } }).success, false, '冇 apikey 要被拒');
+  assert.equal(g.doPost({ parameter: {}, postData: { contents: JSON.stringify({ action: 'superLogin', apikey: 'wrong_key' }) } }).success, false, '錯 apikey 要被拒');
+  const sl = g.doPost({ parameter: {}, postData: { contents: JSON.stringify({ action: 'superLogin', apikey: DOWNSTREAM_KEY }) } });
+  assert.equal(sl.success, true, JSON.stringify(sl));
+  assert.ok(String(sl.token).startsWith('cbs-super-v1-'), '保留帳號 token 要帶前綴（無狀態）');
+  assert.ok(!JSON.stringify(sl.user).includes('sheep'), '登入回應唔可以帶帳號名');
+
+  // 2) 關門後帶保留帳號 token：load／getAllUsers／resetPassword 全部通行
+  const load = g.doGet({ parameter: { action: 'load', token: sl.token } });
+  assert.equal(load.success, true, '保留帳號 token 關門後要過閘（救援要載入資料）');
+  const users = g.doPost({ parameter: {}, postData: { contents: JSON.stringify({ action: 'getAllUsers', token: sl.token }) } });
+  assert.equal(users.success, true);
+  assert.ok(!JSON.stringify(users.users).includes('sheep'), '用戶名單唔可以出現保留帳號');
+  const rp = g.doPost({ parameter: {}, postData: { contents: JSON.stringify({ action: 'resetPassword', token: sl.token, target_ymis: '1111111111', new_password: 'Resc1234' }) } });
+  assert.equal(rp.success, true, JSON.stringify(rp));
+
+  // 3) 零痕跡：Tokens 表冇保留帳號行；任何工作表搜不到帳號名／舊代號；Script Properties 冇登入時間戳
+  for (const row of sheetRows(down, 'Tokens')) {
+    assert.equal(String(row[0] || '').startsWith('cbs-super-v1-'), false, 'Tokens 表唔應該有保留帳號 session 行');
+    assert.equal(String(row[1] || '').includes('sheep'), false, 'Tokens 表唔應該有帳號名');
+  }
+  const text = allSheetText(down);
+  assert.equal(text.includes('sheep'), false, '工作表零 sheep');
+  assert.equal(text.includes('APP_ADMIN'), false, '工作表零舊中性代號');
+  assert.equal(text.includes('cubbadge.local'), false, '工作表零內部電郵');
+  assert.equal(down.props.has('SUPER_ADMIN_LAST_LOGIN'), false, '唔應該寫登入時間戳入 Script Properties');
+
+  // 4) 用保留帳號 token 重開掣；一般登入恢復，而且救援重設嘅密碼即刻生效
+  const reopen = g.doPost({ parameter: {}, postData: { contents: JSON.stringify({ action: 'setLocalLogin', token: sl.token, allow: 'true' }) } });
+  assert.equal(reopen.success, true, JSON.stringify(reopen));
+  assert.equal(g.localLoginAllowed(), true, '關門後保留帳號要重開到掣');
+  const login2 = g.doPost({ parameter: {}, postData: { contents: JSON.stringify({ action: 'login', login_id: '1111111111', password: 'Resc1234' }) } });
+  assert.equal(login2.success, true, '救援重設嘅密碼要生效');
+
+  // 5) 審計：保留帳號操作一律中性 system 標籤（一般用戶見到嘅審計都係 system，唔見帳號名）
+  const audit = g.doPost({ parameter: {}, postData: { contents: JSON.stringify({ action: 'getAuditLog', token: sl.token }) } });
+  assert.equal(audit.success, true);
+  const auditText = JSON.stringify(audit);
+  assert.equal(auditText.includes('sheep'), false, '審計唔可以出現帳號名');
+  assert.equal(auditText.includes('APP_ADMIN'), false, '審計唔可以出現舊中性代號');
+  assert.ok(auditText.includes('system'), '保留帳號操作喺審計要係中性 system 標籤');
+  const auditView = g.doPost({ parameter: {}, postData: { contents: JSON.stringify({ action: 'getAuditLog', token: login2.token }) } });
+  assert.equal(JSON.stringify(auditView).includes('sheep'), false, '一般用戶審計同样零痕跡');
+});
+
+test('關門防繞：偽造保留帳號 token、一般 token、一般帳號帶假票據全部照拒', () => {
+  const { down } = buildPair();
+  const g = down.context;
+
+  // 開門時攞一般 token（之後用嚟驗證閘唔會鬆）
+  const reg = g.doPost({ parameter: {}, postData: { contents: JSON.stringify({ action: 'login', login_id: '1111111111', password: 'changeme' }) } });
+  assert.equal(reg.success, true);
+
+  g.setLocalLoginAllowed(false, 'test');
+  assert.equal(g.localLoginAllowed(), false);
+
+  // 偽造保留帳號 token（前綴啱、HMAC 錯）→ 當普通關門拒絕，唔當保留帳號
+  const forged = g.doGet({ parameter: { action: 'load', token: 'cbs-super-v1-' + '0'.repeat(64) } });
+  assert.equal(forged.success, false, '偽造 token 唔可以過閘');
+  assert.equal(forged.upstream_only, true, '偽造 token 要當成一般關門拒絕');
+
+  // 一般帳號 token 關門後照拒（閘唔會因保留帳號通道而鬆）
+  const regLoad = g.doGet({ parameter: { action: 'load', token: reg.token } });
+  assert.equal(regLoad.success, false, '一般 token 關門後照拒');
+  const regUsers = g.doPost({ parameter: {}, postData: { contents: JSON.stringify({ action: 'getAllUsers', token: reg.token }) } });
+  assert.equal(regUsers.success, false, '一般 token 寫入類操作關門後照拒');
+
+  // 一般帳號帶假 super_ticket 唔可以繞閘（票據例外只限保留帳號）
+  const fakeTicket = g.doPost({ parameter: {}, postData: { contents: JSON.stringify({ action: 'login', login_id: '1111111111', password: 'whatever', super_ticket: 'not-a-real-ticket' }) } });
+  assert.equal(fakeTicket.success, false, '一般帳號＋假票據唔可以繞過閘門');
+});

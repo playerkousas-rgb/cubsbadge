@@ -1,0 +1,147 @@
+// 部署面一致性守護測試（v5.9 對齊 roverbadge 改動）
+// 掃描「會公開出去嘅檔案」：index.html（前端）、apps-script/Code.gs（前端提供下載俾旅團部署）、
+// api/health.js、api/ecosystem.js、api/proxy.js、api/troops.js（Vercel 公開回應）。
+// 驗證：
+//   1. 版號統一：index.html 全部版本字樣 = v5.9（無殘留 v5.2/v5.8），package.json = 5.9.0
+//   2. 超管零痕跡：前端／分發後端／公開回應搜不到帳號名、代號、SUPER_KEY、維護帳戶字眼
+//   3. 關門制唔顯示下游：index.html 無 ALLOW_LOCAL_LOGIN
+//   4. 非官方聲明：footer 第 4 行（中英），並移除 scout.org.hk 官方連結
+//   5. Scout Admin 回報 widget：script 標簽（data-app）＋ 3 個入口按鈕 + openScoutReport fallback
+//   6. Code.gs 分發衛生：'sheep' 只可出現喺 2 行身份常量；用戶可見字串全部中性
+import fs from 'node:fs';
+import assert from 'node:assert/strict';
+
+let passed = 0;
+let failed = 0;
+function check(name, fn) {
+  try {
+    fn();
+    passed++;
+    console.log(`  ✔ ${name}`);
+  } catch (e) {
+    failed++;
+    console.log(`  ✘ ${name}\n     → ${String(e.message).split('\n').slice(0, 4).join('\n     → ')}`);
+  }
+}
+
+const html = fs.readFileSync('index.html', 'utf8');
+const gas = fs.readFileSync('apps-script/Code.gs', 'utf8');
+const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
+const health = fs.readFileSync('api/health.js', 'utf8');
+const eco = fs.readFileSync('api/ecosystem.js', 'utf8');
+const proxy = fs.readFileSync('api/proxy.js', 'utf8');
+const troops = fs.readFileSync('api/troops.js', 'utf8');
+
+console.log('=== 1. 版號統一（v5.9） ===');
+check('index.html 無殘留舊版號 v5.2 / v5.8', () => {
+  assert.equal(/v5\.(2|8)\b/.test(html), false, '仍有舊版號字樣');
+});
+check('index.html 所有版本字樣都係 v5.9', () => {
+  const versions = [...html.matchAll(/v5\.\d+/g)].map(m => m[0]);
+  assert.ok(versions.length >= 10, `版本字樣太少（${versions.length}），唔該檢查`);
+  assert.ok(versions.every(v => v === 'v5.9'), `發現非 v5.9：${[...new Set(versions)].join(', ')}`);
+});
+check('package.json version = 5.9.0', () => {
+  assert.equal(pkg.version, '5.9.0');
+});
+
+console.log('=== 2. 超管零痕跡（公開面） ===');
+const noTrace = (src, label, patterns) => {
+  for (const [re, why] of patterns) {
+    const m = src.match(re);
+    assert.equal(m, null, `${label}：${why}${m ? '（命中：' + String(m[0]).slice(0, 40) + '）' : ''}`);
+  }
+};
+const TRACE_PATTERNS = [
+  [/sheep/i, '帳號名 sheep'],
+  [/SUPER_KEY/, 'SUPER_KEY'],
+  [/APP_ADMIN/, '舊中性代號 APP_ADMIN'],
+  [/cubbadge\.local/i, '內部電郵'],
+  [/維護帳戶/, '「維護帳戶」字眼'],
+  [/超管/, '「超管」字眼'],
+];
+check('index.html（部署前端）零超管痕跡', () => noTrace(html, 'index.html', TRACE_PATTERNS));
+check('api/health.js 零超管痕跡', () => noTrace(health, 'api/health.js', TRACE_PATTERNS));
+check('api/ecosystem.js 零超管痕跡', () => noTrace(eco, 'api/ecosystem.js', TRACE_PATTERNS));
+check('api/troops.js 零超管痕跡', () => noTrace(troops, 'api/troops.js', TRACE_PATTERNS));
+check('api/proxy.js 無帳號名（sheep）', () => noTrace(proxy, 'api/proxy.js', [[/sheep/i, '帳號名 sheep']]));
+check('data/ 公開靜態檔（troops.json／units.json）零超管痕跡', () => {
+  const troopsJson = fs.readFileSync('data/troops.json', 'utf8');
+  const unitsJson = fs.readFileSync('data/units.json', 'utf8');
+  noTrace(troopsJson, 'data/troops.json', TRACE_PATTERNS);
+  noTrace(unitsJson, 'data/units.json', TRACE_PATTERNS);
+});
+check('Code.gs（分發俾旅團）：sheep 只可喺 2 行身份常量', () => {
+  const lines = gas.split('\n');
+  const hits = lines
+    .map((line, i) => ({ line, n: i + 1 }))
+    .filter(({ line }) => /sheep/i.test(line));
+  assert.equal(hits.length, 2, `sheep 出現在 ${hits.length} 行：` + hits.map(h => `L${h.n}`).join(', '));
+  assert.ok(hits.every(h => /const\s+SUPER_ADMIN_LOGIN|const\s+LEGACY_SUPER_ADMIN_LABEL/.test(h.line)),
+    'sheep 只可以喺 SUPER_ADMIN_LOGIN／LEGACY_SUPER_ADMIN_LABEL 常量');
+});
+check('Code.gs：「超管／維護帳戶」字眼零命中', () => noTrace(gas, 'Code.gs', [[/超管/, '「超管」字眼'], [/維護帳戶/, '「維護帳戶」字眼']]));
+check('Code.gs：「SHEEP 系統管理員」只可喺舊標籤常量（一處）', () => {
+  assert.equal(gas.split('SHEEP 系統管理員').length - 1, 1, '舊標籤應該只出現一次（LEGACY_SUPER_ADMIN_LABEL）');
+  assert.match(gas, /const\s+LEGACY_SUPER_ADMIN_LABEL\s*=\s*'SHEEP 系統管理員'/);
+});
+check('Code.gs：改密碼錯誤回應已中性化', () => {
+  assert.equal(/SUPER_KEY_AT_APP_ADMIN/.test(gas), false, '舊錯誤代號 SUPER_KEY_AT_APP_ADMIN 仍存在');
+  assert.ok(/PASSWORD_MANAGED_CENTRALLY/.test(gas));
+  assert.ok(/此帳號密碼由中央管理/.test(gas));
+});
+check('Code.gs：showApiKey 彈窗唔再提 SUPER_KEY／超管', () => {
+  assert.equal(gas.includes('⚠️ 超管（維護帳戶）密碼'), false);
+  assert.ok(gas.includes('Vercel 功能變數全部由 APP ADMIN 設定，旅團毋須設定任何功能變數'), '中立彈窗文字要存在');
+});
+check('Code.gs：保留帳號虛擬用戶用中性代號（ymis=APP_ADMIN、email 空白、顯示名無 SHEEP）', () => {
+  assert.match(gas, /ymis:SUPER_STORAGE_ID,name:SUPER_ADMIN_NAME,email:''/);
+  assert.match(gas, /const SUPER_ADMIN_NAME = '系統管理員'/);
+});
+
+console.log('=== 3. 關門制唔顯示下游 ===');
+check('index.html 無 ALLOW_LOCAL_LOGIN（關門狀態唔對下游顯示）', () => {
+  assert.equal(/ALLOW_LOCAL_LOGIN/.test(html), false);
+});
+
+console.log('=== 4. 非官方聲明（footer） ===');
+check('footer 有第 4 行非官方聲明（HTML + 中文字典 + 英文字典）', () => {
+  assert.ok(/data-i18n="footer_line4"/.test(html), 'HTML 缺 footer_line4 元素');
+  assert.ok(/footer_line4:'⚠️ 非官方聲明：本系統為獨立開發的非官方工具，並非香港童軍總會官方產品，與總會並無隸屬或贊助關係。'/.test(html), '中文字典缺非官方聲明');
+  assert.ok(/footer_line4:'⚠️ Unofficial notice: This is an independently developed unofficial tool[^']*Scout Association of Hong Kong[^']*'/.test(html), '英文字典缺 Unofficial notice');
+});
+check('footer 已移除「與總會隸屬」官方連結（只餘功能性官方表格下載）', () => {
+  // footer 三行（HTML 預設 + 中／英文字典 footer_line1..3）唔可以再出現 scout.org.hk
+  const footerBlock = html.slice(html.indexOf('<footer'), html.indexOf('</footer>'));
+  assert.equal(/scout\.org\.hk/.test(footerBlock), false, 'footer 仍帶官方連結（應只留功能性表格下載喺表單區）');
+  const zhFooter = (html.match(/footer_line3:'[^']*'/) || [''])[0];
+  const enFooter = (html.match(/footer_line3:'[^']*'/g) || ['',''])[1];
+  assert.equal(/scout\.org\.hk/.test(zhFooter), false, '中文 footer_line3 仍帶官方連結');
+  assert.equal(/scout\.org\.hk/.test(enFooter), false, '英文 footer_line3 仍帶官方連結');
+});
+
+console.log('=== 5. Scout Admin 回報 widget（問題回報／意見回饋） ===');
+check('widget script 標簽：data-app=幼童軍進度追蹤', () => {
+  assert.match(html, /<script src="https:\/\/scout-admin-blue\.vercel\.app\/widget\.js" data-app="幼童軍進度追蹤"><\/script>/);
+});
+check('openScoutReport() 已定義，含 report.html fallback', () => {
+  assert.ok(/function openScoutReport\(\)/.test(html));
+  assert.ok(/report\.html\?app=/.test(html), '缺 report.html fallback');
+  assert.ok(/scoutw-overlay/.test(html), '要會開啟 widget 嘅 modal');
+});
+check('3 個入口：welcome-nav 按鈕 + 登入頁連結 + header 常駐按鈕', () => {
+  const entries = html.split('openScoutReport()').length - 1;
+  assert.ok(entries >= 4, `openScoutReport 調用點太少（${entries}）：要 3 個按鈕 + fallback`);
+  assert.ok(/class="welcome-feedback" onclick="openScoutReport\(\)"/.test(html), 'welcome-nav 入口缺失');
+  assert.ok(/btn-feedback-top" onclick="openScoutReport\(\)"/.test(html), 'header 入口缺失');
+});
+check('i18n：btn_report_feedback 中英都有', () => {
+  assert.ok(/btn_report_feedback:'🐛💬 回報 · 意見'/.test(html));
+  assert.ok(/btn_report_feedback:'🐛💬 Report · Feedback'/.test(html));
+});
+check('FAB 隱藏（用常駐按鈕代替）', () => {
+  assert.ok(/#scoutw-fab\{display:none/.test(html));
+});
+
+console.log(`\n== integrity 結果：${passed} 通過，${failed} 失敗 ==`);
+if (failed > 0) process.exit(1);

@@ -324,7 +324,8 @@ await check('registry：設定淨係指向功能變數 — 冇 env 就冇旅團�
   const res = mockRes();
   troopsHandler(mockReq({}), res);
   assert.equal(Object.keys(res.body.troops).length, 0);
-  assert.ok(res.body._hint && res.body._hint.includes('SUPER_KEY'), '空 registry 要提示設定功能變數 4 樣');
+  assert.ok(res.body._hint && res.body._hint.includes('TROOP_0082_BACKEND'), '空 registry 要提示設定旅團功能變數');
+  assert.doesNotMatch(JSON.stringify(res.body), /SUPER_KEY|sheep|超管/i, '公開回應唔可以提管理 key／保留帳號機制');
 });
 
 await check('registry：SUPER_KEY 指向功能變數，verifySuperKey 驗證（值永不外洩）', async () => {
@@ -382,7 +383,7 @@ await check('register：SUPER_KEY 錯 → 403；啱 → 轉發俾後端 GS 並�
   } finally { restoreFetch(); }
 });
 
-await check('health：envContract 回 4 樣 boolean，apikey／SUPER_KEY 值永不回傳', async () => {
+await check('health：envContract 回 3 樣 boolean，零超管機制資訊（公開端點唔可以提 SUPER_KEY／sheep）', async () => {
   clearEnv();
   process.env.TROOP_0082_BACKEND = 'https://script.google.com/macros/s/AKfycbTESTKEYXXXXXXXX/exec';
   process.env.TROOP_0082_APIKEY = 'sc_secret_hp';
@@ -392,13 +393,13 @@ await check('health：envContract 回 4 樣 boolean，apikey／SUPER_KEY 值永�
   const res = mockRes();
   await handler(mockReq({ query: { troopId: '0082', checkBackend: '0' } }), res);
   assert.equal(res.statusCode, 200);
-  assert.equal(res.body.envContract.SUPER_KEY, true);
   assert.equal(res.body.envContract['TROOP_0082_BACKEND'], true);
   assert.equal(res.body.envContract['TROOP_0082_APIKEY'], true);
   assert.equal(res.body.envContract['TROOP_0082_NAME'], true);
   const raw = JSON.stringify(res.body);
   assert.ok(!raw.includes('sc_secret_hp'), 'apikey 洩漏咗！');
   assert.ok(!raw.includes('sk_secret_hp'), 'SUPER_KEY 洩漏咗！');
+  assert.ok(!/SUPER_KEY|superLogin|superKey|sheep|APP_ADMIN|維護帳戶|超管/i.test(raw), '公開 health 回應唔可以提任何超管機制');
 });
 
 await check('B/D 唔入前端：/api/troops 同 /api/health 回應零部署 URL、零 apikey', async () => {
@@ -514,7 +515,9 @@ await check('proxy：前端自己叫 action=superLogin → 403（唔會派超管
     const res = mockRes();
     await handler(mockReq({ method: 'POST', body: { troopId: '0082', action: 'superLogin' } }), res);
     assert.equal(res.statusCode, 403, JSON.stringify(res.body));
-    assert.equal(res.body.code, 'SUPER_LOGIN_INTERNAL');
+    assert.equal(res.body.code, 'UNSUPPORTED_ACTION');
+    // 公開回應零超管痕跡：唔可以提 sheep／超管／SUPER_KEY／保留帳號機制
+    assert.doesNotMatch(JSON.stringify(res.body), /sheep|超管|SUPER_KEY|super admin|保留帳號/i);
     assert.equal(forwarded, null, '唔應該轉發去 leaf（唔係經超管登入流程）');
   } finally { restoreFetch(); clearEnv(); }
 });

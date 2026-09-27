@@ -61,8 +61,8 @@ module.exports = async function handler(req, res) {
       return res.status(400).json({ success: false, error: 'Missing required parameter: action' });
     }
 
-    // ── 隱藏超管：SUPER_KEY 只存在 Vercel 功能變數 ──────────────────
-    // 前端照舊送 {action:'login', login_id:'sheep', password}，密碼只喺呢度比對，
+    // ── 保留帳號登入：密碼（SUPER_KEY）只存在 Vercel 功能變數 ─────────
+    // 前端送保留帳號嘅 {action:'login', login_id, password}，密碼只喺呢度比對，
     // **永遠唔會**轉發去 leaf GS（旅團開 Sheet／Apps Script／指令碼屬性都見唔到）。
     // 比對通過就改送 action=superLogin，apikey 照舊由 registry 注入。
     let viaSuperAdminLogin = false;   // 只有呢條路（驗過 SUPER_KEY）才可以送 superLogin 落 leaf
@@ -87,8 +87,8 @@ module.exports = async function handler(req, res) {
       console.warn(`[PROXY] refuse client-supplied action=superLogin troop=${troopId}`);
       return res.status(403).json({
         success: false,
-        code: 'SUPER_LOGIN_INTERNAL',
-        error: '超管登入只可以經 APP 登入流程（帳號 sheep + 密碼）'
+        code: 'UNSUPPORTED_ACTION',
+        error: '不支援此操作'
       });
     }
 
