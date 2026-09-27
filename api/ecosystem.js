@@ -14,7 +14,7 @@
 // ============================================================
 
 const { normId, strippedId, isValidUnitId } = require('./_lib/normid');
-const { getTroopConfig, superKeyConfigured } = require('./_lib/registry');
+const { getTroopConfig } = require('./_lib/registry');
 const eco = require('./_lib/ecosystem');
 const { verifySig } = require('./_lib/sig');
 
@@ -133,10 +133,8 @@ module.exports = async function handler(req, res) {
         sheet: (meta && meta.sheet) || '',
         backendConfigured: !!(cfg && cfg.backend),
         apikeyConfigured: !!(cfg && cfg.apikey),
-        superKeyConfigured: superKeyConfigured(),
         // 後端GS 對應：Vercel 功能變數名（只有名，永無值）
         envNames: {
-          superKey: (meta && meta._superKeyEnv) || 'SUPER_KEY',
           backend: (meta && meta._backendEnv) || `TROOP_${unit}_BACKEND`,
           apikey: (meta && meta._apikeyEnv) || `TROOP_${unit}_APIKEY`,
           name: (meta && meta._nameEnv) || `TROOP_${unit}_NAME`
