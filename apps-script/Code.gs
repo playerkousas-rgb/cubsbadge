@@ -1351,7 +1351,9 @@ function removeSuperAdminTokenRows(){
 function handleLoad(loadUser){
   const ss=getSheet();
   const pSheet=tbl('進度追蹤'); const progress={};
-  if(pSheet){ const data=pSheet.getDataRange().getValues(); for(let i=1;i<data.length;i++){ const ymis=data[i][0].toString(); if(!ymis) continue; if(!progress[ymis]) progress[ymis]={}; progress[ymis][data[i][1].toString()]={date:data[i][2]?formatDate(data[i][2]):'',confirmer:data[i][4]?data[i][4].toString():''}; } }
+  // 新版：回傳第 6 欄「備註」（活動細項／過渡等同紀錄的來源說明）。
+  // 舊後端不回傳 note 時，前端會以空字串補位（向下兼容，見 index.html loadItemsAndProgress）。
+  if(pSheet){ const data=pSheet.getDataRange().getValues(); for(let i=1;i<data.length;i++){ const ymis=data[i][0].toString(); if(!ymis) continue; if(!progress[ymis]) progress[ymis]={}; progress[ymis][data[i][1].toString()]={date:data[i][2]?formatDate(data[i][2]):'',confirmer:data[i][4]?data[i][4].toString():'',note:data[i][5]?data[i][5].toString():''}; } }
   // 簡化版：同時提供 flat
   const flat={}; for(const y in progress){ flat[y]={}; for(const k in progress[y]){ flat[y][k]=progress[y][k].date; } }
   const members=getMembers();
@@ -1359,8 +1361,9 @@ function handleLoad(loadUser){
   const prSheet=tbl('待批完成'); const pending=[];
   if(prSheet){ const data=prSheet.getDataRange().getValues(); for(let i=1;i<data.length;i++){ if(data[i][7].toString()==='pending'){ pending.push({request_id:data[i][0].toString(),ymis:data[i][1].toString(),name:data[i][2].toString(),item_id:data[i][3].toString(),item_name:data[i][4].toString(),requested_date:data[i][5]?formatDate(data[i][5]):'',evidence:data[i][6]?data[i][6].toString():'',status:'pending',created_at:data[i][8]?formatDate(data[i][8]):''}); } } }
   // other badges
+  // 新版：一併回傳第 6 欄「備註」（col1=YMIS, col2=獎章ID, col3=名稱, col4=日期, col5=證書, col6=備註, col7=更新時間）
   const oSheet=tbl('其他獎章'); const other={};
-  if(oSheet){ const data=oSheet.getDataRange().getValues(); for(let i=1;i<data.length;i++){ const y=data[i][0].toString(); if(!y) continue; if(!other[y]) other[y]={}; other[y][data[i][1].toString()]={name:data[i][2]?data[i][2].toString():'',date:data[i][3]?formatDate(data[i][3]):'',cert:data[i][4]?data[i][4].toString():''}; } }
+  if(oSheet){ const data=oSheet.getDataRange().getValues(); for(let i=1;i<data.length;i++){ const y=data[i][0].toString(); if(!y) continue; if(!other[y]) other[y]={}; other[y][data[i][1].toString()]={name:data[i][2]?data[i][2].toString():'',date:data[i][3]?formatDate(data[i][3]):'',cert:data[i][4]?data[i][4].toString():'',note:data[i][5]?data[i][5].toString():''}; } }
   // 活動履歷回包（logsSupported 讓前端分辨後端是否已升級）
   const lSheet=tbl(LOG_SHEET_NAME);
   // 待批履歷（團員自行申報，logRequestsSupported 讓前端分辨後端是否已升級）
@@ -1376,14 +1379,23 @@ function handleSave(changes, confirmer){
   let processed=0;
   changes.forEach(function(c){
     const data=sheet.getDataRange().getValues(); let found=false;
+    // 新版（對齊 VSBADGE）：只有請求「明確帶有」 note 欄才會改寫備註；
+    // 舊前端不送 note 時保留 Sheet 內既有備註，不會被清空。
+    const hasNote=Object.prototype.hasOwnProperty.call(c,'note');
+    const noteValue=hasNote?safeSheetText(c.note,500):'';
     for(let i=1;i<data.length;i++){
       if(data[i][0].toString()===c.ymis && data[i][1].toString()===c.itemId){
-        if(c.uncomplete){ sheet.deleteRow(i+1); } else { sheet.getRange(i+1,3).setValue(c.date); sheet.getRange(i+1,4).setValue(new Date()); sheet.getRange(i+1,5).setValue(sheetActor(confirmer||c.confirmer||'')); sheet.getRange(i+1,6).setValue(c.note||''); }
+        if(c.uncomplete){ sheet.deleteRow(i+1); } else {
+          sheet.getRange(i+1,3).setValue(c.date);
+          sheet.getRange(i+1,4).setValue(new Date());
+          sheet.getRange(i+1,5).setValue(sheetActor(confirmer||c.confirmer||''));
+          if(hasNote) sheet.getRange(i+1,6).setValue(noteValue);
+        }
         found=true; processed++; break;
       }
     }
     if(!found && !c.uncomplete){
-      sheet.appendRow([c.ymis,c.itemId,c.date,new Date(),sheetActor(confirmer||c.confirmer||''),c.note||'']);
+      sheet.appendRow([c.ymis,c.itemId,c.date,new Date(),sheetActor(confirmer||c.confirmer||''),hasNote?noteValue:'']);
       processed++;
     }
   });
@@ -1655,7 +1667,8 @@ function handleReviewRequest(reqId,decision,note,reviewer,confirmed_date){
 }
 function handleGetOtherBadges(ymis){
   const sheet=tbl('其他獎章'); const list=[];
-  if(sheet){ const data=sheet.getDataRange().getValues(); for(let i=1;i<data.length;i++){ if(data[i][0].toString()===ymis){ list.push({id:data[i][1].toString(),name:data[i][2].toString(),date:data[i][3]?formatDate(data[i][3]):'',cert:data[i][4]?data[i][4].toString():''}); } } }
+  // 新版：一併回傳備註欄（col6）
+  if(sheet){ const data=sheet.getDataRange().getValues(); for(let i=1;i<data.length;i++){ if(data[i][0].toString()===ymis){ list.push({id:data[i][1].toString(),name:data[i][2].toString(),date:data[i][3]?formatDate(data[i][3]):'',cert:data[i][4]?data[i][4].toString():'',note:data[i][5]?data[i][5].toString():''}); } } }
   return jsonResponse({success:true,other:list});
 }
 // ===== ：活動履歷（服務／活動／訓練班紀錄） =====
@@ -1753,12 +1766,30 @@ function handleDeleteLogRecord(recordId, recorderYmis){
 }
 
 function handleSaveOtherBadge(records){
+  // 新版（對齊 VSBADGE）：逐欄更新，修正舊版把「完成日期」寫入第 3 欄（獎章名稱欄）的 bug。
+  // 其他獎章表欄位：col1=YMIS, col2=獎章ID, col3=獎章名稱, col4=完成日期, col5=證書編號, col6=備註, col7=更新時間
+  // - uncomplete=true → 刪除該列（取消完成）
+  // - 只有請求明確帶有 note 才改寫備註（舊前端不送 note 時保留原有備註）
+  // - 全部文字經 safeSheetText 防公式注入
   const sheet=tbl('其他獎章'); if(!sheet) return jsonResponse({success:false,error:'Sheet missing'});
   let c=0;
   records.forEach(function(r){
     const data=sheet.getDataRange().getValues(); let found=false;
-    for(let i=1;i<data.length;i++){ if(data[i][0].toString()===r.ymis && data[i][1].toString()===r.badgeId){ sheet.getRange(i+1,3).setValue(r.date); sheet.getRange(i+1,4).setValue(r.cert||''); sheet.getRange(i+1,5).setValue(r.note||''); sheet.getRange(i+1,6).setValue(new Date()); found=true; c++; break; } }
-    if(!found){ sheet.appendRow([r.ymis,r.badgeId,r.name||r.badgeId,r.date,r.cert||'',r.note||'',new Date()]); c++; }
+    for(let i=1;i<data.length;i++){
+      if(data[i][0].toString()===r.ymis && data[i][1].toString()===r.badgeId){
+        if(r.uncomplete){ sheet.deleteRow(i+1); found=true; c++; break; }
+        sheet.getRange(i+1,3).setValue(safeSheetText(r.name||r.badgeId,120));
+        sheet.getRange(i+1,4).setValue(r.date||'');
+        sheet.getRange(i+1,5).setValue(safeSheetText(r.cert||'',60));
+        if(Object.prototype.hasOwnProperty.call(r,'note')) sheet.getRange(i+1,6).setValue(safeSheetText(r.note||'',500));
+        sheet.getRange(i+1,7).setValue(new Date());
+        found=true; c++; break;
+      }
+    }
+    if(!found && !r.uncomplete){
+      sheet.appendRow([r.ymis,r.badgeId,safeSheetText(r.name||r.badgeId,120),r.date||'',safeSheetText(r.cert||'',60),Object.prototype.hasOwnProperty.call(r,'note')?safeSheetText(r.note||'',500):'',new Date()]);
+      c++;
+    }
   });
   return jsonResponse({success:true,processed:c});
 }

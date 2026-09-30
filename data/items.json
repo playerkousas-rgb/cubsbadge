@@ -1,9 +1,12 @@
 {
   "meta": {
-    "version": "幼童軍專用 - 2025年8月網上擬定簡易版",
-    "base": "2025年8月《幼童軍訓練綱要》網上擬定簡易版（官方來源）",
-    "updated": "2025年8月官方訓練綱要完整進度範疇及紀錄冊版",
-    "source": "https://prog.scouting.org.hk/cub/wp-content/uploads/2025/08/%E5%B9%BC%E7%AB%A5%E8%BB%8D%E8%A8%93%E7%B7%B4%E7%B6%B1%E8%A6%812025%E5%B9%B48%E6%9C%88%E7%B6%B2%E4%B8%8A%E6%93%AC%E5%AE%9A%E7%B0%A1%E6%98%93%E7%89%88.pdf#page=9"
+    "version": "6.0.0",
+    "base": "2025年8月《幼童軍訓練綱要》網上擬定簡易版；新修訂綱要（2026年8月9日版本，2026年8月15日生效）及過渡安排按 P022/2026 另列",
+    "updated": "2026-09-30",
+    "source": "https://prog.scouting.org.hk/cub/wp-content/uploads/2025/08/%E5%B9%BC%E7%AB%A5%E8%BB%8D%E8%A8%93%E7%B7%B4%E7%B6%B1%E8%A6%812025%E5%B9%B48%E6%9C%88%E7%B6%B2%E4%B8%8A%E6%93%AC%E5%AE%9A%E7%B0%A1%E6%98%93%E7%89%88.pdf#page=9",
+    "sourceZh": "https://prog.scouting.org.hk/cub/wp-content/uploads/2025/08/%E5%B9%BC%E7%AB%A5%E8%BB%8D%E8%A8%93%E7%B7%B4%E7%B6%B1%E8%A6%812025%E5%B9%B48%E6%9C%88%E7%B6%B2%E4%B8%8A%E6%93%AC%E5%AE%9A%E7%B0%A1%E6%98%93%E7%89%88.pdf#page=9",
+    "newSchemeSource": "https://drive.google.com/file/d/19StE5sobEUb8DOSkW0e57T0j784S6-R5/view",
+    "transitionSource": "https://www.scout.org.hk/uploads/tc/circulars/23585/p022-26.pdf"
   },
   "badges": [
     {
@@ -531,6 +534,22 @@
                   "name": "物體的浮沉"
                 }
               ]
+            },
+            {
+              "id": "L3-SCI-STAR",
+              "name": "星空：知曉如何尋找香港常見星座及了解其故事"
+            },
+            {
+              "id": "L3-SCI-GARDEN",
+              "name": "園藝：種植一種植物，製作紀錄簿，記錄生長過程、照顧方法並匯報"
+            },
+            {
+              "id": "L3-SCI-WEATHER",
+              "name": "天氣：製作兩週天氣紀錄表，記錄最高／最低溫、晴陰雨等天氣概況"
+            },
+            {
+              "id": "L3-SCI-NATURE",
+              "name": "自然世界：利用實物或圖片展示一些自然生態現象"
             }
           ]
         },
@@ -992,7 +1011,7 @@
         },
         {
           "code": "L5-ADV",
-          "name": "歷險挑戰",
+          "name": "歷險挑戰（甲部）",
           "items": [
             {
               "id": "L5-ADV-NIGHT",
@@ -1020,12 +1039,13 @@
               "id": "L5-ADV-ROPE",
               "name": "兒童繩網陣 - 專業教練指導下明瞭安全守則，完成最少三個不同關次"
             }
-          ]
+          ],
+          "desc": "歷險挑戰最少完成三項；甲部及乙部各最少一項。此段列出甲部項目。"
         },
         {
           "code": "L5-ACT",
-          "name": "活動徽章",
-          "desc": "考核期間最少考獲1個指定活動徽章，若開展前已考取則須考其他或更高級別",
+          "name": "歷險挑戰（乙部指定活動徽章）",
+          "desc": "考核期間最少考獲一個指定活動徽章；若開展前已考取，須考取其他活動徽章或三級制章中更高級別。",
           "items": [
             {
               "id": "L5-ACT-01",
@@ -1153,244 +1173,291 @@
   ],
   "otherBadges": [
     {
-      "id": "ACT-CYCLIST",
-      "name": "單車章 (三級制)",
-      "icon": "🚲",
-      "desc": "初級紅、中級黃、高級綠"
-    },
-    {
-      "id": "ACT-SWIMMER",
-      "name": "游泳章 (三級制)",
-      "icon": "🏊",
-      "desc": "三級制"
+      "id": "ACT-07",
+      "name": "愛護動物章",
+      "icon": "🐾",
+      "desc": "了解動物需要、寵物選擇及飼養責任。",
+      "detail": "目的：提升幼童軍對愛護動物的意識，提倡善待動物、了解動物的需要及學習尊重生命。\n要求：1. 向領袖講述動物的需要及如何選擇合適的寵物。2. 明瞭飼養寵物的責任。3. 認識一種寵物的生命週期、生活習性、常見疾病、棲息地及生存的基本需要。"
     },
     {
       "id": "ACT-ARCHER",
-      "name": "射箭章 (三級)",
+      "name": "射箭章（三級制度）",
       "icon": "🏹",
-      "desc": "射箭三級制，知識訓練實射"
+      "desc": "射箭知識、8小時訓練及實射成績考核。",
+      "detail": "目的：讓幼童軍初步理解及學習射箭知識，以啟發及培養其興趣。\n要求：此章包含知識、訓練和實射三部分。\n1. 知識（擬考取較高一級時，無須再考）：認識弓之主要部分名稱；認識常用射箭輔助工具名稱；懂得五色十環靶面之計分方法。\n2. 訓練（擬考取較高一級仍須重新完成）：明白並能遵守射箭安全規則；示範正確基本姿勢；懂得記錄積分；不少於8小時訓練。\n3. 實射：按官方射箭章三級制度之距離、靶面、箭數及分數要求完成。\n備註：初級（紅色）；中級（黃色）；高級（綠色）。此章為金紫荊獎章指定活動徽章之一。"
+    },
+    {
+      "id": "ACT-08",
+      "name": "藝術章",
+      "icon": "🎨",
+      "desc": "選擇三種藝術媒介製作作品並向領袖闡述意念和技巧。",
+      "detail": "目的：鼓勵幼童軍展現創意及發展多元化的美術技巧。\n要求：選擇下列其中三種不同藝術媒介，分別製作一件藝術作品，展現美術技巧或想像力，並向領袖闡述意念以及所運用的技巧：1. 繪畫。2. 雕塑。3. 手工藝。4. 版畫。5. 數碼藝術。6. 其他（需取得領袖同意）。"
+    },
+    {
+      "id": "ACT-09",
+      "name": "天象章",
+      "icon": "🌌",
+      "desc": "認識星座、月相、日月食、太陽系、觀星禮儀及安全觀測。",
+      "detail": "目的：透過認識香港常見天象及相關觀測安全事項，引發夜空探索興趣及明瞭星空保育重要性。\n要求：1. 認識黃道十二星座名稱及主要特徵。2. 認識月相、日食和月食。3. 認識太陽系各行星名稱及主要特徵。4. 明瞭觀星禮儀及光污染對觀星的影響。5. 製作針孔投影儀安全觀測太陽。6. 完成其中一項：參加一次晚間戶外觀星活動，觀看月球或光亮星體；或參觀香港太空館。\n注意：太陽觀測時必須保護眼睛。"
     },
     {
       "id": "ACT-ATHLETE",
-      "name": "田徑章 (三級)",
+      "name": "田徑章（三級制度）",
       "icon": "🏃",
-      "desc": "4項初級22分中級28分高級34分"
+      "desc": "完成四個田徑項目；初級22分、中級28分、高級34分。",
+      "detail": "目的：鼓勵幼童軍參與田徑活動，了解相關安全知識，並能展示基本技能。\n要求：必須完成所有四個項目。初級及格者需獲得22分；中級需獲得28分；高級需獲得34分。\n備註：初級（紅色）；中級（黃色）；高級（綠色）。此章為金紫荊獎章指定活動徽章之一。"
+    },
+    {
+      "id": "ACT-10",
+      "name": "閱讀章",
+      "icon": "📚",
+      "desc": "列出閱讀書目、講述三本書內容並認識工具書和圖書館分類。",
+      "detail": "目的：培養幼童軍閱讀風氣及習慣，認識如何使用工具書及在圖書館尋找書籍。\n要求：1. 列出最近閱讀書本名單及作者，向領袖講述其中三本內容；三本由幼童軍自選，最少包括一本故事書及一本寫實書籍。2. 知曉如何保護及儲存書籍。3. 知曉如何運用中英文字典及地圖集或街道圖。4. 向領袖解釋圖書館書籍如何陳列安放，以及如何找出一本小說。"
     },
     {
       "id": "ACT-CAMP",
       "name": "露營章",
       "icon": "⛺",
-      "desc": "參與兩次戶外露營，準備裝備，架拆營幕，保養營幕，簡單紮作，協助烹調，衛生安全，清理場地，兩日一夜"
+      "desc": "參與兩次戶外露營並完成營務、自理、烹調、衛生及安全要求。",
+      "detail": "目的：透過露營的體驗，讓幼童軍學習自理能力，認識露營的知識及合作精神。\n要求：1. 參與兩次戶外露營。2. 準備露營的裝備。3. 協助架搭及拆卸一個營幕。4. 懂得在營地中處理及保養一個已架搭之營幕。5. 架設一個簡單的營地紮作。6. 在營地協助烹調、分發及善後一次家常膳食。7. 懂得露營的基本衞生常識及安全守則。8. 協助清理露營後的場地。\n注意：每次露營時間不少於兩日一夜；露營地點建議選擇有營職員及有建築物的營地。此章為金紫荊獎章指定活動徽章之一。"
     },
     {
       "id": "ACT-CANOE",
-      "name": "獨木舟章 (三級)",
+      "name": "獨木舟章（三級制度）",
       "icon": "🛶",
-      "desc": "一星海馬章二星海豹三星海象，需游泳測試"
-    },
-    {
-      "id": "ACT-07",
-      "name": "愛護動物章",
-      "icon": "🏅",
-      "desc": "官方幼童軍活動徽章；詳細考驗要求請在資料庫開啟 2025 年 8 月官方訓練綱要核對。"
-    },
-    {
-      "id": "ACT-08",
-      "name": "藝術章",
-      "icon": "🏅",
-      "desc": "官方幼童軍活動徽章；詳細考驗要求請在資料庫開啟 2025 年 8 月官方訓練綱要核對。"
-    },
-    {
-      "id": "ACT-09",
-      "name": "天象章",
-      "icon": "🏅",
-      "desc": "官方幼童軍活動徽章；詳細考驗要求請在資料庫開啟 2025 年 8 月官方訓練綱要核對。"
-    },
-    {
-      "id": "ACT-10",
-      "name": "閱讀章",
-      "icon": "🏅",
-      "desc": "官方幼童軍活動徽章；詳細考驗要求請在資料庫開啟 2025 年 8 月官方訓練綱要核對。"
+      "desc": "通過游泳測試並考獲少年獨木舟海馬／海豹／海象章或同等資歷。",
+      "detail": "目的：鼓勵幼童軍參與獨木舟活動並能展示基本技能。\n初級（一星章）：通過本會之游泳測試；考獲香港獨木舟總會少年獨木舟海馬章或同等資歷。\n中級（二星章）：通過本會之游泳測試；考獲香港獨木舟總會少年獨木舟海豹章或同等資歷。\n高級（三星章）：通過本會之游泳測試；考獲香港獨木舟總會少年獨木舟海象章或同等資歷。\n備註：各級星章課程以該項運動所屬總會最新課程為依歸。此章為金紫荊獎章指定活動徽章之一。"
     },
     {
       "id": "ACT-11",
       "name": "搜集章",
-      "icon": "🏅",
-      "desc": "官方幼童軍活動徽章；詳細考驗要求請在資料庫開啟 2025 年 8 月官方訓練綱要核對。"
+      "icon": "🧰",
+      "desc": "與領袖商討搜集計劃，最少四個月有系統地搜集和整理物件。",
+      "detail": "目的：讓幼童軍透過搜集過程，思考搜集物件的意義，學習儲存、分類與保養技巧。\n要求：1. 在領袖同意下選定一種物件並討論搜集計劃，說明選擇理由及如何搜集、保存。2. 以最少四個月時間搜集上述物件，並整齊、有系統地整理；如已開始搜集，完成第1項後仍須繼續搜集達四個月。"
     },
     {
       "id": "ACT-12",
       "name": "電腦章",
-      "icon": "🏅",
-      "desc": "官方幼童軍活動徽章；詳細考驗要求請在資料庫開啟 2025 年 8 月官方訓練綱要核對。"
+      "icon": "💻",
+      "desc": "認識電腦裝置、檔案操作、雲端儲存、多媒體製作、電郵及知識產權。",
+      "detail": "目的：讓幼童軍學習電腦知識及使用技巧，了解知識產權及誠實使用電腦的重要性。\n要求：1. 認識電腦系統各類裝置並以簡圖說明，包括主機、硬碟、常用輸入及輸出裝置。2. 能將USB記憶體或記憶卡格式化。3. 能在USB記憶體或記憶卡儲存、剪下、複製、貼上及刪除檔案。4. 明瞭雲端儲存簡單運作原理及其好處和壞處。5. 利用軟件完成其中兩項：多媒體作品；中文或英文A4通告／告示（包括文字及圖案）；最少5張投影片介紹自己或旅團。6. 利用電郵將第5項檔案附夾傳送給領袖。7. 明瞭尊重知識產權及誠實使用電腦的重要性。"
     },
     {
       "id": "ACT-13",
       "name": "烹飪章",
-      "icon": "🏅",
-      "desc": "官方幼童軍活動徽章；詳細考驗要求請在資料庫開啟 2025 年 8 月官方訓練綱要核對。"
+      "icon": "🍳",
+      "desc": "計劃及預備二人膳食、熱飲小食，並認識廚房安全及衞生。",
+      "detail": "目的：培養幼童軍對烹飪的興趣，了解煮食計劃、正確技巧及健康地進行飲食。\n要求：1. 與領袖討論兩種不同烹飪方法優缺點，及均衡飲食習慣的重要。2. 預備一份足夠兩人食用的膳食，包括計劃餐單、烹調、餐桌安排、上菜與清理餐桌。餐單可中式或西式，須先與領袖商討並獲主考同意；中式為兩餸一湯及白飯；西式包括餐湯、主菜及甜品。3. 預備熱飲及小食，作下午茶或輕便午餐。4. 知道並能向領袖解釋廚房及煮食安全措施及衞生守則。\n注意：不可純以市面預製食品完成；可用作食材。使用利器須注意安全。參閱「使用爐具安全指引」。"
+    },
+    {
+      "id": "ACT-CYCLIST",
+      "name": "單車章",
+      "icon": "🚲",
+      "desc": "認識騎單車前準備、單車保養、交通手號及安全守則。",
+      "detail": "目的：讓幼童軍了解騎單車前的準備事項，掌握騎單車的基本知識以策安全，並能展示基本技能。\n要求：1. 擁有或時常使用一輛大小適合之單車。2. 能正確地上車及下車。3. 能保持單車整潔及上油，並能替輪胎打氣。4. 明瞭保持單車性能良好的重要性並履行之。5. 明瞭停放單車時上鎖的重要性。6. 知曉及協助修補輪胎。7. 在領袖觀察下，駕單車完成指定短路程，以顯示能正確運用交通規則內之手號和守則（盡可能包括十字路口、行人橫過馬路處、右轉及迴旋處）。\n注意：考取前應已懂得騎乘雙輪單車；騎單車時必須戴上合適個人保護裝備。此章為金紫荊獎章指定活動徽章之一。"
     },
     {
       "id": "ACT-14",
       "name": "共融章",
-      "icon": "🏅",
-      "desc": "官方幼童軍活動徽章；詳細考驗要求請在資料庫開啟 2025 年 8 月官方訓練綱要核對。"
+      "icon": "🤝",
+      "desc": "認識弱能人士類別及特質、特能童軍活動，並參與傷健聯合或服務活動。",
+      "detail": "目的：讓幼童軍學習認識及接納、關懷社會上的弱能人士，與其融洽共處並理解其特質及需求。\n要求：1. 認識以下一種弱能人士類別及其特質：弱智、弱聽／失聰、弱視／失明、身體弱能、自閉症。2. 簡介特能童軍活動。3. 必須參與一次傷健旅團聯合活動／參與一次弱能人士服務活動，並作簡單記錄。"
     },
     {
       "id": "ACT-15",
       "name": "娛樂章",
-      "icon": "🏅",
-      "desc": "官方幼童軍活動徽章；詳細考驗要求請在資料庫開啟 2025 年 8 月官方訓練綱要核對。"
+      "icon": "🎭",
+      "desc": "從甲、乙、丙三組娛樂節目中各選一項完成。",
+      "detail": "目的：讓幼童軍策劃及表演節目，並從中學習與人溝通及合作。\n要求：從三組中每組各選一項。甲組：編排及演出一套戲劇；或在領袖指導下擔任戲劇幕後工作。乙組：組織一群兒童唱歌；或領導幼童軍團跳土風舞；或製作簡單樂器並伴奏歌曲。丙組：演唱兩首民歌；表演三種惹笑動作；講一個最少五分鐘故事；用一種樂器奏簡單歌曲；耍一連串（三個以上）雜技或魔術。註：事前取得領袖同意，可做其他水準相同娛樂性節目。"
     },
     {
       "id": "ACT-16",
       "name": "探險章",
-      "icon": "🏅",
-      "desc": "官方幼童軍活動徽章；詳細考驗要求請在資料庫開啟 2025 年 8 月官方訓練綱要核對。"
+      "icon": "🧭",
+      "desc": "野外旅程準備、旅行、遮蔽、生火烹調及二公里方位／標誌行程。",
+      "detail": "目的：讓幼童軍了解野外旅程前的準備及需關注事項，並明瞭戶外基本求生技能。\n要求：1. 向領袖講解一日郊外旅行前準備，包括費用、服裝、鞋襪、救傷用品及食物等。2. 參加兩次幼童軍旅行，其中一次必須完全在戶外舉行。3. 蓋搭一個簡單遮蔽上蓋。4. 在戶外生火，並利用它弄一種熱食品。5. 根據領袖指示前往二公里外一處地方（郊外或市區，可用方位指示或地上標誌）。\n注意：第4項須留意戶外生火安全，離開前確保火種熄滅。此章為金紫荊獎章指定活動徽章之一。"
     },
     {
       "id": "ACT-17",
       "name": "急救章",
-      "icon": "🏅",
-      "desc": "官方幼童軍活動徽章；詳細考驗要求請在資料庫開啟 2025 年 8 月官方訓練綱要核對。"
+      "icon": "🩹",
+      "desc": "急救原則、求助、出血傷口、燒燙傷、昏厥、扭傷、藥囊及三角繃帶。",
+      "detail": "目的：讓幼童軍明白急救的目的及原則、求助程序、日常生活中導致意外因素及簡單處理方法。\n要求：1. 明瞭急救原則，說出日常生活和戶外活動危險因素，以及急救前首要工作如向成年人求助及報警。2. 認識輕微／嚴重出血及有異物傷口處理方法，示範傷口處理前程序。3. 認識燒傷與燙傷成因、預防方法及簡單處理。4. 認識昏厥徵狀及簡單處理。5. 認識扭傷徵狀及簡單處理。6. 完成《幼童軍急救章手冊》第一至第五課討論及溫習。7. 列舉個人藥囊應用物品。8. 示範三角繃帶大手掛及三角手掛。\n注意：確保幼童軍正確使用急救用品；參閱《幼童軍急救章手冊》。"
     },
     {
       "id": "ACT-18",
       "name": "體操章（三級制度）",
-      "icon": "🏅",
-      "desc": "官方幼童軍活動徽章；詳細考驗要求請在資料庫開啟 2025 年 8 月官方訓練綱要核對。"
+      "icon": "🤸",
+      "desc": "初級／中級／高級體操技能考核。",
+      "detail": "目的：讓幼童軍認識體操運動並能展示基本技能。\n初級（紅色）：前滾翻；手倒立（靠牆）；分腿騰越（越過同伴或木馬）；正握低單槓懸垂收腹穿腿成反臂懸垂（1.2米）；或平衡木完成指定動作。\n中級（黃色）：魚躍前滾翻越過0.6米障礙物；側手翻；由單掛膝懸垂開始勾單膝上成騎撐（低單槓1.2米）；或分腿騰越（木馬／木箱高1米）。\n高級（綠色）：頭手翻；連續兩次側手翻（直線）；低槓腹迴環上（1.2米）；或分腿騰越（木馬／木箱高1米）。"
     },
     {
       "id": "ACT-19",
       "name": "勞作章",
-      "icon": "🏅",
-      "desc": "官方幼童軍活動徽章；詳細考驗要求請在資料庫開啟 2025 年 8 月官方訓練綱要核對。"
+      "icon": "🔨",
+      "desc": "示範工具使用及保養，並以工具製作家庭或團部有用物品。",
+      "detail": "目的：讓幼童軍認識如何運用及保養家居中常見工具。\n要求：1. 示範各工具的使用及保養方法，包括鎚子、鋸子、螺絲批、士巴拿、鉗子。2. 使用上述最少一項工具，在領袖認許下，以一種手藝方式設計及製造一件在家庭或團部有用的物品，並介紹用途及保養方法。\n注意：需注意幼童軍是否正確使用工具及相關保護衣物。"
     },
     {
       "id": "ACT-20",
       "name": "家務章",
-      "icon": "🏅",
-      "desc": "官方幼童軍活動徽章；詳細考驗要求請在資料庫開啟 2025 年 8 月官方訓練綱要核對。"
+      "icon": "🏠",
+      "desc": "分擔家務：烹調、佈置飯桌、洗碗、洗熨旅巾、縫章鈕、整理及清潔。",
+      "detail": "目的：鼓勵幼童軍分擔家務並能展示基本技能。\n要求：1. 煎煙肉或香腸，煮蛋和煮飯。2. 佈置飯桌及懂得進膳時之禮貌（可與第一項同時進行）。3. 洗碗碟並知道怎樣處理用過之鍋鑊、刀叉、筷子、玻璃器皿等。4. 洗及熨旅巾。5. 在制服上縫上一個徽章或鈕扣。6. 整理睡床。7. 清潔門窗、銀器或銅器。8. 清潔及整理一個房間。"
     },
     {
       "id": "ACT-21",
       "name": "香港歷史章",
-      "icon": "🏅",
-      "desc": "官方幼童軍活動徽章；詳細考驗要求請在資料庫開啟 2025 年 8 月官方訓練綱要核對。"
+      "icon": "🏛️",
+      "desc": "以人物、建築、歷史大事等主題探索香港歷史，並介紹古蹟、博物館及地名典故。",
+      "detail": "目的：鼓勵幼童軍探索香港歷史，了解本地的人和事。\n要求：1. 與領袖商討後，就本港歷史名人、古舊建築、歷史大事或其他具歷史意義題目製作剪貼簿或網站。2. 選取三個香港法定古蹟，為各古蹟設計海報介紹背景及參觀方法。3. 參觀一間由政府部門、公營機構、教育機構、非牟利組織或私營機構管理的博物館（事前取得團長同意），並匯報。4. 向團員介紹一條香港街道或一個香港地區名稱的命名背景和典故。"
     },
     {
       "id": "ACT-22",
       "name": "繩結章",
-      "icon": "🏅",
-      "desc": "官方幼童軍活動徽章；詳細考驗要求請在資料庫開啟 2025 年 8 月官方訓練綱要核對。"
+      "icon": "🪢",
+      "desc": "完成九種繩結／編結並以小組完成兩項小型紮作。",
+      "detail": "目的：讓幼童軍學習及知曉相關繩結用途。\n要求：1. 在領袖面前完成並說出用途：平結、接繩結、繫木結、稱人結、雙套結、曳木結、8字編結、四方編結、十字編結。2. 利用上述繩結，以小組合作形式完成其中兩項小型紮作：旗杆架、衣鞋架、戰車架、羅馬炮架。\n注意：應先了解各繩結用途及安全事項；繩結以香港童軍總會訓練署童軍技能評審局內繩結綁法為標準。"
     },
     {
       "id": "ACT-23",
       "name": "語言章",
-      "icon": "🏅",
-      "desc": "官方幼童軍活動徽章；詳細考驗要求請在資料庫開啟 2025 年 8 月官方訓練綱要核對。"
+      "icon": "🗣️",
+      "desc": "以非母語指出地點、回答交通問題、解釋標誌票務、說日期及上網地點。",
+      "detail": "目的：培養幼童軍非母語表達能力。\n要求：除了母語之外，用任何一種語言完成：1. 正確指出鄰近商店、警署、郵局、教堂、油站、酒店位置。2. 回答居所／學校／旅部附近公共交通服務情況的簡單問題。3. 解釋「單程路」、「路不通行」、交通燈號及單程票等意思。4. 說出一星期七天和一年十二個月名稱，並懂得日期說法。5. 指出鄰近公眾免費上網地點及說明如何連線。"
     },
     {
       "id": "ACT-24",
       "name": "讀圖章",
-      "icon": "🏅",
-      "desc": "官方幼童軍活動徽章；詳細考驗要求請在資料庫開啟 2025 年 8 月官方訓練綱要核對。"
+      "icon": "🗺️",
+      "desc": "地圖圖例、等高線模型、描述5公里路線及使用指南針。",
+      "detail": "目的：讓幼童軍學習基本閱讀地圖的技巧。\n要求：1. 能在地圖或街道圖指出團部及居所位置，知曉主要圖例，解釋自選名勝在地圖如何表示。2. 製作一個合比例之250米小模型，顯示相距50米等高線。3. 明瞭第1、2點，以形容由領袖在地圖所指一條5,000米長路上會見到的事物。4. 正確把地圖較正位置，並知曉如何使用指南針。\n備註：建議採用地政總署測繪處1:20,000地圖。此章為金紫荊獎章指定活動徽章之一。"
     },
     {
       "id": "ACT-25",
       "name": "音樂章",
-      "icon": "🏅",
-      "desc": "官方幼童軍活動徽章；詳細考驗要求請在資料庫開啟 2025 年 8 月官方訓練綱要核對。"
+      "icon": "🎵",
+      "desc": "辨認音樂術語、表演歌曲／樂曲，並完成兩項音樂技能／欣賞／創作項目。",
+      "detail": "目的：培養幼童軍對音樂的興趣，並能展示基本技能。\n要求：1. 能清楚辨認五線譜音名，並能解釋六種基本音樂術語，包括高音譜號、低音譜號、休止符、音符等。2. 唱出或演奏兩首自選不同風格歌曲。3. 完成其中兩項：即時視奏或視唱指定樂段；正確辨識樂器結構部分；知道如何保養樂器或聲線；以拍掌完成三段指定樂章節奏；細聽兩段指定樂曲並指出樂器；認識一個歌劇／芭蕾舞／民謠歌曲故事背景；創作六至八小節音樂；為一段音樂譜上新歌詞。"
     },
     {
       "id": "ACT-26",
       "name": "公園定向章（三級制度）",
-      "icon": "🏅",
-      "desc": "官方幼童軍活動徽章；詳細考驗要求請在資料庫開啟 2025 年 8 月官方訓練綱要核對。"
+      "icon": "🧭",
+      "desc": "依次完成初級、中級、高級公園定向知識及活動要求。",
+      "detail": "目的：透過認識公園定向活動，提高幼童軍對定向運動的認識及興趣，並能展示基本技能。\n要求：必須依次完成初級、中級及高級。\n初級：完成公園定向訓練課程及一次體驗活動後，認識公園定向及簡史、越野式及奪分式玩法、地圖顏色定義、基本圖例、安全守則。\n中級：完成初級後，明瞭比賽程序、示範正置公園定向地圖、示範拇指輔行法、參與一次同樂日或比賽。\n高級：完成中級後，認識地圖比例及表示方式、等高線概念、國際控制點提示符號表主要用途、描述不少於100米的公園定向地圖所見事物、完成最少兩次公園定向比賽。中級d項與高級e項不能是同一事工。此章為金紫荊指定活動徽章之一。"
     },
     {
       "id": "ACT-27",
       "name": "寵物章",
-      "icon": "🏅",
-      "desc": "官方幼童軍活動徽章；詳細考驗要求請在資料庫開啟 2025 年 8 月官方訓練綱要核對。"
+      "icon": "🐹",
+      "desc": "飼養寵物三個月並記錄習慣、生長、原產地、照顧及病症處理。",
+      "detail": "目的：透過了解寵物需要，以及親自照料寵物，培養責任感。\n要求：1. 飼養一寵物，記錄三個月內其生活習慣及生長過程（包括特徵及變化），並附照片或圖片。2. 知曉其原產地、所需特別照顧、辨別及處理普通病症之方法。"
     },
     {
       "id": "ACT-28",
       "name": "攝影章",
-      "icon": "🏅",
-      "desc": "官方幼童軍活動徽章；詳細考驗要求請在資料庫開啟 2025 年 8 月官方訓練綱要核對。"
+      "icon": "📷",
+      "desc": "以12張照片或3分鐘錄像記錄旅行／活動，並認識攝錄器材基本操作。",
+      "detail": "目的：讓幼童軍學習攝影基本原則及技巧，培養攝影興趣。\n要求：1. 拍攝一套12張照片或3分鐘長錄像，以記錄一次旅行或活動；內容應包括不同主體，並分享作品及講述相關活動或旅行概況。2. 與領袖討論攝錄器材基本操作，包括曝光、光圈、快門、感光度（ISO）、焦距等，以及如何運用不同拍攝模式獲取美滿效果。"
     },
     {
       "id": "ACT-29",
       "name": "體適能章（三級制度）",
-      "icon": "🏅",
-      "desc": "官方幼童軍活動徽章；詳細考驗要求請在資料庫開啟 2025 年 8 月官方訓練綱要核對。"
+      "icon": "💪",
+      "desc": "按學校體適能獎勵計劃完成皮摺、仰臥起坐、前伸、耐力跑、握力等測試。",
+      "detail": "目的：透過體適能測試了解身體狀況，建立良好生活品質及保持健康身體。\n要求：1. 皮摺量度。2. 曲膝仰臥起坐。3. 坐地前伸。4. 6／9分鐘耐力跑或15米漸進式心肺耐力跑。5. 手握力或仰臥引體上升。\n註：課程以教育局最新「學校體適能獎勵計劃」內容為依歸；如考獲校內該計劃金、銀、銅獎章，即等同及豁免本章相同級別（高級、中級、初級）考驗。此章為金紫荊指定活動徽章之一。"
     },
     {
       "id": "ACT-30",
       "name": "園藝章",
-      "icon": "🏅",
-      "desc": "官方幼童軍活動徽章；詳細考驗要求請在資料庫開啟 2025 年 8 月官方訓練綱要核對。"
+      "icon": "🌱",
+      "desc": "介紹四種香港植物，栽種一株植物不少於一個月並記錄照顧及用具。",
+      "detail": "目的：讓幼童軍瞭解植物特性及栽培過程，培養園藝興趣。\n要求：1. 介紹四種香港常見植物，包括特徵、生長時節及所在地方。2. 用不少於一個月時間栽種一株植物，記錄由種子開始的生長、栽種過程及介紹其特性，包括每星期生長形態萌芽情況、栽培注意事項（土壤、氣候、濕氣、溫度、時節等）、繁殖及栽種方法、控制或培養植物生長。3. 知道栽種第2項植物所需用具及如何適當使用和保養。"
     },
     {
       "id": "ACT-31",
       "name": "宗教章",
-      "icon": "🏅",
-      "desc": "官方幼童軍活動徽章；詳細考驗要求請在資料庫開啟 2025 年 8 月官方訓練綱要核對。"
+      "icon": "🕊️",
+      "desc": "從基督教、孔教、佛教、天主教、伊斯蘭教、道教等課程中選一項研習。",
+      "detail": "目的：培養幼童軍靈性的發展。\n要求：可選擇其中一項課程研習。\n基督教：背誦主禱文；唱聖詩三首；敘述聖經故事兩則（其一為耶穌降生）；背誦並略加解釋自選金句三則；在度假營負責謝飯禱告或為有病未出席團集會的幼童軍禱告。\n孔教：尊重中國傳統文化和儒教思想；念誦《禮運・大同》篇；唱《孔聖頌》；講述孔子生平故事兩則；每年拜祭祖先、天地；參與傳統祭禮並認識禮儀；曾參觀孔教團體和傳統廟宇。\n佛教：能唱佛寶歌、誦佛號、講述悉達太子降生故事、背誦五戒文、參加浴佛禮、備有佛像圖或佛章、遇見佛教法師時能合什行禮及作尊稱。\n天主教：擁有《聖經》或《福音》並明白如何使用；明白若望福音13:34-35；舉例實踐瑪竇福音25:35-40；劃十字聖號及誦念天主經；明白聖堂正確態度；說出教宗及教區主教姓名；明白主日本份並曾參與彌撒；能詠唱聖歌一首。\n伊斯蘭教：擁有《古蘭經》（中文譯本）並明白使用；背誦及明白清真言；明白伊斯蘭意義；明白念、禮、齋、課、朝五功；說出全世界穆斯林信徒數目；說出香港各清真寺位置。\n道教：能誦《太上道祖頌》；擁有《道德經》；能誦《道德經》首章；辨認太上道祖像；認識道家三寶；解釋七善意義；曾參觀道教宮觀。"
     },
     {
       "id": "ACT-32",
       "name": "道路安全章",
-      "icon": "🏅",
-      "desc": "官方幼童軍活動徽章；詳細考驗要求請在資料庫開啟 2025 年 8 月官方訓練綱要核對。"
+      "icon": "🚦",
+      "desc": "認識交通意外成因、過馬路、標誌、單車、乘客、社區道路設施、求救及宣傳。",
+      "detail": "目的：讓幼童軍明瞭交通安全基本常識，清楚了解使用道路時正確態度，加強責任感及自律性。\n要求：1. 明瞭交通意外常見成因。2. 懂得選擇安全橫過馬路地點及使用「過馬路守則」。3. 畫出至少十種常見交通標誌並解釋意思。4. 明瞭如何安全騎單車。5. 明瞭作為車輛乘客如何實踐道路安全及違例後果。6. 認識居住社區中不同道路設施。7. 懂得在發生交通意外時如何求救。8. 製作一張道路安全海報或蒐集一份有關不安全使用道路的剪報。"
     },
     {
       "id": "ACT-33",
       "name": "風帆章",
-      "icon": "🏅",
-      "desc": "官方幼童軍活動徽章；詳細考驗要求請在資料庫開啟 2025 年 8 月官方訓練綱要核對。"
+      "icon": "⛵",
+      "desc": "通過游泳測試並取得兒童滑浪風帆體驗證書或少年帆船一級等同資歷。",
+      "detail": "目的：讓幼童軍初步理解滑浪風帆原理及知識，透過相關實習培養興趣並展示基本技能。\n要求：1. 通過本會之游泳測試。2. 完成其中一項：考獲香港滑浪風帆會兒童滑浪風帆體驗證書或同等資歷；或考獲香港帆船運動總會少年帆船課程第一級證書或同等資歷。\n備註：課程以該項運動所屬總會最新課程為依歸。此章為金紫荊指定活動徽章之一。"
     },
     {
       "id": "ACT-34",
       "name": "科學章",
-      "icon": "🏅",
-      "desc": "官方幼童軍活動徽章；詳細考驗要求請在資料庫開啟 2025 年 8 月官方訓練綱要核對。"
+      "icon": "🔬",
+      "desc": "示範兩個自選科學實驗，並從指定實驗中完成兩項。",
+      "detail": "目的：培養幼童軍對科學探究的興趣及求證精神。\n要求：1. 示範任何兩個自選科學實驗，向領袖解釋實驗及結論。2. 完成其中兩項實驗：製作燈泡電池開關模型；以尼龍布及紙製作風箏比較性能；證明白光由多種顏色組成；製作顯微鏡或潛望鏡並詳述原理；製作氣象記錄用具並一星期每天同時記錄風向、風速、視野、雨量、溫度、雲及氣溫並討論現象；找出植物缺乏水和光會怎樣；從飽和化學溶液析出結晶體；設計實驗證明金屬受熱膨脹；準備隱形墨水並說明原理；證明聲音的傳播。"
     },
     {
       "id": "ACT-35",
       "name": "水手章",
-      "icon": "🏅",
-      "desc": "官方幼童軍活動徽章；詳細考驗要求請在資料庫開啟 2025 年 8 月官方訓練綱要核對。"
+      "icon": "⚓",
+      "desc": "通過游泳測試，認識海上活動中心規則、天氣、風潮水流、艇裝備、拋繩、划艇及繩結。",
+      "detail": "目的：讓幼童軍初步理解海上知識，透過實習培養對水上活動的興趣並展示基本技能。\n要求：1. 通過本會之游泳測試。2. 理論及實習：認識本會海上活動中心訊號旗及用途；明瞭海上活動中心守則及水上安全守則；知曉如何獲取天氣預告及用途；明瞭風、潮汐、水流對海上活動影響；指出童軍標準艇所需裝備及各部分名稱；船上拋擲救生繩至距離8公尺外物體；以單槳單獨搖動小艇至距離10公尺物體並拾起；示範並明瞭用途：8字結、接繩結、雙接繩結、錨結、稱人結、繫木結、雙套結、普通繩端結。此章為金紫荊指定活動徽章之一。"
     },
     {
       "id": "ACT-36",
       "name": "運動章",
       "icon": "🏅",
-      "desc": "官方幼童軍活動徽章；詳細考驗要求請在資料庫開啟 2025 年 8 月官方訓練綱要核對。"
+      "desc": "認識兩種運動，專長其中一項，保養用具並表現良好體育精神。",
+      "detail": "目的：鼓勵幼童軍主動認識運動技能及安全守則，培養平日運動的興趣及習慣。\n要求：1. 對兩種運動有廣泛認識。2. 對其中一項有專門技能及知識，並經常參加該項活動。3. 知曉如何保養第2項所選運動之用具及服裝。4. 在所有幼童軍遊戲及活動中表現良好體育精神。5. 明瞭每次運動後沐浴或更衣的重要性，並明瞭保護足部的重要性。"
+    },
+    {
+      "id": "ACT-SWIMMER",
+      "name": "游泳章（三級制度）",
+      "icon": "🏊",
+      "desc": "初級、中級、高級游泳技能考核。",
+      "detail": "目的：考核幼童軍的游泳技能。\n初級（紅色）：1. 從池畔跳水或用其他方式跳入水中。2. 呼吸練習。3. 俯浮滑進。4. 仰浮滑進。5. 俯浮划水10米。6. 仰浮划水10米。7. 拯溺式背泳10米。8. 用胸泳或捷泳或背泳游25米。\n中級（黃色）：1. 用一種泳式由淺水處向深水處游25米，再踏水1分鐘。2. 潛水約1.25米深，身體不能觸及水底或池邊。3. 冬菇式浮水；以任何前泳式橫越，半途翻身以任何背泳式游完全程。4. 插（潛或滑）水至一個最遠距離。5. 以正確比賽姿態開始，用胸泳或蝶泳游25米。\n高級（綠色）：1. 保持身體垂直踏水3分鐘。2. 游泳200米，途中潛水一次並潛泳最少5米。3. 不用扶梯或他人協助由泳池深水一端爬上池畔。4. 以良好站立姿態跳起，騰空及插入水中。\n此章為金紫荊獎章指定活動徽章之一。"
     },
     {
       "id": "ACT-37",
       "name": "水上安全章",
-      "icon": "🏅",
-      "desc": "官方幼童軍活動徽章；詳細考驗要求請在資料庫開啟 2025 年 8 月官方訓練綱要核對。"
+      "icon": "🛟",
+      "desc": "認識水上安全和求助，安全地示範手援及拋物救援。",
+      "detail": "目的：提升幼童軍安全意識，使他們遇上水上意外時懂得如何協助。\n要求：1. 認識水上安全知識及守則。2. 明瞭向成年人求助的重要性。3. 明瞭及能在安全情況下完成：手援——利用竹竿／木棒等棒類物品，或兩件緊縛一起的衣物拯救近岸溺者；拋物——站在岸上將無負重繩索、水泡或其他浮物拋與離岸6米之溺者。"
     },
     {
       "id": "ACT-38",
       "name": "氣象章",
-      "icon": "🏅",
-      "desc": "官方幼童軍活動徽章；詳細考驗要求請在資料庫開啟 2025 年 8 月官方訓練綱要核對。"
+      "icon": "🌦️",
+      "desc": "認識天氣資訊、要素、警告、雲類、二十四節氣、觀測紀錄及氣象事工。",
+      "detail": "目的：認識天氣變化對日常生活的影響及需注意事項。\n要求：1. 懂得利用大眾傳播媒介或電子工具獲取天氣資訊。2. 認識氣溫、風、降雨及紫外線指數等天氣要素，並能說出戶外活動如何因應變化準備。3. 懂得天氣警告（雷暴、暴雨、熱帶氣旋等）發出後相關注意事項。4. 認識雲的形成，辨認層雲、積雲、卷雲、積雨雲。5. 認識二十四節氣基本概念，說出最少六個節氣特點。6. 進行最少五天天氣觀測，記錄個人對天氣狀況感覺並與當時天氣資訊對比。7. 完成其中兩項：製作海報或實驗描述水循環；製作測風儀（風向或風速）模型；透過網上資源學習簡單氣象知識並匯報。"
     },
     {
       "id": "ACT-39",
       "name": "世界友誼章",
-      "icon": "🏅",
-      "desc": "官方幼童軍活動徽章；詳細考驗要求請在資料庫開啟 2025 年 8 月官方訓練綱要核對。"
+      "icon": "🌍",
+      "desc": "研究一個世界童軍成員國、認識聯合國、列舉國家與旗幟並與外國童軍通訊。",
+      "detail": "目的：讓幼童軍對世界童軍有更多認識。\n要求：1. 以不少於四個月時間完成剪貼簿，內容關於一個世界童軍組織成員國的民族生活方式、食物特色及風俗習慣等。2. 略知聯合國的組織、歷史、旗幟及其意義。3. 能向領袖列舉香港以外十個世界童軍組織成員國，並知道其中三個國家國旗的意義。4. 曾與外國童軍通訊最少兩次。"
     },
     {
       "id": "ACT-40",
       "name": "寫作章",
-      "icon": "🏅",
-      "desc": "官方幼童軍活動徽章；詳細考驗要求請在資料庫開啟 2025 年 8 月官方訓練綱要核對。"
+      "icon": "✍️",
+      "desc": "創作故事或詩、書信及電郵，培養寫作興趣。",
+      "detail": "目的：培養幼童軍寫作興趣。\n要求：1. 創作一個故事或一首詩。2. 寫一封不少於二百字的信件郵寄給親友，內容描述自成為幼童軍後曾參與最有意義或最有趣的事，並能正確在信封寫上收信人、發信人及地址。3. 發出一封電郵寄給親友，邀請他們參加團部活動，或向他們表達某特別事件的謝意。"
+    },
+    {
+      "id": "ACT-SCOUT-LINK",
+      "name": "童軍先修章",
+      "icon": "🔗",
+      "desc": "年滿十歲半可考取；認識童軍支部、參與童軍團集會及一項新體驗。",
+      "detail": "簡介：童軍先修章旨在強化幼童軍支部及童軍支部連接，幫助適齡幼童軍認識童軍支部活動，吸引年長幼童軍參與從未體驗過的童軍活動，鼓勵晉升童軍。\n資格：年滿十歲半之幼童軍支部成員可考取，完成後由幼童軍團長簽發；特殊情況下可由區、地域或總會委派指定人士簽發。\n要求：完成三部分。1. 認知：認識童軍支部目的及方法、童軍制服、童軍支部小隊制度、童軍團獎章制度。2. 參與：在幼童軍團長及童軍團長同意下，由童軍團團隊長／隊長帶領，一同參與不少於兩次童軍團集會。3. 新體驗：在雙方團長同意及童軍團隊長／隊長帶領下，參與一項幼童軍時從未體驗過的童軍活動。\n豁免／佩戴：已考取童軍大家庭第四段者，可豁免第1及第2部分（2025版）；新綱要列明獲童軍先修章可豁免金紫荊獎章童軍家庭4.4.1 d項。考獲後可佩戴至成為童軍後一年。"
     }
   ],
   "trainingPlan": {
@@ -1446,5 +1513,1435 @@
       "name": "金紫荊獎章開展通知書 PT/67",
       "code": "PT/67"
     }
+  },
+  "legacyTransition": {
+    "title": "現行綱要 → 新修訂綱要過渡安排",
+    "enTitle": "Current → Revised Cub Scout Training Scheme Transition",
+    "from": "2025年8月《幼童軍訓練綱要》網上擬定簡易版",
+    "enFrom": "August 2025 online simplified Cub Scout Training Scheme",
+    "to": "新修訂《幼童軍訓練綱要》（2026年8月9日版本）",
+    "enTo": "Revised Cub Scout Training Scheme (as at 9 August 2026)",
+    "effectiveDate": "2026-08-15",
+    "deadline": "2028-08-14",
+    "source": "香港童軍總會通告 P022/2026「新修訂支部訓練綱要」幼童軍支部過渡安排",
+    "enSource": "SAHK Circular P022/2026 — Cub Scout Section transition arrangements",
+    "sourceUrl": "https://www.scout.org.hk/uploads/tc/circulars/23585/p022-26.pdf",
+    "oldSchemeUrl": "https://prog.scouting.org.hk/cub/wp-content/uploads/2025/08/%E5%B9%BC%E7%AB%A5%E8%BB%8D%E8%A8%93%E7%B7%B4%E7%B6%B1%E8%A6%812025%E5%B9%B48%E6%9C%88%E7%B6%B2%E4%B8%8A%E6%93%AC%E5%AE%9A%E7%B0%A1%E6%98%93%E7%89%88.pdf",
+    "newSchemeUrl": "https://drive.google.com/file/d/19StE5sobEUb8DOSkW0e57T0j784S6-R5/view",
+    "policy": "新修訂幼童軍訓練綱要於 2026年8月15日生效。2026年8月15日或以後宣誓之成員必須使用新綱要。2026年8月15日前已宣誓之成員設兩年過渡期（2026年8月15日至2028年8月14日），按通告 P022/2026 幼童軍支部 A–E 情況銜接。此工具只新增「過渡等同紀錄」，不會刪改舊進度、不會自動勾選任何新綱要細項，也不代表每項新考驗均已完成。",
+    "enPolicy": "The revised Cub Scout Training Scheme takes effect on 15 August 2026. Members invested on or after that date must use the revised scheme. Members invested before that date have a two-year transition period from 15 August 2026 to 14 August 2028 under SAHK Circular P022/2026 cases A–E. This tool records transition equivalence only; it does not delete old progress or automatically tick any revised-scheme checklist item.",
+    "mappingScope": "P022/2026 只列章級／資格銜接；實際年齡、宣誓日期、已完成徽章、開展金紫荊資格、學籍及表格證明仍須由領袖核實。",
+    "enMappingScope": "P022/2026 gives award-level and eligibility arrangements only. Leaders must verify age, investiture date, completed awards, Golden Bauhinia eligibility, school status, forms and evidence.",
+    "badgeMappings": [
+      {
+        "id": "A-membership-to-experience",
+        "old": "2026年8月15日前宣誓、年滿7歲半並已完成會員章",
+        "enOld": "Invested before 15 Aug 2026, aged 7½ or above and completed Membership Badge",
+        "new": "視作完成新「幼童軍體驗章」，可開展新「幼童軍歷奇章」",
+        "enNew": "Deemed to have completed the new Cub Scout Experience Badge; may start the new Adventure Badge",
+        "note": "P022/2026 幼童軍支部 A。須核實宣誓日期、年齡及會員章完成紀錄。",
+        "enNote": "P022/2026 Cub case A. Verify investiture date, age and Membership completion.",
+        "transferable": true
+      },
+      {
+        "id": "B-cub-award-to-experience",
+        "old": "已完成或預計於2027年8月31日前完成現行「幼童軍獎章」",
+        "enOld": "Completed, or expected to complete by 31 Aug 2027, the current Cub Scout Award",
+        "new": "視作完成新「幼童軍體驗章」，可開展新「幼童軍歷奇章」",
+        "enNew": "Deemed to have completed the new Cub Scout Experience Badge; may start the new Adventure Badge",
+        "note": "P022/2026 幼童軍支部 B。預計完成者須由領袖持續跟進。",
+        "enNote": "P022/2026 Cub case B. Expected completion requires leader follow-up.",
+        "transferable": true
+      },
+      {
+        "id": "C-adventure-to-adventure",
+        "old": "2026年8月15日前宣誓、未滿9歲半並已完成現行「幼童軍歷奇章」",
+        "enOld": "Invested before 15 Aug 2026, under age 9½ and completed the current Adventure Award",
+        "new": "視作完成新「幼童軍歷奇章」，可開展新「幼童軍高級歷奇章」核心範疇指定內容，然後開展新「金紫荊獎章」",
+        "enNew": "Deemed to have completed the new Adventure Badge; may start specified core content of the new Adventure Crest, then the new Golden Bauhinia Award",
+        "note": "P022/2026 幼童軍支部 C。",
+        "enNote": "P022/2026 Cub case C.",
+        "transferable": true
+      },
+      {
+        "id": "D-expected-adventure-to-adventure",
+        "old": "預計於2027年8月31日前完成現行「幼童軍歷奇章」",
+        "enOld": "Expected to complete the current Adventure Award by 31 Aug 2027",
+        "new": "視作完成新「幼童軍歷奇章」，可開展新「幼童軍高級歷奇章」核心範疇指定內容，然後開展新「金紫荊獎章」",
+        "enNew": "Deemed to have completed the new Adventure Badge; may start specified core content of the new Adventure Crest, then the new Golden Bauhinia Award",
+        "note": "P022/2026 幼童軍支部 D。預計完成者須由領袖持續跟進。",
+        "enNote": "P022/2026 Cub case D. Expected completion requires leader follow-up.",
+        "transferable": true
+      },
+      {
+        "id": "E-continue-current-gba",
+        "old": "2026年8月15日前已宣誓、年滿9歲半、已完成現行「幼童軍歷奇章」，並已開始現行「幼童軍高級歷奇章」及「金紫荊獎章」",
+        "enOld": "Invested before 15 Aug 2026, aged 9½ or above, completed the current Adventure Award, and already started the current Adventure Crest and Golden Bauhinia Award",
+        "new": "可沿用現行綱要繼續完成；須於12歲生日或不遲於2028年8月31日前完成並遞交 PT/68 及證明",
+        "enNew": "May continue under the current scheme; complete by 12th birthday or no later than 31 Aug 2028 and submit PT/68 with evidence",
+        "note": "P022/2026 幼童軍支部 E；完成時須未滿12歲，或仍就讀小學而畢業學年結束日不遲於8月31日。",
+        "enNote": "P022/2026 Cub case E. At completion the member must be under 12, or still in primary school with the school year ending by 31 Aug.",
+        "transferable": false
+      }
+    ],
+    "categoryOnlyNotes": [
+      {
+        "old": "現行活動徽章",
+        "enOld": "Current Activity Badges",
+        "new": "新活動徽章與已考取現行活動徽章可同時並列佩戴",
+        "enNew": "New Activity Badges and current Activity Badges already earned may be worn side by side",
+        "consequence": "系統不會把舊活動徽章自動轉為新活動徽章；領袖可在「其他獎章」分別記錄。",
+        "enConsequence": "The app does not auto-convert old Activity Badges into new ones. Leaders may record them separately under Other Badges."
+      },
+      {
+        "old": "現行高級歷奇章／金紫荊獎章進行中",
+        "enOld": "Current Adventure Crest / Golden Bauhinia in progress",
+        "new": "符合 P022/2026 E 者可沿用現行綱要至期限",
+        "enNew": "Eligible members under P022/2026 case E may continue the current scheme until the deadline",
+        "consequence": "須核實年齡、已開始紀錄、PT/67/PT/68 及學籍證明；逾期或不符條件須依新綱要。",
+        "enConsequence": "Verify age, start records, PT/67/PT/68 and school proof. If ineligible or overdue, use the revised scheme."
+      }
+    ],
+    "unmatchedItems": [
+      {
+        "old": "現行「幼童軍獎章」名稱",
+        "enOld": "Current “Cub Scout Award” name",
+        "new": "新制第一個進度性獎章為「幼童軍體驗章」",
+        "enNew": "The first revised progressive award is “Cub Scout Experience Badge”",
+        "consequence": "只按 P022/2026 視作完成體驗章；不等於自動完成新體驗章每個細項。",
+        "enConsequence": "Only deemed completion under P022/2026; not automatic completion of every new Experience item."
+      },
+      {
+        "old": "現行進度範疇（戶外／運動／幫助／照顧／科學／創意／社區／文化）",
+        "enOld": "Current progress areas",
+        "new": "新制七個學習範疇（四個核心＋三個興趣）",
+        "enNew": "Seven revised learning areas: four core and three interest areas",
+        "consequence": "範疇結構已重組，請勿逐項硬套。",
+        "enConsequence": "The structure is reorganised; do not force a line-by-line conversion."
+      }
+    ],
+    "newRequirements": [
+      {
+        "old": "金紫荊年齡限制（現行）",
+        "enOld": "Current Golden Bauhinia age limit",
+        "new": "新金紫荊可按 P022/2026 在仍就讀小學時延長至新學年前一日",
+        "enNew": "The revised Golden Bauhinia may, under P022/2026, extend for members still in primary school until the day before the new school year",
+        "consequence": "須符合已考獲新高級歷奇章，或年滿10歲並完成指定核心內容等條件，遞交新表格時附學校證明。",
+        "enConsequence": "Must meet the specified conditions and attach school proof when submitting the new form."
+      },
+      {
+        "old": "活動徽章列表",
+        "enOld": "Activity Badge list",
+        "new": "新制加入核心／興趣範疇分類、積極公民系列、地球部落計劃、資訊科技／媒體製作等",
+        "enNew": "Revised scheme classifies badges into core/interest areas and adds Active Citizenship, Earth Tribe, IT/Media Maker, etc.",
+        "consequence": "本 v6.0 先完整記錄現行徽章並列出新制過渡安排；新制逐項追蹤可按旅團轉制時間再啟用。",
+        "enConsequence": "v6.0 records the current badges and transition arrangements first; revised-scheme item tracking can be enabled according to the troop’s transition timing."
+      }
+    ],
+    "detailMappings": [
+      {
+        "id": "L1-to-new-membership",
+        "code": "L1",
+        "old": "現行會員章",
+        "enOld": "Current Membership Badge",
+        "new": "新會員章（仍為入門章）／或按個案 A 視作完成新體驗章",
+        "enNew": "Revised Membership Badge remains an introductory badge; under case A may deem new Experience completed",
+        "newItemId": "NEW-L1",
+        "note": "新會員章內容已更新，新增更清晰的童軍運動起源、禮儀、旅團資料及 Safe from Harm。",
+        "enNote": "The revised Membership Badge updates Scouting origins, etiquette, Group details and Safe from Harm."
+      },
+      {
+        "id": "L2-to-experience",
+        "code": "L2",
+        "old": "現行幼童軍獎章",
+        "enOld": "Current Cub Scout Award",
+        "new": "新幼童軍體驗章",
+        "enNew": "Revised Cub Scout Experience Badge",
+        "newItemId": "NEW-L2-EXPERIENCE",
+        "note": "P022/2026 B 為章級視作完成，不代表新體驗章逐項已完成。",
+        "enNote": "P022/2026 case B is award-level deemed completion, not item-by-item completion."
+      },
+      {
+        "id": "L3-to-adventure",
+        "code": "L3",
+        "old": "現行幼童軍歷奇章",
+        "enOld": "Current Adventure Award",
+        "new": "新幼童軍歷奇章",
+        "enNew": "Revised Cub Scout Adventure Badge",
+        "newItemId": "NEW-L3-ADVENTURE",
+        "note": "P022/2026 C/D 為章級視作完成。",
+        "enNote": "P022/2026 cases C/D are award-level deemed completion."
+      },
+      {
+        "id": "activity-side-by-side",
+        "code": "ACT",
+        "old": "已考獲現行活動徽章",
+        "enOld": "Current Activity Badges already earned",
+        "new": "可與新活動徽章並列佩戴",
+        "enNew": "May be worn alongside revised Activity Badges",
+        "note": "不作自動兌換；請保留證書／紀錄。",
+        "enNote": "No automatic conversion; keep certificates/records."
+      }
+    ],
+    "quickTransfers": [
+      {
+        "id": "A-MEMBERSHIP-EXPERIENCE",
+        "old": "會員章（個案A：2026-08-15前宣誓且年滿7歲半）",
+        "enOld": "Membership Badge (case A: invested before 2026-08-15 and aged 7½+)",
+        "new": "新幼童軍體驗章（過渡視作完成）",
+        "enNew": "Revised Cub Scout Experience Badge (transition deemed completion)",
+        "permissionItemId": "L1-10",
+        "note": "只在成員符合個案A並由領袖核實後記錄。",
+        "enNote": "Record only after leader verifies case A eligibility.",
+        "recordId": "LEGACY-CUB-A-MEMBERSHIP-TO-EXPERIENCE",
+        "label": "會員章 → 新體驗章（個案A）",
+        "enLabel": "Membership → revised Experience (case A)",
+        "targetSegmentCode": "TRANSITION"
+      },
+      {
+        "id": "B-CUB-AWARD-EXPERIENCE",
+        "old": "現行幼童軍獎章（已完成／預計2027-08-31前完成）",
+        "enOld": "Current Cub Scout Award (completed / expected by 2027-08-31)",
+        "new": "新幼童軍體驗章（過渡視作完成）",
+        "enNew": "Revised Cub Scout Experience Badge (transition deemed completion)",
+        "permissionItemId": "L2-TRACK-01",
+        "note": "只在成員符合個案B並由領袖核實後記錄。",
+        "enNote": "Record only after leader verifies case B eligibility.",
+        "recordId": "LEGACY-CUB-B-CUB-AWARD-TO-EXPERIENCE",
+        "label": "幼童軍獎章 → 新體驗章（個案B）",
+        "enLabel": "Cub Scout Award → revised Experience (case B)",
+        "targetSegmentCode": "TRANSITION"
+      },
+      {
+        "id": "C-D-ADVENTURE-ADVENTURE",
+        "old": "現行幼童軍歷奇章（個案C/D）",
+        "enOld": "Current Adventure Award (case C/D)",
+        "new": "新幼童軍歷奇章（過渡視作完成）",
+        "enNew": "Revised Cub Scout Adventure Badge (transition deemed completion)",
+        "permissionItemId": "L3-PRO-01",
+        "note": "只在成員符合個案C或D並由領袖核實後記錄。",
+        "enNote": "Record only after leader verifies case C or D eligibility.",
+        "recordId": "LEGACY-CUB-CD-ADVENTURE-TO-ADVENTURE",
+        "label": "歷奇章 → 新歷奇章（個案C/D）",
+        "enLabel": "Adventure Award → revised Adventure (case C/D)",
+        "targetSegmentCode": "TRANSITION"
+      },
+      {
+        "id": "E-CURRENT-GBA-CONTINUE",
+        "old": "符合個案E：可沿用現行高級歷奇章／金紫荊考核",
+        "enOld": "Case E: may continue current Adventure Crest / Golden Bauhinia",
+        "new": "沿用現行綱要至期限（12歲生日或不遲於2028-08-31）",
+        "enNew": "Continue current scheme until deadline (12th birthday or no later than 2028-08-31)",
+        "permissionItemId": "L5-SVC-01",
+        "note": "只記錄資格核實；不代表金紫荊已完成。",
+        "enNote": "Records eligibility verification only; not completion of Golden Bauhinia.",
+        "recordId": "LEGACY-CUB-E-CURRENT-GBA-CONTINUE",
+        "label": "個案E：沿用現行高級歷奇／金紫荊",
+        "enLabel": "Case E: continue current Adventure Crest / Golden Bauhinia",
+        "targetSegmentCode": "TRANSITION"
+      }
+    ],
+    "preservedChecklistItems": [
+      {
+        "id": "L1",
+        "name": "會員章",
+        "segmentCode": "",
+        "segmentName": ""
+      },
+      {
+        "id": "L1-01",
+        "name": "認識自己：能向領袖說出自己的興趣、愛好以及專長",
+        "segmentCode": "",
+        "segmentName": ""
+      },
+      {
+        "id": "L1-02",
+        "name": "認識小隊：能說出自己隊色以及隊中所有隊員、隊長及隊副的名字",
+        "segmentCode": "",
+        "segmentName": ""
+      },
+      {
+        "id": "L1-03A",
+        "name": "認識所屬旅團 - 在兩次團集會後認識全團所有成員及領袖",
+        "segmentCode": "",
+        "segmentName": ""
+      },
+      {
+        "id": "L1-03B",
+        "name": "知道自己童軍旅的旅號、所屬區、地域及主辦機構",
+        "segmentCode": "",
+        "segmentName": ""
+      },
+      {
+        "id": "L1-04",
+        "name": "認識國家：能辨認中華人民共和國國旗和香港特別行政區區旗並說明含意",
+        "segmentCode": "",
+        "segmentName": ""
+      },
+      {
+        "id": "L1-05",
+        "name": "認識幼童軍徽章（包括外形及設立意義）",
+        "segmentCode": "",
+        "segmentName": ""
+      },
+      {
+        "id": "L1-05A",
+        "name": "會員章",
+        "segmentCode": "",
+        "segmentName": ""
+      },
+      {
+        "id": "L1-05B",
+        "name": "幼童軍進度性徽章（獎章、歷奇章、高級歷奇章、金紫荊）",
+        "segmentCode": "",
+        "segmentName": ""
+      },
+      {
+        "id": "L1-05C",
+        "name": "幼童軍活動徽章（最少四個）",
+        "segmentCode": "",
+        "segmentName": ""
+      },
+      {
+        "id": "L1-05D",
+        "name": "童軍先修章",
+        "segmentCode": "",
+        "segmentName": ""
+      },
+      {
+        "id": "L1-06A",
+        "name": "說出毛吉利入狼群的故事及其意義",
+        "segmentCode": "",
+        "segmentName": ""
+      },
+      {
+        "id": "L1-06B",
+        "name": "說出森林故事中其他人物(動物)的名稱",
+        "segmentCode": "",
+        "segmentName": ""
+      },
+      {
+        "id": "L1-06C",
+        "name": "知道團呼的意義",
+        "segmentCode": "",
+        "segmentName": ""
+      },
+      {
+        "id": "L1-07A",
+        "name": "認識立正 (Alert) 口號及手號並能迅速作出相應動作",
+        "segmentCode": "",
+        "segmentName": ""
+      },
+      {
+        "id": "L1-07B",
+        "name": "認識休息 (At Ease)",
+        "segmentCode": "",
+        "segmentName": ""
+      },
+      {
+        "id": "L1-07C",
+        "name": "認識集隊 (Fall In)",
+        "segmentCode": "",
+        "segmentName": ""
+      },
+      {
+        "id": "L1-07D",
+        "name": "認識解散 (Fall Out, Dismiss)",
+        "segmentCode": "",
+        "segmentName": ""
+      },
+      {
+        "id": "L1-07E",
+        "name": "認識幼童軍 (Pack)",
+        "segmentCode": "",
+        "segmentName": ""
+      },
+      {
+        "id": "L1-08A",
+        "name": "國旗及國歌：能辨別國歌曲調及在國歌奏唱和升掛國旗、區旗時表現應有禮儀",
+        "segmentCode": "",
+        "segmentName": ""
+      },
+      {
+        "id": "L1-08B",
+        "name": "敬禮：認識全禮、半禮、握手禮、注目禮何時使用及正確方法手勢",
+        "segmentCode": "",
+        "segmentName": ""
+      },
+      {
+        "id": "L1-08C",
+        "name": "團呼：懂得團呼正確方法及口號，參與團呼及排練",
+        "segmentCode": "",
+        "segmentName": ""
+      },
+      {
+        "id": "L1-08D",
+        "name": "展旗：知道展旗意義、程序及參與幼童軍團展旗儀式",
+        "segmentCode": "",
+        "segmentName": ""
+      },
+      {
+        "id": "L1-08E",
+        "name": "宣誓：知道宣誓意義，參與宣誓儀式排練",
+        "segmentCode": "",
+        "segmentName": ""
+      },
+      {
+        "id": "L1-08F",
+        "name": "制服：知道幼童軍制服正確式樣及各種徽章正確縫製位置",
+        "segmentCode": "",
+        "segmentName": ""
+      },
+      {
+        "id": "L1-08G1",
+        "name": "誓詞、規律和銘言：知道幼童軍誓詞和規律意義",
+        "segmentCode": "",
+        "segmentName": ""
+      },
+      {
+        "id": "L1-08G2",
+        "name": "在日常生活中實踐誓詞和規律",
+        "segmentCode": "",
+        "segmentName": ""
+      },
+      {
+        "id": "L1-08G3",
+        "name": "知道童軍銘言及其意義",
+        "segmentCode": "",
+        "segmentName": ""
+      },
+      {
+        "id": "L1-09A1",
+        "name": "了解童軍運動起源 - 白浪島第一次實驗露營 1907年開始 童子警探 小狼隊 幼童軍1916開始 貝登堡太太開展女童軍",
+        "segmentCode": "",
+        "segmentName": ""
+      },
+      {
+        "id": "L1-09B1",
+        "name": "認識童軍大家庭 - 香港童軍5支部：小童軍、幼童軍、童軍、深資童軍、樂行童軍",
+        "segmentCode": "",
+        "segmentName": ""
+      },
+      {
+        "id": "L1-09B2",
+        "name": "當中和幼童軍關係最密切是小童軍和童軍，家長、其他團領袖、旅長、旅務委員會等協助支持本團活動",
+        "segmentCode": "",
+        "segmentName": ""
+      },
+      {
+        "id": "L1-10",
+        "name": "認識基本措施去保護自己及夥伴免受傷害 (Safe from Harm 2025年7月1日起必修)",
+        "segmentCode": "",
+        "segmentName": ""
+      },
+      {
+        "id": "L2",
+        "name": "幼童軍獎章",
+        "segmentCode": "",
+        "segmentName": ""
+      },
+      {
+        "id": "L2-TRACK-01",
+        "name": "跟隨一些追蹤符號作一次追蹤",
+        "segmentCode": "",
+        "segmentName": ""
+      },
+      {
+        "id": "L2-TRACK-02",
+        "name": "安排一些追蹤符號讓其他幼童軍跟隨",
+        "segmentCode": "",
+        "segmentName": ""
+      },
+      {
+        "id": "L2-TRACK-03",
+        "name": "繪製一個追蹤符號圖表或製作模型",
+        "segmentCode": "",
+        "segmentName": ""
+      },
+      {
+        "id": "L2-KNOT-01",
+        "name": "懂得自己綁鞋帶",
+        "segmentCode": "",
+        "segmentName": ""
+      },
+      {
+        "id": "L2-KNOT-02",
+        "name": "知道平結的結法及其用途",
+        "segmentCode": "",
+        "segmentName": ""
+      },
+      {
+        "id": "L2-COUNTRY-01",
+        "name": "遵守漁農自然護理署郊區守則",
+        "segmentCode": "",
+        "segmentName": ""
+      },
+      {
+        "id": "L2-COUNTRY-02",
+        "name": "實踐童軍活動郊野守則",
+        "segmentCode": "",
+        "segmentName": ""
+      },
+      {
+        "id": "L2-COUNTRY-03",
+        "name": "宣揚遵守郊野守則重要性",
+        "segmentCode": "",
+        "segmentName": ""
+      },
+      {
+        "id": "L2-GOOD-01",
+        "name": "製作一本善行紀錄冊，記錄一週內做過的善行",
+        "segmentCode": "",
+        "segmentName": ""
+      },
+      {
+        "id": "L2-FA-01",
+        "name": "知道簡單護理和救傷常識，包括清理和包紮小傷口",
+        "segmentCode": "",
+        "segmentName": ""
+      },
+      {
+        "id": "L2-FA-02",
+        "name": "向成年人求助",
+        "segmentCode": "",
+        "segmentName": ""
+      },
+      {
+        "id": "L2-PROMISE-01",
+        "name": "向領袖闡述日常生活中實踐誓詞和規律的事件",
+        "segmentCode": "",
+        "segmentName": ""
+      },
+      {
+        "id": "L2-FAMILY2-01",
+        "name": "參與一次旅、區、地域或總會舉辦的活動，或與其他幼童軍團聯合活動",
+        "segmentCode": "",
+        "segmentName": ""
+      },
+      {
+        "id": "L2-FAMILY2-02",
+        "name": "認識童軍大家庭 - 5支部簡介其不同及相同地方",
+        "segmentCode": "",
+        "segmentName": ""
+      },
+      {
+        "id": "L3",
+        "name": "幼童軍歷奇章",
+        "segmentCode": "",
+        "segmentName": ""
+      },
+      {
+        "id": "L3-OUT-MAP",
+        "name": "簡單地圖閱讀",
+        "segmentCode": "",
+        "segmentName": ""
+      },
+      {
+        "id": "L3-OUT-MAP-01",
+        "name": "認識八種圖例並在地圖中找出",
+        "segmentCode": "",
+        "segmentName": ""
+      },
+      {
+        "id": "L3-OUT-MAP-02",
+        "name": "在地圖上找出圖例並在畫冊繪出或貼照片",
+        "segmentCode": "",
+        "segmentName": ""
+      },
+      {
+        "id": "L3-OUT-COOK",
+        "name": "戶外烹飪",
+        "segmentCode": "",
+        "segmentName": ""
+      },
+      {
+        "id": "L3-OUT-COOK-01",
+        "name": "在燒烤爐上烹飪簡單食物",
+        "segmentCode": "",
+        "segmentName": ""
+      },
+      {
+        "id": "L3-OUT-COOK-02",
+        "name": "用鋁製飯鍋水煮熟一組食物",
+        "segmentCode": "",
+        "segmentName": ""
+      },
+      {
+        "id": "L3-OUT-COOK-03",
+        "name": "用錫紙包食物放爐下煨熟",
+        "segmentCode": "",
+        "segmentName": ""
+      },
+      {
+        "id": "L3-OUT-KNOT",
+        "name": "繩結 (必修)",
+        "segmentCode": "",
+        "segmentName": ""
+      },
+      {
+        "id": "L3-OUT-KNOT-01",
+        "name": "接繩結 Sheet Bend",
+        "segmentCode": "",
+        "segmentName": ""
+      },
+      {
+        "id": "L3-OUT-KNOT-02",
+        "name": "繫木結 Round-Turn and Two Half Hitches",
+        "segmentCode": "",
+        "segmentName": ""
+      },
+      {
+        "id": "L3-OUT-COMPASS",
+        "name": "指南針認識",
+        "segmentCode": "",
+        "segmentName": ""
+      },
+      {
+        "id": "L3-OUT-COMP-01",
+        "name": "說出某些建築物或特定物件位置",
+        "segmentCode": "",
+        "segmentName": ""
+      },
+      {
+        "id": "L3-OUT-COMP-02",
+        "name": "利用指南針指出八個方位",
+        "segmentCode": "",
+        "segmentName": ""
+      },
+      {
+        "id": "L3-OUT-HIKE",
+        "name": "遠足",
+        "segmentCode": "",
+        "segmentName": ""
+      },
+      {
+        "id": "L3-OUT-HIKE-01",
+        "name": "了解遠足前準備工作",
+        "segmentCode": "",
+        "segmentName": ""
+      },
+      {
+        "id": "L3-OUT-HIKE-02",
+        "name": "在領袖或其他成年人陪同下完成一段自然教育徑或家樂徑",
+        "segmentCode": "",
+        "segmentName": ""
+      },
+      {
+        "id": "L3-OUT-PIONEER",
+        "name": "小型先鋒工程",
+        "segmentCode": "",
+        "segmentName": ""
+      },
+      {
+        "id": "L3-OUT-PION-01",
+        "name": "利用幼棉繩、塑膠帶及木條或小竹枝紮作小型先鋒工程",
+        "segmentCode": "",
+        "segmentName": ""
+      },
+      {
+        "id": "L3-OUT-CAMP",
+        "name": "露營或度假營 (必須選一項或兩項均參與)",
+        "segmentCode": "",
+        "segmentName": ""
+      },
+      {
+        "id": "L3-OUT-CAMP-01",
+        "name": "認識收拾背囊方法並自行收拾背囊",
+        "segmentCode": "",
+        "segmentName": ""
+      },
+      {
+        "id": "L3-OUT-CAMP-02",
+        "name": "參與一次露營或度假營",
+        "segmentCode": "",
+        "segmentName": ""
+      },
+      {
+        "id": "L3-OUT-CAMP-03",
+        "name": "能遵守營地規則並在活動中注意安全",
+        "segmentCode": "",
+        "segmentName": ""
+      },
+      {
+        "id": "L3-SPORT-01",
+        "name": "於團內發揮體育精神及團隊精神",
+        "segmentCode": "",
+        "segmentName": ""
+      },
+      {
+        "id": "L3-HELP-FA",
+        "name": "護理傷者",
+        "segmentCode": "",
+        "segmentName": ""
+      },
+      {
+        "id": "L3-HELP-FA-01",
+        "name": "尋求成年人幫助",
+        "segmentCode": "",
+        "segmentName": ""
+      },
+      {
+        "id": "L3-HELP-FA-02",
+        "name": "知道如何處理流鼻血、割傷擦傷、燒傷燙傷",
+        "segmentCode": "",
+        "segmentName": ""
+      },
+      {
+        "id": "L3-HELP-WATER",
+        "name": "水上安全知識",
+        "segmentCode": "",
+        "segmentName": ""
+      },
+      {
+        "id": "L3-HELP-WATER-01",
+        "name": "知道基本水上安全守則",
+        "segmentCode": "",
+        "segmentName": ""
+      },
+      {
+        "id": "L3-HELP-WATER-02",
+        "name": "向他人推廣水上安全規則",
+        "segmentCode": "",
+        "segmentName": ""
+      },
+      {
+        "id": "L3-HELP-HOME",
+        "name": "家居安全",
+        "segmentCode": "",
+        "segmentName": ""
+      },
+      {
+        "id": "L3-HELP-HOME-01",
+        "name": "知曉家裡什麼地方及東西容易發生危險",
+        "segmentCode": "",
+        "segmentName": ""
+      },
+      {
+        "id": "L3-HELP-HOME-02",
+        "name": "推廣家居安全規則",
+        "segmentCode": "",
+        "segmentName": ""
+      },
+      {
+        "id": "L3-HELP-SPECIAL",
+        "name": "特別的善行 - 記錄在筆記冊並向領袖講述經過",
+        "segmentCode": "",
+        "segmentName": ""
+      },
+      {
+        "id": "L3-HELP-LEADER",
+        "name": "協助領袖處理團務",
+        "segmentCode": "",
+        "segmentName": ""
+      },
+      {
+        "id": "L3-SELF-01",
+        "name": "在日常生活中能照顧自己",
+        "segmentCode": "",
+        "segmentName": ""
+      },
+      {
+        "id": "L3-SELF-02",
+        "name": "遵守道路安全守則",
+        "segmentCode": "",
+        "segmentName": ""
+      },
+      {
+        "id": "L3-SCI-EXP",
+        "name": "小實驗並闡述原理",
+        "segmentCode": "",
+        "segmentName": ""
+      },
+      {
+        "id": "L3-SCI-EXP-01",
+        "name": "聲音的傳播",
+        "segmentCode": "",
+        "segmentName": ""
+      },
+      {
+        "id": "L3-SCI-EXP-02",
+        "name": "物體的浮沉",
+        "segmentCode": "",
+        "segmentName": ""
+      },
+      {
+        "id": "L3-SCI-STAR",
+        "name": "星空：知曉如何尋找香港常見星座及了解其故事",
+        "segmentCode": "",
+        "segmentName": ""
+      },
+      {
+        "id": "L3-SCI-GARDEN",
+        "name": "園藝：種植一種植物，製作紀錄簿，記錄生長過程、照顧方法並匯報",
+        "segmentCode": "",
+        "segmentName": ""
+      },
+      {
+        "id": "L3-SCI-WEATHER",
+        "name": "天氣：製作兩週天氣紀錄表，記錄最高／最低溫、晴陰雨等天氣概況",
+        "segmentCode": "",
+        "segmentName": ""
+      },
+      {
+        "id": "L3-SCI-NATURE",
+        "name": "自然世界：利用實物或圖片展示一些自然生態現象",
+        "segmentCode": "",
+        "segmentName": ""
+      },
+      {
+        "id": "L3-CRE-DRAMA",
+        "name": "戲劇表演：演出一個戲劇表演",
+        "segmentCode": "",
+        "segmentName": ""
+      },
+      {
+        "id": "L3-CRE-MUSIC",
+        "name": "音樂：唱一首歌或演奏一種樂器",
+        "segmentCode": "",
+        "segmentName": ""
+      },
+      {
+        "id": "L3-CRE-FAITH",
+        "name": "對神明盡責任：在童軍崇拜會中擔任工作",
+        "segmentCode": "",
+        "segmentName": ""
+      },
+      {
+        "id": "L3-CRE-REPORTER",
+        "name": "小記者：訪問一位人士並作口頭報告，或報道一件事件",
+        "segmentCode": "",
+        "segmentName": ""
+      },
+      {
+        "id": "L3-CRE-ART",
+        "name": "美術：繪畫主題圖畫、四幅或以上漫畫／卡通，表達簡短故事",
+        "segmentCode": "",
+        "segmentName": ""
+      },
+      {
+        "id": "L3-CRE-MAGIC",
+        "name": "魔術：利用道具表演一個魔術",
+        "segmentCode": "",
+        "segmentName": ""
+      },
+      {
+        "id": "L3-CRE-PHOTO",
+        "name": "攝影：拍攝有連貫主題相片或三分鐘短片並說明",
+        "segmentCode": "",
+        "segmentName": ""
+      },
+      {
+        "id": "L3-CRE-CRAFT",
+        "name": "手工藝：製作模型或有用小用具",
+        "segmentCode": "",
+        "segmentName": ""
+      },
+      {
+        "id": "L3-CRE-OTHER",
+        "name": "其他創意：任何獲領袖同意的意念",
+        "segmentCode": "",
+        "segmentName": ""
+      },
+      {
+        "id": "L3-COM-INFO",
+        "name": "社區資料：介紹社區位置、環境、歷史、名勝古蹟及代表物",
+        "segmentCode": "",
+        "segmentName": ""
+      },
+      {
+        "id": "L3-COM-SURVEY",
+        "name": "社區調查：調查社區資料並完成圖文並茂報告",
+        "segmentCode": "",
+        "segmentName": ""
+      },
+      {
+        "id": "L3-COM-VISIT",
+        "name": "社區漫遊：參觀社區設施或機構並作報告",
+        "segmentCode": "",
+        "segmentName": ""
+      },
+      {
+        "id": "L3-COM-PEOPLE",
+        "name": "認識社區人物：訪問服務社區人士，描述工作及貢獻",
+        "segmentCode": "",
+        "segmentName": ""
+      },
+      {
+        "id": "L3-CUL-CHINA",
+        "name": "認識中國風俗及傳統：剪貼簿介紹節日／風俗起源及工藝品",
+        "segmentCode": "",
+        "segmentName": ""
+      },
+      {
+        "id": "L3-CUL-FLAGS",
+        "name": "認識國旗及國徽、區旗及區徽，並說出意義",
+        "segmentCode": "",
+        "segmentName": ""
+      },
+      {
+        "id": "L3-CUL-CHARITY",
+        "name": "認識香港慈善團體：簡述其歷史及工作",
+        "segmentCode": "",
+        "segmentName": ""
+      },
+      {
+        "id": "L3-PRO-01",
+        "name": "在日常生活中實踐幼童軍誓詞和規律",
+        "segmentCode": "",
+        "segmentName": ""
+      },
+      {
+        "id": "L3-FAM3-01",
+        "name": "認識童軍團的活動及徽章",
+        "segmentCode": "",
+        "segmentName": ""
+      },
+      {
+        "id": "L3-FAM3-02",
+        "name": "參與區、地域活動或與其他支部成員進行一次聯合活動",
+        "segmentCode": "",
+        "segmentName": ""
+      },
+      {
+        "id": "L4",
+        "name": "幼童軍高級歷奇章",
+        "segmentCode": "",
+        "segmentName": ""
+      },
+      {
+        "id": "L4-OUT-MAP",
+        "name": "讀圖",
+        "segmentCode": "",
+        "segmentName": ""
+      },
+      {
+        "id": "L4-OUT-MAP-01",
+        "name": "認識圖例及比例",
+        "segmentCode": "",
+        "segmentName": ""
+      },
+      {
+        "id": "L4-OUT-MAP-02",
+        "name": "利用香港標準地圖設計一段旅程",
+        "segmentCode": "",
+        "segmentName": ""
+      },
+      {
+        "id": "L4-OUT-FIRE",
+        "name": "生火 - 用炭生火並烹煮食物",
+        "segmentCode": "",
+        "segmentName": ""
+      },
+      {
+        "id": "L4-OUT-KNOT",
+        "name": "繩結必修",
+        "segmentCode": "",
+        "segmentName": ""
+      },
+      {
+        "id": "L4-OUT-KNOT-01",
+        "name": "雙套結 Clove Hitch",
+        "segmentCode": "",
+        "segmentName": ""
+      },
+      {
+        "id": "L4-OUT-KNOT-02",
+        "name": "稱人結 Bowline",
+        "segmentCode": "",
+        "segmentName": ""
+      },
+      {
+        "id": "L4-OUT-COMPASS",
+        "name": "指南針 - 利用地圖及西維氏指南針指出前進方向或地標方位",
+        "segmentCode": "",
+        "segmentName": ""
+      },
+      {
+        "id": "L4-OUT-HIKE",
+        "name": "遠足 - 和領袖一起計劃及進行遠足活動",
+        "segmentCode": "",
+        "segmentName": ""
+      },
+      {
+        "id": "L4-OUT-SHELTER",
+        "name": "建造遮蔽物 - 利用物料建造一個遮蔽物",
+        "segmentCode": "",
+        "segmentName": ""
+      },
+      {
+        "id": "L4-OUT-CAMP",
+        "name": "露營 - 在領袖帶領下參與一次戶外露營並在營幕過一晚",
+        "segmentCode": "",
+        "segmentName": ""
+      },
+      {
+        "id": "L4-OUT-GADGET",
+        "name": "營地建設 - 紮作一些營地裝置",
+        "segmentCode": "",
+        "segmentName": ""
+      },
+      {
+        "id": "L4-SP-01",
+        "name": "選擇最少兩項運動或愛好；其中一項為現有愛好／常作運動，匯報好處及特點",
+        "segmentCode": "",
+        "segmentName": ""
+      },
+      {
+        "id": "L4-SP-02",
+        "name": "嘗試另一項新的運動或愛好，並作出紀錄",
+        "segmentCode": "",
+        "segmentName": ""
+      },
+      {
+        "id": "L4-HELP-FA",
+        "name": "救傷：認識直接壓法止血及使用三角巾的方法",
+        "segmentCode": "",
+        "segmentName": ""
+      },
+      {
+        "id": "L4-HELP-WATER",
+        "name": "水上安全：模擬示範拯救掉進水中的人及知道向成年人求助重要性",
+        "segmentCode": "",
+        "segmentName": ""
+      },
+      {
+        "id": "L4-HELP-HOME",
+        "name": "家居安全：知道防止罪案及家居意外方法，以及火警處理",
+        "segmentCode": "",
+        "segmentName": ""
+      },
+      {
+        "id": "L4-HELP-GOOD",
+        "name": "特別善行：在小隊或團中進行一次善行",
+        "segmentCode": "",
+        "segmentName": ""
+      },
+      {
+        "id": "L4-HELP-LEADER",
+        "name": "協助團長及領袖處理團務最少四星期",
+        "segmentCode": "",
+        "segmentName": ""
+      },
+      {
+        "id": "L4-SELF-HYGIENE",
+        "name": "保持身體健康：知道個人衞生重要並養成良好習慣",
+        "segmentCode": "",
+        "segmentName": ""
+      },
+      {
+        "id": "L4-SELF-HEALTH",
+        "name": "保持身體良好狀態：知道保持健康及避免損害健康食物",
+        "segmentCode": "",
+        "segmentName": ""
+      },
+      {
+        "id": "L4-SELF-FOOD",
+        "name": "有益食物：紀錄一週早午晚餐單，檢視均衡營養",
+        "segmentCode": "",
+        "segmentName": ""
+      },
+      {
+        "id": "L4-SELF-ROAD",
+        "name": "道路安全：認識行人設施及交通標誌、單車安全及乘客安全",
+        "segmentCode": "",
+        "segmentName": ""
+      },
+      {
+        "id": "L4-SCI-WEATHER",
+        "name": "天氣站：設最少三種測量天氣儀器並記錄兩週天氣",
+        "segmentCode": "",
+        "segmentName": ""
+      },
+      {
+        "id": "L4-SCI-REPAIR",
+        "name": "小維修：協助及觀察成年人維修家居用品，知道如何保養",
+        "segmentCode": "",
+        "segmentName": ""
+      },
+      {
+        "id": "L4-SCI-MODEL",
+        "name": "模型製作：製作有活動部分模型並匯報",
+        "segmentCode": "",
+        "segmentName": ""
+      },
+      {
+        "id": "L4-SCI-TECH",
+        "name": "科技器材：使用一種科技器材並匯報",
+        "segmentCode": "",
+        "segmentName": ""
+      },
+      {
+        "id": "L4-SCI-ENV",
+        "name": "保護環境：設計及參與環保活動，呈交圖文報告",
+        "segmentCode": "",
+        "segmentName": ""
+      },
+      {
+        "id": "L4-SCI-WILD",
+        "name": "保護野生動物：製作介紹瀕危動物小冊子",
+        "segmentCode": "",
+        "segmentName": ""
+      },
+      {
+        "id": "L4-SCI-FARM",
+        "name": "綠田園：參與耕作活動，注意不用污染環境肥料",
+        "segmentCode": "",
+        "segmentName": ""
+      },
+      {
+        "id": "L4-CRE-DRAMA",
+        "name": "戲劇表演",
+        "segmentCode": "",
+        "segmentName": ""
+      },
+      {
+        "id": "L4-CRE-MUSIC",
+        "name": "音樂",
+        "segmentCode": "",
+        "segmentName": ""
+      },
+      {
+        "id": "L4-CRE-FAITH",
+        "name": "對神明盡責任",
+        "segmentCode": "",
+        "segmentName": ""
+      },
+      {
+        "id": "L4-CRE-REPORTER",
+        "name": "小記者",
+        "segmentCode": "",
+        "segmentName": ""
+      },
+      {
+        "id": "L4-CRE-ART",
+        "name": "美術",
+        "segmentCode": "",
+        "segmentName": ""
+      },
+      {
+        "id": "L4-CRE-MAGIC",
+        "name": "魔術",
+        "segmentCode": "",
+        "segmentName": ""
+      },
+      {
+        "id": "L4-CRE-PHOTO",
+        "name": "攝影",
+        "segmentCode": "",
+        "segmentName": ""
+      },
+      {
+        "id": "L4-CRE-CRAFT",
+        "name": "手工藝",
+        "segmentCode": "",
+        "segmentName": ""
+      },
+      {
+        "id": "L4-CRE-OTHER",
+        "name": "其他創意（領袖同意）",
+        "segmentCode": "",
+        "segmentName": ""
+      },
+      {
+        "id": "L4-COM-IMPROVE",
+        "name": "改善社區：參與發展及改善社區活動，並說明計劃",
+        "segmentCode": "",
+        "segmentName": ""
+      },
+      {
+        "id": "L4-COM-VOLUNTEER",
+        "name": "小義工：參與一次社區團體義工服務",
+        "segmentCode": "",
+        "segmentName": ""
+      },
+      {
+        "id": "L4-CUL-EXCHANGE",
+        "name": "國際交流：參與認識其他國家文化風俗的活動或國際童軍活動",
+        "segmentCode": "",
+        "segmentName": ""
+      },
+      {
+        "id": "L4-CUL-ORG",
+        "name": "國際組織：搜集最少兩個國際組織資料，匯報工作及支持方法",
+        "segmentCode": "",
+        "segmentName": ""
+      },
+      {
+        "id": "L4-CUL-CULTURE",
+        "name": "其他國家文化：製作資料冊展示不同文化的傳統、風俗、宗教及服飾",
+        "segmentCode": "",
+        "segmentName": ""
+      },
+      {
+        "id": "L4-PRO-01",
+        "name": "製作紀錄簿，記錄日常實踐幼童軍誓詞和規律的事",
+        "segmentCode": "",
+        "segmentName": ""
+      },
+      {
+        "id": "L4-FAM4-01",
+        "name": "知道童軍團小隊制度如何運作，列出三項與幼童軍小隊不同之處",
+        "segmentCode": "",
+        "segmentName": ""
+      },
+      {
+        "id": "L4-FAM4-02",
+        "name": "知道童軍團獎章制度，了解與幼童軍團獎章的不同",
+        "segmentCode": "",
+        "segmentName": ""
+      },
+      {
+        "id": "L4-FAM4-03",
+        "name": "參與一次童軍團活動",
+        "segmentCode": "",
+        "segmentName": ""
+      },
+      {
+        "id": "L5",
+        "name": "金紫荊獎章",
+        "segmentCode": "",
+        "segmentName": ""
+      },
+      {
+        "id": "L5-CAMP-01",
+        "name": "收拾一個週末露營的裝備",
+        "segmentCode": "",
+        "segmentName": ""
+      },
+      {
+        "id": "L5-CAMP-02",
+        "name": "協助架搭及拆卸一個營幕",
+        "segmentCode": "",
+        "segmentName": ""
+      },
+      {
+        "id": "L5-CAMP-03",
+        "name": "在營地中怎樣處理及保養已搭建之營幕",
+        "segmentCode": "",
+        "segmentName": ""
+      },
+      {
+        "id": "L5-CAMP-04",
+        "name": "架設一個簡單的營地紮作",
+        "segmentCode": "",
+        "segmentName": ""
+      },
+      {
+        "id": "L5-CAMP-05",
+        "name": "在營地協助烹調、分發及善後一次膳食",
+        "segmentCode": "",
+        "segmentName": ""
+      },
+      {
+        "id": "L5-CAMP-06",
+        "name": "懂得露營的基本衛生常識及安全守則",
+        "segmentCode": "",
+        "segmentName": ""
+      },
+      {
+        "id": "L5-CAMP-07",
+        "name": "協助清理露營後的場地",
+        "segmentCode": "",
+        "segmentName": ""
+      },
+      {
+        "id": "L5-HIKE-01",
+        "name": "商討一個學習的主題",
+        "segmentCode": "",
+        "segmentName": ""
+      },
+      {
+        "id": "L5-HIKE-02",
+        "name": "懂得收拾一套戶外活動用的裝備",
+        "segmentCode": "",
+        "segmentName": ""
+      },
+      {
+        "id": "L5-HIKE-03",
+        "name": "運用指南針及地圖完成最少六公里遠足",
+        "segmentCode": "",
+        "segmentName": ""
+      },
+      {
+        "id": "L5-HIKE-04",
+        "name": "實踐郊野守則",
+        "segmentCode": "",
+        "segmentName": ""
+      },
+      {
+        "id": "L5-ADV-NIGHT",
+        "name": "黑夜歷程",
+        "segmentCode": "",
+        "segmentName": ""
+      },
+      {
+        "id": "L5-ADV-NIGHT-01",
+        "name": "明瞭黑夜活動安全守則及裝備",
+        "segmentCode": "",
+        "segmentName": ""
+      },
+      {
+        "id": "L5-ADV-NIGHT-02",
+        "name": "在不多於二人一組情況下完成歷程",
+        "segmentCode": "",
+        "segmentName": ""
+      },
+      {
+        "id": "L5-ADV-NIGHT-03",
+        "name": "完成不少於兩公里黑夜歷程",
+        "segmentCode": "",
+        "segmentName": ""
+      },
+      {
+        "id": "L5-ADV-CLIMB",
+        "name": "運動攀登 - 在人工牆專業教練指導下明瞭安全措施及裝備，完成最少兩次",
+        "segmentCode": "",
+        "segmentName": ""
+      },
+      {
+        "id": "L5-ADV-ROPE",
+        "name": "兒童繩網陣 - 專業教練指導下明瞭安全守則，完成最少三個不同關次",
+        "segmentCode": "",
+        "segmentName": ""
+      },
+      {
+        "id": "L5-ACT-01",
+        "name": "指定活動徽章一級或三級制：單車/游泳/探險/公園定向/讀圖/田徑/風帆/獨木舟/水手/射箭/體適能",
+        "segmentCode": "",
+        "segmentName": ""
+      },
+      {
+        "id": "L5-ACT-CYCLIST",
+        "name": "單車章",
+        "segmentCode": "",
+        "segmentName": ""
+      },
+      {
+        "id": "L5-ACT-SWIMMER",
+        "name": "游泳章",
+        "segmentCode": "",
+        "segmentName": ""
+      },
+      {
+        "id": "L5-ACT-PIONEER",
+        "name": "探險章",
+        "segmentCode": "",
+        "segmentName": ""
+      },
+      {
+        "id": "L5-ACT-ORIENTEER",
+        "name": "公園定向章",
+        "segmentCode": "",
+        "segmentName": ""
+      },
+      {
+        "id": "L5-ACT-READER",
+        "name": "讀圖章",
+        "segmentCode": "",
+        "segmentName": ""
+      },
+      {
+        "id": "L5-ACT-ATHLETE",
+        "name": "田徑章",
+        "segmentCode": "",
+        "segmentName": ""
+      },
+      {
+        "id": "L5-ACT-SAILOR",
+        "name": "風帆章",
+        "segmentCode": "",
+        "segmentName": ""
+      },
+      {
+        "id": "L5-ACT-CANOE",
+        "name": "獨木舟章",
+        "segmentCode": "",
+        "segmentName": ""
+      },
+      {
+        "id": "L5-ACT-SAILOR2",
+        "name": "水手章",
+        "segmentCode": "",
+        "segmentName": ""
+      },
+      {
+        "id": "L5-ACT-ARCHER",
+        "name": "射箭章",
+        "segmentCode": "",
+        "segmentName": ""
+      },
+      {
+        "id": "L5-ACT-FITNESS",
+        "name": "體適能章",
+        "segmentCode": "",
+        "segmentName": ""
+      },
+      {
+        "id": "L5-LEAD-01",
+        "name": "在領袖領導下完成一項活動，擔當角色：事前準備、過程帶領、活動後檢討分享",
+        "segmentCode": "",
+        "segmentName": ""
+      },
+      {
+        "id": "L5-LEAD-02",
+        "name": "選擇協助團活動 - 以幼童軍身份與較年長幼童軍帶領一次團活動並擔任主要角色",
+        "segmentCode": "",
+        "segmentName": ""
+      },
+      {
+        "id": "L5-PION-01",
+        "name": "以竹枝及天然物資／代用品搭建簡單天幕作臨時遮蔽物",
+        "segmentCode": "",
+        "segmentName": ""
+      },
+      {
+        "id": "L5-PION-02",
+        "name": "在領袖面前完成 8 字編結、四方編結、十字編結",
+        "segmentCode": "",
+        "segmentName": ""
+      },
+      {
+        "id": "L5-PION-03",
+        "name": "利用上述編結紮作簡單先鋒工程（不可作攀爬、橫越或支持重物用）",
+        "segmentCode": "",
+        "segmentName": ""
+      },
+      {
+        "id": "L5-COOK-01",
+        "name": "示範架搭炭架",
+        "segmentCode": "",
+        "segmentName": ""
+      },
+      {
+        "id": "L5-COOK-02",
+        "name": "在安全情況下自行生火",
+        "segmentCode": "",
+        "segmentName": ""
+      },
+      {
+        "id": "L5-COOK-03",
+        "name": "不使用爐具或煮食器皿，煮出可供自己享用的一餐",
+        "segmentCode": "",
+        "segmentName": ""
+      },
+      {
+        "id": "L5-COOK-04",
+        "name": "運用三款不同方式烹調食物",
+        "segmentCode": "",
+        "segmentName": ""
+      },
+      {
+        "id": "L5-SVC-01",
+        "name": "在領袖領導下完成持續服務：不少於八次及總時數不少於八小時",
+        "segmentCode": "",
+        "segmentName": ""
+      },
+      {
+        "id": "L5-SVC-02",
+        "name": "完成服務後作不少於三分鐘短講，分享服務目的及對象、心得、難忘經歷",
+        "segmentCode": "",
+        "segmentName": ""
+      }
+    ]
   }
 }
