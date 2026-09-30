@@ -1,7 +1,7 @@
 // Vercel Serverless Function - Same-origin Proxy for Google Apps Script
 // 超管（隱藏維護帳戶）密碼只喺 Vercel 比對（SUPER_KEY），之後改送 action=superLogin
 //       （apikey 由 registry 注入）—— 密碼永遠唔會轉發去 leaf GS。
-const { getTroopConfig, getRegistry, normalizeToPadded4, normalizeStripped } = require('./_lib/registry');
+const { getTroopConfig, getRegistry, normalizeToPadded4, normalizeStripped, isValidGasUrl } = require('./_lib/registry');
 const { isSuperAdminLoginId, verifySuperAdminLogin } = require('./_lib/superadmin');
 
 /**
@@ -17,6 +17,84 @@ const SENSITIVE_ACTIONS = new Set([
   'ecSetModule', 'ecRegisterBranch', 'ecUnregisterBranch', 'ecInitSheets', 'ecAccessLog',
   'opsRegistry'
 ]);
+
+// ── Scout Admin 統一回報（問題回報／意見回饋）─────────────────────────────
+// 中央管理員收件匣：目的地是伺服器端固定常數（可由 SCOUT_ADMIN_API 環境變數覆寫），
+// 不接受請求自帶 URL（SSRF 防線，同旅團 GAS 轉發原則）。
+const SCOUT_ADMIN_API = process.env.SCOUT_ADMIN_API ||
+  'https://script.google.com/macros/s/AKfycbxj5BDDGgjs559smkK4Z5aYImWYeXbN5af8U1ObON0z9WnsN6QJW4I1XWolhs5kQ_H-UQ/exec';
+
+function feedbackSafeText(value, limit) {
+  const text = String(value || '').trim().substring(0, limit);
+  return /^[=+\-@]/.test(text) ? "'" + text : text;
+}
+
+async function handleSubmitFeedback(req, res, payload) {
+  const type = String(payload.type || '').trim().toLowerCase();
+  const contact = String(payload.contact || '').trim().substring(0, 120);
+  if (!['issue', 'feedback'].includes(type)) {
+    return res.status(400).json({ success: false, deliveryStatus: 'not_sent', error: '回報類型不正確' });
+  }
+  if (contact.length < 3) {
+    return res.status(400).json({ success: false, deliveryStatus: 'not_sent', error: '請留下聯絡方式，方便通知處理結果' });
+  }
+  if (!isValidGasUrl(SCOUT_ADMIN_API)) {
+    console.error('[PROXY] feedback inbox misconfig: SCOUT_ADMIN_API is not a trusted GAS /exec URL');
+    return res.status(500).json({ success: false, deliveryStatus: 'not_sent', error: '回報服務暫時無法使用，請稍後重試' });
+  }
+  const troopIdRaw = String(payload.troopId || '').trim();
+  const troopId = /^[0-9A-Za-z_-]{1,32}$/.test(troopIdRaw) ? troopIdRaw : '';
+  const name = feedbackSafeText(payload.name, 80);
+  const common = { type, sourceApp: 'cubbadge', troopId, name, contact: feedbackSafeText(contact, 120) };
+  let inboxPayload;
+  if (type === 'issue') {
+    const title = String(payload.title || '').trim().substring(0, 120);
+    const desc = String(payload.desc || '').trim().substring(0, 2000);
+    if (!desc) {
+      return res.status(400).json({ success: false, deliveryStatus: 'not_sent', error: '請描述問題' });
+    }
+    inboxPayload = { ...common, title: feedbackSafeText(title, 120) || '使用協助', desc: feedbackSafeText(desc, 2000), severity: String(payload.severity || '中').substring(0, 10) };
+  } else {
+    const fbType = String(payload.fbType || '').trim().substring(0, 40);
+    const content = String(payload.content || '').trim().substring(0, 2000);
+    if (!content) {
+      return res.status(400).json({ success: false, deliveryStatus: 'not_sent', error: '請填寫意見內容' });
+    }
+    inboxPayload = { ...common, fbType: feedbackSafeText(fbType, 40) || '其他', content: feedbackSafeText(content, 2000) };
+  }
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 55000);
+  try {
+    const up = await fetch(SCOUT_ADMIN_API, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify(inboxPayload),
+      redirect: 'follow',
+      signal: controller.signal
+    });
+    const raw = await up.text();
+    let json = null;
+    try { json = JSON.parse(raw); } catch (e) { json = null; }
+    if (!json) {
+      // 上游回覆不是 JSON：請求可能已送達（收件系統常在 302 後回 HTML），按「未知」處理
+      console.error(`[PROXY] feedback upstream non-JSON status=${up.status}`);
+      return res.status(502).json({ success: false, deliveryStatus: 'unknown', error: '暫時未能確認回報是否送達，請先不要重複提交' });
+    }
+    if (json.success === true || json.ok === true || json.status === 'ok') {
+      return res.status(200).json({ success: true, deliveryStatus: 'confirmed' });
+    }
+    // 收件系統有回應但表示未接收（例如 token/配額問題）
+    console.error('[PROXY] feedback rejected by inbox:', String(json.error || '').substring(0, 120));
+    return res.status(200).json({ success: false, deliveryStatus: 'rejected', error: json.error || '回報未被接收' });
+  } catch (err) {
+    const timeout = err && (err.name === 'AbortError' || err.name === 'TimeoutError');
+    console.error('[PROXY] feedback fetch error:', err.message);
+    // 逾時／網絡錯誤可能發生在收件系統已收到之後 —— 永遠不宣稱「確定失敗」
+    return res.status(timeout ? 504 : 502).json({ success: false, deliveryStatus: 'unknown', error: '暫時未能確認回報是否送達，請先不要重複提交' });
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
 
 module.exports = async function handler(req, res) {
   if (!res.status) {
@@ -90,6 +168,17 @@ module.exports = async function handler(req, res) {
         code: 'UNSUPPORTED_ACTION',
         error: '不支援此操作'
       });
+    }
+
+    // ── Scout Admin 統一回報格式 v1（對齊 VSBADGE）──────────────────────
+    // 問題回報／意見回饋直達中央收件匣，不經旅團 GAS；目的地是伺服器端固定常數，
+    // 不由用戶輸入決定。每個回應都帶 deliveryStatus：
+    //   confirmed = 收件系統已確認收到
+    //   unknown   = 連線中斷／收件系統回覆無法解析（可能已送達，前端須警告勿重複提交）
+    //   rejected  = 收件系統明確表示未接收
+    //   not_sent  = 請求本身有問題（驗證失敗／設定錯誤），肯定未送出
+    if (action === 'submitFeedback') {
+      return handleSubmitFeedback(req, res, payload);
     }
 
     const troopConfig = getTroopConfig(troopId);

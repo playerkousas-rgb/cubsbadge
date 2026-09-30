@@ -1,12 +1,12 @@
-// 部署面一致性守護測試（v5.9 對齊 roverbadge 改動）
+// 部署面一致性守護測試（v6.0 對齊 roverbadge 改動）
 // 掃描「會公開出去嘅檔案」：index.html（前端）、apps-script/Code.gs（前端提供下載俾旅團部署）、
 // api/health.js、api/ecosystem.js、api/proxy.js、api/troops.js（Vercel 公開回應）。
 // 驗證：
-//   1. 版號統一：index.html 全部版本字樣 = v5.9（無殘留 v5.2/v5.8），package.json = 5.9.0
+//   1. 版號統一：index.html 全部版本字樣 = v6.0（無殘留 v5.2/v5.8），package.json = 6.0.0
 //   2. 超管零痕跡：前端／分發後端／公開回應搜不到帳號名、代號、SUPER_KEY、維護帳戶字眼
 //   3. 關門制唔顯示下游：index.html 無 ALLOW_LOCAL_LOGIN
 //   4. 非官方聲明：footer 第 4 行（中英），並移除 scout.org.hk 官方連結
-//   5. Scout Admin 回報 widget：script 標簽（data-app）＋ 3 個入口按鈕 + openScoutReport fallback
+//   5. Scout Admin 回報入口：script 標簽（data-app）＋ 3 個入口按鈕 + 本機回報 modal / deliveryStatus UX
 //   6. Code.gs 分發衛生：'sheep' 只可出現喺 2 行身份常量；用戶可見字串全部中性
 import fs from 'node:fs';
 import assert from 'node:assert/strict';
@@ -32,17 +32,17 @@ const eco = fs.readFileSync('api/ecosystem.js', 'utf8');
 const proxy = fs.readFileSync('api/proxy.js', 'utf8');
 const troops = fs.readFileSync('api/troops.js', 'utf8');
 
-console.log('=== 1. 版號統一（v5.9） ===');
+console.log('=== 1. 版號統一（v6.0） ===');
 check('index.html 無殘留舊版號 v5.2 / v5.8', () => {
   assert.equal(/v5\.(2|8)\b/.test(html), false, '仍有舊版號字樣');
 });
-check('index.html 所有版本字樣都係 v5.9', () => {
-  const versions = [...html.matchAll(/v5\.\d+/g)].map(m => m[0]);
+check('index.html 所有版本字樣都係 v6.0', () => {
+  const versions = [...html.matchAll(/v6\.\d+/g)].map(m => m[0]);
   assert.ok(versions.length >= 10, `版本字樣太少（${versions.length}），唔該檢查`);
-  assert.ok(versions.every(v => v === 'v5.9'), `發現非 v5.9：${[...new Set(versions)].join(', ')}`);
+  assert.ok(versions.every(v => v === 'v6.0'), `發現非 v6.0：${[...new Set(versions)].join(', ')}`);
 });
-check('package.json version = 5.9.0', () => {
-  assert.equal(pkg.version, '5.9.0');
+check('package.json version = 6.0.0', () => {
+  assert.equal(pkg.version, '6.0.0');
 });
 
 console.log('=== 2. 超管零痕跡（公開面） ===');
@@ -120,18 +120,19 @@ check('footer 已移除「與總會隸屬」官方連結（只餘功能性官方
   assert.equal(/scout\.org\.hk/.test(enFooter), false, '英文 footer_line3 仍帶官方連結');
 });
 
-console.log('=== 5. Scout Admin 回報 widget（問題回報／意見回饋） ===');
-check('widget script 標簽：data-app=幼童軍進度追蹤', () => {
+console.log('=== 5. Scout Admin 回報入口（問題回報／意見回饋） ===');
+check('widget script 標簽仍保留 data-app=幼童軍進度追蹤（向下兼容），但入口使用本機 modal', () => {
   assert.match(html, /<script src="https:\/\/scout-admin-blue\.vercel\.app\/widget\.js" data-app="幼童軍進度追蹤"><\/script>/);
+  assert.ok(/id="feedbackModal"/.test(html), '缺 feedbackModal');
 });
-check('openScoutReport() 已定義，含 report.html fallback', () => {
-  assert.ok(/function openScoutReport\(\)/.test(html));
-  assert.ok(/report\.html\?app=/.test(html), '缺 report.html fallback');
-  assert.ok(/scoutw-overlay/.test(html), '要會開啟 widget 嘅 modal');
+check('openScoutReport() 已定義，開啟本機 feedbackModal，proxy 有 deliveryStatus 協定', () => {
+  assert.ok(/function openScoutReport\(\)\{ showFeedbackModal\(\); \}/.test(html));
+  assert.ok(/function showFeedbackModal\(\)/.test(html));
+  assert.ok(/deliveryStatus/.test(proxy), 'proxy 缺 deliveryStatus 回報協定');
 });
 check('3 個入口：welcome-nav 按鈕 + 登入頁連結 + header 常駐按鈕', () => {
   const entries = html.split('openScoutReport()').length - 1;
-  assert.ok(entries >= 4, `openScoutReport 調用點太少（${entries}）：要 3 個按鈕 + fallback`);
+  assert.ok(entries >= 4, `openScoutReport 調用點太少（${entries}）：要 3 個按鈕 + function`);
   assert.ok(/class="welcome-feedback" onclick="openScoutReport\(\)"/.test(html), 'welcome-nav 入口缺失');
   assert.ok(/btn-feedback-top" onclick="openScoutReport\(\)"/.test(html), 'header 入口缺失');
 });
