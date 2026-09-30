@@ -317,9 +317,19 @@ module.exports = async function handler(req, res) {
 
     if (jsonResult && jsonResult.success === false && jsonResult.error) {
       const errLower = String(jsonResult.error).toLowerCase();
-      if (errLower.includes('sheet') || errLower.includes('工作表') || errLower.includes('找不到')) {
+      // 「找不到此帳號／找不到用戶」係登入授權問題，唔係工作表問題。
+      // 掛「Sheet 缺工作表」提示會令用戶誤會後端連唔到（曾經有旅團因此報「連接不了後端」）。
+      const isAccountNotFound = errLower.includes('找不到此帳號') || errLower.includes('找不到用戶') || errLower.includes('找不到成員') || errLower.includes('account not found');
+      const looksLikeSheetIssue = !isAccountNotFound && (errLower.includes('sheet') || errLower.includes('工作表') || errLower.includes('找不到'));
+      if (looksLikeSheetIssue) {
         jsonResult.troubleshooting = {
           hint: `此錯誤通常表示 Google Sheet 缺少工作表或 ${troopId} 設定異常。請執行 initializeSheets()，並確認 TROOP_${normalizeToPadded4(troopId)}_BACKEND 指向正確的 Spreadsheet。`,
+          troopId: troopId,
+          normalized: normalizeToPadded4(troopId)
+        };
+      } else if (isAccountNotFound) {
+        jsonResult.troubleshooting = {
+          hint: '後端連線正常；此帳號未開通。新旅團請以預設管理員（YMIS 1111111111）登入後於「用戶管理」開戶，成員可按「申請帳戶」。',
           troopId: troopId,
           normalized: normalizeToPadded4(troopId)
         };

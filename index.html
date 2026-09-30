@@ -4,6 +4,10 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <meta name="theme-color" content="#FFD60A">
+<!-- App icon：金紫荊獎章（favicon + PWA / iOS 主畫面圖示） -->
+<link rel="icon" href="assets/app-icon.ico" sizes="48x48">
+<link rel="icon" type="image/png" sizes="128x128" href="assets/app-icon-128.png">
+<link rel="apple-touch-icon" href="assets/app-icon-256.png">
 <title>幼童軍進度追蹤系統 v6.0 - 中英對照</title>
 <style>
 :root{
@@ -272,7 +276,7 @@ html[lang="en"] body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","No
   <div class="app-header-common">
     <button class="lang-toggle-btn" id="langToggleHome" onclick="setLang(currentLang==='en'?'zh':'en')">🌐 English</button>
     <div class="logo-row">
-      <div class="logo-svg-wrap"><img src="assets/cub-logo-256.png" alt="幼童軍" onerror="this.style.display='none'"></div>
+      <div class="logo-svg-wrap"><img src="assets/app-icon-256.png" alt="幼童軍" onerror="this.style.display='none'"></div>
       <div style="text-align:left">
         <h1 data-i18n="app_h1">幼童軍進度追蹤系統</h1>
         <p data-i18n="app_tagline">Cub Scout Progress Tracker v6.0 • 幼童軍支部 • 2025年8月擬定簡易版 + 中英對照</p>
@@ -368,7 +372,7 @@ html[lang="en"] body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","No
 <div id="loginPage" style="display:none">
   <div class="app-header-common" style="padding:14px">
     <button class="lang-toggle-btn" onclick="setLang(currentLang==='en'?'zh':'en')">🌐 English</button>
-    <div class="logo-row" style="margin-bottom:0"><div class="logo-svg-wrap"><img src="assets/cub-logo-256.png" alt="Logo"></div><div><h1 style="font-size:18px" data-i18n="login_page_h1">幼童軍進度追蹤 v6.0</h1></div></div>
+    <div class="logo-row" style="margin-bottom:0"><div class="logo-svg-wrap"><img src="assets/app-icon-256.png" alt="Logo"></div><div><h1 style="font-size:18px" data-i18n="login_page_h1">幼童軍進度追蹤 v6.0</h1></div></div>
   </div>
   <div class="container">
     <div class="login-container">
@@ -395,7 +399,7 @@ html[lang="en"] body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","No
 <!-- Main App -->
 <div id="mainApp" style="display:none">
   <div class="main-app-header">
-    <div class="left"><div class="logo-mini"><img src="assets/cub-logo-128.png" alt="logo"></div><h1 id="appTitle">幼童軍進度追蹤</h1></div>
+    <div class="left"><div class="logo-mini"><img src="assets/app-icon-128.png" alt="logo"></div><h1 id="appTitle">幼童軍進度追蹤</h1></div>
     <div class="user-info">
       <span class="user-chip" id="userInfo">—</span>
       <button class="btn btn-sm btn-secondary lang-toggle-btn" onclick="setLang(currentLang==='en'?'zh':'en')" style="background:rgba(0,0,0,0.08);color:#000;border:1px solid rgba(0,0,0,0.15)">🌐 English</button>
@@ -681,7 +685,7 @@ zh:{
   api_no_troop:'未選擇旅團',api_bad_response:'伺服器回應格式錯誤',api_failed:'操作失敗',api_timeout:'請求逾時，請檢查網絡後重試',offline_cache:'⚠️ 離線模式：顯示快取資料',
   role_super_admin:'系統管理',role_admin:'管理員',role_group_leader:'旅長',role_branch_leader:'幼童軍團長',role_member:'幼童軍成員',role_member_short:'成員',role_leader_short:'領袖',
   demo_word:'示範',demo_member_name:'示範成員',demo_leader_name:'示範團長',demo_troop_name:'第82旅 DEMO (示範)',member_mode_toast:'成員模式：只能查看自己進度，活動履歷可申報',
-  login_fill_all:'請填寫帳號和密碼',login_working:'登入中...',login_ok_sync:'登入成功！載入資料...',login_failed:'登入失敗',login_failed_retry:'登入失敗，請稍後重試',login_newpw_prompt:'首次登入／密碼已重設，請設定新密碼（4-8位）',login_newpw_required:'必須先設定 4-8 位的新密碼',login_pw_changed:'密碼已更新',login_pw_fail:'更改密碼失敗',apply_pw_notice:'💡 申請經批核後，初始密碼預設為 1234；首次登入時系統會強制要求設定新密碼。',
+  login_fill_all:'請填寫帳號和密碼',login_working:'登入中...',login_ok_sync:'登入成功！載入資料...',login_failed:'登入失敗',login_failed_retry:'登入失敗，請稍後重試',login_no_account:'✅ 後端連線正常，但這個帳號未開通（找不到此帳號）。新旅團請以預設管理員登入後於「用戶管理」開戶（初始密碼見 Apps Script 初始化提示）；成員可按「🆕 申請帳戶」或聯絡領袖。',login_newpw_prompt:'首次登入／密碼已重設，請設定新密碼（4-8位）',login_newpw_required:'必須先設定 4-8 位的新密碼',login_pw_changed:'密碼已更新',login_pw_fail:'更改密碼失敗',apply_pw_notice:'💡 申請經批核後，初始密碼預設為 1234；首次登入時系統會強制要求設定新密碼。',
   troop_builtin:'(內置)',troop_syncing:'正在同步最新旅團列表...',troop_sync_fail:'⚠️ 同步失敗，已顯示內置旅團 0082。',troop_pick_fail:'無法選擇旅團',portal_badge:'Portal',portal_preselected:'(ID: {0}) - Portal預選',
   demo_entered:'✅ 已進入示範模式，可體驗{0}功能；資料僅在瀏覽器',demo_load_fail:'MOCK試用載入失敗：',demo_btn:'👀 試用 MOCK 效果',
   no_perm_tick:'你沒有勾選權限',no_perm_item:'你的權限不可勾選此項目 ({0})',no_perm_other:'無權限勾選此其他獎章',no_perm:'無權限',no_perm_generic:'沒有權限',
@@ -721,7 +725,7 @@ en:{
   guide_h2:'📖 Guide - Cub Specific',g1h:'Pick Troop',g1p:'Tap troop card',g2h:'Login',g2p:'Members/parents: YMIS 10 digits + password; Leaders: Email + password. Force change on first login.',g3h:'Parents/Members: view progress, can claim activity logs',g3p:'Cubs young: leaders fill all progress, parents/members view only. But activity logs (service/activity/training) can be claimed by parents/members → leader approves.',g4h:'Leaders: tick + date',g4p:'Leaders tick directly, auto today date, editable. Cached in browser, confirm to write to cloud.',g5h:'Other features',g5p:'Troop overview batch, by-item stats, PT/68 Golden Bauhinia forms, bilingual.',
   guide_roles_h3:'👥 Roles',guide_member_card:'<b>👤 Parent/Member</b><ul style="font-size:11px;margin:6px 0 0 16px"><li>View own progress only (no tick)</li><li>Can claim activity logs (service/activity/training)</li><li>Can cancel pending claims</li><li>Approved records can request edit (leader re-approves)</li></ul>',guide_leader_card:'<b>👨‍💼 Leader</b><ul style="font-size:11px;margin:6px 0 0 16px"><li>All functions</li><li>My progress: any member</li><li>Troop overview batch tick</li><li>Approval centre: users + log claims</li><li>Activity logs direct add/edit/delete + batch</li><li>User management, bulk onboard YMIS PDF</li></ul>',
   guide_onboard_h3:'🆕 Account apply / Bulk onboard',guide_onboard_intro:'Individual: login page → Apply for an account → choose member or leader → GSL / leader approves.<br>Bulk: User Management → Bulk onboard → upload YMIS custom report PDF (auto reads ID/name/email) → preview → onboard.',
-  login_page_h1:'Cub Progress Tracker v6.0',login_h2:'🔐 Login',login_member_tab:'👤 Parent/Member<br><small>YMIS 10 digits</small>',login_leader_tab:'👨‍💼 Leader<br><small>Email</small>',login_pw_label:'Password',login_pw_ph:'Enter password',login_btn:'Sign In',login_apply:'🆕 Apply for an account (member / leader)',login_join:'Troop join',login_back:'← Back to home',btn_report_feedback:'🐛💬 Report · Feedback',
+  login_page_h1:'Cub Progress Tracker v6.0',login_h2:'🔐 Login',login_member_tab:'👤 Parent/Member<br><small>YMIS 10 digits</small>',login_leader_tab:'👨‍💼 Leader<br><small>Email</small>',login_pw_label:'Password',login_pw_ph:'Enter password',login_btn:'Sign In',login_no_account:'✅ Backend connection is fine — this account just is not provisioned yet (account not found). New troops: sign in with the default admin and onboard accounts in User Management (initial password is shown by initializeSheets); members can tap "🆕 Apply for an account" or contact a leader.',login_apply:'🆕 Apply for an account (member / leader)',login_join:'Troop join',login_back:'← Back to home',btn_report_feedback:'🐛💬 Report · Feedback',
   fb_title:'🐛💬 Bug report / Feedback',fb_type:'Type *',fb_type_issue:'🐛 Bug report',fb_type_feedback:'💬 Feedback',fb_category:'Feedback type',fb_cat_suggestion:'💡 Suggestion',fb_cat_praise:'👍 Praise',fb_cat_criticism:'👎 Criticism',fb_cat_other:'📝 Other',fb_message:'Issue details *',fb_feedback_message:'Feedback content *',fb_message_ph:'Briefly describe the problem or suggestion',fb_contact:'Contact (email / phone) *',fb_contact_ph:'An email address or phone number for our reply',fb_submit:'Send',fb_need:'Please describe what help you need and leave a contact method.',fb_sending_hint:'⏳ Sending your report. Please do not press Send again; the result will appear here.',fb_confirmed:'✅ Sent successfully; the receiving system confirmed receipt. Please wait for a reply. This dialog will stay open.',fb_not_accepted:'The receiving system did not accept this report. Your text is still here; please try again later.',fb_unknown:'⚠️ The connection ended before we could confirm receipt. Please do not submit again yet. Check for a notification later; if none arrives, choose “Resend anyway”. Resending may create a duplicate report.',fb_sending:'Sending…',fb_sent_button:'Sent ✓',fb_retry_unknown:'Resend anyway',fb_retry_unknown_confirm:'We could not confirm whether the previous report was received. Resending may create a duplicate. Do you still want to send it again?',fb_close:'Close',
   nav_progress:'📊 My Progress',nav_overview:'👥 Troop Overview',nav_requests:'✅ Approvals',nav_logs:'📅 Activity Logs',nav_forms:'🏅 Golden Bauhinia',nav_help:'❓ Guide',nav_info:'📚 Library',nav_users:'👥 User Management',logout:'Logout',
   pending_hint:'Cached in browser',savebar_discard:'Discard',savebar_confirm:'✅ Confirm write to cloud',
@@ -1196,7 +1200,13 @@ async function doLogin(){
         btn.disabled=false; btn.textContent=t('login_btn'); return;
       }
       finishLogin();
-    }else{ msg.textContent=d.error||t('login_failed'); msg.className='login-msg error'; }
+    }else{
+      let em=d.error||t('login_failed');
+      // 「找不到此帳號」= 後端連線正常但帳號未開通（常見：新旅團未開戶／空表）。
+      // 唔好淨係顯示四個字，用戶會誤會「連接不了後端」。
+      if(String(em).includes('找不到此帳號')||/account not found/i.test(String(em))) em=t('login_no_account');
+      msg.textContent=em; msg.className='login-msg error';
+    }
   }catch(e){
     console.error(e); let friendly=e.message||t('login_failed_retry');
     if(friendly.includes('Troop not found')) friendly='旅團未登記 / Troop not found';
