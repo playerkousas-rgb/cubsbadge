@@ -144,5 +144,34 @@ check('FAB 隱藏（用常駐按鈕代替）', () => {
   assert.ok(/#scoutw-fab\{display:none/.test(html));
 });
 
+console.log('=== 6. i18n 完整性（中英字典同步，英文模式全英文） ===');
+function extractI18N() {
+  const s = html.indexOf('const I18N={');
+  const e = html.indexOf('\n};', s);
+  return new Function(html.slice(s, e + 2) + '; return I18N;')();
+}
+check('I18N 可解析，且非空 zh key 全部有 en（英文模式唔會 fallback 顯示中文）', () => {
+  const I18N = extractI18N();
+  const miss = Object.keys(I18N.zh).filter(k => String(I18N.zh[k]).length > 0 && !(k in I18N.en));
+  assert.deepEqual(miss, [], `en 缺 key：${miss.join(', ')}`);
+});
+check('所有 t()/tf() 用到嘅 key 中英字典都有（唔會顯示 raw key）', () => {
+  const I18N = extractI18N();
+  const used = [...new Set([...html.matchAll(/\bt(?:f)?\(\s*['"]([A-Za-z0-9_]+)['"]\s*[,)]/g)].map(m => m[1]))];
+  assert.ok(used.length > 300, `t()/tf() key 樣本太少（${used.length}），唔該檢查`);
+  const missZh = used.filter(k => !(k in I18N.zh));
+  const missEn = used.filter(k => !(k in I18N.en));
+  assert.deepEqual(missZh, [], `zh 缺：${missZh.join(', ')}`);
+  assert.deepEqual(missEn, [], `en 缺：${missEn.join(', ')}`);
+});
+check('data-i18n／-html／-ph／-aria／-alt 屬性 key 中英字典都有', () => {
+  const I18N = extractI18N();
+  const keys = [];
+  for (const m of html.matchAll(/data-i18n(?:-html|-ph|-aria|-alt)?="([^"]+)"/g)) keys.push(m[1]);
+  assert.ok(keys.length > 150, `data-i18n 屬性太少（${keys.length}），唔該檢查`);
+  const miss = [...new Set(keys)].filter(k => !(k in I18N.zh) || !(k in I18N.en));
+  assert.deepEqual(miss, [], `缺：${miss.join(', ')}`);
+});
+
 console.log(`\n== integrity 結果：${passed} 通過，${failed} 失敗 ==`);
 if (failed > 0) process.exit(1);
