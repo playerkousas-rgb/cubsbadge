@@ -5,9 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <meta name="theme-color" content="#FFD60A">
 <!-- App icon：金紫荊獎章（favicon + PWA / iOS 主畫面圖示） -->
-<link rel="icon" href="assets/app-icon.ico" sizes="48x48">
-<link rel="icon" type="image/png" sizes="128x128" href="assets/app-icon-128.png">
-<link rel="apple-touch-icon" href="assets/app-icon-256.png">
+<!-- 使用 assets 內的高解像度圖示，避免 favicon／頁首圖示顯示模糊 -->
+<link rel="icon" type="image/png" sizes="256x256" href="assets/app-icon-256.png">
+<link rel="apple-touch-icon" sizes="256x256" href="assets/app-icon-256.png">
 <title>幼童軍進度追蹤系統 v6.0 - 中英對照</title>
 <style>
 :root{
@@ -399,7 +399,7 @@ html[lang="en"] body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","No
 <!-- Main App -->
 <div id="mainApp" style="display:none">
   <div class="main-app-header">
-    <div class="left"><div class="logo-mini"><img src="assets/app-icon-128.png" alt="logo"></div><h1 id="appTitle">幼童軍進度追蹤</h1></div>
+    <div class="left"><div class="logo-mini"><img src="assets/app-icon-256.png" alt="logo"></div><h1 id="appTitle">幼童軍進度追蹤</h1></div>
     <div class="user-info">
       <span class="user-chip" id="userInfo">—</span>
       <button class="btn btn-sm btn-secondary lang-toggle-btn" onclick="setLang(currentLang==='en'?'zh':'en')" style="background:rgba(0,0,0,0.08);color:#000;border:1px solid rgba(0,0,0,0.15)">🌐 English</button>
