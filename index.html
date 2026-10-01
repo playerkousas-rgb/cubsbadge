@@ -625,7 +625,7 @@ zh:{
   tab_enter:'🏠 進入系統',tab_setup:'📋 新旅團部署',tab_guide:'📖 使用教學',
   home_badges_title:'幼童軍進度獎章 • 中英對照',lv1:'會員章',lv2:'幼童軍獎章',lv3:'歷奇章',lv4:'高級歷奇章',lv5:'金紫荊獎章',lv1d:'3個月內•保護兒童必修',lvd:'逐項記錄',lv5d:'最高榮譽 PT/68',
   home_cub_note:'💡 <b>幼童軍年紀小，全部由領袖填寫，家長/成員只看</b>。進度性獎章（會員章至金紫荊）不可由成員申請完成，僅限領袖勾選。<br>但 <b>📅 活動履歷（服務／活動／訓練班）可由家長/成員帳號申報，領袖審批</b>，與童軍支部一致（所謂家長=成員帳號）。',
-  home_pick_troop:'📍 請選擇您的旅團',home_reload:'🔄 重新載入',home_demo_l:'👀 示範：領袖',home_demo_m:'👤 示範：家長/成員',loading:'載入中...',
+  home_pick_troop:'📍 請選擇您的旅團',home_reload:'🔄 重新載入',home_demo_l:'👀 示範：領袖',home_demo_m:'👤 示範：家長/成員',loading:'載入中...',troop_stale_hint:'若您之前用過本系統，可能是瀏覽器仍顯示舊快取頁面，請按下方按鈕強制重新整理（或按 Ctrl+F5 / Cmd+Shift+R）。',
   home_tip:'💡 提示：若您的旅團不在列表，請到「新旅團部署」查看10分鐘自助部署教學。<br>🎬 <b>未登入試用：</b>可選「示範：領袖」或「示範：家長/成員」體驗兩種角色。<br>🌐 <b>中英切換：</b>右上角按「🌐 English」全站轉英文，內容相通，後端紀錄相同，適合英語旅團。',
   setup_h2:'📋 新旅團部署指南 (10分鐘)',setup_portal_card:'<h3 style="color:var(--blue)">🌟 主系統平台是什麼？</h3><p style="font-size:12px">本系統可獨立用，亦可接入 <b>scoutsystem-2.0 主系統平台</b>：Dashboard、考勤、財務、活動報名，單一登入。</p><p style="font-size:11px;margin-top:6px;background:#fff;padding:6px;border-radius:6px"><b>有主系統 ≠ 一定要接上</b>，兩條路並存。</p>',
   setup_map_card:'<h3>🗺️ 部署地圖</h3><p style="font-size:11px">旅團只做 3 樣：① 下載 Code.gs → 建 Sheet → 部署 ② 執行 initializeSheets（只生成 API Key）③ 把「旅團編號 + 部署 URL + API Key」交 APP ADMIN<br>Vercel 功能變數全部由 APP ADMIN 設定，旅團毋須（亦唔會）設定任何功能變數<br>軌道B 接入主系統：同時交主系統管理員</p><p style="font-size:10px;color:var(--red);margin-top:6px">⚠️ 功能變數由 APP ADMIN 設定：旅團毋須設定任何功能變數，SETUP 彈窗只會顯示要交嘅 API Key。</p>',
@@ -716,7 +716,7 @@ en:{
   tab_enter:'🏠 Enter',tab_setup:'📋 Setup',tab_guide:'📖 Guide',
   home_badges_title:'Cub Scout Progressive Awards • Bilingual',lv1:'Membership',lv2:'Cub Award',lv3:'Adventure',lv4:'Adventure Crest',lv5:'Golden Bauhinia',lv1d:'Within 3 months•Safe from Harm',lvd:'Progress items',lv5d:'Highest honour PT/68',
   home_cub_note:'💡 <b>Cubs are young: leaders fill all progress, parents/members view only</b>. Progressive awards (Membership to Golden Bauhinia) are leader-only.<br>But <b>📅 Activity logs (service/activity/training) can be claimed by parents/members (parent = member account), leaders approve</b>, same as Scout section.',
-  home_pick_troop:'📍 Pick your Troop',home_reload:'🔄 Reload',home_demo_l:'👀 Demo: Leader',home_demo_m:'👤 Demo: Parent/Member',loading:'Loading...',
+  home_pick_troop:'📍 Pick your Troop',home_reload:'🔄 Reload',home_demo_l:'👀 Demo: Leader',home_demo_m:'👤 Demo: Parent/Member',loading:'Loading...',troop_stale_hint:'If you have used this system before, your browser may be showing a stale cached page — press the button below to force reload (or Ctrl+F5 / Cmd+Shift+R).',
   home_tip:'💡 If your troop not in list, see \"Setup\" for 10-min guide.<br>🎬 <b>Demo without login:</b> choose Leader or Parent/Member.<br>🌐 <b>Bilingual:</b> tap \"🌐 中文\" top-right to switch; records stay same, suitable for English troops.',
   setup_h2:'📋 New Troop Setup (10 min) - Super-admin hidden',setup_portal_card:'<h3 style="color:var(--blue)">🌟 What is main system?</h3><p style="font-size:12px">This is a Tier 3 plugin, can be standalone or linked to <b>scoutsystem-2.0</b>: Dashboard, attendance, finance, events, SSO.</p><p style="font-size:11px;margin-top:6px;background:#fff;padding:6px;border-radius:6px"><b>Main system ≠ must link</b>, both routes co-exist.</p>',
   setup_map_card:'<h3>🗺️ Deployment Map</h3><p style="font-size:11px">Troops do only 3 things: ① download Code.gs → create Sheet → deploy ② run initializeSheets (API Key only) ③ send “troop ID + deploy URL + API Key” to the APP ADMIN<br>All Vercel env vars are set by the APP ADMIN — troops never set any env var<br>Track B portal: also give to main system admin</p><p style="font-size:10px;color:var(--red);margin-top:6px">⚠️ Env vars are set by the APP ADMIN only; the setup dialog shows just the API Key you send.</p>',
@@ -1136,6 +1136,11 @@ function backToHome(){
   document.getElementById('loginMsg').className='login-msg';
   document.getElementById('loginId').value=''; document.getElementById('loginPassword').value='';
 }
+/* 強制重新整理：換一個新 URL（?r=timestamp）令瀏覽器唔可以用舊快取頁面。
+   用途：旅團列表空白時，好可能係瀏覽器仲用緊舊版頁面（舊版讀已棄用嘅 data/troops.json＝空白）。 */
+function forceReloadPage(){
+  location.replace(location.pathname + '?r=' + Date.now() + location.hash);
+}
 async function loadTroops(){
   const grid=document.getElementById('troopGrid');
   grid.innerHTML=`<p style="grid-column:1/-1;text-align:center;color:var(--text-light);padding:20px">${t('loading')}</p>`;
@@ -1153,11 +1158,11 @@ async function loadTroops(){
       if(seenPadded.has(canonical)) continue;
       if(troops[id]&&troops[id].connected){ displayMap[canonical]=troops[id]; seenPadded.add(canonical); }
     }
-    if(Object.keys(displayMap).length===0){ grid.innerHTML=`<div style="grid-column:1/-1;text-align:center;padding:20px;color:var(--text-light)"><p>暫無旅團資料 / No troops</p><p style="font-size:10px;margin-top:8px">請 APP ADMIN 喺 Vercel 設定功能變數：TROOP_0082_BACKEND、TROOP_0082_APIKEY、TROOP_0082_NAME（旅團毋須設定）</p></div>`; return; }
+    if(Object.keys(displayMap).length===0){ grid.innerHTML=`<div style="grid-column:1/-1;text-align:center;padding:20px;color:var(--text-light)"><p>暫無旅團資料 / No troops</p><p style="font-size:10px;margin-top:8px">請 APP ADMIN 喺 Vercel 設定功能變數：TROOP_0082_BACKEND、TROOP_0082_APIKEY、TROOP_0082_NAME（旅團毋須設定）</p><p style="font-size:11px;margin-top:10px;color:var(--orange)">⚠️ ${t('troop_stale_hint')}</p><button class="btn btn-sm btn-outline" style="margin-top:8px" onclick="forceReloadPage()">${t('home_reload')}</button></div>`; return; }
     grid.innerHTML=Object.entries(displayMap).map(([id,t])=>`<div class="troop-card" onclick="selectTroop('${id}')"><div class="troop-id">${id}</div><div class="troop-name">${t.name||'第'+id+'旅'}</div><div style="font-size:9px;color:var(--text-light);margin-top:4px">✅</div></div>`).join('');
   }catch(e){
     console.error(e);
-    grid.innerHTML=`<div style="grid-column:1/-1;text-align:center;padding:20px"><p style="color:var(--red);font-size:11px">載入出錯 / Load error: ${e.message}</p><p style="font-size:10px;margin-top:8px;color:var(--text-light)">請檢查 /api/troops 及 Vercel 功能變數（全部由 APP ADMIN 設定，旅團毋須設定）</p></div>`;
+    grid.innerHTML=`<div style="grid-column:1/-1;text-align:center;padding:20px"><p style="color:var(--red);font-size:11px">載入出錯 / Load error: ${e.message}</p><p style="font-size:10px;margin-top:8px;color:var(--text-light)">請檢查 /api/troops 及 Vercel 功能變數（全部由 APP ADMIN 設定，旅團毋須設定）</p><p style="font-size:11px;margin-top:10px;color:var(--orange)">⚠️ ${t('troop_stale_hint')}</p><button class="btn btn-sm btn-outline" style="margin-top:8px" onclick="forceReloadPage()">${t('home_reload')}</button></div>`;
   }
 }
 async function selectTroop(id){
