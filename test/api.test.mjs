@@ -296,6 +296,37 @@ await check('proxy：apikey 未設定但唔敏感的 action 照行（唔會整�
   } finally { restoreFetch(); }
 });
 
+await check('proxy：「找不到此帳號」唔會被掛「Sheet 缺工作表」提示（登入失敗≠後端斷線）', async () => {
+  clearEnv();
+  process.env.TROOP_0082_BACKEND = 'https://script.google.com/macros/s/AKfycbREALXXXXXXXXXX/exec';
+  // 後端連線正常，只係帳號未開通（新旅團空表常見）
+  stubFetch([['script.google.com', async () => { return { body: { success: false, error: '找不到此帳號' } }; }]]);
+  try {
+    const handler = freshModule('../api/proxy.js');
+    const res = mockRes();
+    await handler(mockReq({ method: 'POST', body: { troopId: '82', action: 'login', login_id: '1234567890', password: 'x' } }), res);
+    assert.equal(res.statusCode, 200);
+    assert.equal(res.body.error, '找不到此帳號');
+    assert.ok(res.body.troubleshooting, '要有 troubleshooting');
+    assert.ok(!res.body.troubleshooting.hint.includes('缺少工作表'), '帳號未開通唔可以話 Sheet 缺工作表');
+    assert.ok(res.body.troubleshooting.hint.includes('後端連線正常'), '提示要講明後端連線正常');
+    assert.ok(res.body.troubleshooting.hint.includes('預設管理員'), '提示要講點入去（預設管理員）');
+  } finally { restoreFetch(); }
+});
+
+await check('proxy：真正工作表錯誤仍然有 initializeSheets 提示', async () => {
+  clearEnv();
+  process.env.TROOP_0082_BACKEND = 'https://script.google.com/macros/s/AKfycbREALXXXXXXXXXX/exec';
+  stubFetch([['script.google.com', async () => { return { body: { success: false, error: 'Exception: Cannot find Sheet 進度追蹤' } }; }]]);
+  try {
+    const handler = freshModule('../api/proxy.js');
+    const res = mockRes();
+    await handler(mockReq({ method: 'POST', body: { troopId: '82', action: 'save', token: 't', changes: [] } }), res);
+    assert.equal(res.statusCode, 200);
+    assert.ok(res.body.troubleshooting.hint.includes('initializeSheets'), 'Sheet 錯誤要保留 initializeSheets 提示');
+  } finally { restoreFetch(); }
+});
+
 // ============================================================
 console.log('\n=== 功能變數契約（4樣）：SUPER_KEY + TROOP_*_BACKEND/_APIKEY/_NAME ===');
 // ============================================================
