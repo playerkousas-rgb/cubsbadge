@@ -1154,7 +1154,7 @@ async function handlePortalParams(){
     currentTroopId=u; currentTroopName=troopNameParam;
     {
       // 旅團設定淨係來自 /api/troops（Vercel 功能變數），唔再讀 data/troops.json
-      try{ const r2=await fetch('/api/troops?_='+Date.now()); if(r2.ok){ const d2=await r2.json(); const t2=d2.troops[u]||d2.troops[String(u).padStart(4,'0')]; if(t2){ troopConnected=!!t2.connected; currentTroopName=t2.name||troopNameParam; } } }catch(e){}
+      try{ const r2=await fetch('/api/troops'); if(r2.ok){ const d2=await r2.json(); const t2=d2.troops[u]||d2.troops[String(u).padStart(4,'0')]; if(t2){ troopConnected=!!t2.connected; currentTroopName=t2.name||troopNameParam; } } }catch(e){}
     }
   }
   if(from==='portal' && ymis && role){
@@ -1204,7 +1204,7 @@ async function loadTroops(){
   try{
     // 功能變數契約：旅團清單淨係來自 /api/troops（= Vercel 功能變數 TROOP_*_BACKEND/_APIKEY/_NAME）。
     // 唔再讀 data/troops.json、唔再有內置 URL fallback。
-    const r=await fetch('/api/troops?_='+Date.now());
+    const r=await fetch('/api/troops');
     const d=r.ok?await r.json():null;
     let troops=(d&&d.troops)||{};
     // deduplicate 0082/82 for display: prefer padded
