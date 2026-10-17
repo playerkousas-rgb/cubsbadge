@@ -44,7 +44,10 @@ module.exports = function handler(req, res) {
     }
   });
 
-  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+  // The troop registry is derived only from Vercel environment variables. It changes
+  // when the project is redeployed, not on every request, so let the edge serve it
+  // briefly while revalidating stale entries in the background.
+  res.setHeader('Cache-Control', 'public, max-age=300, s-maxage=3600, stale-while-revalidate=86400');
   res.setHeader('Content-Type', 'application/json; charset=utf-8');
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.status(200).json({

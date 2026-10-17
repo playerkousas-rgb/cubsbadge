@@ -445,6 +445,7 @@ await check('B/D 唔入前端：/api/troops 同 /api/health 回應零部署 URL�
   const tRaw = JSON.stringify(tRes.body);
   assert.ok(!tRaw.includes('script.google.com'), 'B（部署 URL）唔可以落前端：' + tRaw.slice(0, 200));
   assert.ok(!tRaw.includes('sc_front_secret'), 'D（apikey）唔可以落前端');
+  assert.equal(tRes.headers['cache-control'], 'public, max-age=300, s-maxage=3600, stale-while-revalidate=86400');
   assert.equal(tRes.body.troops['0082'].connected, true, '前端只需要知「掛咗未」');
   const health = freshModule('../api/health.js');
   const hRes = mockRes();
