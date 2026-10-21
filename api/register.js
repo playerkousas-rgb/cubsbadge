@@ -1,22 +1,24 @@
 // Central admin registration proxy - avoids browser direct fetch to script.google.com
-// 功能變數契約：APP ADMIN 層嘅管理操作要帶 SUPER_KEY（x-super-key header 或 body superKey）。
-// SUPER_KEY 由 APP ADMIN 喺 Vercel 設定（唔係旅團設定、GS 亦唔會顯示），並轉發俾後端管理 GS 驗證。
-const { getSuperKey, verifySuperKey } = require('./_lib/registry');
-const ADMIN_API_URL = process.env.SCOUT_ADMIN_API || 'https://script.google.com/macros/s/AKfycbxj5BDDGgjs559smkK4Z5aYImWYeXbN5af8U1ObON0z9WnsN6QJW4I1XWolhs5kQ_H-UQ/exec';
+//
+// 公開「新旅團接入申請」（submitRegistration）：未接入旅團提交申請，
+// 只往伺服器端固定嘅 Scout Admin 收件匣（SCOUT_ADMIN_API 一族環境變數）
+// 寫入「申請記錄」待審核 — 對齊 ScoutBadge / vsbadge / roverbadge。
+//
+// 紅線：
+//  - 申請人唔使（亦唔會得到）SUPER_KEY；本端點唔驗 SUPER_KEY。
+//    伺服器端 SUPER_KEY 絕不可放入送往 Google Sheet／Email 嘅 payload。
+//    （SUPER_KEY 仍然只用作 /api/proxy 嘅超管登入比對，值永不離開 Vercel。）
+//  - 收件匣 URL 只由伺服器端環境變數決定（見 _lib/scoutAdmin.js），
+//    前端自帶嘅 URL 一律唔理（SSRF 防線）；申請人自己部 GS 嘅 backendUrl
+//    只會寫入申請記錄欄位俾管理員審核，唔會被伺服器攞去 fetch。
+const { isValidGasUrl } = require('./_lib/registry');
+const {
+  APP_TYPE,
+  getScoutAdminApiUrl,
+  buildApplyPayload,
+  isScoutAdminSuccess
+} = require('./_lib/scoutAdmin');
 const TIMEOUT_MS = 12000;
-
-function isValidAdminUrl(url) {
-  try {
-    const u = new URL(url);
-    if (u.protocol !== 'https:') return false;
-    if (u.hostname !== 'script.google.com') return false;
-    if (!u.pathname.includes('/macros/s/')) return false;
-    if (!u.pathname.endsWith('/exec')) return false;
-    return true;
-  } catch {
-    return false;
-  }
-}
 
 async function handler(req, res) {
   res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
@@ -29,51 +31,44 @@ async function handler(req, res) {
     return res.status(204).end();
   }
 
-  if (!isValidAdminUrl(ADMIN_API_URL)) {
-    console.error('[register] Invalid ADMIN_API_URL');
+  // 動態讀取（相容 SCOUT_ADMIN_API / ROVERBADGE_ADMIN_API / CUBSBADGE_ADMIN_API /
+  // SCOUTBADGE_ADMIN_API，未設用內建預設）＋同 proxy submitFeedback 共用 helper。
+  const adminApiUrl = getScoutAdminApiUrl();
+  if (!isValidGasUrl(adminApiUrl)) {
+    console.error('[register] Invalid Scout Admin API URL');
     return res.status(500).json({ success: false, error: 'Admin API misconfigured' });
   }
 
   let body = {};
   try {
-    body = typeof req.body === 'object' ? req.body : JSON.parse(req.body || '{}');
+    body = typeof req.body === 'object' && req.body !== null ? req.body : JSON.parse(req.body || '{}');
   } catch {
     return res.status(400).json({ success: false, error: 'Invalid JSON body' });
   }
 
-  // ── SUPER_KEY 驗證（APP ADMIN 喺 Vercel 設定嘅管理 key；GS 永不顯示值）──
-  // key 未設定 = 管理 API 停用（同 EC_FLUSH_KEY 一樣，唔會變成公開註冊口）。
-  if (!getSuperKey()) {
-    return res.status(503).json({
-      success: false,
-      error: 'SUPER_KEY 未設定：請 APP ADMIN 喺 Vercel 環境變數設定 SUPER_KEY（管理 API 用）'
-    });
-  }
-  const providedKey = String((req.headers && req.headers['x-super-key']) || body.superKey || body.super_key || '');
-  if (!verifySuperKey(providedKey)) {
-    return res.status(403).json({ success: false, error: 'SUPER_KEY 驗證失敗' });
-  }
-
-  const troopId = String(body.troopId || '').trim();
-  const scriptUrl = String(body.scriptUrl || '').trim();
-  const apiKey = String(body.apiKey || '').trim();
-  if (!troopId || !scriptUrl || !apiKey) {
-    return res.status(400).json({ success: false, error: 'Missing required fields: troopId, scriptUrl, apiKey' });
+  // 前端請求格式不變：scriptUrl 喺伺服器端映射為 backendUrl（唔再送 scriptUrl），
+  // 固定 type:"apply" + appType:"cubsbadge"；空 troopName／note 喺 builder 內補好
+  // （預設旅名 + [cubsbadge] 標記，確保 Scout Admin「旅團登記」卡片必顯示且分得清來源）。
+  // builder 係 allowlist：請求就算帶埋 superKey／super_key 都唔會轉發。
+  const payload = buildApplyPayload(body);
+  const { troopId, backendUrl, apiKey } = payload;
+  if (!troopId || !backendUrl || !apiKey) {
+    return res.status(400).json({ success: false, error: 'Missing required fields: troopId, backendUrl, apiKey' });
   }
   if (!/^[A-Za-z0-9_-]{1,32}$/.test(troopId)) {
     return res.status(400).json({ success: false, error: 'Invalid troopId format' });
   }
-  if (!isValidAdminUrl(scriptUrl)) {
-    return res.status(400).json({ success: false, error: 'Invalid scriptUrl - must be HTTPS script.google.com /exec URL' });
+  if (!isValidGasUrl(backendUrl)) {
+    return res.status(400).json({ success: false, error: 'Invalid backendUrl - must be HTTPS script.google.com /exec URL' });
   }
 
-  console.log(`[register] Forwarding registration troop=${troopId} appType=${body.appType || 'cubbadge'}`);
+  console.log(`[register] Forwarding apply troop=${troopId} appType=${APP_TYPE}`);
 
   try {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), TIMEOUT_MS);
 
-    const upstreamResp = await fetch(ADMIN_API_URL, {
+    const upstreamResp = await fetch(adminApiUrl, {
       method: 'POST',
       redirect: 'follow',
       signal: controller.signal,
@@ -81,36 +76,35 @@ async function handler(req, res) {
         'Content-Type': 'text/plain;charset=utf-8',
         'User-Agent': 'cubsbadge-register-proxy/1.0'
       },
-      body: JSON.stringify({
-        troopId,
-        troopName: body.troopName || '',
-        scriptUrl,
-        apiKey,
-        superKey: getSuperKey(),
-        appType: body.appType || 'cubbadge',
-        note: body.note || ''
-      })
+      body: JSON.stringify(payload)
     });
 
     clearTimeout(timeoutId);
 
     const text = await upstreamResp.text();
-    let json;
+    let result;
     try {
-      json = JSON.parse(text);
+      result = JSON.parse(text);
     } catch {
-      json = null;
+      result = null;
     }
 
-    if (!upstreamResp.ok) {
-      return res.status(upstreamResp.status).json(json || { success: false, error: `Upstream error ${upstreamResp.status}` });
+    // Scout Admin GS 成功回 {status:"success"}（舊式 {success:true} 亦兼容），
+    // 必須 HTTP 2xx + 成功標記齊全，先統一回前端 {success:true}；
+    // 其餘（上游錯誤／非 2xx／非 JSON／冇成功標記）一律 502，
+    // 唔好將冇 success:true 嘅上游原文直接回俾前端。
+    if (isScoutAdminSuccess(upstreamResp.status, result)) {
+      return res.status(200).json({ success: true, message: '申請已提交' });
     }
 
-    if (json) {
-      return res.status(200).json(json);
-    } else {
-      return res.status(200).json({ success: true, message: 'Submitted', raw: text.slice(0,200) });
-    }
+    const upstreamError = result && (result.error || result.message)
+      ? String(result.error || result.message).slice(0, 200)
+      : '';
+    console.error(`[register] upstream not successful status=${upstreamResp.status}${upstreamError ? ' error=' + upstreamError : ''}`);
+    return res.status(502).json({
+      success: false,
+      error: upstreamError || '申請提交失敗，請稍後重試'
+    });
   } catch (err) {
     if (err.name === 'AbortError') {
       return res.status(504).json({ success: false, error: 'Registration upstream timeout' });

@@ -28,7 +28,7 @@
 
 | # | 功能變數 | 值來自 | 幾多個 |
 |---|---------|--------|--------|
-| 1 | `SUPER_KEY` | **APP ADMIN 自己定**（= 超管 `sheep` 嘅密碼，亦係管理 API key） | 全 APP **1 個** |
+| 1 | `SUPER_KEY` | **APP ADMIN 自己定**（= 超管 `sheep` 嘅密碼；只用於超管登入比對） | 全 APP **1 個** |
 | 2 | `TROOP_0082_BACKEND` | 旅團交嚟嘅部署 URL（`/exec` 結尾） | 每旅團 1 個 |
 | 3 | `TROOP_0082_APIKEY` | 旅團交嚟嘅 API Key（`sc_…`） | 每旅團 1 個 |
 | 4 | `TROOP_0082_NAME` | **APP ADMIN 自己定**（旅團顯示名稱，例：第 82 旅） | 每旅團 1 個 |
@@ -72,10 +72,18 @@ const SUPER_ADMIN_LOGIN = 'sheep';            // ← GS 只有呢一行。冇密
   - 未設定 → 通用失敗（入口關閉，唔會變成公開登入）
   - 密碼錯 → 通用失敗（15 分鐘 20 次輕量限流）
   - 密碼啱 → 改送 `action=superLogin` 落 leaf；密碼本身**永不轉發**
-- 保護 APP 管理 API：`/api/register`（旅團註冊）必須帶 `x-super-key` header（或 body `superKey`）
-  - 未設定 → `503`（管理 API 停用，唔會變成公開註冊口）
-  - 驗證失敗 → `403`
-  - 驗證通過 → 轉發註冊俾後端管理 GS
+- ⚠️ `/api/register`（公開「新旅團接入申請」）**唔用** `SUPER_KEY`：申請人係未接入旅團，
+  唔可能、亦唔應該持有管理 key。申請只會轉發去伺服器端固定嘅 Scout Admin 收件匣
+  寫入待審核「申請記錄」；伺服器端 `SUPER_KEY` 值**絕不可**放入申請 payload
+  （會寫入 Google Sheet／寄出 Email＝外洩）。
+  - 收件匣 URL 環境變數四名相容（任一即可，伺服器端動態讀取＋`trim`）：
+    `SCOUT_ADMIN_API`／`ROVERBADGE_ADMIN_API`／`CUBSBADGE_ADMIN_API`／`SCOUTBADGE_ADMIN_API`
+    （Vercel 現有設定為 `SCOUTBADGE_ADMIN_API`）；四個都冇就用內建預設 `/exec` URL。
+    `/api/register` 同 `/api/proxy` 嘅 `submitFeedback` 共用同一個 helper（`api/_lib/scoutAdmin.js`）。
+  - 轉發 payload 固定：`type:"apply"` + `appType:"cubsbadge"` + `backendUrl`
+    （前端送嘅 `scriptUrl` 喺伺服器端映射，不再送 `scriptUrl`）；
+    空 `troopName` 會補 `第 <troopId> 旅`，`note` 會加 `[cubsbadge]` 標記，
+    先確保 Scout Admin「🏛️ 旅團登記」卡片唔會漏顯示、分得清來源。
 - `/api/health` 只回 `SUPER_KEY` **有冇設定**（boolean），**永不回值**
 
 ---

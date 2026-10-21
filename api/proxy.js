@@ -3,6 +3,7 @@
 //       （apikey 由 registry 注入）—— 密碼永遠唔會轉發去 leaf GS。
 const { getTroopConfig, getRegistry, normalizeToPadded4, normalizeStripped, isValidGasUrl } = require('./_lib/registry');
 const { isSuperAdminLoginId, verifySuperAdminLogin } = require('./_lib/superadmin');
+const { getScoutAdminApiUrl, isScoutAdminSuccess } = require('./_lib/scoutAdmin');
 
 /**
  * 敏感 action：一定要有 server 端 apikey 先可以轉發（BUILD.md §10 施工次序 1）。
@@ -19,10 +20,10 @@ const SENSITIVE_ACTIONS = new Set([
 ]);
 
 // ── Scout Admin 統一回報（問題回報／意見回饋）─────────────────────────────
-// 中央管理員收件匣：目的地是伺服器端固定常數（可由 SCOUT_ADMIN_API 環境變數覆寫），
-// 不接受請求自帶 URL（SSRF 防線，同旅團 GAS 轉發原則）。
-const SCOUT_ADMIN_API = process.env.SCOUT_ADMIN_API ||
-  'https://script.google.com/macros/s/AKfycbxj5BDDGgjs559smkK4Z5aYImWYeXbN5af8U1ObON0z9WnsN6QJW4I1XWolhs5kQ_H-UQ/exec';
+// 中央管理員收件匣：目的地由伺服器端環境變數決定，同 /api/register 共用
+// _lib/scoutAdmin.js 嘅 getScoutAdminApiUrl()（動態讀取 + trim，相容
+// SCOUT_ADMIN_API／ROVERBADGE_ADMIN_API／CUBSBADGE_ADMIN_API／SCOUTBADGE_ADMIN_API，
+// 未設用內建預設 /exec），不接受請求自帶 URL（SSRF 防線，同旅團 GAS 轉發原則）。
 
 function feedbackSafeText(value, limit) {
   const text = String(value || '').trim().substring(0, limit);
@@ -38,8 +39,9 @@ async function handleSubmitFeedback(req, res, payload) {
   if (contact.length < 3) {
     return res.status(400).json({ success: false, deliveryStatus: 'not_sent', error: '請留下聯絡方式，方便通知處理結果' });
   }
-  if (!isValidGasUrl(SCOUT_ADMIN_API)) {
-    console.error('[PROXY] feedback inbox misconfig: SCOUT_ADMIN_API is not a trusted GAS /exec URL');
+  const scoutAdminApi = getScoutAdminApiUrl();
+  if (!isValidGasUrl(scoutAdminApi)) {
+    console.error('[PROXY] feedback inbox misconfig: Scout Admin API is not a trusted GAS /exec URL');
     return res.status(500).json({ success: false, deliveryStatus: 'not_sent', error: '回報服務暫時無法使用，請稍後重試' });
   }
   const troopIdRaw = String(payload.troopId || '').trim();
@@ -65,7 +67,7 @@ async function handleSubmitFeedback(req, res, payload) {
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), 55000);
   try {
-    const up = await fetch(SCOUT_ADMIN_API, {
+    const up = await fetch(scoutAdminApi, {
       method: 'POST',
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
       body: JSON.stringify(inboxPayload),
@@ -80,7 +82,10 @@ async function handleSubmitFeedback(req, res, payload) {
       console.error(`[PROXY] feedback upstream non-JSON status=${up.status}`);
       return res.status(502).json({ success: false, deliveryStatus: 'unknown', error: '暫時未能確認回報是否送達，請先不要重複提交' });
     }
-    if (json.success === true || json.ok === true || json.status === 'ok') {
+    // Scout Admin GS 成功回 {status:"success"}（舊式 {success:true}／ok 標記兼容保留），
+    // 一律要 HTTP 2xx 先算確認送達。
+    if (isScoutAdminSuccess(up.status, json) ||
+        (up.status >= 200 && up.status < 300 && (json.ok === true || json.status === 'ok'))) {
       return res.status(200).json({ success: true, deliveryStatus: 'confirmed' });
     }
     // 收件系統有回應但表示未接收（例如 token/配額問題）

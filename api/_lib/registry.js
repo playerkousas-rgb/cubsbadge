@@ -1,7 +1,8 @@
 // Shared registry loader for multi-troop system — 功能變數契約（4樣）
 //
 // 死規矩：旅團設定淨係「指向」Vercel 環境變數（功能變數），唔讀 JSON、唔內置 URL：
-//   SUPER_KEY            — APP ADMIN 設定嘅管理 key（保護 /api/register 等管理 API；Vercel 端唯一來源）
+//   SUPER_KEY            — APP ADMIN 設定嘅管理 key（/api/proxy 超管登入比對用；Vercel 端唯一來源。
+//                          注意：公開「新旅團接入申請」/api/register 唔用 SUPER_KEY，亦絕不轉發此值）
 //   TROOP_<id>_BACKEND   — 該旅團 GS /exec URL（後端GS 對應：部署 URL）
 //   TROOP_<id>_APIKEY    — 該旅團 GS API Key（後端GS 對應：Script Property API_KEY）
 //   TROOP_<id>_NAME      — 該旅團名稱（後端GS 對應：Script Property TROOP_NAME）

@@ -21,6 +21,35 @@ test('proxy exposes explicit feedback deliveryStatus protocol', () => {
   assert.match(proxy, /SCOUT_ADMIN_API/);
 });
 
+test('Scout Admin apply contract: shared inbox helper, no SUPER_KEY forwarding', () => {
+  const proxy = fs.readFileSync('api/proxy.js', 'utf8');
+  const register = fs.readFileSync('api/register.js', 'utf8');
+  const lib = fs.readFileSync('api/_lib/scoutAdmin.js', 'utf8');
+  const html = fs.readFileSync('index.html', 'utf8');
+
+  // register（submitRegistration）同 submitFeedback 共用同一個動態 helper
+  assert.match(register, /getScoutAdminApiUrl\(\)/);
+  assert.match(proxy, /getScoutAdminApiUrl\(\)/);
+  for (const name of ['SCOUT_ADMIN_API', 'ROVERBADGE_ADMIN_API', 'CUBSBADGE_ADMIN_API', 'SCOUTBADGE_ADMIN_API']) {
+    assert.match(lib, new RegExp(name), `${name} is honoured`);
+  }
+  assert.match(lib, /\.trim\(\)/);
+
+  // 公開申請唔驗 SUPER_KEY，伺服器 key 永不落 payload（防回歸靜態閘）
+  assert.doesNotMatch(register, /getSuperKey|verifySuperKey/);
+  assert.doesNotMatch(register + lib, /superKey\s*:/);
+
+  // payload 對齊 Scout Admin GS + 上游成功判斷兼容 {status:"success"}
+  assert.match(lib, /type: 'apply'/);
+  assert.match(lib, /backendUrl/);
+  assert.match(lib, /result\.status === 'success'/);
+  assert.match(register, /message: '申請已提交'/);
+
+  // 前端請求格式／路徑不變
+  assert.match(html, /fetch\('\/api\/register'/);
+  assert.match(html, /scriptUrl:su/);
+});
+
 test('items.json has no official-badge placeholder text and includes missing Cub items', () => {
   const raw = fs.readFileSync('data/items.json', 'utf8');
   assert.equal(raw.includes('詳細考驗要求請在資料庫開啟'), false, 'placeholder wording removed');

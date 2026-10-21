@@ -44,7 +44,7 @@ TROOP_0082_APIKEY：sc_xxxxxxxx
 
 1. Vercel → Project → Settings → Environment Variables
 2. 加功能變數：
-   - 全 APP 一次：`SUPER_KEY`（**你自己定** = 超管 `sheep` 密碼，亦係 `/api/register` 管理 API key）
+   - 全 APP 一次：`SUPER_KEY`（**你自己定** = 超管 `sheep` 密碼；公開申請 `/api/register` 唔使用、亦不得向外轉發此值）
    - 每旅團 3 個：`TROOP_0082_BACKEND` / `TROOP_0082_APIKEY`（旅團交嚟）/ `TROOP_0082_NAME`（你定）
    - 4 個都勾 Production, Preview, Development
 3. **Redeploy** → 首頁 `troopGrid` 即刻見到該旅團

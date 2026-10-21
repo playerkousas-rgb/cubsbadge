@@ -40,9 +40,9 @@
   - JSON 與非 JSON 上游錯誤處理
   - 不 log 敏感欄位 (password, token, apikey → [REDACTED])
 
-- `api/register.js` - 旅團註冊申請代理
+- `api/register.js` - 公開「新旅團接入申請」代理（唔使 SUPER_KEY；申請待 Scout Admin 審核）
   - 原本前端 `fetch(SCOUT_ADMIN_API)` 直連 GAS，現改為同源 `/api/register`
-  - 同樣驗證 troopId 與 scriptUrl 必須為可信 GAS URL
+  - 驗證必填 `troopId`／`backendUrl`（前端 `scriptUrl` 伺服器端映射）／`apiKey`，URL 必須為可信 GAS URL；固定轉發 `type:"apply"` + `appType:"cubsbadge"`，伺服器端 `SUPER_KEY` 絕不落申請 payload
   - 避免瀏覽器 CORS
 
 ### 修改
@@ -143,9 +143,9 @@
 ## Vercel 是否需要新增環境變數？
 
 - 功能變數契約（4樣，全部必需）：
-  - `SUPER_KEY`（全 APP 一個，**APP ADMIN 設定**）：管理 key（= 維護帳戶密碼；**只存在 Vercel，leaf GS 冇**）；`/api/register` 要帶 `x-super-key`；超管登入由 `/api/proxy` 比對 `SUPER_KEY` 後送 `action=superLogin`
+  - `SUPER_KEY`（全 APP 一個，**APP ADMIN 設定**）：管理 key（= 維護帳戶密碼；**只存在 Vercel，leaf GS 冇**）；超管登入由 `/api/proxy` 比對 `SUPER_KEY` 後送 `action=superLogin`（公開申請 `/api/register` 唔用此 key）
   - 每旅團 3 個：`TROOP_XXXX_BACKEND` / `TROOP_XXXX_APIKEY` / `TROOP_XXXX_NAME`（或 `TROOP_82_*` 去零變體）
-  - 可選 `SCOUT_ADMIN_API` 用於 `/api/register` 轉發目標，預設已 hardcode 為現有 admin GAS，無 env 時仍可用。
+  - 可選 Scout Admin 收件匣（四名相容：`SCOUT_ADMIN_API` / `ROVERBADGE_ADMIN_API` / `CUBSBADGE_ADMIN_API` / `SCOUTBADGE_ADMIN_API`）用於 `/api/register` 同 `submitFeedback` 轉發目標，由 `api/_lib/scoutAdmin.js` 動態讀取＋trim，無 env 時用內建預設 admin GAS。
 - 若新增旅團，按流程：旅團交 **3 樣**（旅團編號／部署 URL／API Key）→ APP ADMIN 喺 Vercel 加 `TROOP_XXXX_BACKEND` / `_APIKEY` / `_NAME` 功能變數（`SUPER_KEY` 全 APP 一個，亦由 APP ADMIN 設定；只放 Vercel，唔好放入 GS）+ redeploy（唔使改任何 JSON；`troops.json` 已棄用）。詳見 `VERCEL_ENV_SETUP.md`（v9.0）。
 
 ## 部署及合併步驟
