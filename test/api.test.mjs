@@ -63,7 +63,7 @@ function freshModule(p) {
   return require(p);
 }
 function clearEnv() {
-  Object.keys(process.env).filter((k) => /^TROOP_|^EC_|^CIRCULAR_|^SUPER_/.test(k)).forEach((k) => delete process.env[k]);
+  Object.keys(process.env).filter((k) => /^TROOP_|^EC_|^CIRCULAR_|^SUPER_|_ADMIN_API$/.test(k)).forEach((k) => delete process.env[k]);
 }
 
 // ============================================================
@@ -371,47 +371,192 @@ await check('registry：SUPER_KEY 指向功能變數，verifySuperKey 驗證（�
   assert.equal(reg.verifySuperKey('sk_SUPER_SECRET'), false, '未設 SUPER_KEY 一律唔過');
 });
 
-await check('register：SUPER_KEY 未設定 → 503（管理 API 停用）', async () => {
-  clearEnv();
-  const handler = freshModule('../api/register.js');
-  const res = mockRes();
-  await handler(mockReq({ method: 'POST', body: {
-    troopId: '0082',
-    scriptUrl: 'https://script.google.com/macros/s/AKfycbTESTXXXXXX/exec',
-    apiKey: 'sc_x'
-  } }), res);
-  assert.equal(res.statusCode, 503);
+// ── Scout Admin GS 對接契約（register / submitRegistration「新旅團接入申請」）──
+// 公開申請：唔使 SUPER_KEY、伺服器 SUPER_KEY 絕不落 payload；payload 對齊
+// type:"apply" + appType:"cubsbadge" + backendUrl；上游 {status:"success"} 兼容。
+const APPLY_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbAPPLICANTXXXXXXXX/exec';
+const applyBody = (extra = {}) => ({
+  troopId: '0082', troopName: '第 82 旅', scriptUrl: APPLY_SCRIPT_URL,
+  apiKey: 'cb_applicant_key', appType: 'cubbadge', note: '聯絡：a@b.c', ...extra
 });
 
-await check('register：SUPER_KEY 錯 → 403；啱 → 轉發俾後端 GS 並帶 superKey（對應）', async () => {
-  clearEnv();
-  process.env.SUPER_KEY = 'sk_admin';
-  let forwarded = null;
-  stubFetch([['script.google.com', async (u, o) => { forwarded = JSON.parse(o.body); return { body: { success: true } }; }]]);
+await check('scoutAdmin：收件匣 URL 四名相容 + trim + 優先序 + 未設用內建預設', async () => {
+  const sa = freshModule('../api/_lib/scoutAdmin.js');
+  assert.match(sa.getScoutAdminApiUrl({}), /^https:\/\/script\.google\.com\/macros\/s\/.+\/exec$/, '未設用內建預設 /exec');
+  // APP ADMIN 喺 Vercel 用緊嘅名
+  assert.equal(sa.getScoutAdminApiUrl({ SCOUTBADGE_ADMIN_API: '  https://x/scoutbadge  ' }), 'https://x/scoutbadge');
+  assert.equal(sa.getScoutAdminApiUrl({ CUBSBADGE_ADMIN_API: ' https://x/cubs ' }), 'https://x/cubs');
+  assert.equal(sa.getScoutAdminApiUrl({ ROVERBADGE_ADMIN_API: ' https://x/rover ' }), 'https://x/rover');
+  assert.equal(sa.getScoutAdminApiUrl({ SCOUT_ADMIN_API: ' https://x/scout ' }), 'https://x/scout');
+  // 優先序 SCOUT_ADMIN_API > ROVERBADGE > CUBSBADGE > SCOUTBADGE；純空白當未設
+  assert.equal(sa.getScoutAdminApiUrl({ SCOUT_ADMIN_API: '  ', CUBSBADGE_ADMIN_API: 'https://x/cubs', SCOUTBADGE_ADMIN_API: 'https://x/sb' }), 'https://x/cubs');
+  assert.equal(sa.getScoutAdminApiUrl({ SCOUT_ADMIN_API: 'https://x/1', ROVERBADGE_ADMIN_API: 'https://x/2' }), 'https://x/1');
+});
+
+await check('register：公開申請唔使 SUPER_KEY；上游 {status:"success"} → 200 {success:true,message:"申請已提交"}', async () => {
+  clearEnv(); // SUPER_KEY 完全未設
+  let forwarded = null, calledUrl = '';
+  stubFetch([['script.google.com', async (u, o) => { calledUrl = u; forwarded = JSON.parse(o.body); return { body: { status: 'success', message: '申請已記錄' } }; }]]);
   try {
     const handler = freshModule('../api/register.js');
-    const bad = mockRes();
-    await handler(mockReq({ method: 'POST', body: {
-      troopId: '0082',
-      scriptUrl: 'https://script.google.com/macros/s/AKfycbTESTXXXXXX/exec',
-      apiKey: 'sc_x',
-      superKey: 'nope'
-    } }), bad);
-    assert.equal(bad.statusCode, 403);
-    assert.equal(forwarded, null, '驗證失敗唔應該打上游');
+    const res = mockRes();
+    await handler(mockReq({ method: 'POST', body: applyBody() }), res);
+    assert.equal(res.statusCode, 200, JSON.stringify(res.body));
+    // 切勿原樣回 {status:"success"}（前端判 success）— 要統一回覆格式
+    assert.deepEqual(res.body, { success: true, message: '申請已提交' });
+    assert.ok(forwarded, '應該轉發申請');
+    assert.match(calledUrl, /script\.google\.com\/macros\/s\/.+\/exec$/, '未設 env 用內建預設收件匣');
+  } finally { restoreFetch(); clearEnv(); }
+});
 
-    const ok = mockRes();
-    await handler(mockReq({ method: 'POST', headers: { 'x-super-key': 'sk_admin' }, body: {
-      troopId: '0082',
-      scriptUrl: 'https://script.google.com/macros/s/AKfycbTESTXXXXXX/exec',
-      apiKey: 'sc_x',
-      troopName: '第 82 旅'
-    } }), ok);
-    assert.equal(ok.statusCode, 200, JSON.stringify(ok.body));
-    assert.ok(forwarded, '應該轉發註冊');
-    assert.equal(forwarded.superKey, 'sk_admin', '後端GS 對應：superKey 要跟埋過去');
+await check('register：payload 映射 backendUrl（唔送 scriptUrl）、固定 type/appType、note 標記、零 SUPER_KEY 外洩', async () => {
+  clearEnv();
+  process.env.SUPER_KEY = 'sk_SERVER_SECRET';
+  let raw = '', forwarded = null;
+  stubFetch([['script.google.com', async (u, o) => { raw = o.body; forwarded = JSON.parse(o.body); return { body: { status: 'success' } }; }]]);
+  try {
+    const handler = freshModule('../api/register.js');
+    const res = mockRes();
+    // 前端格式不變（scriptUrl + appType:'cubbadge'）；另加 client 自帶 superKey 試圖混入
+    await handler(mockReq({ method: 'POST', headers: { 'x-super-key': 'sk_SERVER_SECRET' }, body: applyBody({ superKey: 'client_supplied', super_key: 'client_supplied2' }) }), res);
+    assert.equal(res.statusCode, 200, JSON.stringify(res.body));
+    assert.equal(forwarded.type, 'apply');
+    assert.equal(forwarded.appType, 'cubsbadge', '伺服器固定 appType，唔信前端 cubbadge');
+    assert.equal(forwarded.backendUrl, APPLY_SCRIPT_URL, 'scriptUrl 映射為 backendUrl');
+    assert.ok(!('scriptUrl' in forwarded), '唔可以再送 scriptUrl');
+    assert.equal(forwarded.troopId, '0082');
     assert.equal(forwarded.troopName, '第 82 旅');
-  } finally { restoreFetch(); }
+    assert.equal(forwarded.apiKey, 'cb_applicant_key');
+    assert.equal(forwarded.note, '[cubsbadge] 聯絡：a@b.c', 'note 加系統標記，Scout Admin 卡片分得清來源');
+    assert.ok(!('superKey' in forwarded) && !('super_key' in forwarded), 'payload 唔可以有 superKey 欄位');
+    assert.ok(!raw.includes('sk_SERVER_SECRET'), '伺服器 SUPER_KEY 絕不可落 Google Sheet／Email payload');
+    assert.ok(!raw.includes('client_supplied'), 'client 自帶 superKey 一律丟棄');
+    assert.ok(!JSON.stringify(res.body).includes('sk_SERVER_SECRET'));
+  } finally { restoreFetch(); clearEnv(); }
+});
+
+await check('register：直接送 backendUrl 亦得；同時有 backendUrl/scriptUrl 以 backendUrl 優先', async () => {
+  clearEnv();
+  let forwarded = null;
+  stubFetch([['script.google.com', async (u, o) => { forwarded = JSON.parse(o.body); return { body: { status: 'success' } }; }]]);
+  try {
+    const handler = freshModule('../api/register.js');
+    const res = mockRes();
+    await handler(mockReq({ method: 'POST', body: applyBody({ backendUrl: 'https://script.google.com/macros/s/AKfycbDIRECTXXXXXXXXXX/exec' }) }), res);
+    assert.equal(res.statusCode, 200);
+    assert.equal(forwarded.backendUrl, 'https://script.google.com/macros/s/AKfycbDIRECTXXXXXXXXXX/exec');
+  } finally { restoreFetch(); clearEnv(); }
+});
+
+await check('register：note 標記變體（無備註／已有前綴唔重複）+ 空 troopName 補「第 <id> 旅」', async () => {
+  clearEnv();
+  const sent = [];
+  stubFetch([['script.google.com', async (u, o) => { sent.push(JSON.parse(o.body)); return { body: { status: 'success' } }; }]]);
+  try {
+    const handler = freshModule('../api/register.js');
+    // 無 note + 空名
+    let res = mockRes();
+    await handler(mockReq({ method: 'POST', body: applyBody({ troopName: '', note: '' }) }), res);
+    assert.equal(res.statusCode, 200);
+    assert.equal(sent[0].note, '[cubsbadge]');
+    assert.equal(sent[0].troopName, '第 0082 旅', '空白 troopName 要補預設，先唔會俾 Scout Admin 卡片略過');
+    // 已有前綴（連空白名）唔重複
+    res = mockRes();
+    await handler(mockReq({ method: 'POST', body: applyBody({ troopName: '   ', note: '[cubsbadge] 舊備註' }) }), res);
+    assert.equal(res.statusCode, 200);
+    assert.equal(sent[1].note, '[cubsbadge] 舊備註');
+    assert.equal(sent[1].troopName, '第 0082 旅');
+  } finally { restoreFetch(); clearEnv(); }
+});
+
+await check('register：必填缺漏（troopId／backendUrl／apiKey）→ 400 且唔打上游；非法 backendUrl／troopId → 400', async () => {
+  clearEnv();
+  let calls = 0;
+  stubFetch([['script.google.com', async () => { calls++; return { body: { status: 'success' } }; }]]);
+  try {
+    const handler = freshModule('../api/register.js');
+    const cases = [
+      ['缺 troopId', applyBody({ troopId: '' })],
+      ['缺 URL（backendUrl 同 scriptUrl 都冇）', applyBody({ scriptUrl: '', backendUrl: '' })],
+      ['缺 apiKey', applyBody({ apiKey: '' })],
+      ['非法 backendUrl', applyBody({ scriptUrl: 'https://evil.example.com/exec' })],
+      ['非法 troopId', applyBody({ troopId: '../../x' })]
+    ];
+    for (const [name, body] of cases) {
+      const res = mockRes();
+      await handler(mockReq({ method: 'POST', body }), res);
+      assert.equal(res.statusCode, 400, `${name}：${JSON.stringify(res.body)}`);
+      assert.equal(res.body.success, false);
+    }
+    assert.equal(calls, 0, '驗證失敗唔應該呼叫上游');
+  } finally { restoreFetch(); clearEnv(); }
+});
+
+await check('register：上游判斷 — {success:true} 舊式兼容；error／非2xx／非JSON／冇標記一律 502', async () => {
+  clearEnv();
+  const handler = freshModule('../api/register.js');
+  const run = async (upstream) => {
+    stubFetch([['script.google.com', async () => upstream]]);
+    const res = mockRes();
+    await handler(mockReq({ method: 'POST', body: applyBody() }), res);
+    return res;
+  };
+  try {
+    let res = await run({ body: { success: true } });
+    assert.equal(res.statusCode, 200); assert.deepEqual(res.body, { success: true, message: '申請已提交' });
+
+    res = await run({ body: { status: 'error', message: '收件匣壞咗' } });
+    assert.equal(res.statusCode, 502); assert.equal(res.body.success, false); assert.match(String(res.body.error), /收件匣壞咗/);
+
+    res = await run({ status: 500, body: { status: 'success' } });
+    assert.equal(res.statusCode, 502, '非 2xx 就算寫住 success 都唔算');
+
+    res = await run({ body: '<html>not json</html>' });
+    assert.equal(res.statusCode, 502, '非 JSON 唔可以當成功');
+
+    res = await run({ body: {} });
+    assert.equal(res.statusCode, 502, '冇成功標記唔可以當成功（唔好只判係咪 JSON）');
+  } finally { restoreFetch(); clearEnv(); }
+});
+
+await check('register：env 相容 — 只設 SCOUTBADGE_ADMIN_API（帶空白）即生效，且動態讀取唔使重載 module', async () => {
+  clearEnv();
+  const urls = [];
+  stubFetch([['AKfycbSCOUTBADGEENV', async (u) => { urls.push(u); return { body: { status: 'success' } }; }],
+             ['AKfycbCUBSBADGEENV', async (u) => { urls.push(u); return { body: { status: 'success' } }; }]]);
+  try {
+    process.env.SCOUTBADGE_ADMIN_API = '  https://script.google.com/macros/s/AKfycbSCOUTBADGEENV12/exec  ';
+    const handler = freshModule('../api/register.js');
+    let res = mockRes();
+    await handler(mockReq({ method: 'POST', body: applyBody() }), res);
+    assert.equal(res.statusCode, 200, JSON.stringify(res.body));
+    assert.equal(urls[0], 'https://script.google.com/macros/s/AKfycbSCOUTBADGEENV12/exec', 'trim 後嘅 SCOUTBADGE_ADMIN_API');
+    // 唔重載 module，改 env 即生效（動態 helper）
+    delete process.env.SCOUTBADGE_ADMIN_API;
+    process.env.CUBSBADGE_ADMIN_API = 'https://script.google.com/macros/s/AKfycbCUBSBADGEENV12/exec';
+    res = mockRes();
+    await handler(mockReq({ method: 'POST', body: applyBody() }), res);
+    assert.equal(res.statusCode, 200);
+    assert.equal(urls[1], 'https://script.google.com/macros/s/AKfycbCUBSBADGEENV12/exec');
+  } finally { restoreFetch(); clearEnv(); }
+});
+
+await check('proxy submitFeedback：共用同一收件匣 helper（SCOUTBADGE_ADMIN_API）+ {status:"success"} 算 confirmed', async () => {
+  clearEnv();
+  process.env.SCOUTBADGE_ADMIN_API = ' https://script.google.com/macros/s/AKfycbFEEDBACKENV1234/exec ';
+  let calledUrl = '', forwarded = null;
+  stubFetch([['AKfycbFEEDBACKENV', async (u, o) => { calledUrl = u; forwarded = JSON.parse(o.body); return { body: { status: 'success', message: 'ok' } }; }]]);
+  try {
+    const handler = freshModule('../api/proxy.js');
+    const res = mockRes();
+    await handler(mockReq({ method: 'POST', body: {
+      action: 'submitFeedback', type: 'issue', contact: 'a@b.c', troopId: '0082', title: '登入問題', desc: '撳登入冇反應'
+    } }), res);
+    assert.equal(res.statusCode, 200, JSON.stringify(res.body));
+    assert.deepEqual(res.body, { success: true, deliveryStatus: 'confirmed' });
+    assert.equal(calledUrl, 'https://script.google.com/macros/s/AKfycbFEEDBACKENV1234/exec');
+    assert.equal(forwarded.type, 'issue');
+  } finally { restoreFetch(); clearEnv(); }
 });
 
 await check('health：envContract 回 3 樣 boolean，零超管機制資訊（公開端點唔可以提 SUPER_KEY／sheep）', async () => {

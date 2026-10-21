@@ -154,7 +154,8 @@ GAS 端亦有對應嘅 `ecStatus` / `ecGetModules`（免 token,唔含敏感資�
 
 | 變數 | 用途 | 必需 |
 |---|---|---|
-| `SUPER_KEY` | APP ADMIN 設定嘅管理 key（= 維護帳戶密碼；**只存在 Vercel 功能變數，leaf GS 冇**）：① 保護 `/api/register` ② 超管登入時喺 `/api/proxy` 比對，之後送 `action=superLogin` 落 leaf | 管理 API／超管登入必需 |
+| `SUPER_KEY` | APP ADMIN 設定嘅管理 key（= 維護帳戶密碼；**只存在 Vercel 功能變數，leaf GS 冇**）：超管登入時喺 `/api/proxy` 比對，之後送 `action=superLogin` 落 leaf（公開申請 `/api/register` **唔用**此 key，亦不得放入申請 payload 外洩去 Scout Admin Sheet／Email） | 超管登入必需 |
+| `SCOUTBADGE_ADMIN_API`（或 `SCOUT_ADMIN_API`／`CUBSBADGE_ADMIN_API`／`ROVERBADGE_ADMIN_API`） | Scout Admin 中央收件匣 `/exec` URL，四名相容、動態讀取＋trim（`api/_lib/scoutAdmin.js`）；`/api/register` 接入申請同 `submitFeedback` 共用 | 否（未設用內建預設） |
 | `TROOP_<id>_BACKEND` | 本 leaf `/exec` URL（後端GS 對應：部署 URL） | 是 |
 | `TROOP_<id>_APIKEY` | 本 leaf apikey（**只存 server**；後端GS 對應：Script Property `API_KEY`） | 敏感 action + sigLogin 必需 |
 | `TROOP_<id>_NAME` | 旅團名稱（後端GS 對應：Script Property `TROOP_NAME`） | 是 |
