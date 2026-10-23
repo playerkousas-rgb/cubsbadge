@@ -1,5 +1,5 @@
 // ============================================================
-// 童軍支部進度及行政平台 — Apps Script 後端（一個 leaf = 一張 SHEET + 一支 /exec）
+// 幼童軍支部進度及行政平台 — Apps Script 後端（一個 leaf = 一張 SHEET + 一支 /exec）
 // 合約（邊個做啲乜）：
 // 旅團只做 3 樣：① 部署本檔 ② 跑 initializeSheets 拎 API Key ③ 交「旅團編號 + 部署 URL + API Key」俾 APP ADMIN
 // APP ADMIN 喺 Vercel 設定全部功能變數：TROOP_<編號>_BACKEND / _APIKEY / _NAME
@@ -41,7 +41,7 @@ function isSuperAdminReserved(ymis,email){
 const ADMIN_NAME = '管理員';
 const ADMIN_EMAIL = 'admin@example.com';
 const ADMIN_PASS = 'changeme';
-// 申請批核後初始臨時密碼統一預設 1234（對齊 SCOUTBADGE／VSBADGE）；
+// 申請批核後初始臨時密碼統一預設 1234；
 // 首次登入強制改密後才可使用。
 // 密碼規定 4-8 位（用家唔係專業，越複雜越唔會用）。
 const MIN_PASSWORD_LEN = 4;
@@ -65,7 +65,7 @@ function setConfigDefaults(cfgSheet) {
   const have = {};
   for (let i = 1; i < rows.length; i++) have[String(rows[i][0])] = true;
   const defaults = [
-    ['allow_member_requests', 'true'],
+    ['allow_member_requests', 'false'],
     ['allow_member_view_others', 'false'],
     ['member_progress_scope', 'private'],
     ['allow_squad_comparison', 'false']
@@ -255,7 +255,7 @@ function showApiKey() {
   return apiKey;
 }
 
-// 活動履歷（服務／活動／訓練班紀錄）—— 參考 VSBADGE 設計
+// 活動履歷（服務／活動／訓練班紀錄）—— 幼童軍活動履歷
 const LOG_SHEET_NAME = '活動履歷';
 const LOG_HEADERS = ['record_id','type','ymis','name','date','title','role','hours','cert_no','detail','recorder','recorded_at','updated_at'];
 const LOG_TYPES = ['service','activity','training'];
@@ -355,7 +355,7 @@ function now(){ return Utilities.formatDate(new Date(), 'Asia/Hong_Kong', 'yyyy-
 function formatDate(d){ if(!d) return ''; if(d instanceof Date) return Utilities.formatDate(d,'Asia/Hong_Kong','yyyy-MM-dd'); return d.toString().split(' ')[0]; }
 function jsonResponse(obj){ return ContentService.createTextOutput(JSON.stringify(obj)).setMimeType(ContentService.MimeType.JSON); }
 
-// 活動履歷（服務／活動／訓練班紀錄）—— 參考 VSBADGE 設計
+// 活動履歷（服務／活動／訓練班紀錄）—— 幼童軍活動履歷
 // 活動履歷／待批履歷常數已移至檔首（REQUIRED_SHEETS 需要引用）
 function safeSheetText(v,maxLen){
   let text=String(v||'').trim().substring(0,maxLen||200);
@@ -398,11 +398,11 @@ function getNextLeaderId(){
   }
   return 'L'+String(maxNum+1).padStart(4,'0');
 }
-// 團長鎖死一位的統一提示（顯示現任團長姓名，不外洩內部 L 編號）
+// 旅長鎖死一位的統一提示（顯示現任旅長姓名，不外洩內部 L 編號）
 function gslLockMsg(name){
-  return '團長只能有一位，全團已有現任團長（'+(name||'現任團長')+'）。如需更換，請先將現任團長轉為其他角色。';
+  return '旅長只能有一位，全團已有現任旅長（'+(name||'現任旅長')+'）。如需更換，請先將現任旅長轉為其他角色。';
 }
-// 團長全團只可有一位 —— 取現任在職團長（可排除指定 YMIS；換人流程：先將現任轉為其他角色，再升新人）
+// 旅長全團只可有一位 —— 取現任在職旅長（可排除指定 YMIS；換人流程：先將現任轉為其他角色，再升新人）
 // 改用 getUsersTable（表頭解析＋status 空白視為 active）
 function findActiveGroupLeader(excludeYmis){
   const t=getUsersTable();
@@ -415,11 +415,11 @@ function findActiveGroupLeader(excludeYmis){
   }
   return null;
 }
-// 檢測全團是否有狀態為 active 的團長 —— 無指定排除（等同現任團長查詢）
+// 檢測全團是否有狀態為 active 的旅長 —— 無指定排除（等同現任旅長查詢）
 function getActiveGroupLeader(){ return findActiveGroupLeader(''); }
 
-// （對齊 VSBADGE）：公開申請入口只接受 member / branch_leader（童軍無執委）
-// 團長／管理員必須由現任管理層在「用戶管理」直接開立，不可自行申請。
+// ：公開申請入口只接受 member / branch_leader（按幼童軍角色權限）
+// 旅長／管理員必須由現任管理層在「用戶管理」直接開立，不可自行申請。
 const VALID_ROLES = ['admin','group_leader','branch_leader','member'];
 const APPLY_ROLES = ['member','branch_leader'];
 // 申請批核後初始臨時密碼統一預設 1234（首次登入強制更改）。
@@ -845,7 +845,7 @@ function doPost(e){
     // 直接入口掣：高權限 token 可設（上游選單另有 sig 路徑）。
     // 保留帳號 token 經閘門例外後可喺關門後重開掣——救援鎖死旅團嘅關鍵一步。
     if(action==='setLocalLogin'){
-      if(getRoleLevel(user.role)<60) return jsonResponse({success:false,error:'需小隊長以上權限'});
+      if(getRoleLevel(user.role)<60) return jsonResponse({success:false,error:'需旅長或以上權限'});
       const rawAllow=String(body.allow===undefined?'':body.allow).trim().toLowerCase();
       const truthyAllow=['1','true','yes','on','open'];
       const falsyAllow=['0','false','no','off','closed'];
@@ -857,7 +857,7 @@ function doPost(e){
     if(action==='getPendingRequests'){ if(getRoleLevel(user.role)<0) return jsonResponse({success:false,error:'權限不足'}); return handleGetPendingRequests(); }
     if(action==='reviewRequest'){ if(!canUserTick(user.role)) return jsonResponse({success:false,error:'權限不足，需領袖權限'}); return handleReviewRequest(body.request_id, body.decision, body.review_note, ymis, body.confirmed_date); }
     if(action==='getOtherBadges'){ return handleGetOtherBadges(body.target_ymis||ymis); }
-    if(action==='getApplications'){ if(getRoleLevel(user.role)<40) return jsonResponse({success:false,error:'權限不足，需團長/支部領袖'}); return handleGetApplications(); }
+    if(action==='getApplications'){ if(getRoleLevel(user.role)<40) return jsonResponse({success:false,error:'權限不足，需幼童軍領袖或以上角色'}); return handleGetApplications(); }
     if(action==='reviewApplication'){ if(getRoleLevel(user.role)<40) return jsonResponse({success:false,error:'權限不足'}); return handleReviewApplication(body.app_id,body.decision,body.review_note,user,body.temp_password); }
     if(action==='getConfig'){
       // 任何已登入用戶都可讀取公開設定
@@ -873,7 +873,7 @@ function doPost(e){
     if(action==='getAuditLog'){ if(getRoleLevel(user.role)<40) return jsonResponse({success:false,error:'權限不足'}); return handleGetAuditLog(user); }
     if(action==='getApprovalHistory'){ if(getRoleLevel(user.role)<40) return jsonResponse({success:false,error:'權限不足'}); return handleGetApprovalHistory(); }
     if(action==='updateUserRole'){
-      // 允許團長/支部領袖/管理員更新角色 + 細緻權限
+      // 允許旅長／幼童軍領袖／管理員更新角色及細緻權限
       if(getRoleLevel(user.role)<40) return jsonResponse({success:false,error:'權限不足'});
       return handleUpdateUserRole(body.target_ymis,body.new_role,body.can_tick,ymis, body.allowed_badges, body.squad, body.squad_role);
     }
@@ -882,10 +882,10 @@ function doPost(e){
       return handleUpdateUserRole(body.target_ymis,body.new_role||null,body.can_tick,ymis, body.allowed_badges);
     }
     if(action==='updateConfig'){
-      // allow_member_view_others 可由團長以上設定，其他設定需管理員
+      // allow_member_view_others 可由旅長以上設定，其他設定需管理員
       const key=body.key;
       if(key==='allow_member_view_others' || key==='member_progress_scope' || key==='allow_squad_comparison' || key==='allow_member_requests'){
-        if(getRoleLevel(user.role)<60) return jsonResponse({success:false,error:'需團長以上權限'});
+        if(getRoleLevel(user.role)<60) return jsonResponse({success:false,error:'需旅長以上權限'});
       }else{
         if(getRoleLevel(user.role)<80) return jsonResponse({success:false,error:'需管理員權限'});
       }
@@ -1033,7 +1033,7 @@ function handleSuperLogin(body){
 }
 
 // 重設／直接設定密碼（領袖在用戶管理操作）：
-// - managerUser：操作者（doPost 已驗證 token）；只可為「自己可管理角色」的用戶重設（支部領袖→成員……）
+// - managerUser：操作者（doPost 已驗證 token）；只可為「自己可管理角色」的用戶重設（幼童軍領袖→成員……）
 // - newPassword：留空＝預設 1234；填寫＝領袖直接指定新密碼（成員忘記密碼又無登記電郵時用）
 // - 純成員（只在成員名單、無帳號）：設定密碼時即場開通帳號（角色 member）
 // - 已停用帳號：先要求「重新啟用」；並只寫入「啟用中」的列（舊版重複列會寫錯列的 bug 已修）
@@ -1131,7 +1131,7 @@ function handleChangePassword(ymis,oldP,newP){
   return jsonResponse({success:false,error:'原密碼錯誤'});
 }
 function handleApply(ymis,name,email,role,branch){
-  // （對齊 VSBADGE）：成員／領袖都可自行申請；角色嚴格驗證，只限 member / branch_leader。
+  // ：成員／領袖都可自行申請；角色嚴格驗證，只限 member / branch_leader。
   // 領袖免 YMIS（用電郵登入），領袖申請一律忽略 YMIS。
   ymis=String(ymis||'').trim(); name=safeSheetText(name,100);
   email=String(email||'').trim().substring(0,160); branch=safeSheetText(branch,100);
@@ -1170,9 +1170,9 @@ function handleGetApplications(){
   return jsonResponse({success:true,applications:apps});
 }
 function handleReviewApplication(appId,decision,note,manager,tempPassword){
-  // （對齊 VSBADGE）：按申請人要求的角色開戶；若審批者權限層級不能設定該角色則退回 member
-  // （批准後團長仍可在「用戶管理」調整）。回應加 final_role + temp_password，首次登入須更改密碼。
-  // 審批只可開出 member／branch_leader（即使有人手改 Sheet 寫入 group_leader／admin 亦會退回 member，配合團長唯一鎖）
+  // ：按申請人要求的角色開戶；若審批者權限層級不能設定該角色則退回 member
+  // （批准後旅長仍可在「用戶管理」調整）。回應加 final_role + temp_password，首次登入須更改密碼。
+  // 審批只可開出 member／branch_leader（即使有人手改 Sheet 寫入 group_leader／admin 亦會退回 member，配合旅長唯一鎖）
   if(decision!=='approved' && decision!=='rejected') return jsonResponse({success:false,error:'無效決定'});
   const sheet=tbl('Applications');
   if(!sheet) return jsonResponse({success:false,error:'找不到 Applications 工作表'});
@@ -1234,10 +1234,10 @@ function handleReviewApplication(appId,decision,note,manager,tempPassword){
 function handleUpdateUserRole(targetYmis,newRole,canTick,managerYmis, allowedBadges, squad, squadRole, managerOverride){
   const manager=managerOverride||getUser(managerYmis);
   if(!manager) return jsonResponse({success:false,error:'找不到管理員'});
-  // super_admin 可以改任何人，admin 可以改團長/支部領袖/成員，團長可改支部領袖/成員，支部領袖可改成員
+  // super_admin 可以改任何人，admin 可改旅長／幼童軍領袖／成員，旅長可改幼童軍領袖／成員，幼童軍領袖可改成員
   if(manager.role!=='super_admin' && !canManageRole(manager.role,newRole) && manager.role!=='admin') return jsonResponse({success:false,error:'權限不足，你的等級不可設定此角色'});
-  // 團長全團只可有一位（換人流程：先將現任轉為其他角色，再升新人）
-  // 拒絕時回傳現任團長姓名（gslLockMsg）；更新同一人時以 exclude 自己避免自鎖
+  // 旅長全團只可有一位（換人流程：先將現任轉為其他角色，再升新人）
+  // 拒絕時回傳現任旅長姓名（gslLockMsg）；更新同一人時以 exclude 自己避免自鎖
   if(newRole==='group_leader'){
     const cur=findActiveGroupLeader(targetYmis);
     if(cur) return jsonResponse({success:false,error:gslLockMsg(cur.name)});
@@ -1379,7 +1379,7 @@ function handleSave(changes, confirmer){
   let processed=0;
   changes.forEach(function(c){
     const data=sheet.getDataRange().getValues(); let found=false;
-    // 新版（對齊 VSBADGE）：只有請求「明確帶有」 note 欄才會改寫備註；
+    // 新版：只有請求「明確帶有」 note 欄才會改寫備註；
     // 舊前端不送 note 時保留 Sheet 內既有備註，不會被清空。
     const hasNote=Object.prototype.hasOwnProperty.call(c,'note');
     const noteValue=hasNote?safeSheetText(c.note,500):'';
@@ -1446,8 +1446,8 @@ function createUserRecord(body,mgr){
   if(dupErr) return {success:false,error:dupErr};
   // YMIS 已在成員名單（純成員）→ 允許「開通帳號」（建立 Users 列，成員名單不會重複加入）
   const alreadyInMemberList=!!findMemberListRow(ymis);
-  // 團長全團只可有一位
-  // 拒絕時回傳現任團長姓名（gslLockMsg，不外洩內部 L 編號）；同一批中的多列團長亦依序被鎖
+  // 旅長全團只可有一位
+  // 拒絕時回傳現任旅長姓名（gslLockMsg，不外洩內部 L 編號）；同一批中的多列旅長亦依序被鎖
   if(role==='group_leader'){
     const cur=getActiveGroupLeader();
     if(cur) return {success:false,error:gslLockMsg(cur.name)};
@@ -1475,7 +1475,7 @@ function createUserRecord(body,mgr){
 function handleAddUser(body,mgr){ return jsonResponse(createUserRecord(body,mgr)); }
 // 批量開戶（CSV／JSON 匯入）。逐列呼叫 createUserRecord：
 // - 領袖列留空 ymis 自動編配內部 L 編號（用電郵登入）
-// - 若已有活躍團長，重複開立 group_leader 的列會被拒絕並回傳現任團長姓名
+// - 若已有活躍旅長，重複開立 group_leader 的列會被拒絕並回傳現任旅長姓名
 // - branch_leader 只能開立 member（權限收緊，於 createUserRecord 內執行）
 // 回傳 per-row 結果（success 總數 / skipped 總數），前端可即時標紅失敗列。
 function handleBulkAddUsers(users,mgr){
@@ -1528,7 +1528,7 @@ function handleDeactivateUser(body,signedManager){
 
 // ===== 新增：重新啟用／修改成員資料／刪除成員 =====
 // 重新啟用已停用帳號：status 回 active、密碼重設為預設（1234）並強制首次登入改密、
-// 成員名單若在停用時被移除則補回。團長唯一鎖同樣適用（不可啟用第二位團長）。
+// 成員名單若在停用時被移除則補回。旅長唯一鎖同樣適用（不可啟用第二位旅長）。
 function handleReactivateUser(body,signedManager){
   const targetYmis=String(body.target_ymis||'').trim();
   if(!targetYmis) return jsonResponse({success:false,error:'請提供 YMIS'});
@@ -1542,7 +1542,7 @@ function handleReactivateUser(body,signedManager){
   if(isActiveStatus(row.status)) return jsonResponse({success:false,error:'此帳號已是啟用狀態'});
   if(manager.ymis===targetYmis) return jsonResponse({success:false,error:'不能對自己操作'});
   if(!canManageUser(manager,row.role)) return jsonResponse({success:false,error:'權限不足，不可啟用此角色的帳號'});
-  // 團長全團只可有一位 —— 重新啟用團長亦受鎖
+  // 旅長全團只可有一位 —— 重新啟用旅長亦受鎖
   if(row.role==='group_leader'){
     const cur=findActiveGroupLeader(targetYmis);
     if(cur) return jsonResponse({success:false,error:gslLockMsg(cur.name)});
@@ -1766,7 +1766,7 @@ function handleDeleteLogRecord(recordId, recorderYmis){
 }
 
 function handleSaveOtherBadge(records){
-  // 新版（對齊 VSBADGE）：逐欄更新，修正舊版把「完成日期」寫入第 3 欄（獎章名稱欄）的 bug。
+  // 新版：逐欄更新，修正舊版把「完成日期」寫入第 3 欄（獎章名稱欄）的 bug。
   // 其他獎章表欄位：col1=YMIS, col2=獎章ID, col3=獎章名稱, col4=完成日期, col5=證書編號, col6=備註, col7=更新時間
   // - uncomplete=true → 刪除該列（取消完成）
   // - 只有請求明確帶有 note 才改寫備註（舊前端不送 note 時保留原有備註）
@@ -2103,7 +2103,7 @@ function ecRoute(action,body,user,ymis){
   }
 
   if(action==='ecAccessLog'){
-    if(!user || getRoleLevel(user.role)<60) return jsonResponse({success:false,error:'需團長以上權限查看'});
+    if(!user || getRoleLevel(user.role)<60) return jsonResponse({success:false,error:'需旅長以上權限查看'});
     var sh=tbl(EC_ACCESS_SHEET);
     var out=[];
     if(sh){ var d=sh.getDataRange().getValues(); for(var i=Math.max(1,d.length-200);i<d.length;i++) out.push(d[i]); }
@@ -3031,7 +3031,7 @@ function menuCreateDownstreamUser(){
   if(ymis===null) return '';
   const name=linkPrompt('為下游開戶 3/6','姓名：');
   if(name===null) return '';
-  const email=linkPrompt('為下游開戶 4/6','Email（領袖／執委必填，團員可留空）：');
+  const email=linkPrompt('為下游開戶 4/6','Email（領袖必填，幼童軍成員可留空）：');
   if(email===null) return '';
   const role=linkPrompt('為下游開戶 5/6','角色：member / exec_committee / branch_leader / group_leader / admin');
   if(role===null) return '';

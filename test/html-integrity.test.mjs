@@ -1,4 +1,4 @@
-// 部署面一致性守護測試（v6.0 對齊 roverbadge 改動）
+// 部署面一致性守護測試（v6.0 對齊共用整合改動）
 // 掃描「會公開出去嘅檔案」：index.html（前端）、apps-script/Code.gs（前端提供下載俾旅團部署）、
 // api/health.js、api/ecosystem.js、api/proxy.js、api/troops.js（Vercel 公開回應）。
 // 驗證：

@@ -520,10 +520,10 @@ console.log('\n=== 超管隱藏（leaf 完全冇 SUPER_KEY）＋ APP ADMIN 層�
     // Script Properties：唔可以留登入時間戳
     assert.equal(b.PropertiesService.getScriptProperties().getProperty('SUPER_ADMIN_LAST_LOGIN'), null, '唔可以留 SUPER_ADMIN_LAST_LOGIN');
     // 超管操作（確認進度）落表一律以中性 system 現身
-    const saved = post({ action: 'save', token: su.token, confirmer: 'sheep', changes: [{ ymis: '1234567890', itemId: 'L1', date: '2026-01-01' }] });
+    const saved = post({ action: 'save', token: su.token, confirmer: 'sheep', changes: [{ ymis: '1234567890', itemId: '1.1.1', date: '2026-01-01' }] });
     assert.equal(saved.success, true, saved.error);
     const pRows = b.__ss.getSheetByName('進度追蹤').getDataRange().getValues();
-    const prow = pRows.find((r) => String(r[0]) === '1234567890' && String(r[1]) === 'L1');
+    const prow = pRows.find((r) => String(r[0]) === '1234567890' && String(r[1]) === '1.1.1');
     assert.ok(prow, '進度要寫到');
     assert.equal(String(prow[4]), 'system', '確認者欄要係中性 system');
   });

@@ -50,23 +50,28 @@ test('Scout Admin apply contract: shared inbox helper, no SUPER_KEY forwarding',
   assert.match(html, /scriptUrl:su/);
 });
 
-test('items.json has no official-badge placeholder text and includes missing Cub items', () => {
+test('items.json separates the 2026 Cub catalogue from preserved legacy Cub items', () => {
   const raw = fs.readFileSync('data/items.json', 'utf8');
   assert.equal(raw.includes('詳細考驗要求請在資料庫開啟'), false, 'placeholder wording removed');
 
   const otherIds = new Set(items.otherBadges.map(b => b.id));
-  assert.equal(items.otherBadges.length, 41, '40 activity badges plus Scout Link Badge');
-  assert.ok(otherIds.has('ACT-SCOUT-LINK'), 'Scout Link Badge is included');
-
+  assert.equal(items.otherBadges.length, 49, '2026 catalogue: activity badge options plus Religion and Scout Link');
+  assert.ok(otherIds.has('A42'));
+  assert.ok(otherIds.has('A09-CHILD-PROTECTION'));
+  assert.ok(otherIds.has('A25-SOLAR'));
   for (const badge of items.otherBadges) {
     assert.ok((badge.desc || '').length > 10, `${badge.id} has a real summary`);
-    assert.ok((badge.detail || '').length > 20, `${badge.id} has real requirements`);
+    assert.ok((badge.detail || '').length > 10, `${badge.id} has requirement/source text`);
+    assert.equal(badge.scheme, '2026');
   }
 
-  const sci = items.badges.find(b => b.id === 'L3').segments.find(s => s.code === 'L3-SCIENCE');
+  const legacyIds = new Set(items.legacyOtherBadges.map(b => b.id));
+  assert.equal(items.legacyOtherBadges.length, 41, 'old 40 activity badges plus Scout Link remain archived');
+  assert.ok(legacyIds.has('ACT-SCOUT-LINK'));
+  const sci = items.legacyBadges.find(b => b.id === 'L3').segments.find(s => s.code === 'L3-SCIENCE');
   const sciIds = new Set(sci.items.map(i => i.id));
   for (const id of ['L3-SCI-STAR', 'L3-SCI-GARDEN', 'L3-SCI-WEATHER', 'L3-SCI-NATURE']) {
-    assert.ok(sciIds.has(id), `missing L3 science option restored: ${id}`);
+    assert.ok(sciIds.has(id), `legacy L3 science option remains available for history: ${id}`);
   }
 });
 
@@ -79,7 +84,7 @@ test('legacy transition data records P022/2026 Cub transition cases', () => {
     assert.ok(mappings.some(m => m.id === id), `contains transition case ${id}`);
   }
   assert.ok((items.legacyTransition.quickTransfers || []).length >= 4, 'leader-selectable transition records available');
-  assert.ok((items.legacyTransition.preservedChecklistItems || []).length >= collectItems(items.badges).filter(x => /^L/.test(x.id)).length - 5, 'old checklist ids are preserved for history');
+  assert.ok((items.legacyTransition.preservedChecklistItems || []).length >= collectItems(items.legacyBadges).filter(x => /^L/.test(x.id)).length - 5, 'old checklist ids are preserved for history');
 });
 
 test('Apps Script preserves notes and writes Other Badge columns correctly', () => {

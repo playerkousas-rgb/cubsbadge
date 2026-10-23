@@ -210,8 +210,8 @@ const UPSTREAM_KEY = 'vs_upstream_branch_key_0001';
 const DOWNSTREAM_KEY = 'vs_downstream_progress_key_0002';
 
 function buildPair() {
-  const up = makeNode({ name: '第 82 旅 深資（團）', apikey: UPSTREAM_KEY, url: UPSTREAM_URL });
-  const down = makeNode({ name: '第 82 旅 深資（進度）', apikey: DOWNSTREAM_KEY, url: DOWNSTREAM_URL });
+  const up = makeNode({ name: '第 82 旅 幼童軍（團）', apikey: UPSTREAM_KEY, url: UPSTREAM_URL });
+  const down = makeNode({ name: '第 82 旅 幼童軍（進度）', apikey: DOWNSTREAM_KEY, url: DOWNSTREAM_URL });
   up.context.initializeSheets();
   down.context.initializeSheets();
   return { up, down };
@@ -245,7 +245,7 @@ test('閂口後：直接登入／申請／load 全部拒絕，只收 sig', () =>
   assert.equal(apply.success, false);
   assert.equal(g.doGet({ parameter: { action: 'load' } }).success, false, '閂口後 GET load 亦拒絕');
   // 舊 API key 路徑（save）喺閂口後唔再生效
-  const save = g.doPost({ parameter: {}, postData: { contents: JSON.stringify({ action: 'save', apikey: DOWNSTREAM_KEY, changes: [{ ymis: '1234567890', itemId: 'L1', date: '2026-01-01' }] }) } });
+  const save = g.doPost({ parameter: {}, postData: { contents: JSON.stringify({ action: 'save', apikey: DOWNSTREAM_KEY, changes: [{ ymis: '1234567890', itemId: '1.1.1', date: '2026-01-01' }] }) } });
   assert.equal(save.success, false, '閂口後只收 sig，apikey 直接寫入要被拒');
 });
 
@@ -264,16 +264,16 @@ test('上游登記下游 SHEET KEY 後，sig 請求可讀可寫下游', () => {
   assert.match(String(ping.node), /進度/);
 
   // 寫：經 sig 落下游寫進度
-  const saved = up.context.callDownstream('progress', 'save', { changes: [{ ymis: '1234567890', itemId: 'L1', date: '2026-02-02' }], confirmer: '上游團長', on_behalf: '1111111111' });
+  const saved = up.context.callDownstream('progress', 'save', { changes: [{ ymis: '1234567890', itemId: '1.1.1', date: '2026-02-02' }], confirmer: '上游旅長', on_behalf: '1111111111' });
   assert.equal(saved.success, true);
   assert.equal(saved.processed, 1);
   const rows = sheetRows(down, '進度追蹤');
-  assert.equal(rows.some(r => String(r[0]) === '1234567890' && String(r[1]) === 'L1'), true, '進度應已寫入下游工作表');
+  assert.equal(rows.some(r => String(r[0]) === '1234567890' && String(r[1]) === '1.1.1'), true, '進度應已寫入下游工作表');
 
   // 讀：上游可讀下游全量
   const load = up.context.callDownstream('progress', 'load', {});
   assert.equal(load.success, true);
-  assert.equal(load.flatProgress['1234567890'].L1, '2026-02-02');
+  assert.equal(load.flatProgress['1234567890']['1.1.1'], '2026-02-02');
 
   // 掣在上游：由上游閂下游直接入口
   const closed = up.context.setDownstreamLocalLogin('progress', false);
@@ -287,14 +287,14 @@ test('上游登記下游 SHEET KEY 後，sig 請求可讀可寫下游', () => {
 test('sig 防護：錯誤 key、竄改 body、過期時間戳、重放 nonce、白名單外 action 全部被拒', () => {
   const { up, down } = buildPair();
   up.context.registerDownstream('progress', DOWNSTREAM_URL, DOWNSTREAM_KEY, '進度節點');
-  const body = { action: 'save', changes: [{ ymis: '1234567890', itemId: 'L1', date: '2026-03-03' }], on_behalf: '1111111111' };
+  const body = { action: 'save', changes: [{ ymis: '1234567890', itemId: '1.1.1', date: '2026-03-03' }], on_behalf: '1111111111' };
   const raw = JSON.stringify(body);
 
   const wrongKey = signRequest(down, 'save', raw, 'vs_not_the_registered_key');
   assert.equal(postTo(down, body, wrongKey).success, false, '用錯 key 簽署必須被拒');
 
   const good = signRequest(down, 'save', raw);
-  const tampered = { ...body, changes: [{ ymis: '9999999999', itemId: 'L1', date: '2026-03-03' }] };
+  const tampered = { ...body, changes: [{ ymis: '9999999999', itemId: '1.1.1', date: '2026-03-03' }] };
   assert.equal(postTo(down, tampered, good).success, false, '竄改 body 必須被拒');
 
   const expired = signRequest(down, 'save', raw, undefined, Date.now() - 10 * 60 * 1000);
@@ -369,19 +369,19 @@ test('開戶：上游揀團開戶，經 sig 落下游寫（兩邊同一 password
   assert.equal(String(downstreamHash.data[downstreamHash.map.password_hash]), sha256('4321'));
   assert.equal(downstreamHash.user.role, 'branch_leader');
   // 下游已閂口，但上游仍可直接寫下游進度
-  assert.equal(up.context.callDownstream('progress', 'save', { changes: [{ ymis: '2345678901', itemId: 'L1', date: '2026-04-04' }] }).success, true);
+  assert.equal(up.context.callDownstream('progress', 'save', { changes: [{ ymis: '2345678901', itemId: '1.1.1', date: '2026-04-04' }] }).success, true);
   // 重複推送同一帳戶 → upsert 更新而非重複開戶
   const again = up.context.createAccountForDownstream('progress', { ymis: '2345678901', name: '李四', role: 'branch_leader', password: '4321' }, { ymis: '1111111111', name: '管理員', role: 'admin' });
   assert.equal(again.success, false, '上游不可重複開同一帳戶');
   // 冇帶 branch 的同步不可洗走下游既有支部
-  assert.equal(up.context.callDownstream('progress', 'upsertUser', { user: { ymis: '2345678901', name: '李四', role: 'branch_leader', branch: '第 82 旅深資' }, on_behalf: '1111111111' }).success, true);
-  assert.equal(down.context.findUserRecord('2345678901').user.branch, '第 82 旅深資');
+  assert.equal(up.context.callDownstream('progress', 'upsertUser', { user: { ymis: '2345678901', name: '李四', role: 'branch_leader', branch: '第 82 旅幼童軍' }, on_behalf: '1111111111' }).success, true);
+  assert.equal(down.context.findUserRecord('2345678901').user.branch, '第 82 旅幼童軍');
   const mirrored = up.context.callDownstream('progress', 'upsertUser', { user: { ymis: '2345678901', name: '李四（改名）', role: 'branch_leader' }, on_behalf: '1111111111' });
   assert.equal(mirrored.success, true);
   assert.equal(mirrored.action, 'updated');
   assert.equal(mirrored.password_kept, true, '冇帶 hash 時必須保留原密碼');
   assert.equal(down.context.findUserRecord('2345678901').user.name, '李四（改名）');
-  assert.equal(down.context.findUserRecord('2345678901').user.branch, '第 82 旅深資', '冇帶 branch 不可洗走既有支部');
+  assert.equal(down.context.findUserRecord('2345678901').user.branch, '第 82 旅幼童軍', '冇帶 branch 不可洗走既有支部');
   assert.equal(String(down.context.findUserRecord('2345678901').data[down.context.findUserRecord('2345678901').map.password_hash]), sha256('4321'));
   assert.equal(sheetRows(down, 'Users').filter(r => String(r[0]) === '2345678901').length, 1, '不可出現重複列');
 });

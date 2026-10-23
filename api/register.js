@@ -2,7 +2,7 @@
 //
 // 公開「新旅團接入申請」（submitRegistration）：未接入旅團提交申請，
 // 只往伺服器端固定嘅 Scout Admin 收件匣（SCOUT_ADMIN_API 一族環境變數）
-// 寫入「申請記錄」待審核 — 對齊 ScoutBadge / vsbadge / roverbadge。
+// 寫入「申請記錄」待審核 — 對齊共用 APP ADMIN 申請協定。
 //
 // 紅線：
 //  - 申請人唔使（亦唔會得到）SUPER_KEY；本端點唔驗 SUPER_KEY。

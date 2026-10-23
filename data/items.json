@@ -1,14 +1,1674 @@
 {
   "meta": {
-    "version": "6.0.0",
-    "base": "2025年8月《幼童軍訓練綱要》網上擬定簡易版；新修訂綱要（2026年8月9日版本，2026年8月15日生效）及過渡安排按 P022/2026 另列",
-    "updated": "2026-09-30",
-    "source": "https://prog.scouting.org.hk/cub/wp-content/uploads/2025/08/%E5%B9%BC%E7%AB%A5%E8%BB%8D%E8%A8%93%E7%B7%B4%E7%B6%B1%E8%A6%812025%E5%B9%B48%E6%9C%88%E7%B6%B2%E4%B8%8A%E6%93%AC%E5%AE%9A%E7%B0%A1%E6%98%93%E7%89%88.pdf#page=9",
-    "sourceZh": "https://prog.scouting.org.hk/cub/wp-content/uploads/2025/08/%E5%B9%BC%E7%AB%A5%E8%BB%8D%E8%A8%93%E7%B7%B4%E7%B6%B1%E8%A6%812025%E5%B9%B48%E6%9C%88%E7%B6%B2%E4%B8%8A%E6%93%AC%E5%AE%9A%E7%B0%A1%E6%98%93%E7%89%88.pdf#page=9",
-    "newSchemeSource": "https://drive.google.com/file/d/19StE5sobEUb8DOSkW0e57T0j784S6-R5/view",
-    "transitionSource": "https://www.scout.org.hk/uploads/tc/circulars/23585/p022-26.pdf"
+    "version": "7.0.0",
+    "scheme": "幼童軍訓練綱要（第十版，2026年8月9日版本）",
+    "schemeEdition": "10th edition, 2026-08-09",
+    "effectiveDate": "2026-08-15",
+    "updated": "2026-10-23",
+    "source": "https://drive.usercontent.google.com/download?id=19StE5sobEUb8DOSkW0e57T0j784S6-R5&export=download",
+    "sourcePage": "https://prog.scouting.org.hk/cub/%E6%96%B0%E8%A8%93%E7%B7%B4%E7%B6%B1%E8%A6%81/",
+    "transitionSource": "https://www.scout.org.hk/uploads/tc/circulars/23585/p022-26.pdf",
+    "formsSource": "https://www.scout.org.hk/tc/circulars-forms/forms/index.html?type=8",
+    "listSource": "data/items.json",
+    "legacyPolicy": "legacyBadges、legacyOtherBadges 及 LEGACY-CUB… 只作歷史紀錄；舊版紀錄／不計完成度，不可刪除或自動映射。",
+    "activityBadgeNote": "官方目錄有42個編號項目；「積極公民」第9項及「地球部落」第25項各拆成可獨立記錄的徽章，因此系統共有49個現行徽章紀錄類型。",
+    "markerGuidance": "＊：中途加入幼童軍的必修基礎課程；＃：符合「小草蜢章」條件者可按綱要豁免指定內容。4.4.1 的豁免只適用於 d 部分（童軍先修章）。",
+    "markerGuidance_en": "*: required foundation content for members joining mid-stage; #: specified content may be exempted under the Grasshopper Scout Badge rule. In 4.4.1, the Scout Link exemption applies only to part d."
   },
   "badges": [
+    {
+      "id": "MEMBERSHIP",
+      "name": "會員章",
+      "name_en": "Membership Badge",
+      "icon": "🐺",
+      "scheme": "2026",
+      "description": "完成幼童軍支部會員章課程；建議在入團後三個月內完成。",
+      "segments": [
+        {
+          "code": "M-A",
+          "name": "a. 了解童軍運動的起源",
+          "category": "SCOUT_FAMILY",
+          "items": [
+            {
+              "id": "a",
+              "name": "了解童軍運動的起源",
+              "detail": "i. 知道貝登堡勳爵的生平。\nii. 知道貝登堡勳爵在白浪島與青少年的第一次實驗露營。"
+            }
+          ]
+        },
+        {
+          "code": "M-B",
+          "name": "b. 認識童軍家庭",
+          "category": "SCOUT_FAMILY",
+          "items": [
+            {
+              "id": "b",
+              "name": "認識童軍家庭",
+              "detail": "i. 香港童軍運動共有5個支部。\nii. 分辨旅團領袖的肩章。"
+            }
+          ]
+        },
+        {
+          "code": "M-C",
+          "name": "c. 誓詞、規律和銘言",
+          "category": "SCOUT_FAMILY",
+          "items": [
+            {
+              "id": "c",
+              "name": "誓詞、規律和銘言",
+              "detail": "i. 說出幼童軍誓詞和規律。\nii. 在日常生活中實踐誓詞和規律。"
+            }
+          ]
+        },
+        {
+          "code": "M-D",
+          "name": "d. 認識幼童軍徽章",
+          "category": "SCOUT_FAMILY",
+          "items": [
+            {
+              "id": "d",
+              "name": "認識幼童軍徽章",
+              "detail": "i. 認識幼童軍進度性獎章。\nii. 認識幼童軍活動徽章。"
+            }
+          ]
+        },
+        {
+          "code": "M-E",
+          "name": "e. 森林故事",
+          "category": "SCOUT_FAMILY",
+          "items": [
+            {
+              "id": "e",
+              "name": "森林故事",
+              "detail": "i. 知道毛吉利加入狼群的故事。\nii. 知道森林故事中其他人物（動物）的名稱。"
+            }
+          ]
+        },
+        {
+          "code": "M-F",
+          "name": "f. 口號和手號",
+          "category": "SCOUT_FAMILY",
+          "items": [
+            {
+              "id": "f",
+              "name": "口號和手號",
+              "detail": "認識下列口號及手號，並能迅速地作出相應動作：\ni. 立正（Alert）。\nii. 休息（At Ease）。\niii. 集隊（Fall In）。\niv. 解散（Fall Out, Dismiss）。\nv. 幼童軍團（Pack）。"
+            }
+          ]
+        },
+        {
+          "code": "M-G",
+          "name": "g. 禮儀",
+          "category": "SCOUT_FAMILY",
+          "items": [
+            {
+              "id": "g",
+              "name": "禮儀",
+              "detail": "i. 敬禮：認識全禮、半禮、握手禮、注目禮何時使用及正確方法手勢。\nii. 團呼：懂得團呼正確方法及口號，參與團呼及排練。\niii. 展旗：知道展旗意義、程序及參與幼童軍團展旗儀式。\niv. 宣誓：知道宣誓意義，參與宣誓儀式排練。\nv. 制服：知道幼童軍制服正確式樣及各種徽章正確縫製位置。"
+            }
+          ]
+        },
+        {
+          "code": "M-H",
+          "name": "h. 認識所屬旅團",
+          "category": "SCOUT_FAMILY",
+          "items": [
+            {
+              "id": "h",
+              "name": "認識所屬旅團",
+              "detail": "知道所屬童軍旅的旅號、所屬區、地域及主辦機構。"
+            }
+          ]
+        },
+        {
+          "code": "M-I",
+          "name": "i. 保護童軍成員免受傷害",
+          "category": "CARING",
+          "items": [
+            {
+              "id": "i",
+              "name": "保護童軍成員免受傷害",
+              "detail": "認識基本措施去保護自己及夥伴免受傷害。"
+            }
+          ]
+        }
+      ],
+      "officialOrder": 0,
+      "completionNote": "會員章是宣誓及佩戴世界童軍會員章的基礎。"
+    },
+    {
+      "id": "P1",
+      "name": "幼童軍體驗章",
+      "name_en": "Cub Scout Experience Badge",
+      "icon": "🌱",
+      "scheme": "2026",
+      "description": "第一個進度性獎章，適合年滿六歲而考獲會員章的成員；如已獲小童軍「小草蜢章」，完成會員章後可直接獲得此章。",
+      "segments": [
+        {
+          "code": "P1-SKILLS",
+          "name": "（一）童軍技能章",
+          "category": "SCOUT_SKILLS",
+          "items": [
+            {
+              "id": "1.1.1",
+              "name": "感官自然探索",
+              "detail": "a. 在校園或公園以視覺及聽覺完成一次「感官探索之旅」（看見3樣事物及聽見2種聲音）。\nb. 說出一項在自然環境中應遵守的安全行為，以及一項不應做的危險行為（如不奔跑、不攀爬、與成人同行）。"
+            },
+            {
+              "id": "1.1.2",
+              "name": "背包自理",
+              "detail": "a. 認識活動日應自備的3樣個人物品（如水、手巾、帽）及其用途。\nb. 於活動前後自行檢點及收拾物品，保持整潔。\nc. 說出一項保護個人物品的小貼士（如貼姓名、分類收納）。",
+              "markers": [
+                "*"
+              ]
+            },
+            {
+              "id": "1.1.3",
+              "name": "天氣觀察",
+              "detail": "a. 辨識當日天氣（晴、雨、多雲、炎熱、清涼）並選擇合適衣物／配件，說出理由。\nb. 繪畫「我的活動日穿著圖」。\nc. 說出天氣轉變時的一項備用安排（如備傘、補水、穿外套）。",
+              "markers": [
+                "*"
+              ]
+            }
+          ],
+          "part": "甲"
+        },
+        {
+          "code": "P1-CARING",
+          "name": "（二）關己愛人章",
+          "category": "CARING",
+          "items": [
+            {
+              "id": "1.2.1",
+              "name": "生活規律",
+              "detail": "a. 製作「一天日程表」，內容包括起床、上學、活動、休息及睡覺。\nb. 說出兩個令自己更有精神的好習慣，如早睡及吃早餐等。\nc. 一週後簡短分享實踐情況。"
+            },
+            {
+              "id": "1.2.2",
+              "name": "小幫手任務",
+              "detail": "a. 連續一週在家／學校完成3次簡單幫手任務，如整理書包、分類回收或遞送物資等；說出在幫手時需注意的一項安全或禮貌，例如先徵求同意、留意自身安全，或說「謝謝」。"
+            },
+            {
+              "id": "1.2.3",
+              "name": "健康點心盒",
+              "detail": "a. 設計及準備一次適合活動日用的點心盒，包括飲用水及至少一項健康食物。\nb. 說出選擇該食物的原因，如補充能量或補充水分等。\nc. 明白準備食物前清潔手部與用具的重要性。"
+            }
+          ],
+          "part": "甲"
+        },
+        {
+          "code": "P1-COUNTRY",
+          "name": "（三）國家與社區章",
+          "category": "COUNTRY",
+          "items": [
+            {
+              "id": "1.3.1",
+              "name": "我的社區地圖",
+              "detail": "a. 在地圖上標示家、學校／旅部及公園三個地點。\nb. 說出一條常用路線或交通方式。\nc. 分享一項在社區行走時應有的禮貌或安全注意事項（如安靜排隊、在走廊慢行）。"
+            },
+            {
+              "id": "1.3.2",
+              "name": "社區體驗",
+              "detail": "a. 參觀一個社區設施（如公園、圖書館、運動場或回收點）。\nb. 說出一項愛護公共設施的做法（如垃圾入桶及按規則使用）。"
+            },
+            {
+              "id": "1.3.3",
+              "name": "中國節日與由來",
+              "detail": "a. 選一個中國傳統或本地節慶（如中秋、端午、新春或重陽等），以圖畫或手作紀錄其食物或習俗一項。\nb. 分享家庭在該節日的一個做法或回憶；說出在慶祝時需要注意的一項安全或禮儀，例如注意人群安全、不推擠，或保持禮貌、不喧嘩。"
+            }
+          ],
+          "part": "甲"
+        },
+        {
+          "code": "P1-FAMILY",
+          "name": "（四）童軍家庭章",
+          "category": "SCOUT_FAMILY",
+          "items": [
+            {
+              "id": "1.4.1",
+              "name": "認識小隊合作",
+              "detail": "a. 進行兩個合作小遊戲，能說出一條「我們的遊戲約定」（如輪流、聆聽、互助）。\nb. 在遊戲後讚賞或鼓勵隊友各一次。\nc. 分享一次與同伴解決小分歧的方法。"
+            },
+            {
+              "id": "1.4.2",
+              "name": "旅巾與徽章小觀察",
+              "detail": "a. 觀察並指出領袖或成員身上兩個不同標誌或裝備。\nb. 提出一條關於童軍活動的問題，並記錄得到的回答。\nc. 繪畫自己最想嘗試的一項童軍活動圖畫。",
+              "markers": [
+                "*"
+              ]
+            },
+            {
+              "id": "1.4.3",
+              "name": "團呼動作與隊形",
+              "detail": "a. 在領袖帶領下練習團呼、口號與手號時應有的反應及動作。\nb. 能在領袖口令下快速完成集合及其相關動作。",
+              "markers": [
+                "*"
+              ]
+            }
+          ],
+          "part": "甲"
+        }
+      ],
+      "officialOrder": 1,
+      "coreItemCount": 12
+    },
+    {
+      "id": "P2",
+      "name": "幼童軍歷奇章",
+      "name_en": "Cub Scout Adventure Badge",
+      "icon": "🧭",
+      "scheme": "2026",
+      "description": "第二個進度性獎章。完成甲部核心範疇，並在乙部三個興趣範疇中選兩個，各完成至少一個指定活動徽章。",
+      "segments": [
+        {
+          "code": "P2-SKILLS",
+          "name": "（一）童軍技能章",
+          "category": "SCOUT_SKILLS",
+          "items": [
+            {
+              "id": "2.1.1",
+              "name": "追蹤",
+              "detail": "c. 認識追蹤符號。\nd. 跟隨一些追蹤符號作一次追蹤活動。\ne. 繪製一個追蹤符號的圖表或利用天然物資製作一個追蹤符號的模型。",
+              "sourceNote": "子項字母c–e依官方原文，不擅自改為a–c。"
+            },
+            {
+              "id": "2.1.2",
+              "name": "繩結",
+              "detail": "a. 認識以下結繩方法及其用途：\ni. 反手結。\nii. 平結。",
+              "markers": [
+                "*"
+              ]
+            },
+            {
+              "id": "2.1.3",
+              "name": "郊野守則",
+              "detail": "a. 認識及遵守幼童軍郊野守則。\nb. 實踐童軍活動的郊野守則。\nc. 宣揚遵守郊野守則的重要性。\nd. 到郊野公園去進行一次活動。\ne. 認識郊野公園的設施。",
+              "markers": [
+                "*"
+              ]
+            }
+          ],
+          "part": "甲"
+        },
+        {
+          "code": "P2-CARING",
+          "name": "（二）關己愛人章",
+          "category": "CARING",
+          "items": [
+            {
+              "id": "2.2.1",
+              "name": "保持身體健康",
+              "detail": "a. 懂得作息時間。\nb. 適當的運動。",
+              "markers": [
+                "#"
+              ]
+            },
+            {
+              "id": "2.2.2",
+              "name": "儀容整潔",
+              "detail": "a. 懂得個人衛生的重要性，例如洗潄、沐浴等。\nb. 懂得穿著整齊及清潔的衣服／制服。\nc. 懂得將污衣放入污衣籃及清洗。",
+              "markers": [
+                "#"
+              ]
+            },
+            {
+              "id": "2.2.3",
+              "name": "認識家居安全",
+              "detail": "a. 懂得在外出時，緊記將門窗關閉。\nb. 懂得在外出時，檢查爐火是否已關閉。",
+              "markers": [
+                "#"
+              ]
+            },
+            {
+              "id": "2.2.4",
+              "name": "日行一善",
+              "detail": "完成「家務章」或完成以下內容：\na. 佈置飯桌及懂得進膳時之禮儀。\nb. 協助收晾衣服。\nc. 整理睡床。\nd. 清潔及整理一間房間。",
+              "markers": [
+                "*"
+              ],
+              "alternativeBadgeIds": [
+                "A06"
+              ]
+            },
+            {
+              "id": "2.2.5",
+              "name": "護理和救傷及保護自己",
+              "detail": "a. 懂得簡單的護理和救傷常識，包括清理和包紮小傷口。"
+            }
+          ],
+          "part": "甲"
+        },
+        {
+          "code": "P2-COUNTRY",
+          "name": "（三）國家與社區章",
+          "category": "COUNTRY",
+          "items": [
+            {
+              "id": "2.3.1",
+              "name": "香港與國家關係",
+              "detail": "a. 認識香港是中國的一部分及地理位置。",
+              "markers": [
+                "*"
+              ]
+            },
+            {
+              "id": "2.3.2",
+              "name": "國旗、國徽、國歌、區旗、區徽",
+              "detail": "a. 認識國家的國旗、國徽及國歌、區旗、區徽。",
+              "markers": [
+                "*"
+              ]
+            },
+            {
+              "id": "2.3.3",
+              "name": "升旗與國歌的禮儀",
+              "detail": "a. 認識升旗儀式和學習當國歌奏起時表現莊嚴和尊重的態度。\nb. 出席一次升國旗儀式。",
+              "markers": [
+                "*"
+              ]
+            },
+            {
+              "id": "2.3.4",
+              "name": "認識中式隊列",
+              "detail": "a. 認識及體驗中式隊列的基本動作，包括立正、敬禮、集合及解散。",
+              "markers": [
+                "*"
+              ],
+              "footnote": "隊列和升掛國旗及區旗指引（2024年6月版本）"
+            },
+            {
+              "id": "2.3.5",
+              "name": "認識社區",
+              "detail": "a. 認識居住社區名稱及地理位置。",
+              "markers": [
+                "#"
+              ]
+            }
+          ],
+          "part": "甲"
+        },
+        {
+          "code": "P2-FAMILY",
+          "name": "（四）童軍家庭章",
+          "category": "SCOUT_FAMILY",
+          "items": [
+            {
+              "id": "2.4.1",
+              "name": "認識童軍家庭",
+              "detail": "a. 簡介各支部所接納的成員之不同及相同的地方。\nb. 參與一次所屬童軍旅或童軍區舉辦之活動。",
+              "markers": [
+                "*"
+              ]
+            },
+            {
+              "id": "2.4.2",
+              "name": "森林故事",
+              "detail": "a. 說出毛吉利加入狼群後在森林生活的故事。\nb. 知道團呼的意義。",
+              "markers": [
+                "*"
+              ]
+            },
+            {
+              "id": "2.4.3",
+              "name": "誓詞和規律",
+              "detail": "a. 知道幼童軍誓詞和規律的意義。\nb. 向領袖闡述他／她在日常生活中所實踐誓詞和規律的逸事。"
+            }
+          ],
+          "part": "甲"
+        },
+        {
+          "code": "P2-INTEREST",
+          "name": "乙、興趣範疇",
+          "category": "INTEREST",
+          "items": [],
+          "part": "乙",
+          "requirement": "從「多元創藝」、「科學與大自然」、「運動與愛好」中選取兩個不同類別，各完成一個指定活動徽章。已用於較低階獎章的徽章不得重複；三級制徽章可以更高一級再用。",
+          "activityRequirement": {
+            "categories": [
+              "CREATIVE",
+              "SCIENCE",
+              "SPORTS"
+            ],
+            "distinctCategories": 2,
+            "badgesPerCategory": 1,
+            "allowedBadgeIds": [
+              "A12",
+              "A14",
+              "A20",
+              "A18",
+              "A16",
+              "A22",
+              "A23",
+              "A25-PLASTIC",
+              "A38",
+              "A35",
+              "A39",
+              "A30",
+              "A28"
+            ]
+          }
+        }
+      ],
+      "officialOrder": 2
+    },
+    {
+      "id": "P3",
+      "name": "幼童軍高級歷奇章",
+      "name_en": "Cub Scout Advanced Adventure Badge",
+      "icon": "🏕️",
+      "scheme": "2026",
+      "description": "第三個進度性獎章。完成甲部核心範疇及乙部興趣範疇；較早階段已使用的徽章不得重複，三級制章可用更高級別。",
+      "segments": [
+        {
+          "code": "P3-SKILLS",
+          "name": "（一）童軍技能章",
+          "category": "SCOUT_SKILLS",
+          "items": [
+            {
+              "id": "3.1.1",
+              "name": "繩結",
+              "detail": "a. 認識以下結繩方法及其用途：\ni. 接繩結。\nii. 繫木結。\niii. 雙套結。\niv. 稱人結。\nv. 曳木結。\nvi. 收繩。",
+              "markers": [
+                "*"
+              ]
+            },
+            {
+              "id": "3.1.2",
+              "name": "認識地圖及指南針",
+              "detail": "a. 認識十個圖例，並在地圖中找出那些圖例。\nb. 認識比例。\nc. 在地圖上找出一些圖例，然後在畫冊上繪出（或貼上照片）那圖例代表的東西。\nd. 利用指南針說出某些建築物或特定物件的位置。\ne. 利用指南針指出十六個方位。",
+              "markers": [
+                "*"
+              ]
+            },
+            {
+              "id": "3.1.3",
+              "name": "遠足",
+              "detail": "a. 了解遠足前要做的準備工作。\nb. 在領袖或其他成年人陪同下完成一段不少於三公里自然教育徑或家樂徑。",
+              "markers": [
+                "*"
+              ]
+            },
+            {
+              "id": "3.1.4",
+              "name": "度假營或露營",
+              "detail": "必須在露營或度假營中選取一項或兩項均參與：\na. 認識收拾背囊的方法，並自行收拾一個度宿的背囊。\nb. 參與一次不少於兩日一夜度假營或露營。\nc. 能遵守營地的規則，並能在活動中注意安全。"
+            }
+          ],
+          "part": "甲"
+        },
+        {
+          "code": "P3-CARING",
+          "name": "（二）關己愛人章",
+          "category": "CARING",
+          "items": [
+            {
+              "id": "3.2.1",
+              "name": "保持身體良好狀態",
+              "detail": "a. 認識有益的食物。\nb. 懂得在日常生活中能照顧自己。"
+            },
+            {
+              "id": "3.2.2",
+              "name": "護理傷者",
+              "detail": "a. 知道如何處理流鼻血、割傷或擦傷、燒傷或燙傷。\nb. 懂得在受傷時尋求成年人幫助。",
+              "markers": [
+                "*"
+              ]
+            },
+            {
+              "id": "3.2.3",
+              "name": "特別行善",
+              "detail": "a. 協助領袖處理團務。\nb. 參與一次義工活動，例如賣旗活動、探訪服務或協助攤位活動。",
+              "markers": [
+                "*"
+              ]
+            },
+            {
+              "id": "3.2.4",
+              "name": "保護自己",
+              "detail": "a. 完成「保護兒童章」。",
+              "requiredBadgeId": "A09-CHILD-PROTECTION",
+              "markers": [
+                "*"
+              ]
+            },
+            {
+              "id": "3.2.5",
+              "name": "安全知識",
+              "detail": "a. 完成下列其中一個活動徽章：\ni. 水上安全章。\nii. 道路安全章。",
+              "alternativeBadgeIds": [
+                "A08",
+                "A07"
+              ]
+            }
+          ],
+          "part": "甲"
+        },
+        {
+          "code": "P3-COUNTRY",
+          "name": "（三）國家與社區章",
+          "category": "COUNTRY",
+          "items": [
+            {
+              "id": "3.3.1",
+              "name": "國民身份的基本認識",
+              "detail": "a. 認識何謂「國民身份認同」。",
+              "markers": [
+                "*"
+              ]
+            },
+            {
+              "id": "3.3.2",
+              "name": "社區設施",
+              "detail": "a. 認識十種居住社區之周邊設施及交通設施。"
+            },
+            {
+              "id": "3.3.3",
+              "name": "學校與旅團",
+              "detail": "a. 認識學校及旅團的地理位置及周邊設施。"
+            },
+            {
+              "id": "3.3.4",
+              "name": "宗教地點與博物館",
+              "detail": "a. 認識區內的宗教建築物及／或博物館。"
+            },
+            {
+              "id": "3.3.5",
+              "name": "中華文化",
+              "detail": "a. 認識一項中華文化，例如二十四節氣、飲食文化、傳統習俗等等。"
+            },
+            {
+              "id": "3.3.6",
+              "name": "中式隊列",
+              "detail": "a. 懂得中式隊列基本動作，包括立正、敬禮、集合及解散。\nb. 懂得升國旗時應有的禮儀及儀式。",
+              "markers": [
+                "*"
+              ],
+              "footnote": "隊列和升掛國旗及區旗指引（2024年6月版本）"
+            }
+          ],
+          "part": "甲"
+        },
+        {
+          "code": "P3-FAMILY",
+          "name": "（四）童軍家庭章",
+          "category": "SCOUT_FAMILY",
+          "items": [
+            {
+              "id": "3.4.1",
+              "name": "認識童軍家庭",
+              "detail": "a. 明瞭幼童軍團內隊長及副隊長職責及工作。\nb. 參與一次童軍區或地域所舉辦之活動。",
+              "markers": [
+                "*"
+              ]
+            },
+            {
+              "id": "3.4.2",
+              "name": "森林舞蹈",
+              "detail": "a. 重溫森林故事。\nb. 跳一隻森林舞蹈。",
+              "markers": [
+                "*"
+              ]
+            },
+            {
+              "id": "3.4.3",
+              "name": "誓詞和規律",
+              "detail": "a. 知道童軍銘言及其意義。\nb. 製作一本紀錄冊，紀錄一週內做過的事如何實踐誓詞和規律。"
+            }
+          ],
+          "part": "甲"
+        },
+        {
+          "code": "P3-INTEREST",
+          "name": "乙、興趣範疇",
+          "category": "INTEREST",
+          "items": [],
+          "part": "乙",
+          "requirement": "從「多元創藝」、「科學與大自然」、「運動與愛好」中選取兩個不同類別，各完成一個指定活動徽章。已用於較低階獎章的徽章不得重複；三級制徽章可以更高一級再用。",
+          "activityRequirement": {
+            "categories": [
+              "CREATIVE",
+              "SCIENCE",
+              "SPORTS"
+            ],
+            "distinctCategories": 2,
+            "badgesPerCategory": 1,
+            "allowedBadgeIds": [
+              "A12",
+              "A14",
+              "A20",
+              "A18",
+              "A16",
+              "A13",
+              "A19",
+              "A15",
+              "A22",
+              "A23",
+              "A25-PLASTIC",
+              "A21",
+              "A24",
+              "A25-NATURE",
+              "A38",
+              "A35",
+              "A39",
+              "A30",
+              "A28",
+              "A26",
+              "A27",
+              "A32",
+              "A29",
+              "A33",
+              "A31",
+              "A34"
+            ]
+          }
+        }
+      ],
+      "officialOrder": 3
+    },
+    {
+      "id": "P4",
+      "name": "金紫荊獎章",
+      "name_en": "Golden Bauhinia Award",
+      "icon": "🏅",
+      "scheme": "2026",
+      "description": "幼童軍支部最高榮譽。完成甲部核心範疇及乙部興趣範疇；完成最後一項課程內容時必須年滿十歲半，方可遞交指定申請表。",
+      "segments": [
+        {
+          "code": "P4-SKILLS",
+          "name": "（一）童軍技能章",
+          "category": "SCOUT_SKILLS",
+          "items": [
+            {
+              "id": "4.1.1",
+              "name": "生火及原野烹飪",
+              "detail": "a. 示範如何利用天然物資及炭搭一個炭架。\nb. 嘗試在安全情況下自行生火，可使用火機及炭精助燃。\nc. 在不利用炊具的情況下將水煮沸，製作一份熱飲。\nd. 運用以下三款不同原野烹飪方式烹調食物：\ni. 用鐵網和竹枝，燒烤一些肉類。\nii. 用錫紙包好一些簡單食物，放在爐火上燒烤或爐下煨。\niii. 用蔬果作器皿（如橙、洋蔥、番茄），把中心挖空，放進雞蛋，直接放在鐵網上或爐邊烤熟。"
+            },
+            {
+              "id": "4.1.2",
+              "name": "繩結及紮作",
+              "detail": "a. 認識以下方法及其用途：\ni. 8字編結。\nii. 四方編結。\niii. 十字編結。\nb. 利用上述所學繩結，以小組合作形式完成下列其中兩項小型紮作：\ni. 旗杆架。\nii. 衣鞋架。\niii. 戰車架。\niv. 羅馬炮架。"
+            },
+            {
+              "id": "4.1.3",
+              "name": "露營",
+              "detail": "完成「露營章」或完成以下內容：\na. 進行不少於一晚的露營，並在露營中完成以下項目：\ni. 收拾一個週末露營的裝備。\nii. 協助架搭及拆卸一個營幕。\niii. 在營地中處理及保養一個已搭建之營幕。\niv. 在營地協助烹調、分發及善後一次膳食。\nv. 懂得露營的基本衞生常識及安全守則。\nvi. 協助清理露營後的場地。",
+              "alternativeBadgeIds": [
+                "A01"
+              ]
+            },
+            {
+              "id": "4.1.4",
+              "name": "認識地圖及指南針",
+              "detail": "完成「探險章」或完成以下內容：\na. 明瞭地圖或街道圖上的主要圖例，並能指出旅團及居所的位置。\nb. 能夠形容出由地圖所指的一條5公里長的路上會見到的事物。\nc. 懂得利用地圖及西維氏（Silva-type）指南針正置地圖、指出前進方向或地標的方位。",
+              "alternativeBadgeIds": [
+                "A02"
+              ]
+            },
+            {
+              "id": "4.1.5",
+              "name": "遠足",
+              "detail": "完成「探險章」或完成以下內容：\na. 懂得收拾一套戶外活動用的裝備。\nb. 和領袖一起計劃及進行一次不少於六公里之遠足活動。",
+              "alternativeBadgeIds": [
+                "A02"
+              ]
+            }
+          ],
+          "part": "甲"
+        },
+        {
+          "code": "P4-CARING",
+          "name": "（二）關己愛人章",
+          "category": "CARING",
+          "items": [
+            {
+              "id": "4.2.1",
+              "name": "急救知識",
+              "detail": "a. 完成「急救章」。",
+              "requiredBadgeId": "A05"
+            },
+            {
+              "id": "4.2.2",
+              "name": "特別行善",
+              "detail": "a. 在小隊或團中進行一次善行。\nb. 統籌及主持一項活動。"
+            },
+            {
+              "id": "4.2.3",
+              "name": "協助團長及領袖",
+              "detail": "a. 在團中協助團長或領袖處理團務最少八星期及總時數不少於八小時之持續服務。服務完成後，幼童軍需要作不少於三分鐘之短講以作分享。"
+            },
+            {
+              "id": "4.2.4",
+              "name": "認識情緒",
+              "detail": "a. 認識自己基本的情緒。\nb. 知道如何抒發自己的情緒。\nc. 懂得如何在自身及他人情緒未能完全抒發時向成年人求助。"
+            },
+            {
+              "id": "4.2.5",
+              "name": "關愛社群",
+              "detail": "a. 完成下列其中一個活動徽章：\ni. 共融章。\nii. 愛護動物章。",
+              "alternativeBadgeIds": [
+                "A04",
+                "A03"
+              ]
+            }
+          ],
+          "part": "甲"
+        },
+        {
+          "code": "P4-COUNTRY",
+          "name": "（三）國家與社區章",
+          "category": "COUNTRY",
+          "items": [
+            {
+              "id": "4.3.1",
+              "name": "國家與守法責任",
+              "detail": "a. 認識「國家概念」、「守法觀念」、「權利與義務」和「責任感」。"
+            },
+            {
+              "id": "4.3.2",
+              "name": "社區緊急服務設施",
+              "detail": "a. 認識居住社區之緊急救援服務位置（例如警署、醫院、救護站、消防局等等）。"
+            },
+            {
+              "id": "4.3.3",
+              "name": "童軍區會與總部",
+              "detail": "a. 認識童軍區會及地域總部之地理位置及前往方法。"
+            },
+            {
+              "id": "4.3.4",
+              "name": "香港古蹟與文物",
+              "detail": "完成「香港歷史章」或完成以下內容：\na. 認識香港的古蹟及文物。",
+              "alternativeBadgeIds": [
+                "A10"
+              ]
+            },
+            {
+              "id": "4.3.5",
+              "name": "中式隊列",
+              "detail": "a. 與其他成員組成升旗隊，懂得如何在配合國歌下升國旗。",
+              "footnote": "隊列和升掛國旗及區旗指引（2024年6月版本）"
+            }
+          ],
+          "part": "甲"
+        },
+        {
+          "code": "P4-FAMILY",
+          "name": "（四）童軍家庭章",
+          "category": "SCOUT_FAMILY",
+          "items": [
+            {
+              "id": "4.4.1",
+              "name": "認識童軍家庭",
+              "detail": "a. 認識童軍總會轄下五個地域。\nb. 參加一次地域或總會所舉辦之活動。\nc. 認識世界童軍運動及香港童軍運動的起源。\nd. 認識童軍團：\ni. 認識童軍團的活動。\nii. 認識童軍制服。\niii. 認識童軍支部的小隊制度。\niv. 認識童軍支部的獎章制度。\n完成「童軍先修章」之成員，d部分可獲豁免。",
+              "exemptionBadgeId": "A42",
+              "exemptionPart": "d"
+            },
+            {
+              "id": "4.4.2",
+              "name": "誓詞和規律",
+              "detail": "a. 製作一本紀錄冊，紀錄一個月內做過的事如何實踐誓詞和規律。\nb. 向其他成員分享他／她在日常生活中所實踐誓詞和規律的兩件事件。"
+            }
+          ],
+          "part": "甲"
+        },
+        {
+          "code": "P4-INTEREST",
+          "name": "乙、興趣範疇",
+          "category": "INTEREST",
+          "items": [],
+          "part": "乙",
+          "requirement": "從「多元創藝」、「科學與大自然」、「運動與愛好」中選取兩個不同類別，各完成一個指定活動徽章。已用於較低階獎章的徽章不得重複；三級制徽章可以更高一級再用。",
+          "activityRequirement": {
+            "categories": [
+              "CREATIVE",
+              "SCIENCE",
+              "SPORTS"
+            ],
+            "distinctCategories": 2,
+            "badgesPerCategory": 1,
+            "allowedBadgeIds": [
+              "A12",
+              "A14",
+              "A20",
+              "A18",
+              "A16",
+              "A13",
+              "A19",
+              "A15",
+              "A17",
+              "A22",
+              "A23",
+              "A25-PLASTIC",
+              "A21",
+              "A24",
+              "A25-NATURE",
+              "A25-SOLAR",
+              "A38",
+              "A35",
+              "A39",
+              "A30",
+              "A28",
+              "A26",
+              "A27",
+              "A32",
+              "A29",
+              "A33",
+              "A31",
+              "A34",
+              "A37",
+              "A36",
+              "A40"
+            ]
+          }
+        }
+      ],
+      "officialOrder": 4,
+      "eligibility": "完成考驗時須年滿十歲半；已達十二歲而仍就讀小學者的延長安排，以 P022/2026 及最新官方指引為準。"
+    }
+  ],
+  "otherBadges": [
+    {
+      "id": "A01",
+      "catalogueNo": "1",
+      "name": "露營章",
+      "name_en": "Camper",
+      "category": "SCOUT_SKILLS",
+      "categoryName": "童軍技能",
+      "categoryName_en": "Scoutcraft Skills",
+      "scheme": "2026",
+      "icon": "⭐",
+      "desc": "童軍技能｜2026年第十版目錄第1項；獨立活動徽章紀錄。",
+      "detail": "考驗內容以現行《Cub Scout Section Training Scheme》（2026年8月9日版，第十版）目錄第1項為準。此工具只記錄徽章取得日期及證書編號，不把單一完成紀錄虛構為逐項進度。",
+      "sourceUrl": "https://prog.scouting.org.hk/cub/%E6%96%B0%E8%A8%93%E7%B7%B4%E7%B6%B1%E8%A6%81/",
+      "desc_en": "Scoutcraft Skills | Catalogue entry 1, tenth edition (2026); one independent badge completion record.",
+      "detail_en": "Assessment must follow catalogue entry 1 in the current Cub Scout Section Training Scheme (9 August 2026, tenth edition). CubBadge records only the award date and certificate number; it does not invent item-level progress IDs for this single completion record."
+    },
+    {
+      "id": "A02",
+      "catalogueNo": "2",
+      "name": "探險章",
+      "name_en": "Explorer",
+      "category": "SCOUT_SKILLS",
+      "categoryName": "童軍技能",
+      "categoryName_en": "Scoutcraft Skills",
+      "scheme": "2026",
+      "icon": "⭐",
+      "desc": "童軍技能｜2026年第十版目錄第2項；獨立活動徽章紀錄。",
+      "detail": "考驗內容以現行《Cub Scout Section Training Scheme》（2026年8月9日版，第十版）目錄第2項為準。此工具只記錄徽章取得日期及證書編號，不把單一完成紀錄虛構為逐項進度。",
+      "sourceUrl": "https://prog.scouting.org.hk/cub/%E6%96%B0%E8%A8%93%E7%B7%B4%E7%B6%B1%E8%A6%81/",
+      "desc_en": "Scoutcraft Skills | Catalogue entry 2, tenth edition (2026); one independent badge completion record.",
+      "detail_en": "Assessment must follow catalogue entry 2 in the current Cub Scout Section Training Scheme (9 August 2026, tenth edition). CubBadge records only the award date and certificate number; it does not invent item-level progress IDs for this single completion record."
+    },
+    {
+      "id": "A03",
+      "catalogueNo": "3",
+      "name": "愛護動物章",
+      "name_en": "Animal Care",
+      "category": "CARING",
+      "categoryName": "關己愛人",
+      "categoryName_en": "Caring for Self and Others",
+      "scheme": "2026",
+      "icon": "⭐",
+      "desc": "關己愛人｜2026年第十版目錄第3項；獨立活動徽章紀錄。",
+      "detail": "考驗內容以現行《Cub Scout Section Training Scheme》（2026年8月9日版，第十版）目錄第3項為準。此工具只記錄徽章取得日期及證書編號，不把單一完成紀錄虛構為逐項進度。",
+      "sourceUrl": "https://prog.scouting.org.hk/cub/%E6%96%B0%E8%A8%93%E7%B7%B4%E7%B6%B1%E8%A6%81/",
+      "desc_en": "Caring for Self and Others | Catalogue entry 3, tenth edition (2026); one independent badge completion record.",
+      "detail_en": "Assessment must follow catalogue entry 3 in the current Cub Scout Section Training Scheme (9 August 2026, tenth edition). CubBadge records only the award date and certificate number; it does not invent item-level progress IDs for this single completion record."
+    },
+    {
+      "id": "A04",
+      "catalogueNo": "4",
+      "name": "共融章",
+      "name_en": "Disability Awareness",
+      "category": "CARING",
+      "categoryName": "關己愛人",
+      "categoryName_en": "Caring for Self and Others",
+      "scheme": "2026",
+      "icon": "⭐",
+      "desc": "關己愛人｜2026年第十版目錄第4項；獨立活動徽章紀錄。",
+      "detail": "考驗內容以現行《Cub Scout Section Training Scheme》（2026年8月9日版，第十版）目錄第4項為準。此工具只記錄徽章取得日期及證書編號，不把單一完成紀錄虛構為逐項進度。",
+      "sourceUrl": "https://prog.scouting.org.hk/cub/%E6%96%B0%E8%A8%93%E7%B7%B4%E7%B6%B1%E8%A6%81/",
+      "desc_en": "Caring for Self and Others | Catalogue entry 4, tenth edition (2026); one independent badge completion record.",
+      "detail_en": "Assessment must follow catalogue entry 4 in the current Cub Scout Section Training Scheme (9 August 2026, tenth edition). CubBadge records only the award date and certificate number; it does not invent item-level progress IDs for this single completion record."
+    },
+    {
+      "id": "A05",
+      "catalogueNo": "5",
+      "name": "急救章",
+      "name_en": "First Aid",
+      "category": "CARING",
+      "categoryName": "關己愛人",
+      "categoryName_en": "Caring for Self and Others",
+      "scheme": "2026",
+      "icon": "⭐",
+      "desc": "關己愛人｜2026年第十版目錄第5項；獨立活動徽章紀錄。",
+      "detail": "考驗內容以現行《Cub Scout Section Training Scheme》（2026年8月9日版，第十版）目錄第5項為準。此工具只記錄徽章取得日期及證書編號，不把單一完成紀錄虛構為逐項進度。",
+      "sourceUrl": "https://prog.scouting.org.hk/cub/%E6%96%B0%E8%A8%93%E7%B7%B4%E7%B6%B1%E8%A6%81/",
+      "desc_en": "Caring for Self and Others | Catalogue entry 5, tenth edition (2026); one independent badge completion record.",
+      "detail_en": "Assessment must follow catalogue entry 5 in the current Cub Scout Section Training Scheme (9 August 2026, tenth edition). CubBadge records only the award date and certificate number; it does not invent item-level progress IDs for this single completion record."
+    },
+    {
+      "id": "A06",
+      "catalogueNo": "6",
+      "name": "家務章",
+      "name_en": "Home Help",
+      "category": "CARING",
+      "categoryName": "關己愛人",
+      "categoryName_en": "Caring for Self and Others",
+      "scheme": "2026",
+      "icon": "⭐",
+      "desc": "關己愛人｜2026年第十版目錄第6項；獨立活動徽章紀錄。",
+      "detail": "考驗內容以現行《Cub Scout Section Training Scheme》（2026年8月9日版，第十版）目錄第6項為準。此工具只記錄徽章取得日期及證書編號，不把單一完成紀錄虛構為逐項進度。",
+      "sourceUrl": "https://prog.scouting.org.hk/cub/%E6%96%B0%E8%A8%93%E7%B7%B4%E7%B6%B1%E8%A6%81/",
+      "desc_en": "Caring for Self and Others | Catalogue entry 6, tenth edition (2026); one independent badge completion record.",
+      "detail_en": "Assessment must follow catalogue entry 6 in the current Cub Scout Section Training Scheme (9 August 2026, tenth edition). CubBadge records only the award date and certificate number; it does not invent item-level progress IDs for this single completion record."
+    },
+    {
+      "id": "A07",
+      "catalogueNo": "7",
+      "name": "道路安全章",
+      "name_en": "Road Safety",
+      "category": "CARING",
+      "categoryName": "關己愛人",
+      "categoryName_en": "Caring for Self and Others",
+      "scheme": "2026",
+      "icon": "⭐",
+      "desc": "關己愛人｜2026年第十版目錄第7項；獨立活動徽章紀錄。",
+      "detail": "考驗內容以現行《Cub Scout Section Training Scheme》（2026年8月9日版，第十版）目錄第7項為準。此工具只記錄徽章取得日期及證書編號，不把單一完成紀錄虛構為逐項進度。",
+      "sourceUrl": "https://prog.scouting.org.hk/cub/%E6%96%B0%E8%A8%93%E7%B7%B4%E7%B6%B1%E8%A6%81/",
+      "desc_en": "Caring for Self and Others | Catalogue entry 7, tenth edition (2026); one independent badge completion record.",
+      "detail_en": "Assessment must follow catalogue entry 7 in the current Cub Scout Section Training Scheme (9 August 2026, tenth edition). CubBadge records only the award date and certificate number; it does not invent item-level progress IDs for this single completion record."
+    },
+    {
+      "id": "A08",
+      "catalogueNo": "8",
+      "name": "水上安全章",
+      "name_en": "Water Safety",
+      "category": "CARING",
+      "categoryName": "關己愛人",
+      "categoryName_en": "Caring for Self and Others",
+      "scheme": "2026",
+      "icon": "⭐",
+      "desc": "關己愛人｜2026年第十版目錄第8項；獨立活動徽章紀錄。",
+      "detail": "考驗內容以現行《Cub Scout Section Training Scheme》（2026年8月9日版，第十版）目錄第8項為準。此工具只記錄徽章取得日期及證書編號，不把單一完成紀錄虛構為逐項進度。",
+      "sourceUrl": "https://prog.scouting.org.hk/cub/%E6%96%B0%E8%A8%93%E7%B7%B4%E7%B6%B1%E8%A6%81/",
+      "desc_en": "Caring for Self and Others | Catalogue entry 8, tenth edition (2026); one independent badge completion record.",
+      "detail_en": "Assessment must follow catalogue entry 8 in the current Cub Scout Section Training Scheme (9 August 2026, tenth edition). CubBadge records only the award date and certificate number; it does not invent item-level progress IDs for this single completion record."
+    },
+    {
+      "id": "A09-ANTI-DECEPTION",
+      "catalogueNo": "9",
+      "name": "防騙先鋒章",
+      "name_en": "Anti-Deception",
+      "category": "CARING",
+      "categoryName": "關己愛人",
+      "categoryName_en": "Caring for Self and Others",
+      "scheme": "2026",
+      "icon": "⭐",
+      "series": "積極公民",
+      "desc": "關己愛人｜2026年第十版目錄第9項；獨立活動徽章紀錄。",
+      "detail": "考驗內容以現行《Cub Scout Section Training Scheme》（2026年8月9日版，第十版）目錄第9項為準。此工具只記錄徽章取得日期及證書編號，不把單一完成紀錄虛構為逐項進度。",
+      "sourceUrl": "https://prog.scouting.org.hk/cub/%E6%96%B0%E8%A8%93%E7%B7%B4%E7%B6%B1%E8%A6%81/",
+      "desc_en": "Caring for Self and Others | Catalogue entry 9, tenth edition (2026); one independent badge completion record.",
+      "detail_en": "Assessment must follow catalogue entry 9 in the current Cub Scout Section Training Scheme (9 August 2026, tenth edition). CubBadge records only the award date and certificate number; it does not invent item-level progress IDs for this single completion record."
+    },
+    {
+      "id": "A09-ANTI-DRUG",
+      "catalogueNo": "9",
+      "name": "禁毒章",
+      "name_en": "Anti-Drug",
+      "category": "CARING",
+      "categoryName": "關己愛人",
+      "categoryName_en": "Caring for Self and Others",
+      "scheme": "2026",
+      "icon": "⭐",
+      "series": "積極公民",
+      "desc": "關己愛人｜2026年第十版目錄第9項；獨立活動徽章紀錄。",
+      "detail": "考驗內容以現行《Cub Scout Section Training Scheme》（2026年8月9日版，第十版）目錄第9項為準。此工具只記錄徽章取得日期及證書編號，不把單一完成紀錄虛構為逐項進度。",
+      "sourceUrl": "https://prog.scouting.org.hk/cub/%E6%96%B0%E8%A8%93%E7%B7%B4%E7%B6%B1%E8%A6%81/",
+      "desc_en": "Caring for Self and Others | Catalogue entry 9, tenth edition (2026); one independent badge completion record.",
+      "detail_en": "Assessment must follow catalogue entry 9 in the current Cub Scout Section Training Scheme (9 August 2026, tenth edition). CubBadge records only the award date and certificate number; it does not invent item-level progress IDs for this single completion record."
+    },
+    {
+      "id": "A09-CHILD-PROTECTION",
+      "catalogueNo": "9",
+      "name": "保護兒童章",
+      "name_en": "Child Protection",
+      "category": "CARING",
+      "categoryName": "關己愛人",
+      "categoryName_en": "Caring for Self and Others",
+      "scheme": "2026",
+      "icon": "⭐",
+      "series": "積極公民",
+      "desc": "關己愛人｜2026年第十版目錄第9項；獨立活動徽章紀錄。",
+      "detail": "考驗內容以現行《Cub Scout Section Training Scheme》（2026年8月9日版，第十版）目錄第9項為準。此工具只記錄徽章取得日期及證書編號，不把單一完成紀錄虛構為逐項進度。",
+      "sourceUrl": "https://prog.scouting.org.hk/cub/%E6%96%B0%E8%A8%93%E7%B7%B4%E7%B6%B1%E8%A6%81/",
+      "desc_en": "Caring for Self and Others | Catalogue entry 9, tenth edition (2026); one independent badge completion record.",
+      "detail_en": "Assessment must follow catalogue entry 9 in the current Cub Scout Section Training Scheme (9 August 2026, tenth edition). CubBadge records only the award date and certificate number; it does not invent item-level progress IDs for this single completion record."
+    },
+    {
+      "id": "A09-COMMUNITY-EMERGENCY",
+      "catalogueNo": "9",
+      "name": "社區應急先鋒章",
+      "name_en": "Community Emergency Responder",
+      "category": "CARING",
+      "categoryName": "關己愛人",
+      "categoryName_en": "Caring for Self and Others",
+      "scheme": "2026",
+      "icon": "⭐",
+      "series": "積極公民",
+      "desc": "關己愛人｜2026年第十版目錄第9項；獨立活動徽章紀錄。",
+      "detail": "考驗內容以現行《Cub Scout Section Training Scheme》（2026年8月9日版，第十版）目錄第9項為準。此工具只記錄徽章取得日期及證書編號，不把單一完成紀錄虛構為逐項進度。",
+      "sourceUrl": "https://prog.scouting.org.hk/cub/%E6%96%B0%E8%A8%93%E7%B7%B4%E7%B6%B1%E8%A6%81/",
+      "desc_en": "Caring for Self and Others | Catalogue entry 9, tenth edition (2026); one independent badge completion record.",
+      "detail_en": "Assessment must follow catalogue entry 9 in the current Cub Scout Section Training Scheme (9 August 2026, tenth edition). CubBadge records only the award date and certificate number; it does not invent item-level progress IDs for this single completion record."
+    },
+    {
+      "id": "A09-GREEN-PIONEER",
+      "catalogueNo": "9",
+      "name": "環保先鋒章",
+      "name_en": "Green Pioneer Badge",
+      "category": "CARING",
+      "categoryName": "關己愛人",
+      "categoryName_en": "Caring for Self and Others",
+      "scheme": "2026",
+      "icon": "⭐",
+      "series": "積極公民",
+      "desc": "關己愛人｜2026年第十版目錄第9項；獨立活動徽章紀錄。",
+      "detail": "考驗內容以現行《Cub Scout Section Training Scheme》（2026年8月9日版，第十版）目錄第9項為準。此工具只記錄徽章取得日期及證書編號，不把單一完成紀錄虛構為逐項進度。",
+      "sourceUrl": "https://prog.scouting.org.hk/cub/%E6%96%B0%E8%A8%93%E7%B7%B4%E7%B6%B1%E8%A6%81/",
+      "desc_en": "Caring for Self and Others | Catalogue entry 9, tenth edition (2026); one independent badge completion record.",
+      "detail_en": "Assessment must follow catalogue entry 9 in the current Cub Scout Section Training Scheme (9 August 2026, tenth edition). CubBadge records only the award date and certificate number; it does not invent item-level progress IDs for this single completion record."
+    },
+    {
+      "id": "A09-EM-PIONEER",
+      "catalogueNo": "9",
+      "name": "機電先鋒章",
+      "name_en": "Electrical & Mechanical (E&M) Pioneer",
+      "category": "CARING",
+      "categoryName": "關己愛人",
+      "categoryName_en": "Caring for Self and Others",
+      "scheme": "2026",
+      "icon": "⭐",
+      "series": "積極公民",
+      "desc": "關己愛人｜2026年第十版目錄第9項；獨立活動徽章紀錄。",
+      "detail": "考驗內容以現行《Cub Scout Section Training Scheme》（2026年8月9日版，第十版）目錄第9項為準。此工具只記錄徽章取得日期及證書編號，不把單一完成紀錄虛構為逐項進度。",
+      "sourceUrl": "https://prog.scouting.org.hk/cub/%E6%96%B0%E8%A8%93%E7%B7%B4%E7%B6%B1%E8%A6%81/",
+      "desc_en": "Caring for Self and Others | Catalogue entry 9, tenth edition (2026); one independent badge completion record.",
+      "detail_en": "Assessment must follow catalogue entry 9 in the current Cub Scout Section Training Scheme (9 August 2026, tenth edition). CubBadge records only the award date and certificate number; it does not invent item-level progress IDs for this single completion record."
+    },
+    {
+      "id": "A10",
+      "catalogueNo": "10",
+      "name": "香港歷史章",
+      "name_en": "Hong Kong Historian",
+      "category": "COUNTRY",
+      "categoryName": "國家與社區",
+      "categoryName_en": "Country and Community",
+      "scheme": "2026",
+      "icon": "⭐",
+      "desc": "國家與社區｜2026年第十版目錄第10項；獨立活動徽章紀錄。",
+      "detail": "考驗內容以現行《Cub Scout Section Training Scheme》（2026年8月9日版，第十版）目錄第10項為準。此工具只記錄徽章取得日期及證書編號，不把單一完成紀錄虛構為逐項進度。",
+      "sourceUrl": "https://prog.scouting.org.hk/cub/%E6%96%B0%E8%A8%93%E7%B7%B4%E7%B6%B1%E8%A6%81/",
+      "desc_en": "Country and Community | Catalogue entry 10, tenth edition (2026); one independent badge completion record.",
+      "detail_en": "Assessment must follow catalogue entry 10 in the current Cub Scout Section Training Scheme (9 August 2026, tenth edition). CubBadge records only the award date and certificate number; it does not invent item-level progress IDs for this single completion record."
+    },
+    {
+      "id": "A11",
+      "catalogueNo": "11",
+      "name": "國家安全大使章",
+      "name_en": "National Security Ambassador",
+      "category": "COUNTRY",
+      "categoryName": "國家與社區",
+      "categoryName_en": "Country and Community",
+      "scheme": "2026",
+      "icon": "⭐",
+      "series": "積極公民",
+      "desc": "國家與社區｜2026年第十版目錄第11項；獨立活動徽章紀錄。",
+      "detail": "考驗內容以現行《Cub Scout Section Training Scheme》（2026年8月9日版，第十版）目錄第11項為準。此工具只記錄徽章取得日期及證書編號，不把單一完成紀錄虛構為逐項進度。",
+      "sourceUrl": "https://prog.scouting.org.hk/cub/%E6%96%B0%E8%A8%93%E7%B7%B4%E7%B6%B1%E8%A6%81/",
+      "desc_en": "Country and Community | Catalogue entry 11, tenth edition (2026); one independent badge completion record.",
+      "detail_en": "Assessment must follow catalogue entry 11 in the current Cub Scout Section Training Scheme (9 August 2026, tenth edition). CubBadge records only the award date and certificate number; it does not invent item-level progress IDs for this single completion record."
+    },
+    {
+      "id": "A12",
+      "catalogueNo": "12",
+      "name": "藝術章",
+      "name_en": "Artist",
+      "category": "CREATIVE",
+      "categoryName": "多元創藝",
+      "categoryName_en": "Creativity and Arts",
+      "scheme": "2026",
+      "icon": "⭐",
+      "desc": "多元創藝｜2026年第十版目錄第12項；獨立活動徽章紀錄。",
+      "detail": "考驗內容以現行《Cub Scout Section Training Scheme》（2026年8月9日版，第十版）目錄第12項為準。此工具只記錄徽章取得日期及證書編號，不把單一完成紀錄虛構為逐項進度。",
+      "sourceUrl": "https://prog.scouting.org.hk/cub/%E6%96%B0%E8%A8%93%E7%B7%B4%E7%B6%B1%E8%A6%81/",
+      "desc_en": "Creativity and Arts | Catalogue entry 12, tenth edition (2026); one independent badge completion record.",
+      "detail_en": "Assessment must follow catalogue entry 12 in the current Cub Scout Section Training Scheme (9 August 2026, tenth edition). CubBadge records only the award date and certificate number; it does not invent item-level progress IDs for this single completion record."
+    },
+    {
+      "id": "A13",
+      "catalogueNo": "13",
+      "name": "手藝章",
+      "name_en": "Craftsman",
+      "category": "CREATIVE",
+      "categoryName": "多元創藝",
+      "categoryName_en": "Creativity and Arts",
+      "scheme": "2026",
+      "icon": "⭐",
+      "desc": "多元創藝｜2026年第十版目錄第13項；獨立活動徽章紀錄。",
+      "detail": "考驗內容以現行《Cub Scout Section Training Scheme》（2026年8月9日版，第十版）目錄第13項為準。此工具只記錄徽章取得日期及證書編號，不把單一完成紀錄虛構為逐項進度。",
+      "sourceUrl": "https://prog.scouting.org.hk/cub/%E6%96%B0%E8%A8%93%E7%B7%B4%E7%B6%B1%E8%A6%81/",
+      "desc_en": "Creativity and Arts | Catalogue entry 13, tenth edition (2026); one independent badge completion record.",
+      "detail_en": "Assessment must follow catalogue entry 13 in the current Cub Scout Section Training Scheme (9 August 2026, tenth edition). CubBadge records only the award date and certificate number; it does not invent item-level progress IDs for this single completion record."
+    },
+    {
+      "id": "A14",
+      "catalogueNo": "14",
+      "name": "娛樂章",
+      "name_en": "Entertainer",
+      "category": "CREATIVE",
+      "categoryName": "多元創藝",
+      "categoryName_en": "Creativity and Arts",
+      "scheme": "2026",
+      "icon": "⭐",
+      "desc": "多元創藝｜2026年第十版目錄第14項；獨立活動徽章紀錄。",
+      "detail": "考驗內容以現行《Cub Scout Section Training Scheme》（2026年8月9日版，第十版）目錄第14項為準。此工具只記錄徽章取得日期及證書編號，不把單一完成紀錄虛構為逐項進度。",
+      "sourceUrl": "https://prog.scouting.org.hk/cub/%E6%96%B0%E8%A8%93%E7%B7%B4%E7%B6%B1%E8%A6%81/",
+      "desc_en": "Creativity and Arts | Catalogue entry 14, tenth edition (2026); one independent badge completion record.",
+      "detail_en": "Assessment must follow catalogue entry 14 in the current Cub Scout Section Training Scheme (9 August 2026, tenth edition). CubBadge records only the award date and certificate number; it does not invent item-level progress IDs for this single completion record."
+    },
+    {
+      "id": "A15",
+      "catalogueNo": "15",
+      "name": "資訊科技章",
+      "name_en": "Information Technology",
+      "category": "CREATIVE",
+      "categoryName": "多元創藝",
+      "categoryName_en": "Creativity and Arts",
+      "scheme": "2026",
+      "icon": "⭐",
+      "desc": "多元創藝｜2026年第十版目錄第15項；獨立活動徽章紀錄。",
+      "detail": "考驗內容以現行《Cub Scout Section Training Scheme》（2026年8月9日版，第十版）目錄第15項為準。此工具只記錄徽章取得日期及證書編號，不把單一完成紀錄虛構為逐項進度。",
+      "sourceUrl": "https://prog.scouting.org.hk/cub/%E6%96%B0%E8%A8%93%E7%B7%B4%E7%B6%B1%E8%A6%81/",
+      "desc_en": "Creativity and Arts | Catalogue entry 15, tenth edition (2026); one independent badge completion record.",
+      "detail_en": "Assessment must follow catalogue entry 15 in the current Cub Scout Section Training Scheme (9 August 2026, tenth edition). CubBadge records only the award date and certificate number; it does not invent item-level progress IDs for this single completion record."
+    },
+    {
+      "id": "A16",
+      "catalogueNo": "16",
+      "name": "語言章",
+      "name_en": "Linguist",
+      "category": "CREATIVE",
+      "categoryName": "多元創藝",
+      "categoryName_en": "Creativity and Arts",
+      "scheme": "2026",
+      "icon": "⭐",
+      "desc": "多元創藝｜2026年第十版目錄第16項；獨立活動徽章紀錄。",
+      "detail": "考驗內容以現行《Cub Scout Section Training Scheme》（2026年8月9日版，第十版）目錄第16項為準。此工具只記錄徽章取得日期及證書編號，不把單一完成紀錄虛構為逐項進度。",
+      "sourceUrl": "https://prog.scouting.org.hk/cub/%E6%96%B0%E8%A8%93%E7%B7%B4%E7%B6%B1%E8%A6%81/",
+      "desc_en": "Creativity and Arts | Catalogue entry 16, tenth edition (2026); one independent badge completion record.",
+      "detail_en": "Assessment must follow catalogue entry 16 in the current Cub Scout Section Training Scheme (9 August 2026, tenth edition). CubBadge records only the award date and certificate number; it does not invent item-level progress IDs for this single completion record."
+    },
+    {
+      "id": "A17",
+      "catalogueNo": "17",
+      "name": "媒體製作章",
+      "name_en": "Media Maker",
+      "category": "CREATIVE",
+      "categoryName": "多元創藝",
+      "categoryName_en": "Creativity and Arts",
+      "scheme": "2026",
+      "icon": "⭐",
+      "desc": "多元創藝｜2026年第十版目錄第17項；獨立活動徽章紀錄。",
+      "detail": "考驗內容以現行《Cub Scout Section Training Scheme》（2026年8月9日版，第十版）目錄第17項為準。此工具只記錄徽章取得日期及證書編號，不把單一完成紀錄虛構為逐項進度。",
+      "sourceUrl": "https://prog.scouting.org.hk/cub/%E6%96%B0%E8%A8%93%E7%B7%B4%E7%B6%B1%E8%A6%81/",
+      "desc_en": "Creativity and Arts | Catalogue entry 17, tenth edition (2026); one independent badge completion record.",
+      "detail_en": "Assessment must follow catalogue entry 17 in the current Cub Scout Section Training Scheme (9 August 2026, tenth edition). CubBadge records only the award date and certificate number; it does not invent item-level progress IDs for this single completion record."
+    },
+    {
+      "id": "A18",
+      "catalogueNo": "18",
+      "name": "音樂章",
+      "name_en": "Musician",
+      "category": "CREATIVE",
+      "categoryName": "多元創藝",
+      "categoryName_en": "Creativity and Arts",
+      "scheme": "2026",
+      "icon": "⭐",
+      "levels": 3,
+      "desc": "多元創藝｜2026年第十版目錄第18項；獨立活動徽章紀錄。",
+      "detail": "考驗內容以現行《Cub Scout Section Training Scheme》（2026年8月9日版，第十版）目錄第18項為準。此工具只記錄徽章取得日期及證書編號，不把單一完成紀錄虛構為逐項進度。",
+      "sourceUrl": "https://prog.scouting.org.hk/cub/%E6%96%B0%E8%A8%93%E7%B7%B4%E7%B6%B1%E8%A6%81/",
+      "desc_en": "Creativity and Arts | Catalogue entry 18, tenth edition (2026); one independent badge completion record.",
+      "detail_en": "Assessment must follow catalogue entry 18 in the current Cub Scout Section Training Scheme (9 August 2026, tenth edition). CubBadge records only the award date and certificate number; it does not invent item-level progress IDs for this single completion record."
+    },
+    {
+      "id": "A19",
+      "catalogueNo": "19",
+      "name": "攝影章",
+      "name_en": "Photographer",
+      "category": "CREATIVE",
+      "categoryName": "多元創藝",
+      "categoryName_en": "Creativity and Arts",
+      "scheme": "2026",
+      "icon": "⭐",
+      "desc": "多元創藝｜2026年第十版目錄第19項；獨立活動徽章紀錄。",
+      "detail": "考驗內容以現行《Cub Scout Section Training Scheme》（2026年8月9日版，第十版）目錄第19項為準。此工具只記錄徽章取得日期及證書編號，不把單一完成紀錄虛構為逐項進度。",
+      "sourceUrl": "https://prog.scouting.org.hk/cub/%E6%96%B0%E8%A8%93%E7%B7%B4%E7%B6%B1%E8%A6%81/",
+      "desc_en": "Creativity and Arts | Catalogue entry 19, tenth edition (2026); one independent badge completion record.",
+      "detail_en": "Assessment must follow catalogue entry 19 in the current Cub Scout Section Training Scheme (9 August 2026, tenth edition). CubBadge records only the award date and certificate number; it does not invent item-level progress IDs for this single completion record."
+    },
+    {
+      "id": "A20",
+      "catalogueNo": "20",
+      "name": "寫作章",
+      "name_en": "Writer",
+      "category": "CREATIVE",
+      "categoryName": "多元創藝",
+      "categoryName_en": "Creativity and Arts",
+      "scheme": "2026",
+      "icon": "⭐",
+      "desc": "多元創藝｜2026年第十版目錄第20項；獨立活動徽章紀錄。",
+      "detail": "考驗內容以現行《Cub Scout Section Training Scheme》（2026年8月9日版，第十版）目錄第20項為準。此工具只記錄徽章取得日期及證書編號，不把單一完成紀錄虛構為逐項進度。",
+      "sourceUrl": "https://prog.scouting.org.hk/cub/%E6%96%B0%E8%A8%93%E7%B7%B4%E7%B6%B1%E8%A6%81/",
+      "desc_en": "Creativity and Arts | Catalogue entry 20, tenth edition (2026); one independent badge completion record.",
+      "detail_en": "Assessment must follow catalogue entry 20 in the current Cub Scout Section Training Scheme (9 August 2026, tenth edition). CubBadge records only the award date and certificate number; it does not invent item-level progress IDs for this single completion record."
+    },
+    {
+      "id": "A21",
+      "catalogueNo": "21",
+      "name": "天象章",
+      "name_en": "Astronomer",
+      "category": "SCIENCE",
+      "categoryName": "科學與大自然",
+      "categoryName_en": "Science and Nature",
+      "scheme": "2026",
+      "icon": "⭐",
+      "desc": "科學與大自然｜2026年第十版目錄第21項；獨立活動徽章紀錄。",
+      "detail": "考驗內容以現行《Cub Scout Section Training Scheme》（2026年8月9日版，第十版）目錄第21項為準。此工具只記錄徽章取得日期及證書編號，不把單一完成紀錄虛構為逐項進度。",
+      "sourceUrl": "https://prog.scouting.org.hk/cub/%E6%96%B0%E8%A8%93%E7%B7%B4%E7%B6%B1%E8%A6%81/",
+      "desc_en": "Science and Nature | Catalogue entry 21, tenth edition (2026); one independent badge completion record.",
+      "detail_en": "Assessment must follow catalogue entry 21 in the current Cub Scout Section Training Scheme (9 August 2026, tenth edition). CubBadge records only the award date and certificate number; it does not invent item-level progress IDs for this single completion record."
+    },
+    {
+      "id": "A22",
+      "catalogueNo": "22",
+      "name": "園藝章",
+      "name_en": "Planting",
+      "category": "SCIENCE",
+      "categoryName": "科學與大自然",
+      "categoryName_en": "Science and Nature",
+      "scheme": "2026",
+      "icon": "⭐",
+      "desc": "科學與大自然｜2026年第十版目錄第22項；獨立活動徽章紀錄。",
+      "detail": "考驗內容以現行《Cub Scout Section Training Scheme》（2026年8月9日版，第十版）目錄第22項為準。此工具只記錄徽章取得日期及證書編號，不把單一完成紀錄虛構為逐項進度。",
+      "sourceUrl": "https://prog.scouting.org.hk/cub/%E6%96%B0%E8%A8%93%E7%B7%B4%E7%B6%B1%E8%A6%81/",
+      "desc_en": "Science and Nature | Catalogue entry 22, tenth edition (2026); one independent badge completion record.",
+      "detail_en": "Assessment must follow catalogue entry 22 in the current Cub Scout Section Training Scheme (9 August 2026, tenth edition). CubBadge records only the award date and certificate number; it does not invent item-level progress IDs for this single completion record."
+    },
+    {
+      "id": "A23",
+      "catalogueNo": "23",
+      "name": "科學章",
+      "name_en": "Scientist",
+      "category": "SCIENCE",
+      "categoryName": "科學與大自然",
+      "categoryName_en": "Science and Nature",
+      "scheme": "2026",
+      "icon": "⭐",
+      "desc": "科學與大自然｜2026年第十版目錄第23項；獨立活動徽章紀錄。",
+      "detail": "考驗內容以現行《Cub Scout Section Training Scheme》（2026年8月9日版，第十版）目錄第23項為準。此工具只記錄徽章取得日期及證書編號，不把單一完成紀錄虛構為逐項進度。",
+      "sourceUrl": "https://prog.scouting.org.hk/cub/%E6%96%B0%E8%A8%93%E7%B7%B4%E7%B6%B1%E8%A6%81/",
+      "desc_en": "Science and Nature | Catalogue entry 23, tenth edition (2026); one independent badge completion record.",
+      "detail_en": "Assessment must follow catalogue entry 23 in the current Cub Scout Section Training Scheme (9 August 2026, tenth edition). CubBadge records only the award date and certificate number; it does not invent item-level progress IDs for this single completion record."
+    },
+    {
+      "id": "A24",
+      "catalogueNo": "24",
+      "name": "氣象章",
+      "name_en": "Weatherman",
+      "category": "SCIENCE",
+      "categoryName": "科學與大自然",
+      "categoryName_en": "Science and Nature",
+      "scheme": "2026",
+      "icon": "⭐",
+      "desc": "科學與大自然｜2026年第十版目錄第24項；獨立活動徽章紀錄。",
+      "detail": "考驗內容以現行《Cub Scout Section Training Scheme》（2026年8月9日版，第十版）目錄第24項為準。此工具只記錄徽章取得日期及證書編號，不把單一完成紀錄虛構為逐項進度。",
+      "sourceUrl": "https://prog.scouting.org.hk/cub/%E6%96%B0%E8%A8%93%E7%B7%B4%E7%B6%B1%E8%A6%81/",
+      "desc_en": "Science and Nature | Catalogue entry 24, tenth edition (2026); one independent badge completion record.",
+      "detail_en": "Assessment must follow catalogue entry 24 in the current Cub Scout Section Training Scheme (9 August 2026, tenth edition). CubBadge records only the award date and certificate number; it does not invent item-level progress IDs for this single completion record."
+    },
+    {
+      "id": "A25-PLASTIC",
+      "catalogueNo": "25",
+      "name": "走塑達人章",
+      "name_en": "Plastic Tide Turners",
+      "category": "SCIENCE",
+      "categoryName": "科學與大自然",
+      "categoryName_en": "Science and Nature",
+      "scheme": "2026",
+      "icon": "⭐",
+      "series": "地球部落計劃",
+      "desc": "科學與大自然｜2026年第十版目錄第25項；獨立活動徽章紀錄。",
+      "detail": "考驗內容以現行《Cub Scout Section Training Scheme》（2026年8月9日版，第十版）目錄第25項為準。此工具只記錄徽章取得日期及證書編號，不把單一完成紀錄虛構為逐項進度。",
+      "sourceUrl": "https://prog.scouting.org.hk/cub/%E6%96%B0%E8%A8%93%E7%B7%B4%E7%B6%B1%E8%A6%81/",
+      "desc_en": "Science and Nature | Catalogue entry 25, tenth edition (2026); one independent badge completion record.",
+      "detail_en": "Assessment must follow catalogue entry 25 in the current Cub Scout Section Training Scheme (9 August 2026, tenth edition). CubBadge records only the award date and certificate number; it does not invent item-level progress IDs for this single completion record."
+    },
+    {
+      "id": "A25-NATURE",
+      "catalogueNo": "25",
+      "name": "自然守護者章",
+      "name_en": "Champions for Nature",
+      "category": "SCIENCE",
+      "categoryName": "科學與大自然",
+      "categoryName_en": "Science and Nature",
+      "scheme": "2026",
+      "icon": "⭐",
+      "series": "地球部落計劃",
+      "desc": "科學與大自然｜2026年第十版目錄第25項；獨立活動徽章紀錄。",
+      "detail": "考驗內容以現行《Cub Scout Section Training Scheme》（2026年8月9日版，第十版）目錄第25項為準。此工具只記錄徽章取得日期及證書編號，不把單一完成紀錄虛構為逐項進度。",
+      "sourceUrl": "https://prog.scouting.org.hk/cub/%E6%96%B0%E8%A8%93%E7%B7%B4%E7%B6%B1%E8%A6%81/",
+      "desc_en": "Science and Nature | Catalogue entry 25, tenth edition (2026); one independent badge completion record.",
+      "detail_en": "Assessment must follow catalogue entry 25 in the current Cub Scout Section Training Scheme (9 August 2026, tenth edition). CubBadge records only the award date and certificate number; it does not invent item-level progress IDs for this single completion record."
+    },
+    {
+      "id": "A25-SOLAR",
+      "catalogueNo": "25",
+      "name": "日光善用者章",
+      "name_en": "Scouts Go Solar",
+      "category": "SCIENCE",
+      "categoryName": "科學與大自然",
+      "categoryName_en": "Science and Nature",
+      "scheme": "2026",
+      "icon": "⭐",
+      "series": "地球部落計劃",
+      "desc": "科學與大自然｜2026年第十版目錄第25項；獨立活動徽章紀錄。",
+      "detail": "考驗內容以現行《Cub Scout Section Training Scheme》（2026年8月9日版，第十版）目錄第25項為準。此工具只記錄徽章取得日期及證書編號，不把單一完成紀錄虛構為逐項進度。",
+      "sourceUrl": "https://prog.scouting.org.hk/cub/%E6%96%B0%E8%A8%93%E7%B7%B4%E7%B6%B1%E8%A6%81/",
+      "desc_en": "Science and Nature | Catalogue entry 25, tenth edition (2026); one independent badge completion record.",
+      "detail_en": "Assessment must follow catalogue entry 25 in the current Cub Scout Section Training Scheme (9 August 2026, tenth edition). CubBadge records only the award date and certificate number; it does not invent item-level progress IDs for this single completion record."
+    },
+    {
+      "id": "A26",
+      "catalogueNo": "26",
+      "name": "射箭章",
+      "name_en": "Archery",
+      "category": "SPORTS",
+      "categoryName": "運動與愛好",
+      "categoryName_en": "Sports and Hobbies",
+      "scheme": "2026",
+      "icon": "⭐",
+      "levels": 3,
+      "desc": "運動與愛好｜2026年第十版目錄第26項；獨立活動徽章紀錄。",
+      "detail": "考驗內容以現行《Cub Scout Section Training Scheme》（2026年8月9日版，第十版）目錄第26項為準。此工具只記錄徽章取得日期及證書編號，不把單一完成紀錄虛構為逐項進度。",
+      "sourceUrl": "https://prog.scouting.org.hk/cub/%E6%96%B0%E8%A8%93%E7%B7%B4%E7%B6%B1%E8%A6%81/",
+      "desc_en": "Sports and Hobbies | Catalogue entry 26, tenth edition (2026); one independent badge completion record.",
+      "detail_en": "Assessment must follow catalogue entry 26 in the current Cub Scout Section Training Scheme (9 August 2026, tenth edition). CubBadge records only the award date and certificate number; it does not invent item-level progress IDs for this single completion record."
+    },
+    {
+      "id": "A27",
+      "catalogueNo": "27",
+      "name": "田徑章",
+      "name_en": "Athlete",
+      "category": "SPORTS",
+      "categoryName": "運動與愛好",
+      "categoryName_en": "Sports and Hobbies",
+      "scheme": "2026",
+      "icon": "⭐",
+      "levels": 3,
+      "desc": "運動與愛好｜2026年第十版目錄第27項；獨立活動徽章紀錄。",
+      "detail": "考驗內容以現行《Cub Scout Section Training Scheme》（2026年8月9日版，第十版）目錄第27項為準。此工具只記錄徽章取得日期及證書編號，不把單一完成紀錄虛構為逐項進度。",
+      "sourceUrl": "https://prog.scouting.org.hk/cub/%E6%96%B0%E8%A8%93%E7%B7%B4%E7%B6%B1%E8%A6%81/",
+      "desc_en": "Sports and Hobbies | Catalogue entry 27, tenth edition (2026); one independent badge completion record.",
+      "detail_en": "Assessment must follow catalogue entry 27 in the current Cub Scout Section Training Scheme (9 August 2026, tenth edition). CubBadge records only the award date and certificate number; it does not invent item-level progress IDs for this single completion record."
+    },
+    {
+      "id": "A28",
+      "catalogueNo": "28",
+      "name": "閱讀章",
+      "name_en": "Book Reader",
+      "category": "SPORTS",
+      "categoryName": "運動與愛好",
+      "categoryName_en": "Sports and Hobbies",
+      "scheme": "2026",
+      "icon": "⭐",
+      "desc": "運動與愛好｜2026年第十版目錄第28項；獨立活動徽章紀錄。",
+      "detail": "考驗內容以現行《Cub Scout Section Training Scheme》（2026年8月9日版，第十版）目錄第28項為準。此工具只記錄徽章取得日期及證書編號，不把單一完成紀錄虛構為逐項進度。",
+      "sourceUrl": "https://prog.scouting.org.hk/cub/%E6%96%B0%E8%A8%93%E7%B7%B4%E7%B6%B1%E8%A6%81/",
+      "desc_en": "Sports and Hobbies | Catalogue entry 28, tenth edition (2026); one independent badge completion record.",
+      "detail_en": "Assessment must follow catalogue entry 28 in the current Cub Scout Section Training Scheme (9 August 2026, tenth edition). CubBadge records only the award date and certificate number; it does not invent item-level progress IDs for this single completion record."
+    },
+    {
+      "id": "A29",
+      "catalogueNo": "29",
+      "name": "獨木舟章",
+      "name_en": "Canoe",
+      "category": "SPORTS",
+      "categoryName": "運動與愛好",
+      "categoryName_en": "Sports and Hobbies",
+      "scheme": "2026",
+      "icon": "⭐",
+      "levels": 3,
+      "desc": "運動與愛好｜2026年第十版目錄第29項；獨立活動徽章紀錄。",
+      "detail": "考驗內容以現行《Cub Scout Section Training Scheme》（2026年8月9日版，第十版）目錄第29項為準。此工具只記錄徽章取得日期及證書編號，不把單一完成紀錄虛構為逐項進度。",
+      "sourceUrl": "https://prog.scouting.org.hk/cub/%E6%96%B0%E8%A8%93%E7%B7%B4%E7%B6%B1%E8%A6%81/",
+      "desc_en": "Sports and Hobbies | Catalogue entry 29, tenth edition (2026); one independent badge completion record.",
+      "detail_en": "Assessment must follow catalogue entry 29 in the current Cub Scout Section Training Scheme (9 August 2026, tenth edition). CubBadge records only the award date and certificate number; it does not invent item-level progress IDs for this single completion record."
+    },
+    {
+      "id": "A30",
+      "catalogueNo": "30",
+      "name": "搜集章",
+      "name_en": "Collector",
+      "category": "SPORTS",
+      "categoryName": "運動與愛好",
+      "categoryName_en": "Sports and Hobbies",
+      "scheme": "2026",
+      "icon": "⭐",
+      "desc": "運動與愛好｜2026年第十版目錄第30項；獨立活動徽章紀錄。",
+      "detail": "考驗內容以現行《Cub Scout Section Training Scheme》（2026年8月9日版，第十版）目錄第30項為準。此工具只記錄徽章取得日期及證書編號，不把單一完成紀錄虛構為逐項進度。",
+      "sourceUrl": "https://prog.scouting.org.hk/cub/%E6%96%B0%E8%A8%93%E7%B7%B4%E7%B6%B1%E8%A6%81/",
+      "desc_en": "Sports and Hobbies | Catalogue entry 30, tenth edition (2026); one independent badge completion record.",
+      "detail_en": "Assessment must follow catalogue entry 30 in the current Cub Scout Section Training Scheme (9 August 2026, tenth edition). CubBadge records only the award date and certificate number; it does not invent item-level progress IDs for this single completion record."
+    },
+    {
+      "id": "A31",
+      "catalogueNo": "31",
+      "name": "烹飪章",
+      "name_en": "Cook",
+      "category": "SPORTS",
+      "categoryName": "運動與愛好",
+      "categoryName_en": "Sports and Hobbies",
+      "scheme": "2026",
+      "icon": "⭐",
+      "desc": "運動與愛好｜2026年第十版目錄第31項；獨立活動徽章紀錄。",
+      "detail": "考驗內容以現行《Cub Scout Section Training Scheme》（2026年8月9日版，第十版）目錄第31項為準。此工具只記錄徽章取得日期及證書編號，不把單一完成紀錄虛構為逐項進度。",
+      "sourceUrl": "https://prog.scouting.org.hk/cub/%E6%96%B0%E8%A8%93%E7%B7%B4%E7%B6%B1%E8%A6%81/",
+      "desc_en": "Sports and Hobbies | Catalogue entry 31, tenth edition (2026); one independent badge completion record.",
+      "detail_en": "Assessment must follow catalogue entry 31 in the current Cub Scout Section Training Scheme (9 August 2026, tenth edition). CubBadge records only the award date and certificate number; it does not invent item-level progress IDs for this single completion record."
+    },
+    {
+      "id": "A32",
+      "catalogueNo": "32",
+      "name": "單車章",
+      "name_en": "Cyclist",
+      "category": "SPORTS",
+      "categoryName": "運動與愛好",
+      "categoryName_en": "Sports and Hobbies",
+      "scheme": "2026",
+      "icon": "⭐",
+      "desc": "運動與愛好｜2026年第十版目錄第32項；獨立活動徽章紀錄。",
+      "detail": "考驗內容以現行《Cub Scout Section Training Scheme》（2026年8月9日版，第十版）目錄第32項為準。此工具只記錄徽章取得日期及證書編號，不把單一完成紀錄虛構為逐項進度。",
+      "sourceUrl": "https://prog.scouting.org.hk/cub/%E6%96%B0%E8%A8%93%E7%B7%B4%E7%B6%B1%E8%A6%81/",
+      "desc_en": "Sports and Hobbies | Catalogue entry 32, tenth edition (2026); one independent badge completion record.",
+      "detail_en": "Assessment must follow catalogue entry 32 in the current Cub Scout Section Training Scheme (9 August 2026, tenth edition). CubBadge records only the award date and certificate number; it does not invent item-level progress IDs for this single completion record."
+    },
+    {
+      "id": "A33",
+      "catalogueNo": "33",
+      "name": "公園定向章",
+      "name_en": "Park Orienteering",
+      "category": "SPORTS",
+      "categoryName": "運動與愛好",
+      "categoryName_en": "Sports and Hobbies",
+      "scheme": "2026",
+      "icon": "⭐",
+      "levels": 3,
+      "desc": "運動與愛好｜2026年第十版目錄第33項；獨立活動徽章紀錄。",
+      "detail": "考驗內容以現行《Cub Scout Section Training Scheme》（2026年8月9日版，第十版）目錄第33項為準。此工具只記錄徽章取得日期及證書編號，不把單一完成紀錄虛構為逐項進度。",
+      "sourceUrl": "https://prog.scouting.org.hk/cub/%E6%96%B0%E8%A8%93%E7%B7%B4%E7%B6%B1%E8%A6%81/",
+      "desc_en": "Sports and Hobbies | Catalogue entry 33, tenth edition (2026); one independent badge completion record.",
+      "detail_en": "Assessment must follow catalogue entry 33 in the current Cub Scout Section Training Scheme (9 August 2026, tenth edition). CubBadge records only the award date and certificate number; it does not invent item-level progress IDs for this single completion record."
+    },
+    {
+      "id": "A34",
+      "catalogueNo": "34",
+      "name": "寵物章",
+      "name_en": "Pets",
+      "category": "SPORTS",
+      "categoryName": "運動與愛好",
+      "categoryName_en": "Sports and Hobbies",
+      "scheme": "2026",
+      "icon": "⭐",
+      "desc": "運動與愛好｜2026年第十版目錄第34項；獨立活動徽章紀錄。",
+      "detail": "考驗內容以現行《Cub Scout Section Training Scheme》（2026年8月9日版，第十版）目錄第34項為準。此工具只記錄徽章取得日期及證書編號，不把單一完成紀錄虛構為逐項進度。",
+      "sourceUrl": "https://prog.scouting.org.hk/cub/%E6%96%B0%E8%A8%93%E7%B7%B4%E7%B6%B1%E8%A6%81/",
+      "desc_en": "Sports and Hobbies | Catalogue entry 34, tenth edition (2026); one independent badge completion record.",
+      "detail_en": "Assessment must follow catalogue entry 34 in the current Cub Scout Section Training Scheme (9 August 2026, tenth edition). CubBadge records only the award date and certificate number; it does not invent item-level progress IDs for this single completion record."
+    },
+    {
+      "id": "A35",
+      "catalogueNo": "35",
+      "name": "體適能章",
+      "name_en": "Physical Fitness",
+      "category": "SPORTS",
+      "categoryName": "運動與愛好",
+      "categoryName_en": "Sports and Hobbies",
+      "scheme": "2026",
+      "icon": "⭐",
+      "levels": 3,
+      "desc": "運動與愛好｜2026年第十版目錄第35項；獨立活動徽章紀錄。",
+      "detail": "考驗內容以現行《Cub Scout Section Training Scheme》（2026年8月9日版，第十版）目錄第35項為準。此工具只記錄徽章取得日期及證書編號，不把單一完成紀錄虛構為逐項進度。",
+      "sourceUrl": "https://prog.scouting.org.hk/cub/%E6%96%B0%E8%A8%93%E7%B7%B4%E7%B6%B1%E8%A6%81/",
+      "desc_en": "Sports and Hobbies | Catalogue entry 35, tenth edition (2026); one independent badge completion record.",
+      "detail_en": "Assessment must follow catalogue entry 35 in the current Cub Scout Section Training Scheme (9 August 2026, tenth edition). CubBadge records only the award date and certificate number; it does not invent item-level progress IDs for this single completion record."
+    },
+    {
+      "id": "A36",
+      "catalogueNo": "36",
+      "name": "風帆章",
+      "name_en": "Sailing",
+      "category": "SPORTS",
+      "categoryName": "運動與愛好",
+      "categoryName_en": "Sports and Hobbies",
+      "scheme": "2026",
+      "icon": "⭐",
+      "desc": "運動與愛好｜2026年第十版目錄第36項；獨立活動徽章紀錄。",
+      "detail": "考驗內容以現行《Cub Scout Section Training Scheme》（2026年8月9日版，第十版）目錄第36項為準。此工具只記錄徽章取得日期及證書編號，不把單一完成紀錄虛構為逐項進度。",
+      "sourceUrl": "https://prog.scouting.org.hk/cub/%E6%96%B0%E8%A8%93%E7%B7%B4%E7%B6%B1%E8%A6%81/",
+      "desc_en": "Sports and Hobbies | Catalogue entry 36, tenth edition (2026); one independent badge completion record.",
+      "detail_en": "Assessment must follow catalogue entry 36 in the current Cub Scout Section Training Scheme (9 August 2026, tenth edition). CubBadge records only the award date and certificate number; it does not invent item-level progress IDs for this single completion record."
+    },
+    {
+      "id": "A37",
+      "catalogueNo": "37",
+      "name": "水手章",
+      "name_en": "Seamanship",
+      "category": "SPORTS",
+      "categoryName": "運動與愛好",
+      "categoryName_en": "Sports and Hobbies",
+      "scheme": "2026",
+      "icon": "⭐",
+      "desc": "運動與愛好｜2026年第十版目錄第37項；獨立活動徽章紀錄。",
+      "detail": "考驗內容以現行《Cub Scout Section Training Scheme》（2026年8月9日版，第十版）目錄第37項為準。此工具只記錄徽章取得日期及證書編號，不把單一完成紀錄虛構為逐項進度。",
+      "sourceUrl": "https://prog.scouting.org.hk/cub/%E6%96%B0%E8%A8%93%E7%B7%B4%E7%B6%B1%E8%A6%81/",
+      "desc_en": "Sports and Hobbies | Catalogue entry 37, tenth edition (2026); one independent badge completion record.",
+      "detail_en": "Assessment must follow catalogue entry 37 in the current Cub Scout Section Training Scheme (9 August 2026, tenth edition). CubBadge records only the award date and certificate number; it does not invent item-level progress IDs for this single completion record."
+    },
+    {
+      "id": "A38",
+      "catalogueNo": "38",
+      "name": "運動章",
+      "name_en": "Sportsman",
+      "category": "SPORTS",
+      "categoryName": "運動與愛好",
+      "categoryName_en": "Sports and Hobbies",
+      "scheme": "2026",
+      "icon": "⭐",
+      "desc": "運動與愛好｜2026年第十版目錄第38項；獨立活動徽章紀錄。",
+      "detail": "考驗內容以現行《Cub Scout Section Training Scheme》（2026年8月9日版，第十版）目錄第38項為準。此工具只記錄徽章取得日期及證書編號，不把單一完成紀錄虛構為逐項進度。",
+      "sourceUrl": "https://prog.scouting.org.hk/cub/%E6%96%B0%E8%A8%93%E7%B7%B4%E7%B6%B1%E8%A6%81/",
+      "desc_en": "Sports and Hobbies | Catalogue entry 38, tenth edition (2026); one independent badge completion record.",
+      "detail_en": "Assessment must follow catalogue entry 38 in the current Cub Scout Section Training Scheme (9 August 2026, tenth edition). CubBadge records only the award date and certificate number; it does not invent item-level progress IDs for this single completion record."
+    },
+    {
+      "id": "A39",
+      "catalogueNo": "39",
+      "name": "游泳章",
+      "name_en": "Swimmer",
+      "category": "SPORTS",
+      "categoryName": "運動與愛好",
+      "categoryName_en": "Sports and Hobbies",
+      "scheme": "2026",
+      "icon": "⭐",
+      "levels": 3,
+      "desc": "運動與愛好｜2026年第十版目錄第39項；獨立活動徽章紀錄。",
+      "detail": "考驗內容以現行《Cub Scout Section Training Scheme》（2026年8月9日版，第十版）目錄第39項為準。此工具只記錄徽章取得日期及證書編號，不把單一完成紀錄虛構為逐項進度。",
+      "sourceUrl": "https://prog.scouting.org.hk/cub/%E6%96%B0%E8%A8%93%E7%B7%B4%E7%B6%B1%E8%A6%81/",
+      "desc_en": "Sports and Hobbies | Catalogue entry 39, tenth edition (2026); one independent badge completion record.",
+      "detail_en": "Assessment must follow catalogue entry 39 in the current Cub Scout Section Training Scheme (9 August 2026, tenth edition). CubBadge records only the award date and certificate number; it does not invent item-level progress IDs for this single completion record."
+    },
+    {
+      "id": "A40",
+      "catalogueNo": "40",
+      "name": "世界友誼章",
+      "name_en": "World Friendship",
+      "category": "SPORTS",
+      "categoryName": "運動與愛好",
+      "categoryName_en": "Sports and Hobbies",
+      "scheme": "2026",
+      "icon": "⭐",
+      "desc": "運動與愛好｜2026年第十版目錄第40項；獨立活動徽章紀錄。",
+      "detail": "考驗內容以現行《Cub Scout Section Training Scheme》（2026年8月9日版，第十版）目錄第40項為準。此工具只記錄徽章取得日期及證書編號，不把單一完成紀錄虛構為逐項進度。",
+      "sourceUrl": "https://prog.scouting.org.hk/cub/%E6%96%B0%E8%A8%93%E7%B7%B4%E7%B6%B1%E8%A6%81/",
+      "desc_en": "Sports and Hobbies | Catalogue entry 40, tenth edition (2026); one independent badge completion record.",
+      "detail_en": "Assessment must follow catalogue entry 40 in the current Cub Scout Section Training Scheme (9 August 2026, tenth edition). CubBadge records only the award date and certificate number; it does not invent item-level progress IDs for this single completion record."
+    },
+    {
+      "id": "A41",
+      "catalogueNo": "41",
+      "name": "宗教章",
+      "name_en": "Religious",
+      "category": "OTHER",
+      "categoryName": "其他徽章",
+      "categoryName_en": "Other Badges",
+      "scheme": "2026",
+      "icon": "⭐",
+      "desc": "其他徽章｜2026年第十版目錄第41項；獨立活動徽章紀錄。",
+      "detail": "考驗內容以現行《Cub Scout Section Training Scheme》（2026年8月9日版，第十版）目錄第41項為準。此工具只記錄徽章取得日期及證書編號，不把單一完成紀錄虛構為逐項進度。",
+      "sourceUrl": "https://prog.scouting.org.hk/cub/%E6%96%B0%E8%A8%93%E7%B7%B4%E7%B6%B1%E8%A6%81/",
+      "desc_en": "Other Badges | Catalogue entry 41, tenth edition (2026); one independent badge completion record.",
+      "detail_en": "Assessment must follow catalogue entry 41 in the current Cub Scout Section Training Scheme (9 August 2026, tenth edition). CubBadge records only the award date and certificate number; it does not invent item-level progress IDs for this single completion record."
+    },
+    {
+      "id": "A42",
+      "catalogueNo": "42",
+      "name": "童軍先修章",
+      "name_en": "Scout Link Badge",
+      "category": "OTHER",
+      "categoryName": "其他徽章",
+      "categoryName_en": "Other Badges",
+      "scheme": "2026",
+      "icon": "⭐",
+      "desc": "其他徽章｜2026年第十版目錄第42項；獨立活動徽章紀錄。",
+      "detail": "考驗內容以現行《Cub Scout Section Training Scheme》（2026年8月9日版，第十版）目錄第42項為準。此工具只記錄徽章取得日期及證書編號，不把單一完成紀錄虛構為逐項進度。",
+      "sourceUrl": "https://prog.scouting.org.hk/cub/%E6%96%B0%E8%A8%93%E7%B7%B4%E7%B6%B1%E8%A6%81/",
+      "desc_en": "Other Badges | Catalogue entry 42, tenth edition (2026); one independent badge completion record.",
+      "detail_en": "Assessment must follow catalogue entry 42 in the current Cub Scout Section Training Scheme (9 August 2026, tenth edition). CubBadge records only the award date and certificate number; it does not invent item-level progress IDs for this single completion record."
+    }
+  ],
+  "legacyBadges": [
     {
       "id": "L1",
       "icon": "🐾",
@@ -1171,7 +2831,7 @@
       ]
     }
   ],
-  "otherBadges": [
+  "legacyOtherBadges": [
     {
       "id": "ACT-07",
       "name": "愛護動物章",
@@ -1461,23 +3121,30 @@
     }
   ],
   "trainingPlan": {
-    "title": "幼童軍支部的訓練計劃（2025年8月網上擬定簡易版）",
-    "purpose": "幼童軍支部旨在促進兒童身心精神陶冶，四個進度性徽章為主，輔以活動徽章，設童軍先修章",
+    "title": "幼童軍支部的訓練計劃（2026年第十版）",
+    "purpose": "多元活動・探索求知。以會員章及四個進度性獎章為主軸，配合核心與興趣範疇活動徽章。",
     "method": [
       "小隊制度",
-      "進度性徽章：獎章/歷奇/高級歷奇/金紫荊",
-      "活動徽章：一級制及三級制"
+      "核心範疇：童軍技能、關己愛人、國家與社區、童軍家庭",
+      "興趣範疇：多元創藝、科學與大自然、運動與愛好",
+      "一級制及三級制活動徽章"
     ],
     "expected": [
       "身心精神陶冶",
-      "團隊合作"
+      "探索求知",
+      "關己愛人",
+      "團隊合作及公民責任"
     ],
-    "progressFlow": "會員章→幼童軍獎章→歷奇章→高級歷奇章→金紫荊獎章",
-    "assessmentPrinciples": "所有徽章由團長或總會/地域/區訓練班委任合適人士評核，團長有最終決定及簽發權。每年最少四份一團員考獲較高一級。 本系統為電子紀錄冊及領袖核對工具；正式簽發、申請及安全要求仍以總會最新通告及官方表格為準。",
+    "progressFlow": "會員章 → 幼童軍體驗章 → 幼童軍歷奇章 → 幼童軍高級歷奇章 → 金紫荊獎章",
+    "assessmentPrinciples": "按2026年8月15日起生效的新修訂綱要評核。系統只作電子紀錄及核對；正式評核、簽發、申請、年齡和過渡安排以總會最新通告及指定表格為準。",
     "links": [
       {
-        "title": "幼童軍訓練綱要 2025年8月網上擬定簡易版 PDF",
-        "url": "https://prog.scouting.org.hk/cub/wp-content/uploads/2025/08/%E5%B9%BC%E7%AB%A5%E8%BB%8D%E8%A8%93%E7%B7%B4%E7%B6%B1%E8%A6%812025%E5%B9%B48%E6%9C%88%E7%B6%B2%E4%B8%8A%E6%93%AC%E5%AE%9A%E7%B0%A1%E6%98%93%E7%89%88.pdf"
+        "title": "新修訂幼童軍訓練綱要（官方支部頁）",
+        "url": "https://prog.scouting.org.hk/cub/%E6%96%B0%E8%A8%93%E7%B7%B4%E7%B6%B1%E8%A6%81/"
+      },
+      {
+        "title": "P022/2026 新修訂支部訓練綱要及過渡安排",
+        "url": "https://www.scout.org.hk/uploads/tc/circulars/23585/p022-26.pdf"
       }
     ]
   },
@@ -1505,18 +3172,948 @@
     ]
   },
   "forms": {
-    "PT68": {
-      "name": "金紫荊獎章及證書申請表 PT/68",
-      "code": "PT/68"
+    "CURRENT_GBA": {
+      "kind": "current-checklist",
+      "title": "新制金紫荊獎章申請資料核對",
+      "official": false,
+      "badgeId": "P4",
+      "notice": "這是由系統資料產生的非官方核對清單，不是總會申請表。2026年8月9日版綱要第20頁仍把申請表標示為「PT/XX」；PT/XX 是待定佔位文字，不是可用表格編號。必須向所屬童軍區確認及使用最新指定表格。",
+      "sourceUrl": "https://drive.usercontent.google.com/download?id=19StE5sobEUb8DOSkW0e57T0j784S6-R5&export=download",
+      "officialIndexUrl": "https://www.scout.org.hk/tc/circulars-forms/forms/index.html?type=8",
+      "personalFields": [
+        "姓名",
+        "幼童軍團／童軍旅",
+        "童軍區",
+        "地域",
+        "童軍成員編號",
+        "出生日期",
+        "年齡",
+        "就讀年級"
+      ],
+      "eligibilityNotes": [
+        "最後一項課程完成時必須年滿十歲半，方可向所屬童軍區及地域遞交指定申請表作審批。",
+        "已達十二歲而仍就讀小學者，只可在符合綱要所列核心範疇資格、完成時仍未小學畢業，並附學校證明文件副本等條件下，延續至相關新學年度開始前一日。",
+        "本核對頁不取代指定表格、官方評核或批核。"
+      ]
     },
     "PT67": {
-      "name": "金紫荊獎章開展通知書 PT/67",
-      "code": "PT/67"
+      "kind": "legacy-official-checklist",
+      "officialCode": "PT/67",
+      "scheme": "legacy",
+      "version": "4/2019",
+      "title": "金紫荊獎章開展通知書（舊制官方表格填寫核對）",
+      "official": true,
+      "downloadUrl": "https://www.scout.org.hk/article_attach/23547/pt67.pdf",
+      "sourceUrl": "https://www.scout.org.hk/article_attach/23547/pt67.pdf",
+      "notice": "只供按 P022/2026 個案E沿用舊制者核對；請下載及遞交官方原表。官方分部是（1）個人資料、（2）考驗計劃、（3）確認及批核，不是甲／乙／丙／丁。",
+      "sections": [
+        {
+          "id": "1",
+          "title": "個人資料",
+          "fields": [
+            "姓名（中文）",
+            "姓名（英文）",
+            "出生日期",
+            "年齡",
+            "就讀年級",
+            "童軍成員編號",
+            "性別",
+            "香港身份證／護照號碼（首4位英文字母及數字）",
+            "所屬單位（旅）",
+            "所屬單位（區）",
+            "所屬單位（地域）",
+            "郵寄地址（中文）",
+            "郵寄地址（英文）",
+            "家長／監護人姓名",
+            "家長／監護人關係",
+            "家長／監護人聯絡電話",
+            "家長／監護人電郵地址",
+            "負責領袖姓名",
+            "負責領袖職位",
+            "負責領袖聯絡電話",
+            "負責領袖電郵地址"
+          ],
+          "extraRows": [
+            {
+              "label": "考獲「幼童軍歷奇章」日期",
+              "source": {
+                "type": "badgeDate",
+                "badgeId": "L3"
+              }
+            },
+            {
+              "label": "證書號碼",
+              "value": ""
+            }
+          ]
+        },
+        {
+          "id": "2",
+          "title": "考驗計劃",
+          "planning": true,
+          "rows": [
+            {
+              "label": "幼童軍高級歷奇章－戶外活動",
+              "source": {
+                "type": "segmentDate",
+                "badgeId": "L4",
+                "segmentCode": "L4-OUTDOOR"
+              }
+            },
+            {
+              "label": "戶外挑戰 1. 露營（必修）",
+              "source": {
+                "type": "itemRange",
+                "itemIds": [
+                  "L5-CAMP-01",
+                  "L5-CAMP-02",
+                  "L5-CAMP-03",
+                  "L5-CAMP-04",
+                  "L5-CAMP-05",
+                  "L5-CAMP-06",
+                  "L5-CAMP-07"
+                ]
+              }
+            },
+            {
+              "label": "戶外挑戰 2. 遠足／簡單先鋒工程／原野烹飪（自選）",
+              "source": {
+                "type": "itemGroups",
+                "groups": [
+                  {
+                    "label": "遠足",
+                    "itemIds": [
+                      "L5-HIKE-01",
+                      "L5-HIKE-02",
+                      "L5-HIKE-03",
+                      "L5-HIKE-04"
+                    ]
+                  },
+                  {
+                    "label": "簡單先鋒工程",
+                    "itemIds": [
+                      "L5-PION-01",
+                      "L5-PION-02",
+                      "L5-PION-03"
+                    ]
+                  },
+                  {
+                    "label": "原野烹飪",
+                    "itemIds": [
+                      "L5-COOK-01",
+                      "L5-COOK-02",
+                      "L5-COOK-03",
+                      "L5-COOK-04"
+                    ]
+                  }
+                ]
+              }
+            },
+            {
+              "label": "戶外挑戰 3. 遠足／簡單先鋒工程／原野烹飪（自選）",
+              "source": {
+                "type": "itemGroups",
+                "groups": [
+                  {
+                    "label": "遠足",
+                    "itemIds": [
+                      "L5-HIKE-01",
+                      "L5-HIKE-02",
+                      "L5-HIKE-03",
+                      "L5-HIKE-04"
+                    ]
+                  },
+                  {
+                    "label": "簡單先鋒工程",
+                    "itemIds": [
+                      "L5-PION-01",
+                      "L5-PION-02",
+                      "L5-PION-03"
+                    ]
+                  },
+                  {
+                    "label": "原野烹飪",
+                    "itemIds": [
+                      "L5-COOK-01",
+                      "L5-COOK-02",
+                      "L5-COOK-03",
+                      "L5-COOK-04"
+                    ]
+                  }
+                ]
+              }
+            },
+            {
+              "label": "歷險挑戰 甲部 1. 黑夜歷程／運動攀登／兒童繩網陣",
+              "source": {
+                "type": "itemGroups",
+                "groups": [
+                  {
+                    "label": "黑夜歷程",
+                    "itemIds": [
+                      "L5-ADV-NIGHT-01",
+                      "L5-ADV-NIGHT-02",
+                      "L5-ADV-NIGHT-03"
+                    ]
+                  },
+                  {
+                    "label": "運動攀登",
+                    "itemIds": [
+                      "L5-ADV-CLIMB"
+                    ]
+                  },
+                  {
+                    "label": "兒童繩網陣",
+                    "itemIds": [
+                      "L5-ADV-ROPE"
+                    ]
+                  }
+                ]
+              }
+            },
+            {
+              "label": "歷險挑戰 甲部 2.（如不適用須註明）",
+              "source": {
+                "type": "itemGroups",
+                "groups": [
+                  {
+                    "label": "黑夜歷程",
+                    "itemIds": [
+                      "L5-ADV-NIGHT-01",
+                      "L5-ADV-NIGHT-02",
+                      "L5-ADV-NIGHT-03"
+                    ]
+                  },
+                  {
+                    "label": "運動攀登",
+                    "itemIds": [
+                      "L5-ADV-CLIMB"
+                    ]
+                  },
+                  {
+                    "label": "兒童繩網陣",
+                    "itemIds": [
+                      "L5-ADV-ROPE"
+                    ]
+                  }
+                ]
+              }
+            },
+            {
+              "label": "歷險挑戰 乙部 1. 指定活動徽章",
+              "source": {
+                "type": "itemGroups",
+                "groups": [
+                  {
+                    "label": "單車章",
+                    "itemIds": [
+                      "L5-ACT-CYCLIST"
+                    ]
+                  },
+                  {
+                    "label": "游泳章",
+                    "itemIds": [
+                      "L5-ACT-SWIMMER"
+                    ]
+                  },
+                  {
+                    "label": "探險章",
+                    "itemIds": [
+                      "L5-ACT-PIONEER"
+                    ]
+                  },
+                  {
+                    "label": "公園定向章",
+                    "itemIds": [
+                      "L5-ACT-ORIENTEER"
+                    ]
+                  },
+                  {
+                    "label": "讀圖章",
+                    "itemIds": [
+                      "L5-ACT-READER"
+                    ]
+                  },
+                  {
+                    "label": "田徑章",
+                    "itemIds": [
+                      "L5-ACT-ATHLETE"
+                    ]
+                  },
+                  {
+                    "label": "風帆章",
+                    "itemIds": [
+                      "L5-ACT-SAILOR"
+                    ]
+                  },
+                  {
+                    "label": "獨木舟章",
+                    "itemIds": [
+                      "L5-ACT-CANOE"
+                    ]
+                  },
+                  {
+                    "label": "水手章",
+                    "itemIds": [
+                      "L5-ACT-SAILOR2"
+                    ]
+                  },
+                  {
+                    "label": "射箭章",
+                    "itemIds": [
+                      "L5-ACT-ARCHER"
+                    ]
+                  },
+                  {
+                    "label": "體適能章",
+                    "itemIds": [
+                      "L5-ACT-FITNESS"
+                    ]
+                  }
+                ]
+              }
+            },
+            {
+              "label": "歷險挑戰 乙部 2.（如不適用須註明）",
+              "source": {
+                "type": "itemGroups",
+                "groups": [
+                  {
+                    "label": "單車章",
+                    "itemIds": [
+                      "L5-ACT-CYCLIST"
+                    ]
+                  },
+                  {
+                    "label": "游泳章",
+                    "itemIds": [
+                      "L5-ACT-SWIMMER"
+                    ]
+                  },
+                  {
+                    "label": "探險章",
+                    "itemIds": [
+                      "L5-ACT-PIONEER"
+                    ]
+                  },
+                  {
+                    "label": "公園定向章",
+                    "itemIds": [
+                      "L5-ACT-ORIENTEER"
+                    ]
+                  },
+                  {
+                    "label": "讀圖章",
+                    "itemIds": [
+                      "L5-ACT-READER"
+                    ]
+                  },
+                  {
+                    "label": "田徑章",
+                    "itemIds": [
+                      "L5-ACT-ATHLETE"
+                    ]
+                  },
+                  {
+                    "label": "風帆章",
+                    "itemIds": [
+                      "L5-ACT-SAILOR"
+                    ]
+                  },
+                  {
+                    "label": "獨木舟章",
+                    "itemIds": [
+                      "L5-ACT-CANOE"
+                    ]
+                  },
+                  {
+                    "label": "水手章",
+                    "itemIds": [
+                      "L5-ACT-SAILOR2"
+                    ]
+                  },
+                  {
+                    "label": "射箭章",
+                    "itemIds": [
+                      "L5-ACT-ARCHER"
+                    ]
+                  },
+                  {
+                    "label": "體適能章",
+                    "itemIds": [
+                      "L5-ACT-FITNESS"
+                    ]
+                  }
+                ]
+              }
+            },
+            {
+              "label": "領導才能",
+              "source": {
+                "type": "itemRange",
+                "itemIds": [
+                  "L5-LEAD-01",
+                  "L5-LEAD-02"
+                ]
+              }
+            },
+            {
+              "label": "服務與分享",
+              "source": {
+                "type": "itemRange",
+                "itemIds": [
+                  "L5-SVC-01",
+                  "L5-SVC-02"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "3",
+          "title": "確認及批核",
+          "blocks": [
+            {
+              "title": "申請者簽署",
+              "fields": [
+                "申請人簽署",
+                "日期"
+              ]
+            },
+            {
+              "title": "同意",
+              "fields": [
+                "旅長／幼童軍團長簽署",
+                "姓名",
+                "日期",
+                "旅／幼童軍團印章"
+              ]
+            },
+            {
+              "title": "批核",
+              "fields": [
+                "區總監簽署",
+                "姓名",
+                "日期",
+                "區印"
+              ]
+            }
+          ]
+        }
+      ],
+      "eligibilityNotes": [
+        "舊制 PT/67 原表註明：開始金紫荊獎章課程時須年滿九歲半；如預計完成時超過十二歲，須一併提交學校證明文件。只供經核實的舊制過渡個案。"
+      ]
+    },
+    "PT68": {
+      "kind": "legacy-official-checklist",
+      "officialCode": "PT/68",
+      "scheme": "legacy",
+      "version": "06/2024",
+      "title": "金紫荊獎章及證書申請表（舊制官方表格填寫核對）",
+      "official": true,
+      "downloadUrl": "https://www.scout.org.hk/uploads/tc/forms/16499/PT68.pdf",
+      "sourceUrl": "https://www.scout.org.hk/uploads/tc/forms/16499/PT68.pdf",
+      "notice": "只供按 P022/2026 個案E沿用舊制者核對；請下載及遞交官方原表。官方分部是（1）個人資料、（2）完成之項目、（3）確認及批核；只有「歷險挑戰」再分甲／乙部。",
+      "sections": [
+        {
+          "id": "1",
+          "title": "個人資料",
+          "fields": [
+            "姓名（中文）",
+            "姓名（英文）",
+            "出生日期",
+            "年齡",
+            "就讀年級",
+            "童軍成員編號",
+            "性別",
+            "香港身份證／護照號碼（首4位英文字母及數字）",
+            "所屬單位（旅）",
+            "所屬單位（區）",
+            "所屬單位（地域）",
+            "郵寄地址（中文）",
+            "郵寄地址（英文）",
+            "家長／監護人姓名",
+            "家長／監護人關係",
+            "家長／監護人聯絡電話",
+            "家長／監護人電郵地址",
+            "負責領袖姓名",
+            "負責領袖職位",
+            "負責領袖聯絡電話",
+            "負責領袖電郵地址"
+          ],
+          "extraRows": [
+            {
+              "label": "考獲「幼童軍高級歷奇章」日期",
+              "source": {
+                "type": "badgeDate",
+                "badgeId": "L4"
+              }
+            },
+            {
+              "label": "證書號碼",
+              "value": ""
+            }
+          ]
+        },
+        {
+          "id": "2",
+          "title": "完成之項目",
+          "rows": [
+            {
+              "label": "幼童軍高級歷奇章－戶外活動",
+              "source": {
+                "type": "segmentDate",
+                "badgeId": "L4",
+                "segmentCode": "L4-OUTDOOR"
+              }
+            },
+            {
+              "label": "戶外挑戰 1. 露營（必修）",
+              "source": {
+                "type": "itemRange",
+                "itemIds": [
+                  "L5-CAMP-01",
+                  "L5-CAMP-02",
+                  "L5-CAMP-03",
+                  "L5-CAMP-04",
+                  "L5-CAMP-05",
+                  "L5-CAMP-06",
+                  "L5-CAMP-07"
+                ]
+              }
+            },
+            {
+              "label": "戶外挑戰 2. 遠足／簡單先鋒工程／原野烹飪（自選）",
+              "source": {
+                "type": "itemGroups",
+                "groups": [
+                  {
+                    "label": "遠足",
+                    "itemIds": [
+                      "L5-HIKE-01",
+                      "L5-HIKE-02",
+                      "L5-HIKE-03",
+                      "L5-HIKE-04"
+                    ]
+                  },
+                  {
+                    "label": "簡單先鋒工程",
+                    "itemIds": [
+                      "L5-PION-01",
+                      "L5-PION-02",
+                      "L5-PION-03"
+                    ]
+                  },
+                  {
+                    "label": "原野烹飪",
+                    "itemIds": [
+                      "L5-COOK-01",
+                      "L5-COOK-02",
+                      "L5-COOK-03",
+                      "L5-COOK-04"
+                    ]
+                  }
+                ]
+              }
+            },
+            {
+              "label": "戶外挑戰 3. 遠足／簡單先鋒工程／原野烹飪（自選）",
+              "source": {
+                "type": "itemGroups",
+                "groups": [
+                  {
+                    "label": "遠足",
+                    "itemIds": [
+                      "L5-HIKE-01",
+                      "L5-HIKE-02",
+                      "L5-HIKE-03",
+                      "L5-HIKE-04"
+                    ]
+                  },
+                  {
+                    "label": "簡單先鋒工程",
+                    "itemIds": [
+                      "L5-PION-01",
+                      "L5-PION-02",
+                      "L5-PION-03"
+                    ]
+                  },
+                  {
+                    "label": "原野烹飪",
+                    "itemIds": [
+                      "L5-COOK-01",
+                      "L5-COOK-02",
+                      "L5-COOK-03",
+                      "L5-COOK-04"
+                    ]
+                  }
+                ]
+              }
+            },
+            {
+              "label": "歷險挑戰 甲部 1. 黑夜歷程／運動攀登／兒童繩網陣",
+              "source": {
+                "type": "itemGroups",
+                "groups": [
+                  {
+                    "label": "黑夜歷程",
+                    "itemIds": [
+                      "L5-ADV-NIGHT-01",
+                      "L5-ADV-NIGHT-02",
+                      "L5-ADV-NIGHT-03"
+                    ]
+                  },
+                  {
+                    "label": "運動攀登",
+                    "itemIds": [
+                      "L5-ADV-CLIMB"
+                    ]
+                  },
+                  {
+                    "label": "兒童繩網陣",
+                    "itemIds": [
+                      "L5-ADV-ROPE"
+                    ]
+                  }
+                ]
+              }
+            },
+            {
+              "label": "歷險挑戰 甲部 2.（如不適用須註明）",
+              "source": {
+                "type": "itemGroups",
+                "groups": [
+                  {
+                    "label": "黑夜歷程",
+                    "itemIds": [
+                      "L5-ADV-NIGHT-01",
+                      "L5-ADV-NIGHT-02",
+                      "L5-ADV-NIGHT-03"
+                    ]
+                  },
+                  {
+                    "label": "運動攀登",
+                    "itemIds": [
+                      "L5-ADV-CLIMB"
+                    ]
+                  },
+                  {
+                    "label": "兒童繩網陣",
+                    "itemIds": [
+                      "L5-ADV-ROPE"
+                    ]
+                  }
+                ]
+              }
+            },
+            {
+              "label": "歷險挑戰 乙部 1. 指定活動徽章",
+              "source": {
+                "type": "itemGroups",
+                "groups": [
+                  {
+                    "label": "單車章",
+                    "itemIds": [
+                      "L5-ACT-CYCLIST"
+                    ]
+                  },
+                  {
+                    "label": "游泳章",
+                    "itemIds": [
+                      "L5-ACT-SWIMMER"
+                    ]
+                  },
+                  {
+                    "label": "探險章",
+                    "itemIds": [
+                      "L5-ACT-PIONEER"
+                    ]
+                  },
+                  {
+                    "label": "公園定向章",
+                    "itemIds": [
+                      "L5-ACT-ORIENTEER"
+                    ]
+                  },
+                  {
+                    "label": "讀圖章",
+                    "itemIds": [
+                      "L5-ACT-READER"
+                    ]
+                  },
+                  {
+                    "label": "田徑章",
+                    "itemIds": [
+                      "L5-ACT-ATHLETE"
+                    ]
+                  },
+                  {
+                    "label": "風帆章",
+                    "itemIds": [
+                      "L5-ACT-SAILOR"
+                    ]
+                  },
+                  {
+                    "label": "獨木舟章",
+                    "itemIds": [
+                      "L5-ACT-CANOE"
+                    ]
+                  },
+                  {
+                    "label": "水手章",
+                    "itemIds": [
+                      "L5-ACT-SAILOR2"
+                    ]
+                  },
+                  {
+                    "label": "射箭章",
+                    "itemIds": [
+                      "L5-ACT-ARCHER"
+                    ]
+                  },
+                  {
+                    "label": "體適能章",
+                    "itemIds": [
+                      "L5-ACT-FITNESS"
+                    ]
+                  }
+                ]
+              }
+            },
+            {
+              "label": "歷險挑戰 乙部 2.（如不適用須註明）",
+              "source": {
+                "type": "itemGroups",
+                "groups": [
+                  {
+                    "label": "單車章",
+                    "itemIds": [
+                      "L5-ACT-CYCLIST"
+                    ]
+                  },
+                  {
+                    "label": "游泳章",
+                    "itemIds": [
+                      "L5-ACT-SWIMMER"
+                    ]
+                  },
+                  {
+                    "label": "探險章",
+                    "itemIds": [
+                      "L5-ACT-PIONEER"
+                    ]
+                  },
+                  {
+                    "label": "公園定向章",
+                    "itemIds": [
+                      "L5-ACT-ORIENTEER"
+                    ]
+                  },
+                  {
+                    "label": "讀圖章",
+                    "itemIds": [
+                      "L5-ACT-READER"
+                    ]
+                  },
+                  {
+                    "label": "田徑章",
+                    "itemIds": [
+                      "L5-ACT-ATHLETE"
+                    ]
+                  },
+                  {
+                    "label": "風帆章",
+                    "itemIds": [
+                      "L5-ACT-SAILOR"
+                    ]
+                  },
+                  {
+                    "label": "獨木舟章",
+                    "itemIds": [
+                      "L5-ACT-CANOE"
+                    ]
+                  },
+                  {
+                    "label": "水手章",
+                    "itemIds": [
+                      "L5-ACT-SAILOR2"
+                    ]
+                  },
+                  {
+                    "label": "射箭章",
+                    "itemIds": [
+                      "L5-ACT-ARCHER"
+                    ]
+                  },
+                  {
+                    "label": "體適能章",
+                    "itemIds": [
+                      "L5-ACT-FITNESS"
+                    ]
+                  }
+                ]
+              }
+            },
+            {
+              "label": "領導才能",
+              "source": {
+                "type": "itemRange",
+                "itemIds": [
+                  "L5-LEAD-01",
+                  "L5-LEAD-02"
+                ]
+              }
+            },
+            {
+              "label": "服務與分享",
+              "source": {
+                "type": "itemRange",
+                "itemIds": [
+                  "L5-SVC-01",
+                  "L5-SVC-02"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "3",
+          "title": "確認及批核",
+          "blocks": [
+            {
+              "title": "申請者簽署",
+              "fields": [
+                "申請人簽署",
+                "日期"
+              ]
+            },
+            {
+              "title": "提名",
+              "fields": [
+                "旅長／幼童軍團長簽署",
+                "姓名",
+                "日期",
+                "旅／幼童軍團印章"
+              ]
+            },
+            {
+              "title": "推薦",
+              "fields": [
+                "區總監簽署",
+                "姓名",
+                "日期"
+              ]
+            },
+            {
+              "title": "批核",
+              "fields": [
+                "地域總監簽署",
+                "姓名",
+                "日期",
+                "地域印"
+              ]
+            },
+            {
+              "title": "地域辦事處專用",
+              "fields": [
+                "收表日期",
+                "證書號碼",
+                "查核",
+                "證書發出日期",
+                "獎章發出日期",
+                "備註"
+              ]
+            }
+          ]
+        }
+      ],
+      "eligibilityNotes": [
+        "舊制 PT/68 原表註明：申請者須在十歲半至十二歲，或在完成小學階段前之期限內；超過十二歲必須提交學校證明文件。只供經核實的舊制過渡個案。"
+      ]
+    },
+    "RECORD": {
+      "kind": "legacy-record-checklist",
+      "officialCode": null,
+      "scheme": "legacy",
+      "version": "06/2024",
+      "title": "金紫荊獎章考驗紀錄冊填寫核對（舊制）",
+      "official": true,
+      "downloadUrl": "https://www.scout.org.hk/uploads/tc/forms/16498/%E9%87%91%E7%B4%AB%E8%8D%8A%E7%8D%8E%E7%AB%A0%E8%80%83%E9%A9%97%E7%B4%80%E9%8C%84%E5%86%8A.pdf",
+      "sourceUrl": "https://www.scout.org.hk/uploads/tc/forms/16498/%E9%87%91%E7%B4%AB%E8%8D%8A%E7%8D%8E%E7%AB%A0%E8%80%83%E9%A9%97%E7%B4%80%E9%8C%84%E5%86%8A.pdf",
+      "notice": "這是官方24頁紀錄冊的填寫核對清單，不取代紀錄冊。只有歷險挑戰分甲部（黑夜歷程／運動攀登／兒童繩網陣）及乙部（指定活動徽章）。",
+      "sections": [
+        {
+          "title": "封面及開展承諾書",
+          "items": [
+            "姓名、旅別、區別、地域",
+            "已考獲舊制幼童軍歷奇章及年滿九歲半",
+            "家長／監護人允許開展考驗",
+            "幼童軍簽署及日期",
+            "家長／監護人簽署、姓名及日期",
+            "幼童軍團長簽署、姓名及日期"
+          ]
+        },
+        {
+          "title": "戶外挑戰",
+          "items": [
+            "舊制幼童軍高級歷奇章「戶外活動」完成日期",
+            "露營兩晚（必修）：日期、地點、照片／圖畫及不少於30字難忘經歷",
+            "遠足最少六公里：日期、時間、地點、主題、起點及終點",
+            "簡單先鋒工程：日期、時間、地點、紮作及難忘經歷",
+            "原野烹飪：日期、時間、地點、菜單、炭架、食物及難忘經歷"
+          ]
+        },
+        {
+          "title": "歷險挑戰（甲部）",
+          "items": [
+            "第一個項目：黑夜歷程／運動攀登／兒童繩網陣、日期、地點及最少三個安全守則",
+            "第二個項目（如適用）：黑夜歷程／運動攀登／兒童繩網陣、日期、地點及最少三個安全守則"
+          ]
+        },
+        {
+          "title": "歷險挑戰（乙部）",
+          "items": [
+            "第一個指定活動徽章證明及不少於30字難忘經歷",
+            "第二個指定活動徽章證明及難忘經歷（如適用）"
+          ]
+        },
+        {
+          "title": "領導才能",
+          "items": [
+            "所擔任之角色、日期及地點",
+            "事前準備",
+            "帶領過程",
+            "檢討",
+            "活動照片／圖畫、感想及難忘經歷"
+          ]
+        },
+        {
+          "title": "服務與分享",
+          "items": [
+            "舊制要求：持續服務不少於八次及總時數不少於八小時",
+            "服務紀錄表：日期、內容、服務時數及總服務時數",
+            "服務單位照片／圖畫",
+            "短講詞：服務目的、心得及難忘經歷"
+          ]
+        },
+        {
+          "title": "完成聲明",
+          "items": [
+            "按開展承諾書日期完成所有考驗的聲明",
+            "與區總監會面日期",
+            "幼童軍簽署及日期"
+          ]
+        }
+      ],
+      "eligibilityNotes": [
+        "此為舊制24頁紀錄冊的填寫核對清單；服務要求沿用舊制「不少於八次及不少於八小時」，不可與2026新制4.2.3的「八星期及八小時」混用。"
+      ]
     }
   },
   "legacyTransition": {
-    "title": "現行綱要 → 新修訂綱要過渡安排",
-    "enTitle": "Current → Revised Cub Scout Training Scheme Transition",
+    "title": "舊制紀錄及2026過渡安排",
+    "enTitle": "Legacy records and 2026 transition arrangements",
     "from": "2025年8月《幼童軍訓練綱要》網上擬定簡易版",
     "enFrom": "August 2025 online simplified Cub Scout Training Scheme",
     "to": "新修訂《幼童軍訓練綱要》（2026年8月9日版本）",
@@ -1527,10 +4124,10 @@
     "enSource": "SAHK Circular P022/2026 — Cub Scout Section transition arrangements",
     "sourceUrl": "https://www.scout.org.hk/uploads/tc/circulars/23585/p022-26.pdf",
     "oldSchemeUrl": "https://prog.scouting.org.hk/cub/wp-content/uploads/2025/08/%E5%B9%BC%E7%AB%A5%E8%BB%8D%E8%A8%93%E7%B7%B4%E7%B6%B1%E8%A6%812025%E5%B9%B48%E6%9C%88%E7%B6%B2%E4%B8%8A%E6%93%AC%E5%AE%9A%E7%B0%A1%E6%98%93%E7%89%88.pdf",
-    "newSchemeUrl": "https://drive.google.com/file/d/19StE5sobEUb8DOSkW0e57T0j784S6-R5/view",
-    "policy": "新修訂幼童軍訓練綱要於 2026年8月15日生效。2026年8月15日或以後宣誓之成員必須使用新綱要。2026年8月15日前已宣誓之成員設兩年過渡期（2026年8月15日至2028年8月14日），按通告 P022/2026 幼童軍支部 A–E 情況銜接。此工具只新增「過渡等同紀錄」，不會刪改舊進度、不會自動勾選任何新綱要細項，也不代表每項新考驗均已完成。",
-    "enPolicy": "The revised Cub Scout Training Scheme takes effect on 15 August 2026. Members invested on or after that date must use the revised scheme. Members invested before that date have a two-year transition period from 15 August 2026 to 14 August 2028 under SAHK Circular P022/2026 cases A–E. This tool records transition equivalence only; it does not delete old progress or automatically tick any revised-scheme checklist item.",
-    "mappingScope": "P022/2026 只列章級／資格銜接；實際年齡、宣誓日期、已完成徽章、開展金紫荊資格、學籍及表格證明仍須由領袖核實。",
+    "newSchemeUrl": "https://drive.usercontent.google.com/download?id=19StE5sobEUb8DOSkW0e57T0j784S6-R5&export=download",
+    "policy": "所有 L…、舊 ACT… 及 LEGACY-CUB… 紀錄均保留作歷史證據，標示為「舊版紀錄／不計完成度」，絕不自動當作新制項目完成。2026年8月15日或之後宣誓者必須使用新制；此前宣誓者按 P022/2026 的個案及期限處理。",
+    "enPolicy": "All L…, legacy ACT… and LEGACY-CUB… records remain as history labelled “Legacy record / excluded from completion”. They never auto-complete revised-scheme items.",
+    "mappingScope": "過渡等同只由領袖核實個案後另行記錄；本系統不把文字相近的舊細項自動轉為新細項。",
     "enMappingScope": "P022/2026 gives award-level and eligibility arrangements only. Leaders must verify age, investiture date, completed awards, Golden Bauhinia eligibility, school status, forms and evidence.",
     "badgeMappings": [
       {
@@ -1646,9 +4243,9 @@
         "enOld": "Current Membership Badge",
         "new": "新會員章（仍為入門章）／或按個案 A 視作完成新體驗章",
         "enNew": "Revised Membership Badge remains an introductory badge; under case A may deem new Experience completed",
-        "newItemId": "NEW-L1",
         "note": "新會員章內容已更新，新增更清晰的童軍運動起源、禮儀、旅團資料及 Safe from Harm。",
-        "enNote": "The revised Membership Badge updates Scouting origins, etiquette, Group details and Safe from Harm."
+        "enNote": "The revised Membership Badge updates Scouting origins, etiquette, Group details and Safe from Harm.",
+        "newBadgeId": "MEMBERSHIP"
       },
       {
         "id": "L2-to-experience",
@@ -1657,9 +4254,9 @@
         "enOld": "Current Cub Scout Award",
         "new": "新幼童軍體驗章",
         "enNew": "Revised Cub Scout Experience Badge",
-        "newItemId": "NEW-L2-EXPERIENCE",
         "note": "P022/2026 B 為章級視作完成，不代表新體驗章逐項已完成。",
-        "enNote": "P022/2026 case B is award-level deemed completion, not item-by-item completion."
+        "enNote": "P022/2026 case B is award-level deemed completion, not item-by-item completion.",
+        "newBadgeId": "P1"
       },
       {
         "id": "L3-to-adventure",
@@ -1668,9 +4265,9 @@
         "enOld": "Current Adventure Award",
         "new": "新幼童軍歷奇章",
         "enNew": "Revised Cub Scout Adventure Badge",
-        "newItemId": "NEW-L3-ADVENTURE",
         "note": "P022/2026 C/D 為章級視作完成。",
-        "enNote": "P022/2026 cases C/D are award-level deemed completion."
+        "enNote": "P022/2026 cases C/D are award-level deemed completion.",
+        "newBadgeId": "P2"
       },
       {
         "id": "activity-side-by-side",
@@ -1686,17 +4283,19 @@
     "quickTransfers": [
       {
         "id": "A-MEMBERSHIP-EXPERIENCE",
-        "old": "會員章（個案A：2026-08-15前宣誓且年滿7歲半）",
-        "enOld": "Membership Badge (case A: invested before 2026-08-15 and aged 7½+)",
-        "new": "新幼童軍體驗章（過渡視作完成）",
-        "enNew": "Revised Cub Scout Experience Badge (transition deemed completion)",
-        "permissionItemId": "L1-10",
+        "old": "已於2026-08-15前年滿七歲半並完成會員章課程（個案A）",
+        "enOld": "Aged 7½+ before 2026-08-15 and completed the legacy Membership Badge course (case A)",
+        "new": "等同完成新幼童軍體驗章，可隨後開展新幼童軍歷奇章",
+        "enNew": "Deemed to have completed the revised Experience Badge; may then start the revised Adventure Badge",
         "note": "只在成員符合個案A並由領袖核實後記錄。",
         "enNote": "Record only after leader verifies case A eligibility.",
         "recordId": "LEGACY-CUB-A-MEMBERSHIP-TO-EXPERIENCE",
         "label": "會員章 → 新體驗章（個案A）",
         "enLabel": "Membership → revised Experience (case A)",
-        "targetSegmentCode": "TRANSITION"
+        "targetSegmentCode": "TRANSITION",
+        "legacyRecord": true,
+        "completionExcluded": true,
+        "permissionItemId": "P1"
       },
       {
         "id": "B-CUB-AWARD-EXPERIENCE",
@@ -1704,13 +4303,15 @@
         "enOld": "Current Cub Scout Award (completed / expected by 2027-08-31)",
         "new": "新幼童軍體驗章（過渡視作完成）",
         "enNew": "Revised Cub Scout Experience Badge (transition deemed completion)",
-        "permissionItemId": "L2-TRACK-01",
         "note": "只在成員符合個案B並由領袖核實後記錄。",
         "enNote": "Record only after leader verifies case B eligibility.",
         "recordId": "LEGACY-CUB-B-CUB-AWARD-TO-EXPERIENCE",
         "label": "幼童軍獎章 → 新體驗章（個案B）",
         "enLabel": "Cub Scout Award → revised Experience (case B)",
-        "targetSegmentCode": "TRANSITION"
+        "targetSegmentCode": "TRANSITION",
+        "legacyRecord": true,
+        "completionExcluded": true,
+        "permissionItemId": "P1"
       },
       {
         "id": "C-D-ADVENTURE-ADVENTURE",
@@ -1718,13 +4319,15 @@
         "enOld": "Current Adventure Award (case C/D)",
         "new": "新幼童軍歷奇章（過渡視作完成）",
         "enNew": "Revised Cub Scout Adventure Badge (transition deemed completion)",
-        "permissionItemId": "L3-PRO-01",
         "note": "只在成員符合個案C或D並由領袖核實後記錄。",
         "enNote": "Record only after leader verifies case C or D eligibility.",
         "recordId": "LEGACY-CUB-CD-ADVENTURE-TO-ADVENTURE",
         "label": "歷奇章 → 新歷奇章（個案C/D）",
         "enLabel": "Adventure Award → revised Adventure (case C/D)",
-        "targetSegmentCode": "TRANSITION"
+        "targetSegmentCode": "TRANSITION",
+        "legacyRecord": true,
+        "completionExcluded": true,
+        "permissionItemId": "P2"
       },
       {
         "id": "E-CURRENT-GBA-CONTINUE",
@@ -1732,13 +4335,15 @@
         "enOld": "Case E: may continue current Adventure Crest / Golden Bauhinia",
         "new": "沿用現行綱要至期限（12歲生日或不遲於2028-08-31）",
         "enNew": "Continue current scheme until deadline (12th birthday or no later than 2028-08-31)",
-        "permissionItemId": "L5-SVC-01",
         "note": "只記錄資格核實；不代表金紫荊已完成。",
         "enNote": "Records eligibility verification only; not completion of Golden Bauhinia.",
         "recordId": "LEGACY-CUB-E-CURRENT-GBA-CONTINUE",
         "label": "個案E：沿用現行高級歷奇／金紫荊",
         "enLabel": "Case E: continue current Adventure Crest / Golden Bauhinia",
-        "targetSegmentCode": "TRANSITION"
+        "targetSegmentCode": "TRANSITION",
+        "legacyRecord": true,
+        "completionExcluded": true,
+        "permissionItemId": "P4"
       }
     ],
     "preservedChecklistItems": [
@@ -2942,6 +5547,7 @@
         "segmentCode": "",
         "segmentName": ""
       }
-    ]
+    ],
+    "verificationNote": "P022/2026附件1幼童軍支部第4項；個案A以原表欄位順序核對。PDF純文字抽取會把該列文字錯位，不以錯位抽取文字作自動映射。"
   }
 }
