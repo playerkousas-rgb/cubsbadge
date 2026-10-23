@@ -198,6 +198,20 @@ function toPublicWebAppUrl(u) {
   return s.replace(/^https:\/\/script\.google\.com\/a\/[^\/]+\/macros\/s\//i,
     'https://script.google.com/macros/s/');
 }
+/** 由 /exec（或 /dev）URL 抽出部署 ID；抽唔到回空字串。 */
+function webAppDeploymentId(u) {
+  const m = String(u || '').match(/\/macros\/s\/([A-Za-z0-9_-]+)\/(?:exec|dev)(?:[?#]|$)/);
+  return m ? m[1] : '';
+}
+/**
+ * 診斷用啟發式（唔會 block 任何操作）：HEAD／測試部署嘅 ID 明顯短過正式版本部署
+ * （Google 實測：HEAD 大約 56 字元，版本部署大約 74 字元）。getUrl() 喺非 HTTP 情境
+ * 回嘅「幽靈」URL 通常就係呢一種——交出去開出嚟就係 Page Not Found。
+ */
+function looksLikeHeadDeployment(u) {
+  const id = webAppDeploymentId(u);
+  return !!id && id.length < 60;
+}
 /** 只認「正式 /exec、非 /dev」嘅公開網址。 */
 function isPublicWebAppUrl(u) {
   return /^https:\/\/script\.google\.com\/macros\/s\/[A-Za-z0-9_-]+\/exec$/.test(String(u || '').trim());
@@ -252,8 +266,13 @@ function verifyBackendUrl(url) {
       httpStatus: code,
       isJson: !!json,
       gsVersion: (json && json.gsVersion) || '',
+      deploymentIdLength: webAppDeploymentId(u).length,
+      looksLikeHeadDeployment: looksLikeHeadDeployment(u),
       error: '',
-      hint: ''
+      hint: looksLikeHeadDeployment(u)
+        ? '⚠️ 呢條 URL 嘅部署 ID 偏短（' + webAppDeploymentId(u).length + ' 字元）＝多數係 HEAD／測試部署，'
+          + '唔係「部署 → 管理部署」嗰條正式版本部署（大約 74 字元）。請以管理部署對話框嗰條為準。'
+        : ''
     };
     if (!json) {
       out.error = '回嘅唔係 JSON（多數係 Google 登入頁／Page Not Found）';
@@ -272,11 +291,12 @@ function menuVerifyBackendUrl() {
   const r = verifyBackendUrl();
   const lines = [
     'BACKEND URL：' + (r.url || '（未取得）'),
+    r.deploymentIdLength ? '部署 ID 長度：' + r.deploymentIdLength + ' 字元（正式版本部署大約 74；偏短多數係 HEAD／測試部署）' : '',
     '',
     r.success ? '✅ 通（回 JSON，GS 版本 ' + (r.gsVersion || '未知') + '）'
               : '❌ 唔通：' + (r.error || '未知錯誤'),
     r.hint ? '\n' + r.hint : ''
-  ];
+  ].filter(function (x) { return x !== ''; });
   return linkAlert('驗證 BACKEND URL', lines.join('\n'));
 }
 /**
@@ -300,7 +320,8 @@ const URL_MISMATCH_WARNING = '⚠️ 上面條 BACKEND URL 係本檔自動讀（
   '同「部署 → 管理部署」顯示嗰條可以唔同（自動讀嗰條開出嚟可能係 Page Not Found）。\n' +
   '請去「部署 → 管理部署」對一次：兩條唔同，一律以部署對話框嗰條為準\n' +
   '（格式 https://script.google.com/macros/s/…/exec，冇 /a/你的網域/）。\n' +
-  '交之前最好按「🔗 旅系統 → 🔎 驗證 BACKEND URL」自己開一次確認通。';
+  '交之前最好按「🔗 旅系統 → 🔎 驗證 BACKEND URL」自己開一次確認通。\n' +
+  '小技巧：正式版本部署嘅 ID 大約 74 字元；如果自動讀到嗰條 ID 明顯短（大約 56）＝多數係 HEAD／測試部署，唔好交。';
 function showVercelEnv() {
   const lines = vercelEnvLines();
   const msg = '交俾 APP ADMIN 嘅資料（旅團只做呢 3 樣）：\n\n' + lines.join('\n') +

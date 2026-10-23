@@ -252,6 +252,19 @@ test('BACKEND URL：Workspace 網域內網址自動轉公開網址，唔會交 /
   assert.equal(node.props.get('WEBAPP_URL'), undefined);
 });
 
+test('BACKEND URL 診斷：HEAD／測試部署（ID 偏短）會被標示，正式版本部署唔會', () => {
+  const HEAD_ID = 'A'.repeat(56);       // HEAD／測試部署（實測大約 56 字元）
+  const VERSION_ID = 'A'.repeat(74);    // 版本部署（實測大約 74 字元）
+  const node = makeNode({ name: '診斷節點', apikey: 'vs_diag_key_0008', url: 'https://script.google.com/macros/s/' + HEAD_ID + '/exec' });
+  const g = node.context;
+  assert.equal(g.webAppDeploymentId('https://script.google.com/macros/s/' + HEAD_ID + '/exec'), HEAD_ID);
+  assert.equal(g.webAppDeploymentId('https://script.google.com/a/x.org/macros/s/' + HEAD_ID + '/dev'), HEAD_ID);
+  assert.equal(g.webAppDeploymentId('not a url'), '');
+  assert.equal(g.looksLikeHeadDeployment('https://script.google.com/macros/s/' + HEAD_ID + '/exec'), true, '56 字元＝HEAD');
+  assert.equal(g.looksLikeHeadDeployment('https://script.google.com/macros/s/' + VERSION_ID + '/exec'), false, '74 字元＝正式版本部署');
+  assert.ok(String(g.menuVerifyBackendUrl()).length >= 0, '選單診斷唔會爆');
+});
+
 test('BACKEND URL：/dev 或非 GAS 網址唔會當成正式部署交出去', () => {
   const devNode = makeNode({
     name: '開發節點',

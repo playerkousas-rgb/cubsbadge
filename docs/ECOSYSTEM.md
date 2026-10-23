@@ -167,6 +167,11 @@ GAS 端亦有對應嘅 `ecStatus` / `ecGetModules`（免 token,唔含敏感資�
 
 Google 有已知問題：`ScriptApp.getService().getUrl()`（即 Sheet 選單／`showVercelEnv()` 顯示嗰條）
 喺非 HTTP 請求情境會回**幽靈 URL** —— 舊部署 ID 或 `/dev`，開出嚟係 **Page Not Found**。
+
+成因：一個 Apps Script 同時有 **HEAD／測試部署**同**版本部署**，各有自己嘅部署 ID。
+舊編輯器把 web app 綁喺一個 meta-version（多數＝HEAD），所以 `getUrl()` 長期回嗰條；
+日後「新增部署」出新 ID（部署對話框見到），`getUrl()` 唔會跟住變成新嗰條。
+**ID 長度可以快速分辨：HEAD 大約 56 字元，版本部署大約 74 字元。**
 **以 Apps Script「部署 → 管理部署」對話框顯示嗰條為準。**
 
 | 格式 | 邊度嚟 | 伺服器對伺服器打唔打得通 |

@@ -139,6 +139,10 @@ A: **一律以「部署 → 管理部署」對話框嗰條為準。**
 彈窗嗰條係 `ScriptApp.getService().getUrl()` 自動讀出嚟嘅，Google 已知有問題（[issue 170799249](https://issuetracker.google.com/issues/170799249)）：
 喺選單／編輯器／觸發器（唔係真實 HTTP 請求）情境，佢會回一條「幽靈」URL（舊部署 ID，或者 `/dev`），
 開出嚟就係 **Page Not Found**。只有喺真實請求（有人開 `/exec`）入面讀，佢先會回正確嗰條。
+**點解兩條會唔同？（實際成因）** Apps Script 同時存在「HEAD／測試部署」同「版本部署」，兩者各有自己嘅部署 ID。
+舊編輯器會把 web app 綁喺一個 meta-version（多數＝HEAD），`getUrl()` 就長期回嗰條；
+之後你「新增部署」開新版本部署，新 ID 出咗喺對話框，但 `getUrl()` **唔會**跟住變。
+實測 ID 長度都唔同：**HEAD 部署大約 56 字元，版本部署大約 74 字元**（用呢個可以快速分辨）。
 所以：① 新 `Code.gs` 會喺有人開過 `/exec` 之後，把正確 URL 記落 Script Property `WEBAPP_URL`，之後選單用嗰條；
 ② 讀到嘅 URL 一律去掉 Workspace 專屬嘅 `/a/<你的網域>/` 段，交公開格式；
 ③ 交之前按「🔗 旅系統 → 🔎 驗證 BACKEND URL」自己開一次，通先交。
