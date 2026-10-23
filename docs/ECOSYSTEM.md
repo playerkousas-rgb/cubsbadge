@@ -146,7 +146,7 @@ GAS 端亦有對應嘅 `ecStatus` / `ecGetModules`（免 token,唔含敏感資�
 `ecInitSheets()` 冪等建立。未建表時 `ecAccessLog()` 靜靜略過 ——
 唔會因為審計失敗而阻塞登入。
 
-查閱:`ecAccessLog` action（需團長以上,回最後 200 筆）。
+查閱:`ecAccessLog` action（需旅長／管理員權限，回最後 200 筆）。
 
 ---
 

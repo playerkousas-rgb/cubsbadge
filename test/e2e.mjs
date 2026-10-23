@@ -1,7 +1,7 @@
 // e2e.mjs
 // cubsbadge 後端邏輯 e2e（在 Node 中以 mock-gas 載入 apps-script/Code.gs）
 // 驗證 v5.3.1 核心規則：
-//   【10d】團長鎖死一位（後端硬鎖、顯示姓名、換人流程）
+//   【10d】旅長鎖死一位（後端硬鎖、顯示姓名、換人流程）
 //   【10e】領袖免 YMIS 用電郵登入（自動分派 L 編號、電郵登入、批量免 YMIS）
 //   【10f】權限收緊 + 批量開戶
 //   【10g】預設密碼 1234 + 首次登入強制改密
@@ -9,7 +9,7 @@
 //   【11a】YMIS／Email 全表唯一（含已停用帳號不可重用）
 //   【11b】用戶管理不漏成員（status 空白＝active、純成員合併列出、include_inactive）
 //   【11c】領袖設定密碼（自訂 new_password、權限檢查、純成員開通、重複列寫對列）
-//   【11d】重新啟用已停用帳號（補回成員名單、密碼重設、團長鎖）
+//   【11d】重新啟用已停用帳號（補回成員名單、密碼重設、旅長鎖）
 //   【11e】修改成員資料／刪除成員（同步兩表、刪後 YMIS 仍不可重用）
 // 執行：npm run test:e2e   （或 node test/e2e.mjs）
 import { buildBackend, sha256Hex } from './mock-gas.mjs';
@@ -41,9 +41,9 @@ function seedUser(sandbox, o) {
 {
   const b = buildBackend();
   check('generateTemporaryPassword() 回傳預設 1234', () => assert.equal(b.generateTemporaryPassword(), '1234'));
-  check('gslLockMsg 顯示現任團長姓名', () => {
+  check('gslLockMsg 顯示現任旅長姓名', () => {
     const m = b.gslLockMsg('陳大文');
-    assert.ok(m.includes('團長只能有一位'));
+    assert.ok(m.includes('旅長只能有一位'));
     assert.ok(m.includes('陳大文'));
     assert.ok(!/L\d{3,}/.test(m), '不應洩漏內部 L 編號');
   });
@@ -76,69 +76,69 @@ function seedUser(sandbox, o) {
   check('領袖開戶無 Email 會被拒', () => { assert.equal(rNo.success, false); assert.ok(rNo.error.includes('Email')); });
 }
 
-// ---------- 【10d】團長鎖死一位（後端硬鎖 + 顯示姓名 + 換人） ----------
+// ---------- 【10d】旅長鎖死一位（後端硬鎖 + 顯示姓名 + 換人） ----------
 {
   const b = buildBackend();
   seedUser(b, { ymis: '1111111111', name: '管理員', email: 'admin@example.org', role: 'admin', pwd: 'pw' });
-  // 升第一位團長成功
+  // 升第一位旅長成功
   const make = b.createUserRecord({ name: '陳大文', email: 'gsl1@example.org', role: 'group_leader', password: '1234', can_tick: true }, ADMIN);
-  check('開立第一位團長成功', () => assert.equal(make.success, true));
-  check('現任團長 = 陳大文 (L0001)', () => {
+  check('開立第一位旅長成功', () => assert.equal(make.success, true));
+  check('現任旅長 = 陳大文 (L0001)', () => {
     const cur = b.getActiveGroupLeader();
     assert.ok(cur); assert.equal(cur.name, '陳大文'); assert.ok(/^L\d+$/.test(cur.ymis));
   });
-  // 再嘗試開立第二位團長 → 硬鎖
+  // 再嘗試開立第二位旅長 → 硬鎖
   const second = b.createUserRecord({ name: '黃志明', email: 'gsl2@example.org', role: 'group_leader', password: '1234', can_tick: true }, ADMIN);
-  check('重複開立團長被拒並顯示現任姓名', () => {
+  check('重複開立旅長被拒並顯示現任姓名', () => {
     assert.equal(second.success, false);
-    assert.ok(second.error.includes('團長只能有一位'));
+    assert.ok(second.error.includes('旅長只能有一位'));
     assert.ok(second.error.includes('陳大文'));
   });
-  // updateUserRole 將他人升為團長亦被鎖
+  // updateUserRole 將他人升為旅長亦被鎖
   seedUser(b, { ymis: '2222333344', name: '候選人', email: 'cand@example.org', role: 'branch_leader', pwd: 'pw' });
   const up = jparse(b.handleUpdateUserRole('2222333344', 'group_leader', true, '1111111111'));
-  check('updateUserRole 升他人為團長被鎖並顯示姓名', () => { assert.equal(up.success, false); assert.ok(up.error.includes('陳大文')); });
+  check('updateUserRole 升他人為旅長被鎖並顯示姓名', () => { assert.equal(up.success, false); assert.ok(up.error.includes('陳大文')); });
   // 換人流程：先把現任轉為其他角色，再升新人 → 成功
   const demote = jparse(b.handleUpdateUserRole(make.ymis, 'branch_leader', true, '1111111111'));
-  check('先將現任團長降為支部領袖（解鎖）', () => assert.equal(demote.success, true));
+  check('先將現任旅長降為幼童軍領袖（解鎖）', () => assert.equal(demote.success, true));
   const promote = jparse(b.handleUpdateUserRole('2222333344', 'group_leader', true, '1111111111'));
-  check('解鎖後可升新團長', () => assert.equal(promote.success, true));
-  check('換人後現任團長為候選人', () => {
+  check('解鎖後可升新旅長', () => assert.equal(promote.success, true));
+  check('換人後現任旅長為候選人', () => {
     const cur = b.getActiveGroupLeader();
     assert.ok(cur); assert.equal(cur.name, '候選人');
   });
 }
 
-// ---------- 【10f】權限收緊：支部領袖只能開 member ----------
+// ---------- 【10f】權限收緊：幼童軍領袖只能開 member ----------
 {
   const b = buildBackend();
-  const BL = { role: 'branch_leader', ymis: 'L0001', name: '支部領袖' };
+  const BL = { role: 'branch_leader', ymis: 'L0001', name: '幼童軍領袖' };
   const okMem = b.createUserRecord({ ymis: '1234560001', name: '小團員', role: 'member' }, BL);
-  check('支部領袖可開立 member', () => assert.equal(okMem.success, true));
+  check('幼童軍領袖可開立 member', () => assert.equal(okMem.success, true));
   const badGsl = b.createUserRecord({ name: 'G', email: 'g@x.org', role: 'group_leader' }, BL);
   const badAdmin = b.createUserRecord({ name: 'A', email: 'a@x.org', role: 'admin' }, BL);
   const badPeer = b.createUserRecord({ name: 'B', email: 'b@x.org', role: 'branch_leader' }, BL);
-  check('支部領袖不可越權開立 group_leader', () => assert.equal(badGsl.success, false));
-  check('支部領袖不可越權開立 admin', () => assert.equal(badAdmin.success, false));
-  check('支部領袖不可越權開立 branch_leader', () => assert.equal(badPeer.success, false));
+  check('幼童軍領袖不可越權開立 group_leader', () => assert.equal(badGsl.success, false));
+  check('幼童軍領袖不可越權開立 admin', () => assert.equal(badAdmin.success, false));
+  check('幼童軍領袖不可越權開立 branch_leader', () => assert.equal(badPeer.success, false));
 }
 
-// ---------- 【10f】批量開戶 + 批量中團長鎖 + 免 YMIS 領袖 ----------
+// ---------- 【10f】批量開戶 + 批量中旅長鎖 + 免 YMIS 領袖 ----------
 {
   const b = buildBackend();
   const res = jparse(b.handleBulkAddUsers([
     { ymis: '1234560001', name: '成員一', role: 'member' },
     { ymis: '', name: '領袖一', email: 'lb1@example.org', role: 'branch_leader', password: '1234' },
-    { name: '團長甲', email: 'gA@example.org', role: 'group_leader', password: '1234' },
-    { name: '團長乙', email: 'gB@example.org', role: 'group_leader', password: '1234' },
+    { name: '旅長甲', email: 'gA@example.org', role: 'group_leader', password: '1234' },
+    { name: '旅長乙', email: 'gB@example.org', role: 'group_leader', password: '1234' },
   ], ADMIN));
   check('批量開戶回傳逐列結果', () => { assert.equal(res.ok, 3); assert.equal(res.skipped, 1); });
-  const gA = res.results.find(r => r.name === '團長甲');
-  const gB = res.results.find(r => r.name === '團長乙');
-  check('批量中第一位團長成功', () => { assert.ok(gA); assert.equal(gA.success, true); });
-  check('批量中第二位團長被鎖並顯示姓名', () => {
+  const gA = res.results.find(r => r.name === '旅長甲');
+  const gB = res.results.find(r => r.name === '旅長乙');
+  check('批量中第一位旅長成功', () => { assert.ok(gA); assert.equal(gA.success, true); });
+  check('批量中第二位旅長被鎖並顯示姓名', () => {
     assert.ok(gB); assert.equal(gB.success, false);
-    assert.ok(gB.error.includes('團長甲'));
+    assert.ok(gB.error.includes('旅長甲'));
   });
   // 批量開戶的領袖列留空 YMIS → 有電郵即可
   const l1 = res.results.find(r => r.name === '領袖一');
@@ -271,13 +271,13 @@ function seedUser(sandbox, o) {
   // 太短被拒
   const r3 = jparse(b.handleResetPassword('1234560001', admin.user, 'abc'));
   check('新密碼少於 4 位被拒', () => { assert.equal(r3.success, false); assert.ok(r3.error.includes('4')); });
-  // 權限：支部領袖不可為 admin 重設
-  seedUser(b, { ymis: 'L0009', name: '支部領袖', email: 'bl@example.org', role: 'branch_leader', pwd: 'bl', force: false });
+  // 權限：幼童軍領袖不可為 admin 重設
+  seedUser(b, { ymis: 'L0009', name: '幼童軍領袖', email: 'bl@example.org', role: 'branch_leader', pwd: 'bl', force: false });
   const bl = jparse(b.handleLogin('bl@example.org', 'bl'));
   const r4 = jparse(b.handleResetPassword('1111111111', bl.user, '1234'));
-  check('支部領袖不可為 admin 設定密碼（權限收緊）', () => { assert.equal(r4.success, false); assert.ok(r4.error.includes('權限')); });
+  check('幼童軍領袖不可為 admin 設定密碼（權限收緊）', () => { assert.equal(r4.success, false); assert.ok(r4.error.includes('權限')); });
   const r4b = jparse(b.handleResetPassword('1234560001', bl.user, 'abcd'));
-  check('支部領袖可為 member 設定密碼', () => assert.equal(r4b.success, true));
+  check('幼童軍領袖可為 member 設定密碼', () => assert.equal(r4b.success, true));
   // 純成員 → 設定密碼即場開通帳號
   b.__ss.sheets['成員名單'].rows.push(['1234560005', '李純成員', '', '', 'lee@example.org', '']);
   const r5 = jparse(b.handleResetPassword('1234560005', admin.user, 'open2026'));
@@ -321,13 +321,13 @@ function seedUser(sandbox, o) {
   });
   const re2 = jparse(b.handleReactivateUser({ target_ymis: '1234560001', token: tok }));
   check('已是 active 再啟用 → 拒絕', () => { assert.equal(re2.success, false); });
-  // 團長唯一鎖：已有一位 active 團長時，不可啟用第二位（inactive 團長）
-  seedUser(b, { ymis: 'L0100', name: '舊團長', email: 'oldgsl@example.org', role: 'group_leader', pwd: 'x', status: 'inactive' });
-  const rGsl = b.createUserRecord({ name: '新團長', email: 'newgsl@example.org', role: 'group_leader', password: '1234', can_tick: true }, ADMIN);
+  // 旅長唯一鎖：已有一位 active 旅長時，不可啟用第二位（inactive 旅長）
+  seedUser(b, { ymis: 'L0100', name: '舊旅長', email: 'oldgsl@example.org', role: 'group_leader', pwd: 'x', status: 'inactive' });
+  const rGsl = b.createUserRecord({ name: '新旅長', email: 'newgsl@example.org', role: 'group_leader', password: '1234', can_tick: true }, ADMIN);
   assert.equal(rGsl.success, true);
   const re3 = jparse(b.handleReactivateUser({ target_ymis: 'L0100', token: tok }));
-  check('重新啟用第二位團長被鎖（顯示現任姓名）', () => {
-    assert.equal(re3.success, false); assert.ok(re3.error.includes('團長只能有一位')); assert.ok(re3.error.includes('新團長'));
+  check('重新啟用第二位旅長被鎖（顯示現任姓名）', () => {
+    assert.equal(re3.success, false); assert.ok(re3.error.includes('旅長只能有一位')); assert.ok(re3.error.includes('新旅長'));
   });
 }
 

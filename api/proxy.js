@@ -175,7 +175,7 @@ module.exports = async function handler(req, res) {
       });
     }
 
-    // ── Scout Admin 統一回報格式 v1（對齊 VSBADGE）──────────────────────
+    // ── Scout Admin 統一回報格式 v1──────────────────────
     // 問題回報／意見回饋直達中央收件匣，不經旅團 GAS；目的地是伺服器端固定常數，
     // 不由用戶輸入決定。每個回應都帶 deliveryStatus：
     //   confirmed = 收件系統已確認收到

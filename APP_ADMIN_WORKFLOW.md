@@ -10,14 +10,11 @@
 [旅團 B] --/                                        \--> 完成，首頁即見該旅團
 ```
 
-## 每個支部係獨立 APP
+## 本部署只服務幼童軍支部
 
-- `vsbadge.vercel.app` → 深資童軍 #8B0000
-- `roverbadge.vercel.app` → 樂行童軍 #0D47A1
-- `scoutbadge.vercel.app` → 童軍 #2E7D32
-- `cubbadge.vercel.app` → 幼童軍 #FFC107
-
-每個 APP 各自有一個 APP ADMIN（維護該 Vercel Project 嘅人，即係你）；同一個 Vercel Project 可以管幾十個旅團。
+- `cubbadge.vercel.app` → 幼童軍支部（黃色主題）
+- 本檔只說明 CubBadge 的旅團接入；其他支部的部署、徽章及表格不屬於本系統依據。
+- 每個 Vercel Project 可以管多個幼童軍旅團；APP ADMIN 負責維護該 Project 的功能變數。
 
 ---
 
