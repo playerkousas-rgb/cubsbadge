@@ -98,4 +98,27 @@ assert.match(element('printableArea').innerHTML,/幼童軍體驗章/);
 run('renderInfoTab()');
 assert.match(element('tab-info').innerHTML,/prog\.scouting\.org\.hk\/cub/);
 
-console.log('frontend-render-harness: OK — home, progress, legacy partition, interest lists, P4 overview, ticking, other badges, forms and information rendered with the real inline script.');
+run('renderReleaseNotices()');
+assert.match(element('homeReleaseNotice').innerHTML,/2026-10-23/);
+assert.match(element('homeReleaseNotice').innerHTML,/2026\.10\.23/);
+assert.match(element('homeReleaseNotice').innerHTML,/initializeSheets\(\)/);
+assert.match(element('homeReleaseNotice').innerHTML,/無須逐級/);
+run("currentTroopId='0082'; currentUser.ymis='TEST_LEADER'; resetBackendRelease(); applyBackendRelease({gsVersion:'cub-leaf',backendVersion:'cub-leaf'})");
+assert.equal(run('backendReleaseState.status'),'update');
+assert.match(element('mainReleaseNotice').innerHTML,/尚未完成 GS 更新/);
+run("applyBackendRelease({gsVersion:LATEST_RELEASE.gsVersion,initializedGsVersion:''})");
+assert.equal(run('backendReleaseState.status'),'initialize');
+assert.match(element('mainReleaseNotice').innerHTML,/initializeSheets\(\) 尚未完成/);
+run("applyBackendRelease({gsVersion:LATEST_RELEASE.gsVersion,initializedGsVersion:LATEST_RELEASE.gsVersion})");
+assert.equal(run('backendReleaseState.status'),'current');
+assert.match(element('mainReleaseNotice').innerHTML,/release-current/);
+assert.match(element('mainReleaseNotice').innerHTML,/已核對/);
+run("currentLang='en'; renderReleaseNotices()");
+assert.match(element('homeReleaseNotice').innerHTML,/Latest update/);
+assert.match(element('mainReleaseNotice').innerHTML,/Verified/);
+run("fetch=async()=>({ok:true,status:200,text:async()=>JSON.stringify({success:true,gsVersion:LATEST_RELEASE.gsVersion,initializedGsVersion:LATEST_RELEASE.gsVersion})})");
+await run('checkBackendRelease()');
+assert.equal(run('backendReleaseState.status'),'current',run('backendReleaseState.error'));
+run("currentLang='zh'; currentTroopId='DEMO'; currentUser.ymis='DEMO_LEADER'; resetBackendRelease()");
+
+console.log('frontend-render-harness: OK — home, progress, legacy partition, interest lists, P4 overview, ticking, other badges, forms, information and latest-GS release notices rendered with the real inline script.');
