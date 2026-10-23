@@ -173,5 +173,66 @@ check('data-i18n／-html／-ph／-aria／-alt 屬性 key 中英字典都有', ()
   assert.deepEqual(miss, [], `缺：${miss.join(', ')}`);
 });
 
+console.log('=== 7. 新旅團部署 GS 與靜態下載檔案部署完整性（防 .vercelignore 誤剔致 404 8KB 錯誤頁） ===');
+function parseVercelIgnoreRules() {
+  const raw = fs.readFileSync('.vercelignore', 'utf8');
+  return raw
+    .split(/\r?\n/)
+    .map(l => l.trim())
+    .filter(l => l && !l.startsWith('#'));
+}
+function isIgnoredByVercel(relPath, rules) {
+  const clean = relPath.replace(/^\/+/, '');
+  let ignored = false;
+  for (const rule of rules) {
+    const neg = rule.startsWith('!');
+    const pat = (neg ? rule.slice(1) : rule).replace(/^\/+/, '');
+    let matched = false;
+    if (pat.endsWith('/')) {
+      matched = clean === pat.slice(0, -1) || clean.startsWith(pat);
+    } else if (pat.startsWith('*.')) {
+      matched = clean.endsWith(pat.slice(1));
+    } else {
+      matched = clean === pat || clean.startsWith(pat + '/');
+    }
+    if (matched) ignored = !neg;
+  }
+  return ignored;
+}
+check('apps-script/Code.gs 為完整正式後端（>100KB），絕非 8KB 錯誤頁或簡化腳本', () => {
+  const stat = fs.statSync('apps-script/Code.gs');
+  assert.ok(stat.size > 100 * 1024, `apps-script/Code.gs 體積異常偏小（${stat.size} bytes），應為完整後端（~183KB）`);
+  assert.ok(gas.includes('function initializeSheets('), 'Code.gs 缺 initializeSheets');
+  assert.ok(gas.includes('function doPost(') && gas.includes('function doGet('), 'Code.gs 缺 doGet/doPost');
+});
+check('.vercelignore 不可忽略 apps-script/Code.gs 及任何前端 <a download> 靜態檔，同時保留 docs/ 與 test/ 隔離', () => {
+  const rules = parseVercelIgnoreRules();
+  assert.equal(isIgnoredByVercel('apps-script/Code.gs', rules), false, '.vercelignore 誤將 apps-script/Code.gs 剔走，會令下載變成 ~8KB Vercel 404 頁面');
+  assert.equal(isIgnoredByVercel('docs/LEADER_GUIDE.md', rules), true, 'docs/ 應維持不部署至公開網站');
+  assert.equal(isIgnoredByVercel('test/api.test.mjs', rules), true, 'test/ 應維持不部署至公開網站');
+  const dlHrefs = [];
+  for (const m of html.matchAll(/<a\b[^>]*\bdownload\b[^>]*>/gi)) {
+    const hm = m[0].match(/\bhref="([^"]+)"/i);
+    if (hm && !hm[1].includes('${') && !/^https?:|^blob:|^data:|^\#/i.test(hm[1])) {
+      dlHrefs.push(hm[1].split('?')[0]);
+    }
+  }
+  assert.ok(dlHrefs.includes('apps-script/Code.gs'), 'index.html 必須包含 apps-script/Code.gs 下載連結');
+  for (const rel of dlHrefs) {
+    assert.ok(fs.existsSync(rel), `下載目標檔案不存在：${rel}`);
+    assert.equal(isIgnoredByVercel(rel, rules), false, `下載目標 ${rel} 被 .vercelignore 排除，部署後下載會變 404 錯誤頁`);
+  }
+});
+check('vercel.json 為 /apps-script/(.*) 設定 UTF-8 純文字、附件下載標頭及 no-cache，且無語法錯誤', () => {
+  const vcfg = JSON.parse(fs.readFileSync('vercel.json', 'utf8'));
+  assert.match(String(vcfg?.functions?.['api/*.js']?.excludeFiles || ''), /apps-script\/\*\*/, 'Serverless function bundle 仍排除 apps-script/**');
+  const gsRule = (vcfg.headers || []).find(h => h.source === '/apps-script/(.*)');
+  assert.ok(gsRule, 'vercel.json 缺 /apps-script/(.*) headers 規則');
+  const hmap = Object.fromEntries((gsRule.headers || []).map(h => [h.key.toLowerCase(), h.value]));
+  assert.equal(hmap['content-type'], 'text/plain; charset=utf-8');
+  assert.match(hmap['content-disposition'] || '', /attachment;\s*filename="Code\.gs"/);
+  assert.match(hmap['cache-control'] || '', /no-cache/);
+});
+
 console.log(`\n== integrity 結果：${passed} 通過，${failed} 失敗 ==`);
 if (failed > 0) process.exit(1);
