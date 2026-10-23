@@ -53,6 +53,31 @@ function readTroopEnv(idUpper, suffix) {
          process.env[`TROOP_${idPadded}_${suffix}`] || '';
 }
 
+// ---------- GAS /exec URL 正規化 ----------
+// Google Workspace（例如 xx@scouting.org.hk）部署出嚟嘅 web app，URL 會多一段網域：
+//   https://script.google.com/a/scouting.org.hk/macros/s/<id>/exec   ← 網域內網址
+//   https://script.google.com/macros/s/<id>/exec                     ← 公開網址
+// 網域內網址只對同一個 Workspace 網域嘅登入使用者有效；伺服器對伺服器（Vercel → GAS）
+// 同匿名請求會攞到登入頁／Page Not Found。所以一律轉做公開網址（部署權限＝任何人就打得通）。
+function normalizeGasUrl(urlString) {
+  const raw = String(urlString == null ? '' : urlString).trim();
+  if (!raw) return '';
+  let u;
+  try { u = new URL(raw); } catch (e) { return raw; }
+  if (u.hostname !== 'script.google.com') return raw;
+  const m = u.pathname.match(/^\/a\/[^/]+\/macros\/s\/([A-Za-z0-9_-]+)\/exec$/);
+  if (m) return `https://script.google.com/macros/s/${m[1]}/exec`;
+  return raw;
+}
+
+/** 係咪 Workspace 網域內網址（/a/<domain>/macros/s/.../exec）。 */
+function isDomainScopedGasUrl(urlString) {
+  try {
+    const u = new URL(String(urlString == null ? '' : urlString).trim());
+    return u.hostname === 'script.google.com' && /^\/a\/[^/]+\/macros\/s\/[A-Za-z0-9_-]+\/exec$/.test(u.pathname);
+  } catch (e) { return false; }
+}
+
 function getRegistry() {
   const registry = {};
 
@@ -68,7 +93,7 @@ function getRegistry() {
     const apikeyEnv = readTroopEnv(idUpper, 'APIKEY');
     const nameEnv = readTroopEnv(idUpper, 'NAME');
 
-    const backend = backendEnv;
+    const backend = normalizeGasUrl(backendEnv);
     const apikey = apikeyEnv;
     const name = nameEnv || `第 ${normalizeStripped(idUpper)} 旅`;
 
@@ -79,7 +104,13 @@ function getRegistry() {
       name,
       backend,
       apikey,
-      _env: { backend: !!backendEnv, apikey: !!apikeyEnv, name: !!nameEnv }
+      _env: {
+        backend: !!backendEnv,
+        apikey: !!apikeyEnv,
+        name: !!nameEnv,
+        // 診斷用：功能變數填咗 Workspace 網域內網址（/a/<domain>/…），已自動轉公開網址。
+        domainScoped: isDomainScopedGasUrl(backendEnv)
+      }
     };
 
     const idNoZero = normalizeStripped(idUpper);
@@ -136,19 +167,22 @@ function getTroopConfig(troopId) {
 }
 
 function isValidGasUrl(urlString) {
+  const raw = String(urlString == null ? '' : urlString).trim();
+  if (!raw) return false;
+  // 本機 mock 後端（只限非生產環境，方便 devserver 預覽）
   try {
-    const u = new URL(urlString);
-    const isLocal = (u.hostname === 'localhost' || u.hostname === '127.0.0.1' || u.hostname === '::1');
-    const allowLocal = isLocal && (process.env.NODE_ENV !== 'production' && process.env.VERCEL_ENV !== 'production');
-    if (allowLocal) {
-      if (u.pathname.includes('/exec') || u.pathname.includes('/mock')) return true;
-      return true;
+    const probe = new URL(raw);
+    if (probe.hostname === 'localhost' || probe.hostname === '127.0.0.1' || probe.hostname === '::1') {
+      return !(process.env.NODE_ENV === 'production' || process.env.VERCEL_ENV === 'production');
     }
+  } catch (e) { return false; }
+  // Workspace 網域內網址（/a/<domain>/…）先轉公開網址再驗；兩者同樣只認 GAS /exec。
+  try {
+    const u = new URL(normalizeGasUrl(raw));
     if (u.protocol !== 'https:') return false;
     if (u.hostname !== 'script.google.com') return false;
-    if (!u.pathname.includes('/macros/s/')) return false;
-    if (!u.pathname.endsWith('/exec')) return false;
-    const match = u.pathname.match(/\/macros\/s\/([A-Za-z0-9-_]+)\/exec/);
+    if (u.search || u.hash) return false;
+    const match = u.pathname.match(/^\/macros\/s\/([A-Za-z0-9_-]+)\/exec$/);
     if (!match) return false;
     if (match[1].length < 10) return false;
     return true;
@@ -160,6 +194,8 @@ module.exports = {
   getTroopsRegistry,
   getTroopConfig,
   isValidGasUrl,
+  normalizeGasUrl,
+  isDomainScopedGasUrl,
   normalizeToPadded4,
   normalizeStripped,
   getSuperKey,

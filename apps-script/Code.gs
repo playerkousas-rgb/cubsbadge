@@ -180,10 +180,104 @@ function setTroopName(v) {
   PropertiesService.getScriptProperties().setProperty(TROOP_NAME_PROP, s);
   return s;
 }
+// ===== Web App URL（Google 已知問題：getUrl() 會回錯／回舊部署）=====
+// ScriptApp.getService().getUrl() 喺選單／編輯器／觸發器（非 HTTP 請求）情境會回一條
+// 「幽靈」URL：有時係 /dev、有時係已經唔存在嘅部署 ID，開出嚟就係 Page Not Found。
+// 另外 Workspace（例如 xx@scouting.org.hk）會多一段網域：
+//   https://script.google.com/a/<domain>/macros/s/<id>/exec  ← 網域內網址（匿名／伺服器打唔通）
+//   https://script.google.com/macros/s/<id>/exec             ← 公開網址（部署權限＝任何人就打得通）
+// 對策：① 真正有 HTTP 請求打過嚟時，把當刻 getUrl() 記落 Script Property（該情境下係準嘅）；
+//       ② 讀取時優先用法 ① 記落嘅值；
+//       ③ 一律去掉 /a/<domain>/ 前綴，交俾 APP ADMIN 嘅一定係公開網址。
+const WEBAPP_URL_PROP = 'WEBAPP_URL';
+
+/** Workspace 網域內網址 → 公開網址（其他 URL 原樣返回）。 */
+function toPublicWebAppUrl(u) {
+  const s = String(u || '').trim();
+  if (!s) return '';
+  return s.replace(/^https:\/\/script\.google\.com\/a\/[^\/]+\/macros\/s\//i,
+    'https://script.google.com/macros/s/');
+}
+/** 只認「正式 /exec、非 /dev」嘅公開網址。 */
+function isPublicWebAppUrl(u) {
+  return /^https:\/\/script\.google\.com\/macros\/s\/[A-Za-z0-9_-]+\/exec$/.test(String(u || '').trim());
+}
+/**
+ * 喺真實 HTTP 請求（doGet／doPost）入面叫：呢個情境下 getUrl() 係準嘅，記落 Script Property。
+ * 之後由選單／編輯器讀 URL 就有正確嗰條可用。回記錄到嘅 URL（記錄唔到回空字串）。
+ */
+function rememberWebAppUrlFromRequest() {
+  try {
+    const u = toPublicWebAppUrl(ScriptApp.getService().getUrl() || '');
+    if (!isPublicWebAppUrl(u)) return '';
+    PropertiesService.getScriptProperties().setProperty(WEBAPP_URL_PROP, u);
+    return u;
+  } catch (e) { return ''; }
+}
+/** 清走記落嘅 URL（換咗部署／懷疑記錯時用；下次有人開 /exec 會再自動記）。 */
+function forgetWebAppUrl() {
+  try { PropertiesService.getScriptProperties().deleteProperty(WEBAPP_URL_PROP); } catch (e) {}
+  return true;
+}
 function getScriptUrl() {
+  // ① 真實請求記落嘅值最可靠
+  try {
+    const stored = PropertiesService.getScriptProperties().getProperty(WEBAPP_URL_PROP) || '';
+    if (isPublicWebAppUrl(stored)) return stored;
+  } catch (e) {}
+  // ② 退返 getUrl()：只認正式 /exec（/dev 或奇怪網址寧願回空，由部署對話框人手抄，
+  //    好過交一條開出嚟 Page Not Found 嘅連結）。
   let u = '';
-  try { u = ScriptApp.getService().getUrl() || ''; } catch (e) { u = ''; }
-  return u;
+  try { u = toPublicWebAppUrl(ScriptApp.getService().getUrl() || ''); } catch (e) { u = ''; }
+  return isPublicWebAppUrl(u) ? u : '';
+}
+/**
+ * 自己開一次 BACKEND URL 驗證（`?action=health`）：
+ * 分得出「JSON＝通」、「HTML／登入頁／Page Not Found＝URL 錯或存取權唔係任何人」。
+ * 只讀，唔會改任何設定。
+ */
+function verifyBackendUrl(url) {
+  const u = toPublicWebAppUrl(url || getScriptUrl());
+  if (!u) return { success: false, error: '未取得 /exec URL：請先「部署 → 新增部署 → 網頁應用程式」' };
+  const target = u + (u.indexOf('?') >= 0 ? '&' : '?') + 'action=health';
+  try {
+    const resp = UrlFetchApp.fetch(target, { method: 'get', muteHttpExceptions: true, followRedirects: true });
+    const code = resp.getResponseCode();
+    const text = String(resp.getContentText() || '');
+    let json = null;
+    try { json = JSON.parse(text); } catch (e) { json = null; }
+    const out = {
+      success: !!(json && json.success !== false),
+      url: u,
+      httpStatus: code,
+      isJson: !!json,
+      gsVersion: (json && json.gsVersion) || '',
+      error: '',
+      hint: ''
+    };
+    if (!json) {
+      out.error = '回嘅唔係 JSON（多數係 Google 登入頁／Page Not Found）';
+      out.hint = '① 去「部署 → 管理部署」抄一次網址（唔好用本檔自動讀到嗰條）；② 確認部署「執行身分＝我」、「存取權＝任何人」；③ 確認條 URL 冇 /a/你的網域/。';
+    } else if (code !== 200) {
+      out.error = 'HTTP ' + code;
+      out.hint = '檢查部署存取權是否「任何人」。';
+    }
+    return out;
+  } catch (e) {
+    return { success: false, url: u, error: String(e && e.message || e), hint: '網絡／URL 問題，請人手喺瀏覽器開一次條 URL 睇下。' };
+  }
+}
+/** 選單用：驗證並用對話框報告。 */
+function menuVerifyBackendUrl() {
+  const r = verifyBackendUrl();
+  const lines = [
+    'BACKEND URL：' + (r.url || '（未取得）'),
+    '',
+    r.success ? '✅ 通（回 JSON，GS 版本 ' + (r.gsVersion || '未知') + '）'
+              : '❌ 唔通：' + (r.error || '未知錯誤'),
+    r.hint ? '\n' + r.hint : ''
+  ];
+  return linkAlert('驗證 BACKEND URL', lines.join('\n'));
 }
 /**
  * 旅團要交俾 APP ADMIN 嘅資料（GS 只顯示呢啲，永不顯示保留帳號密碼）。
@@ -202,9 +296,15 @@ function vercelEnvLines() {
  * 顯示「旅團交俾 APP ADMIN」嘅 3 樣（編號／URL／API KEY）+ 提醒誰設定什麼。
  * 對話框只講旅團要交嘅嘢；其餘功能變數一律由 APP ADMIN 喺 Vercel 設定，唔喺度講。
  */
+const URL_MISMATCH_WARNING = '⚠️ 上面條 BACKEND URL 係本檔自動讀（ScriptApp），Google 已知會讀錯／讀到舊部署，' +
+  '同「部署 → 管理部署」顯示嗰條可以唔同（自動讀嗰條開出嚟可能係 Page Not Found）。\n' +
+  '請去「部署 → 管理部署」對一次：兩條唔同，一律以部署對話框嗰條為準\n' +
+  '（格式 https://script.google.com/macros/s/…/exec，冇 /a/你的網域/）。\n' +
+  '交之前最好按「🔗 旅系統 → 🔎 驗證 BACKEND URL」自己開一次確認通。';
 function showVercelEnv() {
   const lines = vercelEnvLines();
   const msg = '交俾 APP ADMIN 嘅資料（旅團只做呢 3 樣）：\n\n' + lines.join('\n') +
+    '\n\n' + URL_MISMATCH_WARNING +
     '\n\n旅團提交：旅團編號 + 部署 URL + API KEY（就係上面 3 樣）。\n' +
     '功能變數全部由 APP ADMIN 喺 Vercel 設定，旅團毋須（亦唔會）設定任何功能變數。';
   const ui = SpreadsheetApp.getUi();
@@ -490,7 +590,7 @@ function initializeSheets() {
   // 只有所有補表及預設值步驟完成後，才記錄最新初始化版本；只貼新 Code.gs 不會被誤當完成。
   PropertiesService.getScriptProperties().setProperty(CUB_GS_INITIALIZED_PROP,CUB_GS_VERSION);
   // ALLOW_LOCAL_LOGIN 故意不在初始化時寫入；未設定本身就代表開啟。
-  let scriptUrl=''; try{ scriptUrl=ScriptApp.getService().getUrl(); }catch(e){ scriptUrl='請部署為網頁應用程式後查看'; }
+  let scriptUrl=getScriptUrl(); if(!scriptUrl) scriptUrl='請部署為網頁應用程式後查看';
   try{
     const ui=SpreadsheetApp.getUi();
     if(ui){
@@ -721,6 +821,8 @@ function destroyToken(token){
 // ===== API =====
 function doGet(e){
   e=e||{};
+  // 真實 HTTP 請求情境：此刻 getUrl() 係準嘅，記低落 Script Property（選單／編輯器讀 URL 時用）。
+  rememberWebAppUrlFromRequest();
   const params=e.parameter||{};
   const action=String(params.action||'');
   // 旅系統所有簽名請求一律 POST；GET 帶 sig 不可繞過此規則。
@@ -752,6 +854,8 @@ function doGet(e){
 }
 function doPost(e){
   try{
+    // 伺服器對伺服器請求亦屬真實 HTTP 情境，順手記錄正確 /exec URL。
+    rememberWebAppUrlFromRequest();
     const rawBody=String((e&&e.postData&&e.postData.contents)||'{}');
     const body=JSON.parse(rawBody||'{}');
     const action=String(body.action||'');
@@ -972,7 +1076,7 @@ function verifySuperTicket(ticket){
     if(cache.get(cacheKey)) return false;
     const response=UrlFetchApp.fetch(SUPER_VERIFY_URL,{
       method:'post',contentType:'application/json',muteHttpExceptions:true,
-      payload:JSON.stringify({ticket:ticket,apikey:getApiKey(),backend:ScriptApp.getService().getUrl()})
+      payload:JSON.stringify({ticket:ticket,apikey:getApiKey(),backend:getScriptUrl()})
     });
     if(response.getResponseCode()!==200) return false;
     const result=JSON.parse(response.getContentText());
@@ -2925,6 +3029,7 @@ function onOpen(){
       .addSeparator()
       .addItem('🧭 本機接駁狀態','menuShowLinkState')
       .addItem('🔑 顯示 BACKEND／APIKEY（交 ADMIN）','menuShowLinkCredentials')
+      .addItem('🔎 驗證 BACKEND URL','menuVerifyBackendUrl')
       .addSeparator()
       .addItem('➕ 登記下游（URL + SHEET KEY）','menuRegisterDownstream')
       .addItem('📡 測試下游連線（sig）','menuPingDownstream')
@@ -2996,13 +3101,14 @@ function menuShowLinkState(){
   return linkAlert('本機接駁狀態',lines.join('\n'));
 }
 function menuShowLinkCredentials(){
-  let url='';
-  try{ url=ScriptApp.getService().getUrl()||''; }catch(e){ url=''; }
+  const url=toPublicWebAppUrl(getScriptUrl());
   const lines=[
     '以下兩項由本節點 GS 產生，經收件匣交 ADMIN 登記；四項一律不寫入工作表。',
     '',
     'B　BACKEND（部署後抄此 URL）：',
     url||'（尚未部署為網頁應用程式：部署 → 新增部署 → 網頁應用程式，再按一次本選單）',
+    '',
+    URL_MISMATCH_WARNING,
     '',
     'D　APIKEY（SHEET KEY）：',
     getApiKey(),

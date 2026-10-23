@@ -29,7 +29,7 @@
 | # | 功能變數 | 值來自 | 幾多個 |
 |---|---------|--------|--------|
 | 1 | `SUPER_KEY` | **APP ADMIN 自己定**（= 超管 `sheep` 嘅密碼；只用於超管登入比對） | 全 APP **1 個** |
-| 2 | `TROOP_0082_BACKEND` | 旅團交嚟嘅部署 URL（`/exec` 結尾） | 每旅團 1 個 |
+| 2 | `TROOP_0082_BACKEND` | 旅團交嚟嘅部署 URL（`/exec` 結尾；抄「部署 → 管理部署」嗰條，唔好抄 `getUrl()` 自動讀到嗰條） | 每旅團 1 個 |
 | 3 | `TROOP_0082_APIKEY` | 旅團交嚟嘅 API Key（`sc_…`） | 每旅團 1 個 |
 | 4 | `TROOP_0082_NAME` | **APP ADMIN 自己定**（旅團顯示名稱，例：第 82 旅） | 每旅團 1 個 |
 
@@ -133,6 +133,19 @@ A: 普通功能照用；超管登入會失敗（後端唔識 `action=superLogin`
 
 **Q: GS 彈窗會唔會再顯示帳號密碼？**
 A: 唔會。`initializeSheets()` 只顯示「交俾 APP ADMIN 嘅 3 樣」＋預設管理員帳號提示，冇任何超管密碼。
+
+**Q: GS 彈窗／選單顯示嘅 BACKEND URL，同「部署 → 管理部署」顯示嗰條唔同，邊條啱？**
+A: **一律以「部署 → 管理部署」對話框嗰條為準。**
+彈窗嗰條係 `ScriptApp.getService().getUrl()` 自動讀出嚟嘅，Google 已知有問題（[issue 170799249](https://issuetracker.google.com/issues/170799249)）：
+喺選單／編輯器／觸發器（唔係真實 HTTP 請求）情境，佢會回一條「幽靈」URL（舊部署 ID，或者 `/dev`），
+開出嚟就係 **Page Not Found**。只有喺真實請求（有人開 `/exec`）入面讀，佢先會回正確嗰條。
+所以：① 新 `Code.gs` 會喺有人開過 `/exec` 之後，把正確 URL 記落 Script Property `WEBAPP_URL`，之後選單用嗰條；
+② 讀到嘅 URL 一律去掉 Workspace 專屬嘅 `/a/<你的網域>/` 段，交公開格式；
+③ 交之前按「🔗 旅系統 → 🔎 驗證 BACKEND URL」自己開一次，通先交。
+另外 Vercel 端亦會自動把 `/a/<domain>/macros/s/<id>/exec` 正規化成 `script.google.com/macros/s/<id>/exec`，
+所以填咗網域內網址都唔會即刻壞；但如果該部署 ID 根本唔存在（幽靈 URL），一樣會 404 —
+`/api/health?troopId=0082` 會回 `backendLiveCheck.hint` 講明係「回嘅唔係 JSON／Page Not Found」。
+存取權亦一定要係「任何人」，否則伺服器對伺服器請求會攞到 Google 登入頁。
 
 **Q: 幾個旅團點算？**
 A: 每旅團 3 個功能變數；`SUPER_KEY` 全 APP 一個（你一個人管晒）。

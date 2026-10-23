@@ -231,6 +231,42 @@ test('直接入口掣：未設定時現有旅團行為完全不變', () => {
   assert.equal(g.doPost({ parameter: {}, postData: { contents: JSON.stringify({ action: 'getAllUsers', token: login.token }) } }).success, true);
 });
 
+test('BACKEND URL：Workspace 網域內網址自動轉公開網址，唔會交 /a/<domain>/ 出去', () => {
+  const WS_URL = 'https://script.google.com/a/scouting.org.hk/macros/s/AKfycbWorkspaceNode01/exec';
+  const PUBLIC_URL = 'https://script.google.com/macros/s/AKfycbWorkspaceNode01/exec';
+  const node = makeNode({ name: '第 82 旅（Workspace）', apikey: 'vs_ws_key_0006', url: WS_URL });
+  const g = node.context;
+  g.initializeSheets();
+
+  // 未有人開過 /exec 之前：getUrl() 嘅 /a/ 網址已即時轉公開格式
+  assert.equal(g.getScriptUrl(), PUBLIC_URL, 'Workspace 網址要轉公開網址');
+  const env = g.vercelEnvLines().join('\n');
+  assert.ok(env.includes('TROOP_<旅團編號>_BACKEND = ' + PUBLIC_URL), '交 APP ADMIN 嘅要係公開網址');
+  assert.ok(!env.includes('/a/scouting.org.hk/'), '唔可以交 /a/<domain>/ 出去');
+  assert.ok(String(g.linkAlert('x', 'y')).length > 0, '對話框 helper 正常');
+
+  // 真實 HTTP 請求打過嚟 → 記落 Script Property（之後選單／編輯器都用呢條）
+  g.doGet({ parameter: { action: 'getLoginMode' } });
+  assert.equal(node.props.get('WEBAPP_URL'), PUBLIC_URL, '真實請求情境要記錄正確 /exec URL');
+  g.forgetWebAppUrl();
+  assert.equal(node.props.get('WEBAPP_URL'), undefined);
+});
+
+test('BACKEND URL：/dev 或非 GAS 網址唔會當成正式部署交出去', () => {
+  const devNode = makeNode({
+    name: '開發節點',
+    apikey: 'vs_dev_key_0007',
+    url: 'https://script.google.com/macros/s/DEVONLYNODE01/dev'
+  });
+  const g = devNode.context;
+  assert.equal(g.getScriptUrl(), '', '/dev 唔可以當正式 /exec 交出去');
+  assert.equal(g.toPublicWebAppUrl('https://script.google.com/a/x.org/macros/s/ABC/exec'),
+    'https://script.google.com/macros/s/ABC/exec');
+  const verify = g.verifyBackendUrl();
+  assert.equal(verify.success, false);
+  assert.ok(String(verify.error).length > 0, '未部署要老實講錯，唔好扮通');
+});
+
 test('閂口後：直接登入／申請／load 全部拒絕，只收 sig', () => {
   const { down } = buildPair();
   const g = down.context;

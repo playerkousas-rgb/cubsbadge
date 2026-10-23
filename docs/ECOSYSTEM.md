@@ -161,7 +161,27 @@ GAS 端亦有對應嘅 `ecStatus` / `ecGetModules`（免 token,唔含敏感資�
 | `TROOP_<id>_NAME` | 旅團名稱（後端GS 對應：Script Property `TROOP_NAME`） | 是 |
 | `EC_FLUSH_KEY` | cache flush 授權 | 否（未設＝flush 回 503） |
 
-設定全部指向功能變數（唔讀 JSON）；**全部由 APP ADMIN 設定**，旅團只提供編號／部署 URL／API Key。`troops.json` 已棄用。詳見 `VERCEL_ENV_SETUP.md`（v9.0）。
+設定全部指向功能變數（唔讀 JSON）；**全部由 APP ADMIN 設定**，旅團只提供編號／部署 URL／API Key。
+
+### `TROOP_<id>_BACKEND` 抄邊條 URL？（常見陷阱）
+
+Google 有已知問題：`ScriptApp.getService().getUrl()`（即 Sheet 選單／`showVercelEnv()` 顯示嗰條）
+喺非 HTTP 請求情境會回**幽靈 URL** —— 舊部署 ID 或 `/dev`，開出嚟係 **Page Not Found**。
+**以 Apps Script「部署 → 管理部署」對話框顯示嗰條為準。**
+
+| 格式 | 邊度嚟 | 伺服器對伺服器打唔打得通 |
+|---|---|---|
+| `https://script.google.com/macros/s/<id>/exec` | 部署對話框（存取權＝任何人） | ✅ 打得通 |
+| `https://script.google.com/a/<你的網域>/macros/s/<id>/exec` | Workspace 帳戶嘅 `getUrl()` | ⚠️ 網域內網址；只對同網域登入使用者有效 |
+
+本 leaf 兩邊都會自動正規化（`normalizeGasUrl`）：`/a/<domain>/macros/s/<id>/exec` 一律轉公開格式，
+所以填錯格式都唔會即刻壞；但**部署 ID 本身錯（幽靈 URL）就點正規化都通唔到**。
+`/api/health?troopId=<id>` 會回 `config.backendDomainScoped`（boolean，唔回值）同
+`backendLiveCheck.hint`（回唔到 JSON＝多數食咗 Google 登入頁／Page Not Found）。
+
+GAS 端對應：`getScriptUrl()` 先讀 Script Property `WEBAPP_URL`（真實請求入面由
+`rememberWebAppUrlFromRequest()` 記落），冇先用 `getUrl()` 且只認正式 `/exec`；
+選單有「🔎 驗證 BACKEND URL」（`verifyBackendUrl()`）可以自己開一次確認。`troops.json` 已棄用。詳見 `VERCEL_ENV_SETUP.md`（v9.0）。
 
 ---
 

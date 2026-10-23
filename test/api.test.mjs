@@ -359,6 +359,66 @@ await check('registry：設定淨係指向功能變數 — 冇 env 就冇旅團�
   assert.doesNotMatch(JSON.stringify(res.body), /SUPER_KEY|sheep|超管/i, '公開回應唔可以提管理 key／保留帳號機制');
 });
 
+// ── BACKEND URL：Workspace 網域內網址（/a/<domain>/）自動轉公開網址 ──
+await check('normalizeGasUrl：/a/<domain>/ 轉公開網址，其他 URL 原樣', async () => {
+  const { normalizeGasUrl, isDomainScopedGasUrl } = freshModule('../api/_lib/registry.js');
+  const workspaceUrl = 'https://script.google.com/a/scouting.org.hk/macros/s/AKfycbWorkspaceNode01/exec';
+  assert.equal(normalizeGasUrl(workspaceUrl), 'https://script.google.com/macros/s/AKfycbWorkspaceNode01/exec');
+  assert.equal(isDomainScopedGasUrl(workspaceUrl), true);
+  const publicUrl = 'https://script.google.com/macros/s/AKfycbWorkspaceNode01/exec';
+  assert.equal(normalizeGasUrl(publicUrl), publicUrl, '公開網址唔應該被改');
+  assert.equal(isDomainScopedGasUrl(publicUrl), false);
+  assert.equal(normalizeGasUrl(''), '');
+  assert.equal(normalizeGasUrl('not a url'), 'not a url', '非 URL 原樣返回（交由 isValidGasUrl 擋）');
+});
+
+await check('isValidGasUrl：只認 https script.google.com /macros/s/<id>/exec（含 /a/<domain>/ 正規化）', async () => {
+  const { isValidGasUrl } = freshModule('../api/_lib/registry.js');
+  assert.equal(isValidGasUrl('https://script.google.com/macros/s/AKfycbWorkspaceNode01/exec'), true);
+  assert.equal(isValidGasUrl('https://script.google.com/a/scouting.org.hk/macros/s/AKfycbWorkspaceNode01/exec'), true,
+    'Workspace 網域內網址合法（會自動轉公開網址）');
+  assert.equal(isValidGasUrl('https://script.google.com/macros/s/AKfycbWorkspaceNode01/dev'), false, '/dev 唔係正式部署');
+  assert.equal(isValidGasUrl('https://script.google.com/a/scouting.org.hk/macros/s/AKfycbWorkspaceNode01/dev'), false);
+  assert.equal(isValidGasUrl('http://script.google.com/macros/s/AKfycbWorkspaceNode01/exec'), false, '一定要 https');
+  assert.equal(isValidGasUrl('https://script.google.com/macros/s/AKfycbWorkspaceNode01/exec?x=1'), false, '唔收 query string');
+  assert.equal(isValidGasUrl('https://evil.example/macros/s/AKfycbWorkspaceNode01/exec'), false, '主機一定要 script.google.com');
+  assert.equal(isValidGasUrl('https://script.google.com/macros/s/short/exec'), false, '部署 ID 太短');
+});
+
+await check('proxy：功能變數填咗 /a/<domain>/ 網址 → 一律打公開網址（唔會 Page Not Found）', async () => {
+  clearEnv();
+  process.env.TROOP_0082_BACKEND = 'https://script.google.com/a/scouting.org.hk/macros/s/AKfycbWorkspaceNode01/exec';
+  process.env.TROOP_0082_APIKEY = 'sc_ws_key';
+  let calledUrl = '';
+  try {
+    stubFetch([['script.google.com', async (u) => { calledUrl = u; return { body: { success: true, members: [] } }; }]]);
+    const handler = freshModule('../api/proxy.js');
+    const res = mockRes();
+    await handler(mockReq({ method: 'POST', body: { troopId: '0082', action: 'load' } }), res);
+    assert.ok(calledUrl.startsWith('https://script.google.com/macros/s/AKfycbWorkspaceNode01/exec'),
+      '要打公開網址，實際：' + calledUrl);
+    assert.ok(!calledUrl.includes('/a/scouting.org.hk/'), '唔可以帶 Workspace 網域段');
+    assert.ok(!JSON.stringify(res.body).includes('sc_ws_key'), 'apikey 唔可以回前端');
+    assert.ok(!JSON.stringify(res.body).includes('script.google.com'), 'BACKEND URL 唔可以落前端');
+  } finally { restoreFetch(); }
+});
+
+await check('health：填咗 /a/<domain>/ 網址會被標示 backendDomainScoped（只 boolean，唔回值）', async () => {
+  clearEnv();
+  process.env.TROOP_0082_BACKEND = 'https://script.google.com/a/scouting.org.hk/macros/s/AKfycbWorkspaceNode01/exec';
+  process.env.TROOP_0082_APIKEY = 'sc_ws_key';
+  try {
+    stubFetch([['script.google.com', async () => ({ body: { success: true } })]]);
+    const handler = freshModule('../api/health.js');
+    const res = mockRes();
+    await handler(mockReq({ query: { troopId: '0082', checkBackend: '0' } }), res);
+    assert.equal(res.body.config.backendDomainScoped, true);
+    const raw = JSON.stringify(res.body);
+    assert.ok(!raw.includes('/a/scouting.org.hk/'), 'health 唔可以回 BACKEND URL');
+    assert.ok(!raw.includes('sc_ws_key'), 'health 唔可以回 apikey');
+  } finally { restoreFetch(); }
+});
+
 await check('registry：SUPER_KEY 指向功能變數，verifySuperKey 驗證（值永不外洩）', async () => {
   clearEnv();
   process.env.SUPER_KEY = 'sk_SUPER_SECRET';

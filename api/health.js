@@ -41,7 +41,9 @@ module.exports = async function handler(req, res) {
       name: config.name,
       backendHost: (() => { try { return new URL(config.backend).hostname; } catch(e){ return 'invalid'; } })(),
       hasApikey: !!config.apikey,
-      backendConfigured: !!config.backend       // B/D 值唔回前端：只講「有冇設定」
+      backendConfigured: !!config.backend,      // B/D 值唔回前端：只講「有冇設定」
+      // 功能變數填咗 Workspace 網域內網址（/a/<domain>/…）→ 已自動轉公開網址。
+      backendDomainScoped: !!(config._env && config._env.domainScoped)
     } : null,
     registry: {
       totalKeys: Object.keys(registry).length,
@@ -106,6 +108,14 @@ module.exports = async function handler(req, res) {
         diagnosis: null
       };
       if (json && json.diagnose) health.backendLiveCheck.diagnosis = json.diagnose;
+      if (!json) {
+        // 最常見：BACKEND 填錯部署（例如抄咗 ScriptApp.getService().getUrl() 嘅舊／幽靈 URL，
+        // 或者 Workspace 網域內網址而部署存取權唔係「任何人」）→ Google 回登入頁／Page Not Found。
+        health.backendLiveCheck.hint = '後端回嘅唔係 JSON（多數係 Google 登入頁／Page Not Found）＝ ' +
+          'TROOP_<id>_BACKEND 呢條 /exec URL 唔係現行部署。請喺 Apps Script「部署 → 管理部署」抄一次網址 ' +
+          '（唔好用 ScriptApp.getService().getUrl() 印出嚟嗰條，Google 已知會回錯／回舊部署），' +
+          '並確認「執行身分＝我」、「存取權＝任何人」；網址唔應該有 /a/你的網域/。';
+      }
       if (json && json.success !== false) {
         try {
           const loadUrl = new URL(backendUrl);
