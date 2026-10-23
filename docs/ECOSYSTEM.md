@@ -184,9 +184,20 @@ Google 有已知問題：`ScriptApp.getService().getUrl()`（即 Sheet 選單／
 `/api/health?troopId=<id>` 會回 `config.backendDomainScoped`（boolean，唔回值）同
 `backendLiveCheck.hint`（回唔到 JSON＝多數食咗 Google 登入頁／Page Not Found）。
 
-GAS 端對應：`getScriptUrl()` 先讀 Script Property `WEBAPP_URL`（真實請求入面由
-`rememberWebAppUrlFromRequest()` 記落），冇先用 `getUrl()` 且只認正式 `/exec`；
-選單有「🔎 驗證 BACKEND URL」（`verifyBackendUrl()`）可以自己開一次確認。`troops.json` 已棄用。詳見 `VERCEL_ENV_SETUP.md`（v9.0）。
+GAS 端對應：
+
+| 機制 | 作用 |
+|---|---|
+| `rememberWebAppUrlFromRequest()` | `doGet`／`doPost` 每個真實請求都記低當刻 `/exec` 落 Script Property `WEBAPP_URL`（呢個情境 `getUrl()` 係準嘅）→ **之後選單／彈窗永遠攞返正確嗰條** |
+| `getScriptUrl()` | 先讀 `WEBAPP_URL`，冇先退 `getUrl()`；一律 strip `/a/<domain>/`，只認正式 `/exec`（`/dev` 回空） |
+| `action=selfUrl`（**需 apikey**） | 後端自己報告「服務緊呢個請求嘅 /exec 係邊條」。公開 `action=health` **永不**含 URL |
+| `resolveBackendUrl()` | ① `WEBAPP_URL` → ✅ 已核實；② 即場打 `selfUrl` 核實（成功就記落）；③ 都唔得 → ⚠️ 未核實（UI 明講，唔扮對） |
+| `verifyBackendUrl()`／選單「🔎 驗證 BACKEND URL」 | 人手驗一次，顯示部署 ID 長度（版本部署 ≈74、HEAD ≈56） |
+| `looksLikeHeadDeployment()` | ID < 60 字元＝多數係 HEAD／測試部署，UI 會警告 |
+
+即係「即生即睇」呢個情境：領袖部署完即刻按彈窗，若自動讀到嘅係未經核實嘅舊 URL，
+彈窗會標 **⚠️ 未核實** 並叫你開一次 `/exec`；開完之後再按，就會標 **✅ 已核實**，
+而且 `WEBAPP_URL` 已記低，之後點睇都唔會再撞。`troops.json` 已棄用。詳見 `VERCEL_ENV_SETUP.md`（v9.0）。
 
 ---
 

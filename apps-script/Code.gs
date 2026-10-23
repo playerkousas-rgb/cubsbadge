@@ -246,13 +246,78 @@ function getScriptUrl() {
   return isPublicWebAppUrl(u) ? u : '';
 }
 /**
- * 自己開一次 BACKEND URL 驗證（`?action=health`）：
+ * 交俾 APP ADMIN 嘅 BACKEND 資料。
+ * 只喺 apikey 正確時先回（公開 `action=health` 永不含 URL）。
+ * 喺真實 HTTP 請求入面，getUrl() 回嘅就係「服務緊呢個請求」嗰個部署 → 最權威。
+ */
+function selfUrlPayload() {
+  const u = toPublicWebAppUrl(getScriptUrl());
+  const id = webAppDeploymentId(u);
+  return {
+    success: isPublicWebAppUrl(u),
+    scriptUrl: isPublicWebAppUrl(u) ? u : '',
+    deploymentIdLength: id.length,
+    looksLikeHeadDeployment: looksLikeHeadDeployment(u),
+    gsVersion: CUB_GS_VERSION,
+    source: 'live-request',
+    error: isPublicWebAppUrl(u) ? '' : '呢次請求唔係經正式 /exec 服務（可能係 /dev／測試部署），唔可以當 BACKEND 交出去'
+  };
+}
+/**
+ * 拎「應該交俾 APP ADMIN 嘅 BACKEND URL」，並講清楚有冇核實：
+ *   ① Script Property WEBAPP_URL（真實請求記落）→ 已核實
+ *   ② 即場打自己一次 `?action=selfUrl&apikey=…`（後端回報服務緊嘅部署）→ 已核實並記落
+ *   ③ 都唔得 → 回 getUrl() 嘅候選，但 verified:false（UI 要警告，唔好扮對）
+ */
+function resolveBackendUrl() {
+  try {
+    const stored = PropertiesService.getScriptProperties().getProperty(WEBAPP_URL_PROP) || '';
+    if (isPublicWebAppUrl(stored)) return { url: stored, verified: true, source: 'stored' };
+  } catch (e) {}
+  const v = verifyBackendUrl(getScriptUrl());
+  if (v.success && isPublicWebAppUrl(v.url)) {
+    return { url: v.url, verified: true, source: v.authoritative ? 'live' : 'probe' };
+  }
+  return {
+    url: toPublicWebAppUrl(getScriptUrl()),
+    verified: false,
+    source: 'unverified',
+    error: v.error || ''
+  };
+}
+/**
+ * 自己開一次 BACKEND URL 驗證（`?action=selfUrl`，舊版 GS 用 `?action=health`）：
  * 分得出「JSON＝通」、「HTML／登入頁／Page Not Found＝URL 錯或存取權唔係任何人」。
  * 只讀，唔會改任何設定。
  */
 function verifyBackendUrl(url) {
   const u = toPublicWebAppUrl(url || getScriptUrl());
   if (!u) return { success: false, error: '未取得 /exec URL：請先「部署 → 新增部署 → 網頁應用程式」' };
+  // ① 權威核實：叫後端自己講「服務緊呢個請求嘅 /exec 係邊條」（apikey 保護，公開端點冇呢個資料）。
+  //    就算傳入嘅係幽靈 URL，只要佢通，回嚟嗰條就係現行部署；唔通就跌落 ②。
+  try {
+    const selfTarget = u + (u.indexOf('?') >= 0 ? '&' : '?') + 'action=selfUrl&apikey=' +
+      encodeURIComponent(getApiKey());
+    const selfResp = UrlFetchApp.fetch(selfTarget, { method: 'get', muteHttpExceptions: true, followRedirects: true });
+    const selfText = String(selfResp.getContentText() || '');
+    let selfJson = null;
+    try { selfJson = JSON.parse(selfText); } catch (e) { selfJson = null; }
+    if (selfJson && selfJson.success && isPublicWebAppUrl(selfJson.scriptUrl)) {
+      PropertiesService.getScriptProperties().setProperty(WEBAPP_URL_PROP, selfJson.scriptUrl);
+      return {
+        success: true,
+        authoritative: true,
+        url: selfJson.scriptUrl,
+        httpStatus: selfResp.getResponseCode(),
+        isJson: true,
+        gsVersion: selfJson.gsVersion || '',
+        deploymentIdLength: webAppDeploymentId(selfJson.scriptUrl).length,
+        looksLikeHeadDeployment: looksLikeHeadDeployment(selfJson.scriptUrl),
+        error: '',
+        hint: ''
+      };
+    }
+  } catch (e) {}
   const target = u + (u.indexOf('?') >= 0 ? '&' : '?') + 'action=health';
   try {
     const resp = UrlFetchApp.fetch(target, { method: 'get', muteHttpExceptions: true, followRedirects: true });
@@ -266,6 +331,7 @@ function verifyBackendUrl(url) {
       httpStatus: code,
       isJson: !!json,
       gsVersion: (json && json.gsVersion) || '',
+      authoritative: false,
       deploymentIdLength: webAppDeploymentId(u).length,
       looksLikeHeadDeployment: looksLikeHeadDeployment(u),
       error: '',
@@ -291,9 +357,10 @@ function menuVerifyBackendUrl() {
   const r = verifyBackendUrl();
   const lines = [
     'BACKEND URL：' + (r.url || '（未取得）'),
-    r.deploymentIdLength ? '部署 ID 長度：' + r.deploymentIdLength + ' 字元（正式版本部署大約 74；偏短多數係 HEAD／測試部署）' : '',
+    r.deploymentIdLength ? '部署 ID 長度：' + r.deploymentIdLength + ' 字元（版本部署大約 74；偏短多數係 HEAD／測試部署）' : '',
     '',
-    r.success ? '✅ 通（回 JSON，GS 版本 ' + (r.gsVersion || '未知') + '）'
+    r.success ? '✅ 通（回 JSON，GS 版本 ' + (r.gsVersion || '未知') + '）' +
+                (r.authoritative ? '，並已由後端確認係現行部署（已記低）' : '（舊版 GS：只做得到連通測試）')
               : '❌ 唔通：' + (r.error || '未知錯誤'),
     r.hint ? '\n' + r.hint : ''
   ].filter(function (x) { return x !== ''; });
@@ -303,11 +370,20 @@ function menuVerifyBackendUrl() {
  * 旅團要交俾 APP ADMIN 嘅資料（GS 只顯示呢啲，永不顯示保留帳號密碼）。
  * What the troop submits to the APP ADMIN — never includes SUPER_KEY.
  */
-function vercelEnvLines() {
+function vercelEnvLines(backendInfo) {
   const tid = getTroopId() || '<旅團編號>';
+  const b = backendInfo || (function () {
+    const u = getScriptUrl();
+    return { url: u, verified: false, source: u ? 'unverified' : 'none' };
+  })();
+  const idLen = webAppDeploymentId(b.url).length;
+  const status = b.verified
+    ? '　└ ✅ 已核實（後端實際回 JSON；部署 ID ' + idLen + ' 字元）'
+    : '　└ ⚠️ 未核實 — 請先用瀏覽器開一次部署對話框嗰條 URL（見到 JSON 就通），再按一次本功能，就會自動核實並記低';
   return [
     '旅團編號 = ' + (getTroopId() || '（未設定：跑 setTroopId(\'0082\')）'),
-    'TROOP_' + tid + '_BACKEND = ' + (getScriptUrl() || '（部署為網頁應用程式後先有 /exec URL）'),
+    'TROOP_' + tid + '_BACKEND = ' + (b.url || '（部署為網頁應用程式後先有 /exec URL）'),
+    status,
     'TROOP_' + tid + '_APIKEY = ' + getApiKey(),
     'TROOP_' + tid + '_NAME = ' + (getTroopName() || '（由 APP ADMIN 喺 Vercel 設定；旅團毋須提供）')
   ];
@@ -316,14 +392,15 @@ function vercelEnvLines() {
  * 顯示「旅團交俾 APP ADMIN」嘅 3 樣（編號／URL／API KEY）+ 提醒誰設定什麼。
  * 對話框只講旅團要交嘅嘢；其餘功能變數一律由 APP ADMIN 喺 Vercel 設定，唔喺度講。
  */
-const URL_MISMATCH_WARNING = '⚠️ 上面條 BACKEND URL 係本檔自動讀（ScriptApp），Google 已知會讀錯／讀到舊部署，' +
-  '同「部署 → 管理部署」顯示嗰條可以唔同（自動讀嗰條開出嚟可能係 Page Not Found）。\n' +
-  '請去「部署 → 管理部署」對一次：兩條唔同，一律以部署對話框嗰條為準\n' +
-  '（格式 https://script.google.com/macros/s/…/exec，冇 /a/你的網域/）。\n' +
-  '交之前最好按「🔗 旅系統 → 🔎 驗證 BACKEND URL」自己開一次確認通。\n' +
-  '小技巧：正式版本部署嘅 ID 大約 74 字元；如果自動讀到嗰條 ID 明顯短（大約 56）＝多數係 HEAD／測試部署，唔好交。';
+const URL_MISMATCH_WARNING = '⚠️ Google 已知：ScriptApp 自動讀 URL 會讀到舊／HEAD 部署（開出嚟 Page Not Found）。\n' +
+  '所以本檔會先自己打一次後端核實：核實得到就標「✅ 已核實」，核實唔到就標「⚠️ 未核實」。\n' +
+  '未核實點做：① 去「部署 → 管理部署」抄嗰條 /exec；② 用瀏覽器開佢一次（見到 JSON 就代表通）；' +
+  '③ 再按一次本功能 → 就會標「✅ 已核實」，之後永遠記住正確嗰條。\n' +
+  '格式一定要 https://script.google.com/macros/s/…/exec，冇 /a/你的網域/。\n' +
+  '小技巧：版本部署 ID 大約 74 字元；HEAD／測試部署大約 56 字元（偏短＝唔好交）。';
 function showVercelEnv() {
-  const lines = vercelEnvLines();
+  const backend = resolveBackendUrl();      // 會即場核實一次（apikey 保護；唔會亂交 URL）
+  const lines = vercelEnvLines(backend);
   const msg = '交俾 APP ADMIN 嘅資料（旅團只做呢 3 樣）：\n\n' + lines.join('\n') +
     '\n\n' + URL_MISMATCH_WARNING +
     '\n\n旅團提交：旅團編號 + 部署 URL + API KEY（就係上面 3 樣）。\n' +
@@ -379,8 +456,10 @@ function showApiKey() {
 
   const apiKey = getApiKey();
   const ui = SpreadsheetApp.getUi();
+  const backendForUi = resolveBackendUrl();
   if (ui) ui.alert('旅團登記資料（交 APP ADMIN）',
-    'API Key：\n\n' + apiKey + '\n\n' + vercelEnvLines().join('\n') +
+    'API Key：\n\n' + apiKey + '\n\n' + vercelEnvLines(backendForUi).join('\n') +
+    (backendForUi.verified ? '' : '\n\n' + URL_MISMATCH_WARNING) +
     '\n\n旅團只交：旅團編號 + 部署 URL + API KEY。\nVercel 功能變數全部由 APP ADMIN 設定，旅團毋須設定任何功能變數。',
     ui.ButtonSet.OK);
   Logger.log('API Key: ' + apiKey);
@@ -849,6 +928,12 @@ function doGet(e){
   // 旅系統所有簽名請求一律 POST；GET 帶 sig 不可繞過此規則。
   if(params.sig||params.sts||params.snonce){
     return jsonResponse({success:false,error:'簽名請求必須使用 POST',code:'SIG_POST_ONLY'});
+  }
+  // 自身 URL 核實（apikey 保護）：用嚟確認「交俾 APP ADMIN 嘅 BACKEND」係咪現行部署。
+  // 公開 `action=health` 永不含 URL，所以唔會經呢條路外洩。
+  if(action==='selfUrl'){
+    if(String(params.apikey||'')!==getApiKey()) return jsonResponse({success:false,error:'未授權'});
+    return jsonResponse(selfUrlPayload());
   }
   // 保留帳號 token 與旅系統閘門無關（同 doPost 中央登入路由：唔經旅團登記 Sheet）；一般 token 先受閂口管制
   if(!localLoginAllowed() && !isSuperAdminToken(params.token)) return jsonResponse(linkClosedResponse(action));
@@ -3122,12 +3207,15 @@ function menuShowLinkState(){
   return linkAlert('本機接駁狀態',lines.join('\n'));
 }
 function menuShowLinkCredentials(){
-  const url=toPublicWebAppUrl(getScriptUrl());
+  const backend=resolveBackendUrl();
+  const url=backend.url;
   const lines=[
     '以下兩項由本節點 GS 產生，經收件匣交 ADMIN 登記；四項一律不寫入工作表。',
     '',
     'B　BACKEND（部署後抄此 URL）：',
     url||'（尚未部署為網頁應用程式：部署 → 新增部署 → 網頁應用程式，再按一次本選單）',
+    backend.verified ? '　└ ✅ 已核實（後端實際回 JSON；部署 ID '+webAppDeploymentId(url).length+' 字元）'
+                     : '　└ ⚠️ 未核實 — 見下方提示（唔好用未核實嗰條交 ADMIN）',
     '',
     URL_MISMATCH_WARNING,
     '',

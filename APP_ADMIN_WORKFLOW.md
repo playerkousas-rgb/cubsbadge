@@ -43,10 +43,11 @@ TROOP_0082_BACKEND：https://script.google.com/macros/s/.../exec
 TROOP_0082_APIKEY：sc_xxxxxxxx
 ```
 
-> ⚠️ `BACKEND` **一律抄「部署 → 管理部署」對話框嗰條**，唔好抄 Sheet 彈窗自動印出嚟嗰條
-> （`ScriptApp.getService().getUrl()` 有已知問題，會回舊部署 ID／`/dev`，開出嚟 Page Not Found）。
-> 網址唔應該有 `/a/你的網域/`；Vercel 端會自動 strip，但部署 ID 錯就救唔返。
-> 交之前叫旅團按「🔗 旅系統 → 🔎 驗證 BACKEND URL」確認通。
+> ⚠️ `BACKEND` 認住一個記號：**彈窗見到「✅ 已核實」先收貨**。
+> 新 `Code.gs` 會即場打一次自己後端核實（`action=selfUrl`，apikey 保護）；核實唔到會標「⚠️ 未核實」，
+> 叫旅團去「部署 → 管理部署」抄一次、用無痕開一次條 `/exec`（見到 JSON 就通），再按一次就會變 ✅ 並記低。
+> 網址唔應該有 `/a/你的網域/`；Vercel 端會自動 strip，但部署 ID 本身錯（幽靈 URL）就救唔返。
+> 收貨後可叫旅團順手按「🔗 旅系統 → 🔎 驗證 BACKEND URL」，睇部署 ID 長度（版本部署 ≈74、HEAD ≈56）。
 
 （第 3 樣 `TROOP_0082_NAME` 係**你**話事：例如「第 82 旅」。）
 

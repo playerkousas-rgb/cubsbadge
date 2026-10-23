@@ -68,6 +68,7 @@ function makeSpreadsheet(name) {
   return {
     getName: () => name,
     getId: () => 'ss-' + name,
+    getUrl: () => 'https://docs.google.com/spreadsheets/d/ss-' + name + '/edit',
     getSheetByName: n => sheets.get(n) || null,
     insertSheet(n) { const s = makeSheet(n); sheets.set(n, s); return s; },
     getSheets: () => Array.from(sheets.values()),
@@ -156,7 +157,10 @@ function makeNode({ name, apikey, url }) {
         const peer = net.get(base.replace(/\/$/, ''));
         if (!peer) return { getResponseCode: () => 404, getContentText: () => '<HTML>not found</HTML>' };
         const params = Object.fromEntries(new URLSearchParams(qs || ''));
-        const result = peer.context.doPost({ parameter: params, postData: { contents: String((opts && opts.payload) || '') } });
+        const method = String((opts && opts.method) || 'post').toLowerCase();
+        const result = method === 'get'
+          ? peer.context.doGet({ parameter: params })
+          : peer.context.doPost({ parameter: params, postData: { contents: String((opts && opts.payload) || '') } });
         return { getResponseCode: () => 200, getContentText: () => JSON.stringify(result) };
       }
     },
@@ -263,6 +267,60 @@ test('BACKEND URL 診斷：HEAD／測試部署（ID 偏短）會被標示，正�
   assert.equal(g.looksLikeHeadDeployment('https://script.google.com/macros/s/' + HEAD_ID + '/exec'), true, '56 字元＝HEAD');
   assert.equal(g.looksLikeHeadDeployment('https://script.google.com/macros/s/' + VERSION_ID + '/exec'), false, '74 字元＝正式版本部署');
   assert.ok(String(g.menuVerifyBackendUrl()).length >= 0, '選單診斷唔會爆');
+});
+
+test('BACKEND URL 自我核實：selfUrl 要 apikey，核實到就記低正確 /exec；公開 health 唔含 URL', () => {
+  const NODE_URL = 'https://script.google.com/macros/s/' + 'N'.repeat(74) + '/exec';
+  const node = makeNode({ name: '第 82 旅（核實）', apikey: 'vs_verify_key_0009', url: NODE_URL });
+  const g = node.context;
+  g.initializeSheets();
+  const key = g.getApiKey();
+
+  // 冇 apikey / apikey 錯 → 唔會俾 URL 出去
+  const noKey = g.doGet({ parameter: { action: 'selfUrl' } });
+  assert.equal(noKey.success, false);
+  assert.equal(noKey.scriptUrl, undefined);
+  const badKey = g.doGet({ parameter: { action: 'selfUrl', apikey: 'wrong' } });
+  assert.equal(badKey.success, false);
+  assert.ok(!JSON.stringify(badKey).includes(NODE_URL));
+
+  // 正確 apikey → 回現行 /exec URL（真實請求情境）
+  const ok = g.doGet({ parameter: { action: 'selfUrl', apikey: key } });
+  assert.equal(ok.success, true);
+  assert.equal(ok.scriptUrl, NODE_URL);
+
+  // 公開 health 永不含 URL（紅線）
+  const health = g.doGet({ parameter: { action: 'health' } });
+  assert.ok(!JSON.stringify(health).includes(NODE_URL), 'health 唔可以含部署 URL');
+
+  // resolveBackendUrl：經 selfUrl 自我核實後，回已核實嘅 URL 並記落 Script Property
+  node.props.delete('WEBAPP_URL');
+  const resolved = g.resolveBackendUrl();
+  assert.equal(resolved.verified, true, '應該核實得到');
+  assert.equal(resolved.url, NODE_URL);
+  assert.equal(node.props.get('WEBAPP_URL'), NODE_URL, '核實到要記低，之後唔會再撞');
+
+  // 交 ADMIN 嘅清單要標明已核實
+  const lines = g.vercelEnvLines(resolved).join('\n');
+  assert.ok(lines.includes('✅ 已核實'), '要明確標示已核實');
+});
+
+test('BACKEND URL 自我核實：後端連唔到時唔會扮通（標未核實）', () => {
+  const node = makeNode({ name: '未部署節點', apikey: 'vs_verify_key_0010', url: 'https://script.google.com/macros/s/UNREACHABLE_NODE01/exec' });
+  const g = node.context;
+  g.initializeSheets();
+  // 模擬網絡失敗
+  const realFetch = node.context.UrlFetchApp.fetch;
+  node.context.UrlFetchApp.fetch = () => { throw new Error('DNS fail'); };
+  try {
+    const v = g.verifyBackendUrl();
+    assert.equal(v.success, false);
+    const resolved = g.resolveBackendUrl();
+    assert.equal(resolved.verified, false, '連唔到就一定要標未核實');
+    const lines = g.vercelEnvLines(resolved).join('\n');
+    assert.ok(lines.includes('⚠️ 未核實'), '要標未核實，唔好扮對');
+    assert.ok(!lines.includes('✅ 已核實'));
+  } finally { node.context.UrlFetchApp.fetch = realFetch; }
 });
 
 test('BACKEND URL：/dev 或非 GAS 網址唔會當成正式部署交出去', () => {

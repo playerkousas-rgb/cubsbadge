@@ -146,6 +146,9 @@ A: **一律以「部署 → 管理部署」對話框嗰條為準。**
 所以：① 新 `Code.gs` 會喺有人開過 `/exec` 之後，把正確 URL 記落 Script Property `WEBAPP_URL`，之後選單用嗰條；
 ② 讀到嘅 URL 一律去掉 Workspace 專屬嘅 `/a/<你的網域>/` 段，交公開格式；
 ③ 交之前按「🔗 旅系統 → 🔎 驗證 BACKEND URL」自己開一次，通先交。
+**新 Code.gs 已經自動對正，毋須人手比對**：彈窗會即場經 `action=selfUrl`（apikey 保護）問後端
+「服務緊呢個請求嘅 /exec 係邊條」，成功就標 **✅ 已核實**（並記落 Script Property `WEBAPP_URL`），
+失敗就標 **⚠️ 未核實** 並叫你開一次 `/exec`——**未核實就唔好交**。
 另外 Vercel 端亦會自動把 `/a/<domain>/macros/s/<id>/exec` 正規化成 `script.google.com/macros/s/<id>/exec`，
 所以填咗網域內網址都唔會即刻壞；但如果該部署 ID 根本唔存在（幽靈 URL），一樣會 404 —
 `/api/health?troopId=0082` 會回 `backendLiveCheck.hint` 講明係「回嘅唔係 JSON／Page Not Found」。
