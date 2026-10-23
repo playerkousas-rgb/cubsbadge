@@ -6,8 +6,19 @@
 // 保留帳號：本檔只有帳號名，冇密碼。登入只認 APP 送落嚟嘅 action=superLogin（apikey 由 server 端注入）；
 // 本檔唔會比對密碼，只發 token。
 // 本檔永不生成、永不顯示、永不回傳任何密碼；initializeSheets／showApiKey 只顯示旅團自己嗰隻 API Key。
-// 版本同改動紀錄一律寫喺 docs/CHANGE_LOG_*.md —— 本檔唔寫版號。
+// 版本同改動紀錄一律寫喺 docs/CHANGE_LOG_*.md；呢度只保留最新 GS 發佈識別供前端核對，不設逐級升級表。
 // ============================================================
+const CUB_GS_VERSION = '2026.10.23';
+const CUB_GS_INITIALIZED_PROP = 'CUB_GS_INITIALIZED_VERSION';
+function getCubGsReleaseStatus(){
+  let initialized='';
+  try{ initialized=String(PropertiesService.getScriptProperties().getProperty(CUB_GS_INITIALIZED_PROP)||''); }catch(e){}
+  return {
+    gsVersion:CUB_GS_VERSION,
+    initializedGsVersion:initialized,
+    gsInitializationCurrent:initialized===CUB_GS_VERSION
+  };
+}
 const ADMIN_YMIS = '1111111111';
 // 保留帳號：程式碼只有帳號名，冇密碼
 // Reserved account: only the NAME lives in code, never a password.
@@ -476,6 +487,8 @@ function initializeSheets() {
   const superLabelRowsFixed = purgeSuperAdminLabels();   // 舊部署寫過保留帳號識別字就改成中性代號
   if (superLabelRowsFixed) removeSuperAdminRows();       // 順手再確保 Users／成員名單冇保留帳號列
   setConfigDefaults(cfgSheet);                  // allow_member_requests／view_others／progress_scope 等預設值
+  // 只有所有補表及預設值步驟完成後，才記錄最新初始化版本；只貼新 Code.gs 不會被誤當完成。
+  PropertiesService.getScriptProperties().setProperty(CUB_GS_INITIALIZED_PROP,CUB_GS_VERSION);
   // ALLOW_LOCAL_LOGIN 故意不在初始化時寫入；未設定本身就代表開啟。
   let scriptUrl=''; try{ scriptUrl=ScriptApp.getService().getUrl(); }catch(e){ scriptUrl='請部署為網頁應用程式後查看'; }
   try{
@@ -488,7 +501,7 @@ function initializeSheets() {
       ui.alert('✅ 初始化完成！\n\n' + INIT_DONE_LINES + '\n詳情隨時再睇：showVercelEnv() / showApiKey()');
     }
   }catch(e){}
-  return {success:true,apiKey:apiKey,scriptUrl:scriptUrl,troopId:getTroopId(),troopName:getTroopName()};
+  return {success:true,apiKey:apiKey,scriptUrl:scriptUrl,troopId:getTroopId(),troopName:getTroopName(),gsVersion:CUB_GS_VERSION,initializedGsVersion:CUB_GS_VERSION,gsInitializationCurrent:true};
 }
 
 // ===== 用戶查詢 =====
@@ -1372,7 +1385,8 @@ function handleLoad(loadUser){
   const isLogReviewer=!!(loadUser && canUserTick(loadUser.role));
   // 未登入（apikey 載入）→ 不回傳待批申報；領袖 → 全部；團員 → 只見自己
   const logReqList=(lrSheet && loadUser) ? getLogRequestsList(isLogReviewer?null:loadUser.ymis) : [];
-  return jsonResponse({success:true,members:members,progress:progress,flatProgress:flat,pendingRequests:pending,otherBadges:other,logs:getLogRecordsList(loadUser?(canUserTick(loadUser.role)?null:loadUser.ymis):null, !!loadUser&&canUserTick(loadUser.role)),logsSupported:!!lSheet,logRequests:logReqList,logRequestsSupported:!!lrSheet});
+  const releaseStatus=getCubGsReleaseStatus();
+  return jsonResponse(Object.assign({success:true,members:members,progress:progress,flatProgress:flat,pendingRequests:pending,otherBadges:other,logs:getLogRecordsList(loadUser?(canUserTick(loadUser.role)?null:loadUser.ymis):null, !!loadUser&&canUserTick(loadUser.role)),logsSupported:!!lSheet,logRequests:logReqList,logRequestsSupported:!!lrSheet},releaseStatus));
 }
 function handleSave(changes, confirmer){
   const sheet=tbl('進度追蹤'); if(!sheet) return jsonResponse({success:false,error:'Sheet not found'});
@@ -2065,7 +2079,7 @@ function ecSigLogin(payload,sig){
 var EC_BACKEND_VERSION='cub-leaf';
 function ecStatus(unitId){
   var ss=getSheet();
-  return jsonResponse({
+  return jsonResponse(Object.assign({
     success:true,
     backendVersion:EC_BACKEND_VERSION,
     role:'leaf',
@@ -2078,7 +2092,7 @@ function ecStatus(unitId){
     allowLocalLogin: getAllowLocalLogin(),
     downstreamAccess: getAllowLocalLogin(),
     timestamp:now()
-  });
+  },getCubGsReleaseStatus()));
 }
 
 /**

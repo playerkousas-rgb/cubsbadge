@@ -211,6 +211,13 @@ html[lang="en"] body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","No
 .steps{margin-top:12px}.step{display:flex;gap:12px;margin-bottom:12px;padding:12px;background:var(--bg);border-radius:10px;border-left:4px solid var(--maroon)}
 .step-number{width:32px;height:32px;background:var(--maroon);color:#000;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;flex-shrink:0}
 .step-content h4{color:var(--text);font-size:13px;margin-bottom:4px}.step-content p{color:var(--text-light);font-size:11.5px;line-height:1.6}
+.release-notice{border:2px solid #D97706;background:#FFFBEB;border-radius:12px;padding:12px 14px;margin:0 0 14px;box-shadow:var(--shadow);line-height:1.6}
+.release-notice.release-current{border-color:var(--green);background:#F0FFF4}.release-notice.release-checking{border-color:var(--blue);background:var(--blue-light)}
+.release-head{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:13px;font-weight:800;color:#8B5A00}.release-current .release-head{color:var(--green)}
+.release-chip{display:inline-block;padding:2px 8px;border-radius:999px;background:#FEF3C7;color:#92400E;font-size:11px;font-weight:700}.release-chip.required{background:#FEE2E2;color:#991B1B}
+.release-summary{font-size:11.5px;color:var(--text-light);margin-top:5px}.release-status{font-size:12px;font-weight:650;margin-top:8px;padding:8px 10px;border-radius:8px;background:rgba(255,255,255,.78)}
+.release-notice details{margin-top:8px;font-size:11.5px;color:var(--text-light)}.release-notice summary{cursor:pointer;font-weight:700;color:#8B5A00}.release-notice ol{margin:7px 0 8px;padding-left:22px}.release-actions{display:flex;gap:7px;flex-wrap:wrap;margin-top:8px}
+#mainReleaseNotice{padding:10px 12px 0}#mainReleaseNotice .release-notice{margin-bottom:0;box-shadow:none}
 @media(max-width:768px){
   body{font-size:15px;line-height:1.65}.container{padding:12px}
   .btn{min-height:44px;touch-action:manipulation}.btn-sm{min-height:40px}
@@ -302,6 +309,7 @@ html[lang="en"] body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","No
     </div>
   </div>
   <div class="container">
+    <div id="homeReleaseNotice"></div>
     <div id="welcome-enter" class="welcome-section active">
       <div style="background:var(--card);border-radius:12px;padding:14px;margin-bottom:14px;box-shadow:var(--shadow)">
         <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
@@ -337,14 +345,14 @@ html[lang="en"] body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","No
       </div>
       <div class="info-card" style="background:var(--maroon-light);margin-bottom:12px" data-i18n-html="setup_map_card">
         <h3>🗺️ 部署地圖</h3>
-        <p style="font-size:11px">旅團只做 3 樣：① 下載 Code.gs → 建 Sheet → 部署 ② 執行 initializeSheets（只生成 API Key）③ 把「旅團編號 + 部署 URL + API Key」交 APP ADMIN<br>Vercel 功能變數全部由 APP ADMIN 設定，旅團毋須（亦唔會）設定任何功能變數<br>軌道B 接入主系統：同時交主系統管理員</p>
+        <p style="font-size:11px">旅團只做 3 樣：① 下載 Code.gs → 建 Sheet → 部署 ② 執行 initializeSheets（補齊設定並記錄最新版本）③ 把「旅團編號 + 部署 URL + API Key」交 APP ADMIN<br>Vercel 功能變數全部由 APP ADMIN 設定，旅團毋須（亦唔會）設定任何功能變數<br>軌道B 接入主系統：同時交主系統管理員</p>
         <p style="font-size:10px;color:var(--red);margin-top:6px">⚠️ 功能變數由 APP ADMIN 設定，旅團毋須（亦唔會）設定任何功能變數；SETUP 彈窗只顯示旅團要交嘅 API Key。</p>
       </div>
       -->
       <div class="tutorial">
         <div class="steps">
-          <div class="step"><div class="step-number">1</div><div class="step-content"><h4 data-i18n="s1h">下載後端程式碼 v6.0</h4><p data-i18n="s1p">包含活動履歷申報、待批履歷、診斷修復、中英對照、功能變數契約（旅團只交編號／URL／API Key）</p><a href="apps-script/Code.gs" download="Code.gs" class="btn btn-primary btn-sm" style="margin-top:6px" data-i18n="s1btn">⬇️ 下載 Code.gs v6.0</a></div></div>
-          <div class="step"><div class="step-number">2</div><div class="step-content"><h4 data-i18n="s2h">建立 Google Sheet 並部署</h4><p data-i18n-html="s2p">建新試算表 → 擴充功能 → Apps Script 貼上 Code.gs → 儲存 → 執行 initializeSheets 授權（只生成 API Key）→ 部署為網頁應用程式（執行身分我，任何人可存取）→ 跑 showApiKey() 睇返 API Key</p></div></div>
+          <div class="step"><div class="step-number">1</div><div class="step-content"><h4 data-i18n="s1h">下載最新 GS（2026.10.23）</h4><p data-i18n="s1p">最新 GS 2026.10.23：2026 訓練綱要配套、版本／初始化核對、活動履歷及既有行政功能</p><a href="apps-script/Code.gs" download="Code.gs" class="btn btn-primary btn-sm" style="margin-top:6px" data-i18n="s1btn">⬇️ 下載 Code.gs（GS 2026.10.23）</a></div></div>
+          <div class="step"><div class="step-number">2</div><div class="step-content"><h4 data-i18n="s2h">建立 Google Sheet 並部署</h4><p data-i18n-html="s2p">建新試算表 → 擴充功能 → Apps Script 貼上 Code.gs → 儲存 → 執行 initializeSheets 授權（本次必須；補齊設定並保留現有 API Key）→ 部署為網頁應用程式（執行身分我，任何人可存取）→ 跑 showApiKey() 睇返 API Key</p></div></div>
           <div class="step"><div class="step-number">3</div><div class="step-content"><h4 data-i18n="s3h">提交給 APP ADMIN</h4><p data-i18n="s3p">只交 3 樣：旅團編號、部署 URL、API Key。Vercel 功能變數全部由 APP ADMIN 設定，旅團毋須設定任何功能變數</p></div></div>
           <div class="step"><div class="step-number">4</div><div class="step-content"><h4 data-i18n="s_fl_h">首次登入（預設管理員帳號）</h4><p data-i18n-html="s_fl_p">登記完成後，首頁揀該旅團卡片 → 用「<b>👤 家長/成員</b>」分頁登入：<br>YMIS <b>1111111111</b>　密碼 <b>changeme</b>（initializeSheets 自動建立嘅預設管理員，唔好用「領袖=Email」分頁）<br>首次登入會<b>強制改密碼</b>（4-8 位）。之後喺「審批中心」批成員申請、喺「用戶管理」開返各領袖真電郵嘅帳號並設權限</p></div></div>
           <!-- [主系統暫時隱藏 2026-10] 軌道B（接上主系統）未開放，完成後解除註解並自行重排步驟號（而家 4=首次登入、5=私隱選擇）：
@@ -388,6 +396,7 @@ html[lang="en"] body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","No
     <div class="logo-row" style="margin-bottom:0"><div class="logo-svg-wrap"><img src="assets/app-icon-256.png" alt="Logo"></div><div><h1 style="font-size:18px" data-i18n="login_page_h1">幼童軍進度追蹤 v6.0</h1></div></div>
   </div>
   <div class="container">
+    <div id="loginReleaseNotice"></div>
     <div class="login-container">
       <h2 data-i18n="login_h2">🔐 登入系統</h2>
       <div class="troop-info-box" id="loginTroopInfo">—</div>
@@ -420,6 +429,7 @@ html[lang="en"] body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","No
       <button class="btn btn-sm btn-secondary" onclick="doLogout()" data-i18n="logout">登出</button>
     </div>
   </div>
+  <div id="mainReleaseNotice"></div>
   <div class="nav-tabs" id="mainNavTabs">
     <div class="nav-tab-row nav-primary" aria-label="主要功能" data-i18n-aria="nav_primary_aria">
       <button class="nav-tab active" id="btn-tab-progress" onclick="switchTab('progress', this)" data-i18n="nav_progress">📊 我的進度</button>
@@ -653,8 +663,8 @@ zh:{
   // [主系統暫時隱藏 2026-10] setup_portal_card／setup_map_card／s4h／s4p 對應 HTML 元素已用註解隱藏（主系統未開發完成）；
   // 鍵值保留未刪，重啟時解除 HTML 註解即可。
   setup_h2:'📋 新旅團部署指南 (10分鐘)',setup_portal_card:'<h3 style="color:var(--blue)">🌟 主系統平台是什麼？</h3><p style="font-size:12px">本系統可獨立用，亦可接入 <b>scoutsystem-2.0 主系統平台</b>：Dashboard、考勤、財務、活動報名，單一登入。</p><p style="font-size:11px;margin-top:6px;background:#fff;padding:6px;border-radius:6px"><b>有主系統 ≠ 一定要接上</b>，兩條路並存。</p>',
-  setup_map_card:'<h3>🗺️ 部署地圖</h3><p style="font-size:11px">旅團只做 3 樣：① 下載 Code.gs → 建 Sheet → 部署 ② 執行 initializeSheets（只生成 API Key）③ 把「旅團編號 + 部署 URL + API Key」交 APP ADMIN<br>Vercel 功能變數全部由 APP ADMIN 設定，旅團毋須（亦唔會）設定任何功能變數<br>軌道B 接入主系統：同時交主系統管理員</p><p style="font-size:10px;color:var(--red);margin-top:6px">⚠️ 功能變數由 APP ADMIN 設定：旅團毋須設定任何功能變數，SETUP 彈窗只會顯示要交嘅 API Key。</p>',
-  s1h:'下載後端程式碼 v6.0',s1p:'包含活動履歷申報、待批履歷、診斷修復、中英對照、功能變數契約（旅團只交編號／URL／API Key）',s1btn:'⬇️ 下載 Code.gs v6.0',s2h:'建立 Google Sheet 並部署',s2p:'建新試算表 → 擴充功能 → Apps Script 貼上 Code.gs → 儲存 → 執行 initializeSheets 授權（只生成 API Key）→ 部署為網頁應用程式（執行身分我，任何人可存取）→ 跑 showApiKey() 睇返 API Key',s3h:'提交給 APP ADMIN',s3p:'只交 3 樣：旅團編號、部署 URL、API Key。Vercel 功能變數全部由 APP ADMIN 設定，旅團毋須設定任何功能變數',
+  setup_map_card:'<h3>🗺️ 部署地圖</h3><p style="font-size:11px">旅團只做 3 樣：① 下載 Code.gs → 建 Sheet → 部署 ② 執行 initializeSheets（補齊設定並記錄最新版本）③ 把「旅團編號 + 部署 URL + API Key」交 APP ADMIN<br>Vercel 功能變數全部由 APP ADMIN 設定，旅團毋須（亦唔會）設定任何功能變數<br>軌道B 接入主系統：同時交主系統管理員</p><p style="font-size:10px;color:var(--red);margin-top:6px">⚠️ 功能變數由 APP ADMIN 設定：旅團毋須設定任何功能變數，SETUP 彈窗只會顯示要交嘅 API Key。</p>',
+  s1h:'下載最新 GS（2026.10.23）',s1p:'最新 GS 2026.10.23：2026 訓練綱要配套、版本／初始化核對、活動履歷及既有行政功能',s1btn:'⬇️ 下載 Code.gs（GS 2026.10.23）',s2h:'建立 Google Sheet 並部署',s2p:'建新試算表 → 擴充功能 → Apps Script 貼上 Code.gs → 儲存 → 執行 initializeSheets 授權（本次必須；補齊設定並保留現有 API Key）→ 部署為網頁應用程式（執行身分我，任何人可存取）→ 跑 showApiKey() 睇返 API Key',s3h:'提交給 APP ADMIN',s3p:'只交 3 樣：旅團編號、部署 URL、API Key。Vercel 功能變數全部由 APP ADMIN 設定，旅團毋須設定任何功能變數',
   s_fl_h:'首次登入（預設管理員帳號）',s_fl_p:'登記完成後，首頁揀該旅團卡片 → 用「<b>👤 家長/成員</b>」分頁登入：<br>YMIS <b>1111111111</b>　密碼 <b>changeme</b>（initializeSheets 自動建立嘅預設管理員，唔好用「領袖=Email」分頁）<br>首次登入會<b>強制改密碼</b>（4-8 位）。之後喺「審批中心」批成員申請、喺「用戶管理」開返各領袖真電郵嘅帳號並設權限',
   // [主系統暫時隱藏 2026-10] s4h／s4p（軌道B 接主系統）保留未刪，對應步驟已註解隱藏。
   s4h:'軌道B：有主系統並想接上 - 額外提交給主系統管理員',s4p:'將同一組 URL+Key 交主系統管理員，填入旅團設定→元件設定 卡片 backend+apikey。之後成員點 Dashboard 卡片自動帶入身份，無需密碼',
@@ -794,8 +804,8 @@ en:{
   home_tip:'💡 If your troop not in list, see \"Setup\" for 10-min guide.<br>🎬 <b>Demo without login:</b> choose Leader or Parent/Member.<br>🌐 <b>Bilingual:</b> tap \"🌐 中文\" top-right to switch; records stay same, suitable for English troops.',
   // [主系統暫時隱藏 2026-10] setup_portal_card／setup_map_card／s4h／s4p kept unused while the main-platform intro is hidden.
   setup_h2:'📋 New Troop Setup (10 min)',setup_portal_card:'<h3 style="color:var(--blue)">🌟 What is main system?</h3><p style="font-size:12px">This is a Tier 3 plugin, can be standalone or linked to <b>scoutsystem-2.0</b>: Dashboard, attendance, finance, events, SSO.</p><p style="font-size:11px;margin-top:6px;background:#fff;padding:6px;border-radius:6px"><b>Main system ≠ must link</b>, both routes co-exist.</p>',
-  setup_map_card:'<h3>🗺️ Deployment Map</h3><p style="font-size:11px">Troops do only 3 things: ① download Code.gs → create Sheet → deploy ② run initializeSheets (API Key only) ③ send “troop ID + deploy URL + API Key” to the APP ADMIN<br>All Vercel env vars are set by the APP ADMIN — troops never set any env var<br>Track B portal: also give to main system admin</p><p style="font-size:10px;color:var(--red);margin-top:6px">⚠️ Env vars are set by the APP ADMIN only; the setup dialog shows just the API Key you send.</p>',
-  s1h:'Download backend v6.0',s1p:'Includes activity log claims, pending logs, diagnose, bilingual, env-var contract (troops submit ID / URL / API Key only)',s1btn:'⬇️ Download Code.gs v6.0',s2h:'Create Google Sheet & Deploy',s2p:'New spreadsheet → Extensions → Apps Script paste Code.gs → Save → run initializeSheets authorize (API Key only) → Deploy as web app (Me, Anyone) → run showApiKey() to read the API Key',s3h:'Submit to the APP ADMIN',s3p:'Send only 3 items: troop ID, deploy URL, API Key. All Vercel env vars are set by the APP ADMIN — troops never set any env var',
+  setup_map_card:'<h3>🗺️ Deployment Map</h3><p style="font-size:11px">Troops do only 3 things: ① download Code.gs → create Sheet → deploy ② run initializeSheets (required; records the latest initialisation version) ③ send “troop ID + deploy URL + API Key” to the APP ADMIN<br>All Vercel env vars are set by the APP ADMIN — troops never set any env var<br>Track B portal: also give to main system admin</p><p style="font-size:10px;color:var(--red);margin-top:6px">⚠️ Env vars are set by the APP ADMIN only; the setup dialog shows just the API Key you send.</p>',
+  s1h:'Download latest GS (2026.10.23)',s1p:'Latest GS 2026.10.23: 2026 scheme support, release/initialisation checks, activity logs and existing administration features',s1btn:'⬇️ Download Code.gs (GS 2026.10.23)',s2h:'Create Google Sheet & Deploy',s2p:'New spreadsheet → Extensions → Apps Script paste Code.gs → Save → run initializeSheets once (required; preserves the existing API Key) → Deploy as web app (Me, Anyone) → run showApiKey() to read the API Key',s3h:'Submit to the APP ADMIN',s3p:'Send only 3 items: troop ID, deploy URL, API Key. All Vercel env vars are set by the APP ADMIN — troops never set any env var',
   s_fl_h:'First login (default admin account)',s_fl_p:'After registration, pick your troop card on the home page → sign in on the <b>👤 Parent/Member</b> tab:<br>YMIS <b>1111111111</b>　password <b>changeme</b> (the default admin created automatically by initializeSheets — do not use the Leader = Email tab)<br>First login <b>forces a password change</b> (4-8 characters). Then approve member applications in Approvals and create each leader\'s own account (real email) in User Management',
   // [主系統暫時隱藏 2026-10] s4h／s4p kept unused while the main-platform intro is hidden.
   s4h:'Track B: with the main platform — also submit to the main-system admin',s4p:'Give the same URL + API Key to the main-system admin and fill in the card backend + apikey. Members then tap the Dashboard card and the identity is carried over automatically, no password',
@@ -883,6 +893,7 @@ function applyStaticI18n(){
   document.querySelectorAll('[data-i18n-alt]').forEach(el=>{ const k=el.getAttribute('data-i18n-alt'); el.alt=t(k); });
   // also update title
   const titleEl=document.querySelector('title'); if(titleEl) titleEl.textContent = t('app_h1') + ' v6.0 - ' + (inEn()?'Bilingual':'中英對照');
+  renderReleaseNotices();
 }
 
 /* ================== 全局狀態 ================== */
@@ -896,6 +907,76 @@ let logRecords=[],logRequests=[],logRecordsSupported=false,logRequestsSupported=
 let appConfig={allow_member_view_others:'false',member_progress_scope:'private',allow_squad_comparison:'false',allow_member_requests:'false'};
 let _ongoingRequests=new Set();
 let editingLogRecordId=null;
+
+/* 最新發佈：只列目前版本，不設逐級升級表。GS 同時回報程式及初始化版本。 */
+const LATEST_RELEASE=Object.freeze({updated:'2026-10-23',gsVersion:'2026.10.23',initializeRequired:true});
+let backendReleaseState={troopId:'',status:'idle',reportedVersion:'',initializedGsVersion:'',error:''};
+let _releaseCheckSequence=0;
+function resetBackendRelease(){
+  _releaseCheckSequence++;
+  backendReleaseState={troopId:currentTroopId||'',status:currentTroopId==='DEMO'?'demo':'idle',reportedVersion:'',initializedGsVersion:'',error:''};
+  renderReleaseNotices();
+}
+function applyBackendRelease(payload){
+  const source=payload&&payload.release?payload.release:(payload||{});
+  const actual=String(source.gsVersion||'').trim();
+  const initialized=String(source.initializedGsVersion||'').trim();
+  const status=actual!==LATEST_RELEASE.gsVersion?'update':(initialized===LATEST_RELEASE.gsVersion?'current':'initialize');
+  backendReleaseState={troopId:currentTroopId||'',status,reportedVersion:actual||String(source.backendVersion||'').trim()||'unknown',initializedGsVersion:initialized,error:''};
+  renderReleaseNotices();
+  return status;
+}
+async function checkBackendRelease(){
+  if(!currentTroopId){ resetBackendRelease(); return; }
+  if(isDemoMode()){ backendReleaseState={troopId:'DEMO',status:'demo',reportedVersion:'',initializedGsVersion:'',error:''}; renderReleaseNotices(); return; }
+  if(backendReleaseState.status==='checking'&&backendReleaseState.troopId===currentTroopId) return;
+  const troopId=currentTroopId,sequence=++_releaseCheckSequence;
+  backendReleaseState={troopId,status:'checking',reportedVersion:'',initializedGsVersion:'',error:''};
+  renderReleaseNotices();
+  try{
+    const result=await apiRequest({action:'ecStatus',unit:troopId},{method:'POST',allowFail:true,troopId,timeout:15000});
+    if(sequence!==_releaseCheckSequence||troopId!==currentTroopId) return;
+    if(!result.success) throw new Error(result.error||'ecStatus failed');
+    applyBackendRelease(result);
+  }catch(e){
+    if(sequence!==_releaseCheckSequence||troopId!==currentTroopId) return;
+    backendReleaseState={troopId,status:'error',reportedVersion:'',initializedGsVersion:'',error:String(e.message||e)};
+    renderReleaseNotices();
+  }
+}
+function renderReleaseNotices(){
+  const hosts=[['homeReleaseNotice',true],['loginReleaseNotice',false],['mainReleaseNotice',false]];
+  for(const [hostId,isHome] of hosts){
+    const host=document.getElementById(hostId); if(!host) continue;
+    const demo=!isHome&&isDemoMode()&&!!currentTroopId;
+    const state=isHome?{status:'idle'}:(demo?{status:'demo'}:(backendReleaseState.troopId===(currentTroopId||'')?backendReleaseState:{status:'idle'}));
+    const actionNeeded=['update','initialize','error'].includes(state.status);
+    const cardClass=state.status==='current'?'release-current':(state.status==='checking'?'release-checking':'');
+    const title=inEn()?`📣 Latest update · ${LATEST_RELEASE.updated}`:`📣 最新更新公告｜${LATEST_RELEASE.updated}`;
+    let statusText='';
+    if(isHome) statusText=inEn()?'Each troop deploys its own GS. Updating this website alone does not update the troop backend.':'每個旅團都要各自更新 GS；只更新網頁，不代表旅團後端已經更新。';
+    else if(state.status==='demo') statusText=inEn()?'DEMO does not connect to a troop GS. A real troop still needs this update.':'示範模式不連接旅團 GS；正式旅團仍須完成這次更新。';
+    else if(state.status==='checking') statusText=inEn()?'Checking the GS version deployed by this troop…':'正在核對此旅團實際部署的 GS 版本…';
+    else if(state.status==='current') statusText=inEn()?`✅ Verified: GS ${LATEST_RELEASE.gsVersion}; initialisation for this release is complete.`:`✅ 已核對：GS ${LATEST_RELEASE.gsVersion}，此版本的初始化亦已完成。`;
+    else if(state.status==='update') statusText=inEn()?`⚠️ GS update is still required (reported: ${state.reportedVersion||'unknown'}). The latest fixes are not active until GS is replaced and redeployed.`:`⚠️ 此旅團尚未完成 GS 更新（回報版本：${state.reportedVersion||'未知'}）。未更換並重新部署 GS，今次修正就不會生效。`;
+    else if(state.status==='initialize') statusText=inEn()?`⚠️ GS ${LATEST_RELEASE.gsVersion} is deployed, but initializeSheets() has not completed for this release (record: ${state.initializedGsVersion||'none'}). Run it once, then re-check.`:`⚠️ GS 已是 ${LATEST_RELEASE.gsVersion}，但此版本的 initializeSheets() 尚未完成（初始化紀錄：${state.initializedGsVersion||'未記錄'}）。請執行一次，然後重新檢查。`;
+    else if(state.status==='error') statusText=inEn()?'⚠️ The GS version cannot be verified right now. Do not assume the update is complete; use Re-check later.':'⚠️ 暫時未能核對 GS 版本。請不要當作已經更新；稍後按「重新檢查」。';
+    else statusText=inEn()?'Select a troop to verify its deployed GS version.':'選擇旅團後，系統會核對實際部署的 GS 版本。';
+    const steps=inEn()?[
+      'Download the latest Code.gs below, replace the troop Apps Script content and save it.',
+      'Run initializeSheets() once. This is required for this release; keep the existing spreadsheet and records.',
+      'Deploy → Manage deployments → Edit → New version → Deploy, keeping the existing web-app URL.',
+      'Return here and select Re-check. Only the green Verified status means both GS and initialisation are current.'
+    ]:[
+      '按下方按鈕下載最新 Code.gs，取代旅團 Apps Script 的現有內容並儲存。',
+      '必須執行一次 initializeSheets()；保留現有 Google Sheet 及所有紀錄，不需要逐級升級。',
+      '到「部署 → 管理部署 → 編輯 → 新版本 → 部署」，沿用現有網頁應用程式網址。',
+      '回到這裡按「重新檢查」；只有綠色「已核對」才代表 GS 及初始化都是最新版本。'
+    ];
+    const openSteps=!isHome&&actionNeeded?' open':'';
+    host.innerHTML=`<section class="release-notice ${cardClass}" role="status" aria-live="polite"><div class="release-head"><span>${title}</span><span class="release-chip">${inEn()?'Latest GS':'最新 GS'}：${LATEST_RELEASE.gsVersion}</span>${LATEST_RELEASE.initializeRequired?`<span class="release-chip required">${inEn()?'initializeSheets() required once':'必須執行 initializeSheets() 一次'}</span>`:''}</div><div class="release-summary">${inEn()?'Current release only — no sequential patch installation is needed.':'只列最新版本；無須逐級下載或安裝補丁。'}</div><div class="release-status">${escapeHtmlText(statusText)}</div><details${openSteps}><summary>${inEn()?'Update steps and download':'查看更新步驟及下載'}</summary><ol>${steps.map(step=>`<li>${escapeHtmlText(step)}</li>`).join('')}</ol><div class="release-actions"><a class="btn btn-sm btn-primary" href="apps-script/Code.gs" download="Code.gs">${inEn()?'⬇️ Download latest Code.gs':'⬇️ 下載最新 Code.gs'}</a>${!isHome&&currentTroopId&&!demo?`<button type="button" class="btn btn-sm btn-outline" onclick="checkBackendRelease()">🔄 ${inEn()?'Re-check':'重新檢查'}</button>`:''}</div></details></section>`;
+  }
+}
 
 /* ================== Scout Admin 統一回報（問題回報／意見回饋） ==================
    對接 scout-admin「統一回報格式 v1」（SCOUT_ADMIN.md）：widget.js（data-app="幼童軍進度追蹤"）
@@ -1129,6 +1210,7 @@ async function handlePortalParams(){
       // 旅團設定淨係來自 /api/troops（Vercel 功能變數），唔再讀 data/troops.json
       try{ const r2=await fetch('/api/troops'); if(r2.ok){ const d2=await r2.json(); const t2=d2.troops[u]||d2.troops[String(u).padStart(4,'0')]; if(t2){ troopConnected=!!t2.connected; currentTroopName=t2.name||troopNameParam; } } }catch(e){}
     }
+    resetBackendRelease(); if(troopConnected) checkBackendRelease();
   }
   if(from==='portal' && ymis && role){
     currentUser={ymis:ymis,name:nameParam,role:role,can_tick:['admin','group_leader','branch_leader','super_admin'].includes(role),allowed_badges:'*',email:params.get('email')||'',isPortal:true};
@@ -1201,6 +1283,7 @@ async function selectTroop(id){
     try{ const r2=await fetch('/api/troops'); const d2=await r2.json(); t=d2.troops[id]||d2.troops[String(id).padStart(4,'0')]||d2.troops[String(id).replace(/^0+/,'')]; }catch(e){}
     if(!t||!t.connected){ showToast(t('troop_pick_fail'),'error'); return; }
     currentTroopId=String(id).padStart(4,'0'); currentTroopName=t.name||(inEn()?'Troop '+id:'第'+id+'旅'); troopConnected=true;
+    resetBackendRelease(); checkBackendRelease();
     document.getElementById('loginTroopInfo').textContent=`📍 ${currentTroopName} (ID: ${currentTroopId})`;
     document.getElementById('homePage').style.display='none'; document.getElementById('loginPage').style.display='block';
     document.getElementById('loginMsg').className='login-msg'; document.getElementById('loginId').value=''; document.getElementById('loginPassword').value='';
@@ -1266,6 +1349,7 @@ function doLogout(){
   ['feedbackMessage','feedbackContact'].forEach(id=>{ const field=document.getElementById(id); if(field) field.value=''; });
   document.querySelectorAll('.modal.active').forEach(m=>m.classList.remove('active'));
   document.getElementById('mainApp').style.display='none'; document.getElementById('homePage').style.display='block';
+  resetBackendRelease();
   document.getElementById('saveBar').classList.remove('visible'); pendingChanges=[];
 }
 function checkSavedSession(){
@@ -1374,6 +1458,7 @@ async function loadItemsAndProgress(){
     let backendData=null;
     try{ backendData=await apiRequest({action:'load',token:currentToken},{method:'GET',allowFail:true}); }catch(e){ console.warn('backend load fail',e.message); backendData={success:false,error:e.message}; }
     if(backendData.success){
+      applyBackendRelease(backendData);
       members=cubMembersOnly(backendData.members||[]);
       // v6.0：同時正規化 flatProgress 與 rich progress，保留 Sheet 第 6 欄「備註」。
       progressFlat=backendData.flatProgress||{};
@@ -1409,6 +1494,7 @@ async function loadItemsAndProgress(){
       updateRequestsBadge();
       try{ localStorage.setItem(LS.cacheProgress(currentTroopId), JSON.stringify({flat:progressFlat,rich:progressRich,other:otherBadgesMap,members,logs:logRecords,logRequests,config:appConfig,savedAt:Date.now()})); }catch(e){}
     }else{
+      checkBackendRelease();
       const cached=localStorage.getItem(LS.cacheProgress(currentTroopId));
       if(cached){ const c=JSON.parse(cached); progressFlat=c.flat||{}; progressRich=c.rich||{}; otherBadgesMap=c.other||{}; members=cubMembersOnly(c.members||[]); logRecords=c.logs||[]; logRequests=c.logRequests||[]; if(Array.isArray(c.logs)) logRecordsSupported=true; if(Array.isArray(c.logRequests)) logRequestsSupported=true; if(c.config) appConfig={...appConfig,...c.config}; showToast(t('offline_cache'),'warning'); }
       else{ progressFlat={}; members=[]; }
@@ -2635,6 +2721,7 @@ async function enterDemoMode(demoRole='leader'){
     // demo log claims
     logRequests=[{request_id:'DEMOLREQ_seed_0',kind:'new',target_record_id:'',type:'service',ymis:members[0].ymis,name:members[0].name,date:todayISO(),title:inEn()?'Beach clean-up (parent claim)':'海灘清潔日（家長申報）',role:inEn()?'Volunteer':'義工',hours:'3',cert_no:'',detail:inEn()?'Demo: parent claim awaiting approval':'DEMO：家長申報，待領袖批准',status:'pending',created_at:todayISO()},{request_id:'DEMOLREQ_seed_1',kind:'edit',target_record_id:'DEMOLOG_seed_0',type:'service',ymis:members[0].ymis,name:members[0].name,date:todayISO(),title:inEn()?'Summer Flag Day (hours corrected)':'暑期賣旗籌款（時數更正）',role:inEn()?'Helper':'服務員',hours:'6',cert_no:'',detail:inEn()?'Demo: edit claim':'DEMO：修改申報',status:'pending',created_at:todayISO()}];
     document.getElementById('homePage').style.display='none'; document.getElementById('loginPage').style.display='none'; document.getElementById('mainApp').style.display='block';
+    resetBackendRelease();
     refreshAppTitle(); refreshUserInfoChip(); setupTabsByRole(); renderProgressTab(); renderInfoTab(); renderLogsTab();
     showToast(tf('demo_entered',demoRole==='member'?t('demo_role_member'):t('demo_role_leader')),'success');
   }catch(e){ console.error(e); showToast(t('demo_load_fail')+e.message,'error'); }finally{ document.querySelectorAll('button[onclick^="enterDemoMode"]').forEach(b=>{ b.disabled=false; }); }
