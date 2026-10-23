@@ -18,7 +18,8 @@ const PORT = Number(process.env.PORT || 3000);
 
 const MIME = {
   '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8',
-  '.mjs': 'text/javascript; charset=utf-8', '.json': 'application/json; charset=utf-8',
+  '.mjs': 'text/javascript; charset=utf-8', '.gs': 'text/plain; charset=utf-8',
+  '.json': 'application/json; charset=utf-8',
   '.css': 'text/css; charset=utf-8', '.svg': 'image/svg+xml', '.png': 'image/png',
   '.jpg': 'image/jpeg', '.csv': 'text/csv', '.md': 'text/markdown; charset=utf-8',
   '.xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
@@ -149,6 +150,7 @@ const server = http.createServer(async (req, res) => {
   const ext = path.extname(file).toLowerCase();
   const headers = { 'Content-Type': MIME[ext] || 'application/octet-stream' };
   if (pathname === '/sw.js') headers['Service-Worker-Allowed'] = '/';
+  if (pathname.startsWith('/apps-script/')) headers['Content-Disposition'] = 'attachment; filename="Code.gs"';
   headers['Cache-Control'] = 'no-store';
   res.writeHead(200, headers);
   res.end(fs.readFileSync(file));
