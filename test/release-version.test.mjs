@@ -15,7 +15,7 @@ test('latest GS release is consistent between frontend announcement and Apps Scr
   assert.ok(release, 'frontend exposes one latest-release declaration');
   const gs = gas.match(/const CUB_GS_VERSION = '([^']+)'/);
   assert.ok(gs, 'Apps Script exposes its latest GS version');
-  assert.equal(release[1], '2026-10-23');
+  assert.equal(release[1], '2026-10-24');
   assert.equal(release[2], gs[1], 'frontend required GS and backend reported GS must match');
   assert.equal(release[3], 'true', 'this release explicitly requires initializeSheets()');
   assert.ok(html.includes(`href="apps-script/Code.gs?gs=${gs[1]}"`), 'setup tab download link carries current GS version query to bust stale cache');
@@ -41,7 +41,7 @@ test('GS version and initialization are independently verified; initialization i
 
   const before = json(backend.ecStatus('0082'));
   assert.equal(before.success, true);
-  assert.equal(before.gsVersion, '2026.10.23');
+  assert.equal(before.gsVersion, '2026.10.24');
   assert.equal(before.initializedGsVersion, '', 'new Code.gs alone must not count as initialized');
   assert.equal(before.gsInitializationCurrent, false);
 

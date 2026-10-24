@@ -10,6 +10,8 @@
 //      所以出發前要自動加 note 系統標記同補 troopName 預設值。
 //   4. 上游成功判斷：HTTP 2xx + {status:"success"}（或舊式 {success:true}）。
 
+const { normalizeGasUrl } = require('./registry');
+
 const DEFAULT_SCOUT_ADMIN_API_URL =
   'https://script.google.com/macros/s/AKfycbxj5BDDGgjs559smkK4Z5aYImWYeXbN5af8U1ObON0z9WnsN6QJW4I1XWolhs5kQ_H-UQ/exec';
 
@@ -53,7 +55,8 @@ function buildApplyPayload(body) {
   const data = body || {};
   const troopId = String(data.troopId || '').trim();
   // FIELD_MAP["URL"] = ["backendUrl", "url"]：只送 backendUrl，唔再送 scriptUrl。
-  const backendUrl = String(data.backendUrl || data.scriptUrl || '').trim();
+  // Workspace 路徑（/a/<domain>/macros/s/…/exec）轉成同一部署 ID 嘅公開格式；唔代表已驗證部署或存取權限。
+  const backendUrl = normalizeGasUrl(String(data.backendUrl || data.scriptUrl || '').trim());
   const apiKey = String(data.apiKey || '').trim();
   return {
     type: 'apply',

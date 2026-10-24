@@ -21,7 +21,7 @@ const MIME = {
   '.mjs': 'text/javascript; charset=utf-8', '.gs': 'text/plain; charset=utf-8',
   '.json': 'application/json; charset=utf-8',
   '.css': 'text/css; charset=utf-8', '.svg': 'image/svg+xml', '.png': 'image/png',
-  '.jpg': 'image/jpeg', '.csv': 'text/csv', '.md': 'text/markdown; charset=utf-8',
+  '.webp': 'image/webp', '.jpg': 'image/jpeg', '.csv': 'text/csv', '.md': 'text/markdown; charset=utf-8',
   '.xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
 };
 

@@ -443,7 +443,7 @@ console.log('\n=== 超管隱藏（leaf 完全冇 SUPER_KEY）＋ APP ADMIN 層�
     assert.equal(b.superKeyConfigured(), false, 'leaf 永遠唔會聲稱自己有超管密碼');
   });
 
-  check('GS 顯示／回傳嘅嘢：只係旅團要交嘅 3 樣，永不見超管密碼', () => {
+  check('GS 登記資料只提供 API Key，不要求預設旅團編號、不提供自動 URL，永不見超管密碼', () => {
     const b = buildBackend();
     const KEY = 'sk_never_shown_anywhere';
     b.PropertiesService.getScriptProperties().setProperty('SUPER_KEY', KEY);
@@ -451,7 +451,9 @@ console.log('\n=== 超管隱藏（leaf 完全冇 SUPER_KEY）＋ APP ADMIN 層�
     b.setTroopId('0082');
     const lines = b.vercelEnvLines().join('\n');
     assert.ok(lines.includes('sc_troop_apikey'), '要顯示 API KEY（旅團要交俾 APP ADMIN）');
-    assert.ok(lines.includes('TROOP_0082_BACKEND'), '要顯示部署 URL 變數名');
+    assert.equal(lines, 'API Key = sc_troop_apikey', 'API Key 不依賴旅團編號或環境變數命名');
+    assert.ok(!lines.includes('TROOP_0082_BACKEND'), '不再聲稱提供部署 URL');
+    assert.ok(!/https?:\/\//.test(lines), '不提供自動取得的網址');
     assert.ok(!lines.includes(KEY), '唔可以顯示超管密碼');
     assert.ok(!/SUPER_KEY\s*=/.test(lines), '唔可以有 SUPER_KEY = 值 呢一行');
     assert.ok(!JSON.stringify(b.showVercelEnv()).includes(KEY));

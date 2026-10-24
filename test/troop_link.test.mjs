@@ -68,6 +68,7 @@ function makeSpreadsheet(name) {
   return {
     getName: () => name,
     getId: () => 'ss-' + name,
+    getUrl: () => 'https://docs.google.com/spreadsheets/d/ss-' + name + '/edit',
     getSheetByName: n => sheets.get(n) || null,
     insertSheet(n) { const s = makeSheet(n); sheets.set(n, s); return s; },
     getSheets: () => Array.from(sheets.values()),
@@ -156,7 +157,10 @@ function makeNode({ name, apikey, url }) {
         const peer = net.get(base.replace(/\/$/, ''));
         if (!peer) return { getResponseCode: () => 404, getContentText: () => '<HTML>not found</HTML>' };
         const params = Object.fromEntries(new URLSearchParams(qs || ''));
-        const result = peer.context.doPost({ parameter: params, postData: { contents: String((opts && opts.payload) || '') } });
+        const method = String((opts && opts.method) || 'post').toLowerCase();
+        const result = method === 'get'
+          ? peer.context.doGet({ parameter: params })
+          : peer.context.doPost({ parameter: params, postData: { contents: String((opts && opts.payload) || '') } });
         return { getResponseCode: () => 200, getContentText: () => JSON.stringify(result) };
       }
     },
