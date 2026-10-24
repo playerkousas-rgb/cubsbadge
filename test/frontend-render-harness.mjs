@@ -107,8 +107,12 @@ run("currentTroopId='0082'; currentUser.ymis='TEST_LEADER'; resetBackendRelease(
 assert.equal(run('backendReleaseState.status'),'update');
 assert.match(element('mainReleaseNotice').innerHTML,/尚未完成 GS 更新/);
 run("applyBackendRelease({gsVersion:LATEST_RELEASE.gsVersion,initializedGsVersion:''})");
-assert.equal(run('backendReleaseState.status'),'initialize');
-assert.match(element('mainReleaseNotice').innerHTML,/initializeSheets\(\) 尚未完成/);
+assert.equal(run('backendReleaseState.status'),'current');
+assert.match(element('mainReleaseNotice').innerHTML,/本次更新毋須重跑初始化/);
+assert.doesNotMatch(element('mainReleaseNotice').innerHTML,/初始化亦已完成|必須執行 initializeSheets/);
+run("applyBackendRelease({gsVersion:LATEST_RELEASE.gsVersion,initializedGsVersion:'2026.10.23'})");
+assert.equal(run('backendReleaseState.status'),'current','an older initialization marker does not require running scripts for this release');
+assert.equal(run('backendReleaseState.initializedGsVersion'),'2026.10.23','never fabricate a new initialization marker');
 run("applyBackendRelease({gsVersion:LATEST_RELEASE.gsVersion,initializedGsVersion:LATEST_RELEASE.gsVersion})");
 assert.equal(run('backendReleaseState.status'),'current');
 assert.match(element('mainReleaseNotice').innerHTML,/release-current/);
@@ -165,6 +169,43 @@ run("currentLang='zh'; currentTroopId='DEMO'; currentUser.ymis='DEMO_LEADER'; re
   assert.match(copies.get('intro_caution').textContent,/仍待補強/);
   document.querySelectorAll=originalQueryAll;
   document.querySelector=originalQuery;
+}
+
+// Check the real safety hook used by frontend freshness, not a permissive stub.
+{
+  const query=document.querySelector;
+  run('const freshnessSavedPending=pendingChanges; pendingChanges=[]');
+  assert.equal(run('canReloadFrontend()'),true);
+  run("pendingChanges.push({ymis:'9000000001',itemId:'OLD-01'})");
+  assert.equal(run('canReloadFrontend()'),false,'pending writes must block auto-reload');
+  run("pendingChanges=[]; _ongoingRequests.add('freshness-test')");
+  assert.equal(run('canReloadFrontend()'),false,'in-flight writes must block auto-reload');
+  run("_ongoingRequests.delete('freshness-test'); feedbackSubmitState='sending'");
+  assert.equal(run('canReloadFrontend()'),false);
+  run("feedbackSubmitState='idle'; editingLogRecordId='EDITING'");
+  assert.equal(run('canReloadFrontend()'),false);
+  run('editingLogRecordId=null');
+  document.querySelector=selector=>selector==='.modal.active'?{}:query(selector);
+  assert.equal(run('canReloadFrontend()'),false,'open editors must block auto-reload');
+  document.querySelector=query;
+  for(const active of [{tagName:'INPUT'},{tagName:'TEXTAREA'},{tagName:'SELECT'},{isContentEditable:true}]){
+    document.activeElement=active;
+    assert.equal(run('canReloadFrontend()'),false,'do not interrupt focused input');
+  }
+  delete document.activeElement;
+  assert.equal(run('canReloadFrontend()'),true);
+  run('pendingChanges=freshnessSavedPending');
+  const locationBefore={...context.location};
+  let replaced='';
+  context.location.href='https://cubsbadge.vercel.app/?u=0082&from=portal&r=old#progress';
+  context.location.replace=url=>{replaced=url;};
+  run('forceReloadPage()');
+  const freshUrl=new URL(replaced);
+  assert.equal(freshUrl.searchParams.get('u'),'0082');
+  assert.equal(freshUrl.searchParams.get('from'),'portal');
+  assert.equal(freshUrl.hash,'#progress');
+  assert.notEqual(freshUrl.searchParams.get('r'),'old');
+  context.location=locationBefore;
 }
 
 console.log('frontend-render-harness: OK — home, system introduction, welcome cross-links, bilingual copy, progress, legacy partition, interest lists, P4 overview, ticking, other badges, forms, information and latest-GS release notices rendered with the real inline script.');
