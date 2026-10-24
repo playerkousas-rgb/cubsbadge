@@ -102,3 +102,19 @@
 - 僅接受 HTTPS GAS `/exec`，不藉正規化移除或接受 query、fragment、帳密或自訂連接埠。
 - health 只公開是否使用 Workspace 路徑的 boolean，不回傳 API Key 或部署 URL；非 JSON 提示不再直接斷定是錯誤／舊部署。
 - API 回歸測試涵蓋格式相容、拒絕不合法網址及公開回應不洩漏連線憑證。
+
+
+## 10. 舊 HTML 反覆出現：入口快取及前端版本防護（2026-10-24，frontend 2026.10.24.1）
+
+- 使用者確認直接輸入 `https://cubsbadge.vercel.app/` 會先見橙色舊版、F5 後變黃；兩張圖的版本、綱要、選單及旅團列表亦不同，不是同一份 HTML 的轉色。
+- 獨立讀取線上站點為 v6.0；目前尚未在使用者的瀏覽器／快取環境復現，不能判定是哪一個快取層。撤回 v5.8.1 文件「F5 一次就永不再發生」的保證。
+- `/` 及 `/index.html` 對瀏覽器及 CDN 設 `no-store`；移除自有 assets 一週快取／stale-while-revalidate，改成重驗；JS 引用附前端 build 版本。
+- 新增只回傳前端 app/build 的同源 `frontend-version` API，以及啟動／bfcache 恢復／返回分頁時的版本核對。版本不同時以帶版本參數的 URL 最多自動更新一次，保留原 query／hash；離線、逾時、錯誤回應不阻塞網站。
+- 有未儲存進度、正在傳送、編輯視窗或輸入焦點時不自動更新。不刪除 localStorage／IndexedDB／CacheStorage、不登出、不清除待同步資料。
+- 舊版 HTML 若根本沒有新檢查程式，不能被新 JS 隔空修復；須先取得新版 HTML，現有防護才會生效。具體診斷與驗收限制見 `FRONTEND_CACHE_DIAGNOSIS.md`。
+
+## 11. 修正已有 Sheet 被要求重新初始化（2026-10-24）
+
+- 本版 `initializeRequired` 改為 false，版本判定亦真正尊重此旗標；已有正常 Sheet 不因初始化標記較舊／缺失而顯示必須 RUN SCRIPT。
+- GS 版本已為 `2026.10.24` 的旅團，只需部署本次網站修正；沒有更改 GS 本體或任何 Sheet／API Key。
+- 舊 GS 仍須換程式及部署；新建 Sheet 首次使用仍須初始化。公告、指南及同系交接要求同步更正，不把版本核對說成已完成初始化／資料結構驗證。

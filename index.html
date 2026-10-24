@@ -4,6 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <meta name="theme-color" content="#FFD60A">
+<meta name="cubsbadge-build" content="2026.10.24.1">
+<script src="assets/frontend-freshness.js?build=2026.10.24.1" defer></script>
 <!-- App icon：金紫荊獎章（favicon + PWA / iOS 主畫面圖示） -->
 <!-- 使用 assets 內的高解像度圖示，避免 favicon／頁首圖示顯示模糊 -->
 <link rel="icon" type="image/png" sizes="256x256" href="assets/app-icon-256.png">
@@ -399,7 +401,7 @@ html[lang="en"] body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","No
       <div class="tutorial">
         <div class="steps">
           <div class="step"><div class="step-number">1</div><div class="step-content"><h4 data-i18n="s1h">下載最新 GS（2026.10.24）</h4><p data-i18n="s1p">最新 GS 2026.10.24：初始化及 API Key 彈窗不再顯示自動取得的部署網址；保留現有資料及 API Key</p><a href="apps-script/Code.gs?gs=2026.10.24" download="Code.gs" class="btn btn-primary btn-sm" style="margin-top:6px" data-i18n="s1btn">⬇️ 下載 Code.gs（GS 2026.10.24）</a></div></div>
-          <div class="step"><div class="step-number">2</div><div class="step-content"><h4 data-i18n="s2h">建立 Google Sheet 並部署</h4><p data-i18n-html="s2p">建新試算表 → 擴充功能 → Apps Script 貼上 Code.gs → 儲存 → 執行 initializeSheets 授權（本次必須；保留現有資料及 API Key）→ 部署為網頁應用程式（執行身分我，任何人可存取）。Google 部署視窗提供部署網址；GS 彈窗及選單只提供 API Key，不顯示自動取得的網址；旅團編號毋須在 Sheet／Apps Script 預先設定</p></div></div>
+          <div class="step"><div class="step-number">2</div><div class="step-content"><h4 data-i18n="s2h">建立 Google Sheet 並部署</h4><p data-i18n-html="s2p">建新試算表 → 擴充功能 → Apps Script 貼上 Code.gs → 儲存 → 執行 initializeSheets 授權（僅新建 Sheet 首次使用需要；已有正常 Sheet 更新毋須重跑，保留資料及 API Key）→ 部署為網頁應用程式（執行身分我，任何人可存取）。Google 部署視窗提供部署網址；GS 彈窗及選單只提供 API Key，不顯示自動取得的網址；旅團編號毋須在 Sheet／Apps Script 預先設定</p></div></div>
           <div class="step"><div class="step-number">3</div><div class="step-content"><h4 data-i18n="s3h">提交給 APP ADMIN</h4><p data-i18n="s3p">取得 API Key 及 Google 部署視窗提供的部署 URL 後，填寫下方接入申請（ADMIN FORM）。旅團編號直接在 ADMIN FORM 填寫，毋須在 GS 設定。API Key 可在「🔗 旅系統 → 🔑 顯示 API KEY（交 ADMIN）」查看</p></div></div>
           <div class="step"><div class="step-number">4</div><div class="step-content"><h4 data-i18n="s_fl_h">首次登入（預設管理員帳號）</h4><p data-i18n-html="s_fl_p">登記完成後，首頁揀該旅團卡片 → 用「<b>👤 家長/成員</b>」分頁登入：<br>YMIS <b>1111111111</b>　密碼 <b>changeme</b>（initializeSheets 自動建立嘅預設管理員，唔好用「領袖=Email」分頁）<br>首次登入會<b>強制改密碼</b>（4-8 位）。之後喺「審批中心」批成員申請、喺「用戶管理」開返各領袖真電郵嘅帳號並設權限</p></div></div>
           <!-- [主系統暫時隱藏 2026-10] 軌道B（接上主系統）未開放，完成後解除註解並自行重排步驟號（而家 4=首次登入、5=私隱選擇）：
@@ -681,9 +683,9 @@ html[lang="en"] body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","No
 </footer>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<script src="assets/ymis-parse.js"></script>
-<script src="assets/cub-progress.js"></script>
-<script src="assets/form-generator.js"></script>
+<script src="assets/ymis-parse.js?build=2026.10.24.1"></script>
+<script src="assets/cub-progress.js?build=2026.10.24.1"></script>
+<script src="assets/form-generator.js?build=2026.10.24.1"></script>
 <!-- Scout Admin 統一回報 widget（統一回報格式 v1，見 scout-admin SCOUT_ADMIN.md）：問題回報／意見回饋直達 scout-admin 後台。
      data-app="幼童軍進度追蹤"＝來源系統正式名稱；本 APP 各頁的「🐛💬 回報 · 意見」按鈕
      （登入前 welcome-nav／登入頁連結／登入後 header 常駐）一律經 openScoutReport() 開啟這個 widget 的 modal；
@@ -728,7 +730,7 @@ zh:{
   // 鍵值保留未刪，重啟時解除 HTML 註解即可。
   setup_h2:'📋 新旅團部署指南 (10分鐘)',setup_portal_card:'<h3 style="color:var(--blue)">🌟 主系統平台是什麼？</h3><p style="font-size:12px">本系統可獨立用，亦可接入 <b>scoutsystem-2.0 主系統平台</b>：Dashboard、考勤、財務、活動報名，單一登入。</p><p style="font-size:11px;margin-top:6px;background:#fff;padding:6px;border-radius:6px"><b>有主系統 ≠ 一定要接上</b>，兩條路並存。</p>',
   setup_map_card:'<h3>🗺️ 部署地圖</h3><p style="font-size:11px">旅團只做 3 樣：① 下載 Code.gs → 建 Sheet → 部署 ② 執行 initializeSheets（補齊設定並記錄最新版本）③ 把「旅團編號 + 部署 URL + API Key」交 APP ADMIN<br>Vercel 功能變數全部由 APP ADMIN 設定，旅團毋須（亦唔會）設定任何功能變數<br>軌道B 接入主系統：同時交主系統管理員</p><p style="font-size:10px;color:var(--red);margin-top:6px">⚠️ 功能變數由 APP ADMIN 設定：旅團毋須設定任何功能變數，SETUP 彈窗只會顯示要交嘅 API Key。</p>',
-  s1h:'下載最新 GS（2026.10.24）',s1p:"最新 GS 2026.10.24：初始化及 API Key 彈窗不再顯示自動取得的部署網址；保留現有資料及 API Key",s1btn:'⬇️ 下載 Code.gs（GS 2026.10.24）',s2h:'建立 Google Sheet 並部署',s2p:"建新試算表 → 擴充功能 → Apps Script 貼上 Code.gs → 儲存 → 執行 initializeSheets 授權（本次必須；保留現有資料及 API Key）→ 部署為網頁應用程式（執行身分我，任何人可存取）。Google 部署視窗提供部署網址；GS 彈窗及選單只提供 API Key，不顯示自動取得的網址；旅團編號毋須在 Sheet／Apps Script 預先設定",s3h:'提交給 APP ADMIN',s3p:"取得 API Key 及 Google 部署視窗提供的部署 URL 後，填寫下方接入申請（ADMIN FORM）。旅團編號直接在 ADMIN FORM 填寫，毋須在 GS 設定。API Key 可在「🔗 旅系統 → 🔑 顯示 API KEY（交 ADMIN）」查看",
+  s1h:'下載最新 GS（2026.10.24）',s1p:"最新 GS 2026.10.24：初始化及 API Key 彈窗不再顯示自動取得的部署網址；保留現有資料及 API Key",s1btn:'⬇️ 下載 Code.gs（GS 2026.10.24）',s2h:'建立 Google Sheet 並部署',s2p:"建新試算表 → 擴充功能 → Apps Script 貼上 Code.gs → 儲存 → 執行 initializeSheets 授權（僅新建 Sheet 首次使用需要；已有正常 Sheet 更新毋須重跑，保留資料及 API Key）→ 部署為網頁應用程式（執行身分我，任何人可存取）。Google 部署視窗提供部署網址；GS 彈窗及選單只提供 API Key，不顯示自動取得的網址；旅團編號毋須在 Sheet／Apps Script 預先設定",s3h:'提交給 APP ADMIN',s3p:"取得 API Key 及 Google 部署視窗提供的部署 URL 後，填寫下方接入申請（ADMIN FORM）。旅團編號直接在 ADMIN FORM 填寫，毋須在 GS 設定。API Key 可在「🔗 旅系統 → 🔑 顯示 API KEY（交 ADMIN）」查看",
   s_fl_h:'首次登入（預設管理員帳號）',s_fl_p:'登記完成後，首頁揀該旅團卡片 → 用「<b>👤 家長/成員</b>」分頁登入：<br>YMIS <b>1111111111</b>　密碼 <b>changeme</b>（initializeSheets 自動建立嘅預設管理員，唔好用「領袖=Email」分頁）<br>首次登入會<b>強制改密碼</b>（4-8 位）。之後喺「審批中心」批成員申請、喺「用戶管理」開返各領袖真電郵嘅帳號並設權限',
   // [主系統暫時隱藏 2026-10] s4h／s4p（軌道B 接主系統）保留未刪，對應步驟已註解隱藏。
   s4h:'軌道B：有主系統並想接上 - 額外提交給主系統管理員',s4p:'將同一組 URL+Key 交主系統管理員，填入旅團設定→元件設定 卡片 backend+apikey。之後成員點 Dashboard 卡片自動帶入身份，無需密碼',
@@ -886,7 +888,7 @@ en:{
   // [主系統暫時隱藏 2026-10] setup_portal_card／setup_map_card／s4h／s4p kept unused while the main-platform intro is hidden.
   setup_h2:'📋 New Troop Setup (10 min)',setup_portal_card:'<h3 style="color:var(--blue)">🌟 What is main system?</h3><p style="font-size:12px">This is a Tier 3 plugin, can be standalone or linked to <b>scoutsystem-2.0</b>: Dashboard, attendance, finance, events, SSO.</p><p style="font-size:11px;margin-top:6px;background:#fff;padding:6px;border-radius:6px"><b>Main system ≠ must link</b>, both routes co-exist.</p>',
   setup_map_card:'<h3>🗺️ Deployment Map</h3><p style="font-size:11px">Troops do only 3 things: ① download Code.gs → create Sheet → deploy ② run initializeSheets (required; records the latest initialisation version) ③ send “troop ID + deploy URL + API Key” to the APP ADMIN<br>All Vercel env vars are set by the APP ADMIN — troops never set any env var<br>Track B portal: also give to main system admin</p><p style="font-size:10px;color:var(--red);margin-top:6px">⚠️ Env vars are set by the APP ADMIN only; the setup dialog shows just the API Key you send.</p>',
-  s1h:'Download latest GS (2026.10.24)',s1p:"Latest GS 2026.10.24: initialization and API-key dialogs no longer suggest automatically discovered deployment URLs; existing data and API Keys are preserved",s1btn:'⬇️ Download Code.gs (GS 2026.10.24)',s2h:'Create Google Sheet & Deploy',s2p:"New spreadsheet → Extensions → Apps Script → paste Code.gs → Save → run initializeSheets once (required; preserves existing data and API Key) → deploy as a web app (Me, Anyone). Google provides the deployment URL in its deployment dialog; GS dialogs and menus provide only the API Key, never an automatically discovered URL; no troop ID needs to be configured in the Sheet or Apps Script",s3h:'Submit to the APP ADMIN',s3p:"After obtaining the API Key and the deployment URL from Google, use the join request below (ADMIN FORM). Enter the troop ID directly in the ADMIN FORM; no GS setting is needed. Read the key under the troop-system API KEY menu",
+  s1h:'Download latest GS (2026.10.24)',s1p:"Latest GS 2026.10.24: initialization and API-key dialogs no longer suggest automatically discovered deployment URLs; existing data and API Keys are preserved",s1btn:'⬇️ Download Code.gs (GS 2026.10.24)',s2h:'Create Google Sheet & Deploy',s2p:"New spreadsheet → Extensions → Apps Script → paste Code.gs → Save → run initializeSheets for first-time setup of a new Sheet (existing working Sheets do not need to rerun it for this release; data and API Keys are preserved) → deploy as a web app (Me, Anyone). Google provides the deployment URL in its deployment dialog; GS dialogs and menus provide only the API Key, never an automatically discovered URL; no troop ID needs to be configured in the Sheet or Apps Script",s3h:'Submit to the APP ADMIN',s3p:"After obtaining the API Key and the deployment URL from Google, use the join request below (ADMIN FORM). Enter the troop ID directly in the ADMIN FORM; no GS setting is needed. Read the key under the troop-system API KEY menu",
   s_fl_h:'First login (default admin account)',s_fl_p:'After registration, pick your troop card on the home page → sign in on the <b>👤 Parent/Member</b> tab:<br>YMIS <b>1111111111</b>　password <b>changeme</b> (the default admin created automatically by initializeSheets — do not use the Leader = Email tab)<br>First login <b>forces a password change</b> (4-8 characters). Then approve member applications in Approvals and create each leader\'s own account (real email) in User Management',
   // [主系統暫時隱藏 2026-10] s4h／s4p kept unused while the main-platform intro is hidden.
   s4h:'Track B: with the main platform — also submit to the main-system admin',s4p:'Give the same URL + API Key to the main-system admin and fill in the card backend + apikey. Members then tap the Dashboard card and the identity is carried over automatically, no password',
@@ -990,7 +992,7 @@ let _ongoingRequests=new Set();
 let editingLogRecordId=null;
 
 /* 最新發佈：只列目前版本，不設逐級升級表。GS 同時回報程式及初始化版本。 */
-const LATEST_RELEASE=Object.freeze({updated:'2026-10-24',gsVersion:'2026.10.24',initializeRequired:true});
+const LATEST_RELEASE=Object.freeze({updated:'2026-10-24',gsVersion:'2026.10.24',initializeRequired:false});
 let backendReleaseState={troopId:'',status:'idle',reportedVersion:'',initializedGsVersion:'',error:''};
 let _releaseCheckSequence=0;
 function resetBackendRelease(){
@@ -1002,7 +1004,7 @@ function applyBackendRelease(payload){
   const source=payload&&payload.release?payload.release:(payload||{});
   const actual=String(source.gsVersion||'').trim();
   const initialized=String(source.initializedGsVersion||'').trim();
-  const status=actual!==LATEST_RELEASE.gsVersion?'update':(initialized===LATEST_RELEASE.gsVersion?'current':'initialize');
+  const status=actual!==LATEST_RELEASE.gsVersion?'update':(LATEST_RELEASE.initializeRequired&&initialized!==LATEST_RELEASE.gsVersion?'initialize':'current');
   backendReleaseState={troopId:currentTroopId||'',status,reportedVersion:actual||String(source.backendVersion||'').trim()||'unknown',initializedGsVersion:initialized,error:''};
   renderReleaseNotices();
   return status;
@@ -1035,24 +1037,34 @@ function renderReleaseNotices(){
     const cardClass=state.status==='current'?'release-current':(state.status==='checking'?'release-checking':'');
     const title=inEn()?`📣 Latest update · ${LATEST_RELEASE.updated}`:`📣 最新更新公告｜${LATEST_RELEASE.updated}`;
     let statusText='';
-    if(isHome) statusText=inEn()?'Each troop deploys its own GS. Updating this website alone does not update the troop backend.':'每個旅團都要各自更新 GS；只更新網頁，不代表旅團後端已經更新。';
+    if(isHome) statusText=LATEST_RELEASE.initializeRequired?(inEn()?'Each troop needs the required GS update and initialisation for this release.':'每個旅團須完成本版要求的 GS 更新及初始化。'):(inEn()?'This website fix does not require reinitialisation. A troop already on GS '+LATEST_RELEASE.gsVersion+' needs no GS change; an older GS still needs replacement and redeployment.':'本次網頁修正毋須重跑初始化。旅團 GS 已是 '+LATEST_RELEASE.gsVersion+' 就不用再改 GS；舊版 GS 仍須更換及部署。');
     else if(state.status==='demo') statusText=inEn()?'DEMO does not connect to a troop GS. A real troop still needs this update.':'示範模式不連接旅團 GS；正式旅團仍須完成這次更新。';
     else if(state.status==='checking') statusText=inEn()?'Checking the GS version deployed by this troop…':'正在核對此旅團實際部署的 GS 版本…';
-    else if(state.status==='current') statusText=inEn()?`✅ Verified: GS ${LATEST_RELEASE.gsVersion}; initialisation for this release is complete.`:`✅ 已核對：GS ${LATEST_RELEASE.gsVersion}，此版本的初始化亦已完成。`;
+    else if(state.status==='current') statusText=LATEST_RELEASE.initializeRequired?(inEn()?`✅ Verified: GS ${LATEST_RELEASE.gsVersion}; initialisation for this release is complete.`:`✅ 已核對：GS ${LATEST_RELEASE.gsVersion}，此版本的初始化亦已完成。`):(inEn()?`✅ Verified: GS ${LATEST_RELEASE.gsVersion}; no reinitialisation is required for this release.`:`✅ 已核對：GS ${LATEST_RELEASE.gsVersion}；本次更新毋須重跑初始化。`);
     else if(state.status==='update') statusText=inEn()?`⚠️ GS update is still required (reported: ${state.reportedVersion||'unknown'}). The latest fixes are not active until GS is replaced and redeployed.`:`⚠️ 此旅團尚未完成 GS 更新（回報版本：${state.reportedVersion||'未知'}）。未更換並重新部署 GS，今次修正就不會生效。`;
     else if(state.status==='initialize') statusText=inEn()?`⚠️ GS ${LATEST_RELEASE.gsVersion} is deployed, but initializeSheets() has not completed for this release (record: ${state.initializedGsVersion||'none'}). Run it once, then re-check.`:`⚠️ GS 已是 ${LATEST_RELEASE.gsVersion}，但此版本的 initializeSheets() 尚未完成（初始化紀錄：${state.initializedGsVersion||'未記錄'}）。請執行一次，然後重新檢查。`;
     else if(state.status==='error') statusText=inEn()?'⚠️ The GS version cannot be verified right now. Do not assume the update is complete; use Re-check later.':'⚠️ 暫時未能核對 GS 版本。請不要當作已經更新；稍後按「重新檢查」。';
     else statusText=inEn()?'Select a troop to verify its deployed GS version.':'選擇旅團後，系統會核對實際部署的 GS 版本。';
     const steps=inEn()?[
-      'Download the latest Code.gs below, replace the troop Apps Script content and save it.',
-      'Run initializeSheets() once. This is required for this release; keep the existing spreadsheet and records.',
-      'Deploy → Manage deployments → Edit → New version → Deploy, keeping the existing web-app URL.',
-      'Return here and select Re-check. Only the green Verified status means both GS and initialisation are current.'
+      ...(LATEST_RELEASE.initializeRequired?[
+        'Download the latest Code.gs below, replace the troop Apps Script content and save it.'
+      ]:[
+        'If this troop already uses GS '+LATEST_RELEASE.gsVersion+', no GS change or script run is needed for this website fix.',
+        'For an older GS: download the latest Code.gs below, replace the troop Apps Script content and save it.'
+      ]),
+      ...(LATEST_RELEASE.initializeRequired?['Run initializeSheets() once for this release; keep the existing spreadsheet and records.']:[]),
+      'After replacing GS, use Deploy → Manage deployments → Edit → New version → Deploy, keeping the existing web-app URL; then select Re-check.',
+      LATEST_RELEASE.initializeRequired?'Return here and select Re-check to verify this release.':'A brand-new Sheet still needs initializeSheets() once for initial setup. Existing, working Sheets do not need it again for this release.'
     ]:[
-      '按下方按鈕下載最新 Code.gs，取代旅團 Apps Script 的現有內容並儲存。',
-      '必須執行一次 initializeSheets()；保留現有 Google Sheet 及所有紀錄，不需要逐級升級。',
-      '到「部署 → 管理部署 → 編輯 → 新版本 → 部署」，沿用現有網頁應用程式網址。',
-      '回到這裡按「重新檢查」；只有綠色「已核對」才代表 GS 及初始化都是最新版本。'
+      ...(LATEST_RELEASE.initializeRequired?[
+        '下載下方最新 Code.gs，取代旅團 Apps Script 內容並儲存。'
+      ]:[
+        '旅團 GS 已是 '+LATEST_RELEASE.gsVersion+'：今次只需更新網站，不用再改 GS 或 RUN SCRIPT。',
+        '舊版 GS：下載下方最新 Code.gs，取代旅團 Apps Script 內容並儲存。'
+      ]),
+      ...(LATEST_RELEASE.initializeRequired?['本版須執行一次 initializeSheets()；保留現有 Sheet 及所有紀錄。']:[]),
+      '更換 GS 後，到「部署 → 管理部署 → 編輯 → 新版本 → 部署」，沿用原 URL，再按「重新檢查」。',
+      LATEST_RELEASE.initializeRequired?'回到這裡按「重新檢查」，核對本版要求是否完成。':'新建 Sheet 首次使用仍須執行 initializeSheets()；已有正常 Sheet 今次更新毋須重跑。'
     ];
     const openSteps=!isHome&&actionNeeded?' open':'';
     host.innerHTML=`<section class="release-notice ${cardClass}" role="status" aria-live="polite"><div class="release-head"><span>${title}</span><span class="release-chip">${inEn()?'Latest GS':'最新 GS'}：${LATEST_RELEASE.gsVersion}</span>${LATEST_RELEASE.initializeRequired?`<span class="release-chip required">${inEn()?'initializeSheets() required once':'必須執行 initializeSheets() 一次'}</span>`:''}</div><div class="release-summary">${inEn()?'Current release only — no sequential patch installation is needed.':'只列最新版本；無須逐級下載或安裝補丁。'}</div><div class="release-status">${escapeHtmlText(statusText)}</div><details${openSteps}><summary>${inEn()?'Update steps and download':'查看更新步驟及下載'}</summary><ol>${steps.map(step=>`<li>${escapeHtmlText(step)}</li>`).join('')}</ol><div class="release-actions"><a class="btn btn-sm btn-primary" href="apps-script/Code.gs?gs=${encodeURIComponent(LATEST_RELEASE.gsVersion)}" download="Code.gs">${inEn()?'⬇️ Download latest Code.gs':'⬇️ 下載最新 Code.gs'}</a>${!isHome&&currentTroopId&&!demo?`<button type="button" class="btn btn-sm btn-outline" onclick="checkBackendRelease()">🔄 ${inEn()?'Re-check':'重新檢查'}</button>`:''}</div></details></section>`;
@@ -1335,7 +1347,16 @@ function backToHome(){
 /* 強制重新整理：換一個新 URL（?r=timestamp）令瀏覽器唔可以用舊快取頁面。
    用途：旅團列表空白時，好可能係瀏覽器仲用緊舊版頁面（舊版讀已棄用嘅 data/troops.json＝空白）。 */
 function forceReloadPage(){
-  location.replace(location.pathname + '?r=' + Date.now() + location.hash);
+  const url=new URL(location.href);
+  url.searchParams.set('r',String(Date.now()));
+  location.replace(url.toString());
+}
+// Never auto-reload while the user has pending writes, an open editor, or focused input.
+function canReloadFrontend(){
+  if(pendingChanges.length||_ongoingRequests.size||feedbackSubmitState==='sending'||editingLogRecordId) return false;
+  if(document.querySelector('.modal.active')) return false;
+  const active=document.activeElement;
+  return !active||(!active.isContentEditable&&!/^(INPUT|TEXTAREA|SELECT)$/.test(String(active.tagName||'').toUpperCase()));
 }
 async function loadTroops(){
   const grid=document.getElementById('troopGrid');

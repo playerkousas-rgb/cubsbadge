@@ -1,5 +1,7 @@
 # CHANGE LOG v5.8.1 — 幼童軍黃色主題＋預覽旅團列表修復
 
+> **2026-10-24 更正：本文件當時把「用戶必定是快取問題、F5 一次後永不再出現」寫得過度肯定。使用者現已回報反覆出現；不能沿用此結論。現行證據、修正及遷移限制見 [FRONTEND_CACHE_DIAGNOSIS.md](FRONTEND_CACHE_DIAGNOSIS.md)。**
+
 > 本次只改前端 UI 顏色、Vercel 快取標頭、開發預覽（devserver）及 registry 開發兼容。
 > **不改** `apps-script/Code.gs`、**不改**功能變數契約（4 樣）、**不改**任何 API 行為（生產環境）。
 
@@ -29,13 +31,13 @@
 - 旅團清單自 v5.5 功能變數契約起**只來自 `/api/troops`（= Vercel 功能變數 `TROOP_*`）**，
   唔再讀 `data/troops.json`、冇內置 URL fallback（安全設計：部署 URL 唔入前端）。
 - 生產站（cubsbadge.vercel.app）新瀏覽器實測**正常列出 0082**；
-  用戶機睇唔到＝**瀏覽器快取咗舊版 index.html**（舊版用 `t.backend` 過濾，
+  當時推測用戶機可能載入**舊版 index.html**（舊版用 `t.backend` 過濾，
   而 390cee5 之後 API 只回 `connected`，舊前端過濾到零 → 「暫無旅團資料」）。
 - 沙盒預覽（devserver）從來冇 `TROOP_*` 功能變數 → 列表必然空白。
 
 修復（唔改安全契約）：
 1. **`vercel.json`**：`/` 同 `/index.html` 加 `Cache-Control: no-cache, must-revalidate`——
-   用戶瀏覽器以後唔會再食舊版頁面（舊版請硬式重新整理一次）。
+   要求瀏覽器重驗入口，但不能證明已清除先前儲存的 HTML 或排除其他快取層。
 2. **`test/devserver.mjs`（沙盒預覽專用，唔會部署）**：未設 `TROOP_0082_BACKEND` 時
    自動啟用「內置 0082 預覽旅團」——用 `test/mock-gas.mjs` 喺記憶體執行 `apps-script/Code.gs`
    （跑 `initializeSheets()` 生成 API Key），並以功能變數契約 4 樣對齊：
@@ -59,7 +61,7 @@
 
 - 前端：部署最新 `index.html`＋`vercel.json`（Vercel 自動部署 main 即生效）。
 - 後端 GS：**唔使改**、唔使重新部署。
-- 用戶端：見到列表前請**硬式重新整理一次**（清咗舊快取後，以後唔會再出舊版）。
+- 用戶端：當時曾以硬式重新整理作臨時排查，不能當作永久解法；現行防護及限制見上述更正文件。
 
 版本：前端 v5.2（UI 色調更新）／ 後端 `cub-leaf` 無改動
 

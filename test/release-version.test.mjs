@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
+import vm from 'node:vm';
 import { buildBackend } from './mock-gas.mjs';
 
 function json(response) { return JSON.parse(response.getContent()); }
@@ -17,7 +18,7 @@ test('latest GS release is consistent between frontend announcement and Apps Scr
   assert.ok(gs, 'Apps Script exposes its latest GS version');
   assert.equal(release[1], '2026-10-24');
   assert.equal(release[2], gs[1], 'frontend required GS and backend reported GS must match');
-  assert.equal(release[3], 'true', 'this release explicitly requires initializeSheets()');
+  assert.equal(release[3], 'false', 'existing working Sheets need no reinitialization for this release');
   assert.ok(html.includes(`href="apps-script/Code.gs?gs=${gs[1]}"`), 'setup tab download link carries current GS version query to bust stale cache');
   assert.ok(html.includes('href="apps-script/Code.gs?gs=${encodeURIComponent(LATEST_RELEASE.gsVersion)}"'), 'release notice download link carries current GS version query');
   assert.match(gas, /setProperty\(CUB_GS_INITIALIZED_PROP,CUB_GS_VERSION\)/);
@@ -50,7 +51,7 @@ test('GS version and initialization are independently verified; initialization i
   assert.equal(initialized.success, true);
   assert.equal(initialized.gsVersion, before.gsVersion);
   assert.equal(initialized.gsInitializationCurrent, true);
-  assert.equal(backend.getApiKey(), apiKey, 'running the required initialization must not rotate the existing API key');
+  assert.equal(backend.getApiKey(), apiKey, 'running initialization must not rotate the existing API key');
   assert.deepEqual(snapshotRows(backend, preservedSheetNames), originalRows, 'initialization must not modify existing user records, including old IDs');
   assert.deepEqual(sheets.SystemConfig.rows[1], originalConfig, 'an existing troop setting must not be overwritten by a default');
 
@@ -69,4 +70,35 @@ test('GS version and initialization are independently verified; initialization i
   assert.equal(backend.getApiKey(), apiKey, 're-running initialization remains safe and idempotent');
   assert.deepEqual(snapshotRows(backend, preservedSheetNames), originalRows, 're-running initialization must also preserve every existing user value');
   assert.deepEqual(sheets.SystemConfig.rows[1], originalConfig);
+});
+
+
+test('release classification and rendered instructions respect the actual initialization requirement', () => {
+  const html=fs.readFileSync(new URL('../index.html',import.meta.url),'utf8');
+  const apply=html.match(/function applyBackendRelease\(payload\)\{[\s\S]*?\n\}/)?.[0];
+  const render=html.match(/function renderReleaseNotices\(\)\{[\s\S]*?\n\}/)?.[0];
+  assert.ok(apply&&render,'execute the actual frontend release functions');
+  for(const initializeRequired of [false,true]){
+    const hosts=new Map(['homeReleaseNotice','loginReleaseNotice','mainReleaseNotice'].map(id=>[id,{innerHTML:''}]));
+    const ctx=vm.createContext({
+      LATEST_RELEASE:Object.freeze({updated:'2026-10-24',gsVersion:'2026.10.24',initializeRequired}),
+      currentTroopId:'0082',backendReleaseState:{},document:{getElementById:id=>hosts.get(id)},
+      inEn:()=>false,isDemoMode:()=>false,escapeHtmlText:String,encodeURIComponent
+    });
+    vm.runInContext(apply+'\n'+render,ctx);
+    for(const marker of ['', '2026.10.23', '2026.10.24']){
+      const status=vm.runInContext(`applyBackendRelease({gsVersion:'2026.10.24',initializedGsVersion:'${marker}'})`,ctx);
+      assert.equal(status,initializeRequired&&marker!=='2026.10.24'?'initialize':'current');
+      assert.equal(ctx.backendReleaseState.initializedGsVersion,marker,'never rewrite reported initialization metadata');
+      const notice=hosts.get('mainReleaseNotice').innerHTML;
+      if(!initializeRequired){
+        assert.match(notice,/本次更新毋須重跑初始化/);
+        assert.doesNotMatch(notice,/必須執行 initializeSheets|初始化亦已完成|本版須執行一次/);
+      }else{
+        assert.match(notice,/必須執行 initializeSheets/);
+        assert.doesNotMatch(notice,/已有正常 Sheet 今次更新毋須重跑|不用再改 GS 或 RUN SCRIPT/);
+      }
+    }
+    assert.equal(vm.runInContext("applyBackendRelease({gsVersion:'2026.10.23',initializedGsVersion:'2026.10.24'})",ctx),'update','a new init marker cannot mask an old GS');
+  }
 });

@@ -40,6 +40,7 @@ CUBS 參考來源：[cubsbadge/main](https://github.com/playerkousas-rgb/cubsbad
 - 現有 API Key、帳號、成員、YMIS、進度及舊 ID、其他徽章、活動履歷、備註、設定均須保留，不能重置、覆寫、重新編號或擅自遷移。
 - 既有 Script Properties 的旅團編號／名稱及舊 URL 設定原樣保留；不再拿舊 URL 來顯示，也不要為這次 UI 修正刪掉既有屬性。
 - 初始化可安全重跑；新裝只在 Key 不存在時生成，已有 Key 不得更換。
+- 本次顯示／介紹修正不涉及資料結構遷移：已有正常 Sheet 只需更新部署，不要每逢 GS 版本變動就強制 RUN `initializeSheets()`；新建 Sheet 首次使用仍要初始化。前端核對須尊重本版是否真的需要初始化，不得偽造初始化紀錄。
 - 保留自己支部的綱要、評核權限、預設帳號及版本規則，不要套入幼童軍業務邏輯。
 - 同步中英指南、下載參數、GS 版本／初始化標記及相關文件。
 - 若移植 CUBS 的 Workspace URL 格式相容，只轉成相同部署 ID 的公開路徑；不代表修正錯 ID 或改變 Google 權限。不得藉正規化接受 HTTP、query、fragment、帳密或自訂連接埠。非 JSON 回應不能直接證明是錯誤／舊部署。
