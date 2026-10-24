@@ -99,8 +99,8 @@ run('renderInfoTab()');
 assert.match(element('tab-info').innerHTML,/prog\.scouting\.org\.hk\/cub/);
 
 run('renderReleaseNotices()');
-assert.match(element('homeReleaseNotice').innerHTML,/2026-10-23/);
-assert.match(element('homeReleaseNotice').innerHTML,/2026\.10\.23/);
+assert.match(element('homeReleaseNotice').innerHTML,/2026-10-24/);
+assert.match(element('homeReleaseNotice').innerHTML,/2026\.10\.24/);
 assert.match(element('homeReleaseNotice').innerHTML,/initializeSheets\(\)/);
 assert.match(element('homeReleaseNotice').innerHTML,/無須逐級/);
 run("currentTroopId='0082'; currentUser.ymis='TEST_LEADER'; resetBackendRelease(); applyBackendRelease({gsVersion:'cub-leaf',backendVersion:'cub-leaf'})");
@@ -121,4 +121,50 @@ await run('checkBackendRelease()');
 assert.equal(run('backendReleaseState.status'),'current',run('backendReleaseState.error'));
 run("currentLang='zh'; currentTroopId='DEMO'; currentUser.ymis='DEMO_LEADER'; resetBackendRelease()");
 
-console.log('frontend-render-harness: OK — home, progress, legacy partition, interest lists, P4 overview, ticking, other badges, forms, information and latest-GS release notices rendered with the real inline script.');
+// Exercise the actual welcome navigation and language switch, including cross-links
+// which do not pass a nav button (intro → setup and setup → intro).
+{
+  const names=['enter','intro','setup','guide'];
+  const sections=names.map(name=>element('welcome-'+name));
+  const buttons=names.map(name=>element('welcome-nav-'+name));
+  const originalQueryAll=document.querySelectorAll, originalQuery=document.querySelector;
+  const copyKeys=[...new Set([...html.matchAll(/data-i18n="((?:intro_|setup_intro_)[^"]+)"/g)].map(m=>m[1]))];
+  const copies=new Map(copyKeys.map(key=>[key,element('intro-copy-'+key)]));
+  copies.set('tab_intro',buttons[1]);
+  for(const [key,el] of copies) el.getAttribute=name=>name==='data-i18n'?key:null;
+  const image=element('intro-image');
+  image.getAttribute=name=>name==='data-i18n-alt'?'intro_image_alt':null;
+  document.querySelectorAll=selector=>{
+    if(selector==='.welcome-section') return sections;
+    if(selector==='.welcome-nav button') return buttons;
+    if(selector==='[data-i18n]') return [...copies.values()];
+    if(selector==='[data-i18n-alt]') return [image];
+    return originalQueryAll(selector);
+  };
+  document.querySelector=selector=>{
+    const tab=selector.match(/^\.welcome-nav button\[data-tab="([^"]+)"\]$/);
+    return tab?buttons[names.indexOf(tab[1])]:originalQuery(selector);
+  };
+  run("showWelcomeTab('enter')");
+  for(const name of ['intro','setup','guide','enter','intro']){
+    run(`showWelcomeTab('${name}')`);
+    assert.deepEqual(sections.map(el=>el.classList.contains('active')),names.map(n=>n===name),'exactly the selected welcome section is visible');
+    assert.deepEqual(buttons.map(el=>el.classList.contains('active')),names.map(n=>n===name),'cross-links also select the correct nav pill');
+  }
+  run("setLang('en')");
+  assert.equal(document.documentElement.lang,'en');
+  assert.equal(buttons[1].textContent,'🌿 System introduction');
+  assert.equal(copies.get('intro_h2').textContent,'Section Progress Tracking System');
+  assert.match(copies.get('intro_auth_p').textContent,/Google password/);
+  assert.match(copies.get('intro_caution').textContent,/still need strengthening/);
+  assert.match(image.alt,/private Google Sheet/);
+  assert.equal(sections[1].classList.contains('active'),true,'changing language must not change the selected welcome tab');
+  run("setLang('zh')");
+  assert.equal(buttons[1].textContent,'🌿 系統介紹');
+  assert.equal(copies.get('intro_h2').textContent,'支部進度追蹤系統');
+  assert.match(copies.get('intro_caution').textContent,/仍待補強/);
+  document.querySelectorAll=originalQueryAll;
+  document.querySelector=originalQuery;
+}
+
+console.log('frontend-render-harness: OK — home, system introduction, welcome cross-links, bilingual copy, progress, legacy partition, interest lists, P4 overview, ticking, other badges, forms, information and latest-GS release notices rendered with the real inline script.');

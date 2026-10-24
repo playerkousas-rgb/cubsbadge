@@ -161,7 +161,35 @@ GAS 端亦有對應嘅 `ecStatus` / `ecGetModules`（免 token,唔含敏感資�
 | `TROOP_<id>_NAME` | 旅團名稱（後端GS 對應：Script Property `TROOP_NAME`） | 是 |
 | `EC_FLUSH_KEY` | cache flush 授權 | 否（未設＝flush 回 503） |
 
-設定全部指向功能變數（唔讀 JSON）；**全部由 APP ADMIN 設定**，旅團只提供編號／部署 URL／API Key。`troops.json` 已棄用。詳見 `VERCEL_ENV_SETUP.md`（v9.0）。
+設定全部指向功能變數（唔讀 JSON）；**全部由 APP ADMIN 設定**，旅團只提供編號／部署 URL／API Key。
+
+### `TROOP_<id>_BACKEND` 嘅來源與 GS 顯示原則
+
+**正式部署 URL 只以 Google「部署 → 管理部署」中選定網頁應用程式提供的值為準。**
+同一 Script 可以有多個部署，Sheet 選單讀取的 `getUrl()` 並非部署視窗選擇結果。
+
+由 GS **2026.10.24** 起，按使用者決定採用「寧願不顯示 URL，也不提供錯 URL」：
+
+| 位置 | 現在行為 |
+|---|---|
+| `initializeSheets()` 彈窗 | 顯示初始化結果及 API Key；不提示輸入旅團編號、不顯示部署 URL |
+| `initializeSheets()` 回傳物件 | 保留 API Key、旅團及版本狀態，不再有 `scriptUrl` |
+| `showApiKey()`／`showVercelEnv()`／`vercelEnvLines()` | 只提供同一隻現有 API Key，不含旅團專屬功能變數命名或 BACKEND 值 |
+| Sheet 選單 | 「🔑 顯示 API KEY（交 ADMIN）」；不再提供自動驗證 BACKEND 的選單 |
+| `doGet`／`doPost` | 不再從 `getUrl()` 記錄 URL，亦不讀取舊 `WEBAPP_URL` 作顯示 |
+| 舊驗證選單相容函式 | 只提示部署視窗才是網址來源，不發連線請求、不回 URL、不聲稱已核實 |
+
+旅團編號直接在 ADMIN FORM 填寫，不是生成 API Key 的前置條件；不新增「設定旅團編號」選單。既有旅團編號／名稱設定保留。
+不增加貼網址／設定 BACKEND 的 GS 操作，也不新增 Google 授權。
+自我回報的 `selfUrl` 端點及依 ID 長度判斷 HEAD／正式部署的方案已移除。
+既有內部登入／簽名協定不在本次改動範圍；不能把本次「停止顯示 URL」理解為已重寫所有部署身分比對。
+
+Vercel `normalizeGasUrl` 仍將 `/a/<domain>/macros/s/<id>/exec` 正規化成
+`https://script.google.com/macros/s/<id>/exec`。正規化只處理路徑格式，不能把錯的部署 ID 變成正確部署。
+`/api/health?troopId=<id>` 仍提供 `config.backendDomainScoped` 及 `backendLiveCheck.hint`，
+它們是連線診斷，不是部署 URL 自動發現機制。`troops.json` 仍已棄用。
+
+詳細調查及舊說法更正見 `BACKEND_URL_DIAGNOSIS.md`。
 
 ---
 

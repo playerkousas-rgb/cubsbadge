@@ -29,7 +29,7 @@
 | # | 功能變數 | 值來自 | 幾多個 |
 |---|---------|--------|--------|
 | 1 | `SUPER_KEY` | **APP ADMIN 自己定**（= 超管 `sheep` 嘅密碼；只用於超管登入比對） | 全 APP **1 個** |
-| 2 | `TROOP_0082_BACKEND` | 旅團交嚟嘅部署 URL（`/exec` 結尾） | 每旅團 1 個 |
+| 2 | `TROOP_0082_BACKEND` | 旅團交嚟嘅部署 URL（`/exec` 結尾；抄「部署 → 管理部署」嗰條，唔好抄 `getUrl()` 自動讀到嗰條） | 每旅團 1 個 |
 | 3 | `TROOP_0082_APIKEY` | 旅團交嚟嘅 API Key（`sc_…`） | 每旅團 1 個 |
 | 4 | `TROOP_0082_NAME` | **APP ADMIN 自己定**（旅團顯示名稱，例：第 82 旅） | 每旅團 1 個 |
 
@@ -132,7 +132,22 @@ A: 三個可能：① 密碼錯；② Vercel 未設定 `SUPER_KEY`（去 Setting
 A: 普通功能照用；超管登入會失敗（後端唔識 `action=superLogin`）。叫旅團覆蓋最新 `Code.gs` → 部署「新版本」→ 跑一次 `initializeSheets()`。
 
 **Q: GS 彈窗會唔會再顯示帳號密碼？**
-A: 唔會。`initializeSheets()` 只顯示「交俾 APP ADMIN 嘅 3 樣」＋預設管理員帳號提示，冇任何超管密碼。
+A: 唔會。`initializeSheets()` 提供 API Key；旅團編號在 ADMIN FORM 填，URL 由 Google 部署視窗提供，冇任何超管密碼。
+
+**Q: 點解初始化／API Key 彈窗唔再顯示 BACKEND URL？**
+A: **由 GS 2026.10.24 起，呢啲位置只提供 API Key，不要求預先設定旅團編號，不再顯示自動取得嘅 URL。**
+`ScriptApp.getService().getUrl()` 同 Google 部署視窗顯示嘅選定部署 URL 可能唔一致；
+初始化、選單、`WEBAPP_URL` 快取更可能各有不同值，不能當作已核實部署入口。
+
+- 正式部署 URL 由 Google「部署 → 管理部署」中選定的網頁應用程式提供；GS 不再猜測、回報或自動記錄 URL。
+- `initializeSheets()` 彈窗及回傳值、`showApiKey()`、`showVercelEnv()`、選單「🔑 顯示 API KEY（交 ADMIN）」都不再提供 BACKEND 值。
+- 刪除「開一次 /exec 就自動記啱」、「56／74 字元可分部署類型」、「✅ 已核實」等不可靠說法／判斷。
+- **不新增要求用戶將網址貼入 GS、設定 BACKEND 或額外授權的步驟。** 原有旅團登記資料／APP ADMIN 環境變數契約不變。
+- 舊 `WEBAPP_URL` 不再讀取或自動更新；不刪改旅團資料、既有 API Key 或其他設定。
+
+Vercel 端仍會把 `/a/<domain>/macros/s/<id>/exec` 正規化成公開格式，但不能修正另一個部署 ID。
+`/api/health?troopId=0082` 的 JSON／非 JSON 檢查只反映連線回應，不代表自動找到了領袖選定的部署。
+調查紀錄見 `docs/BACKEND_URL_DIAGNOSIS.md`。
 
 **Q: 幾個旅團點算？**
 A: 每旅團 3 個功能變數；`SUPER_KEY` 全 APP 一個（你一個人管晒）。

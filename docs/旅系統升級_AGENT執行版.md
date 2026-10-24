@@ -23,11 +23,11 @@
 | 代號 | 名稱 | 來源 | 儲存位置 | 用途 |
 |---|---|---|---|---|
 | A | `SUPER_KEY` | 現有超管設定 | Vercel env | 中央超管登入；與旅系統接駁無關 |
-| B | `TROOP_(id)_BACKEND` | 部署後 `ScriptApp.getService().getUrl()` | Vercel env；上游為 `DOWNSTREAM_<id>_URL` | proxy／上游要打去邊個 GAS |
+| B | `TROOP_(id)_BACKEND` | Google「部署 → 管理部署」中選定網頁應用程式提供的 URL（GS 不自動顯示） | Vercel env；上游為 `DOWNSTREAM_<id>_URL` | proxy／上游要打去邊個 GAS |
 | C | `TROOP_(id)_NAME` | ADMIN 自填 | Vercel env | 前端顯示名 |
 | D | `TROOP_(id)_APIKEY` | GAS `API_KEY` Script Property | Vercel env；上游為 `DOWNSTREAM_<id>_KEY` | apikey，同時係本節點簽名根密鑰 |
 
-Sheet 選單「🔗 旅系統 → 🔑 顯示 BACKEND／APIKEY（交 ADMIN）」一次顯示 B、D；C 由 ADMIN 填。B/D 只落 Script Properties 及 Vercel env，A 只在 Vercel env；四者及其值不寫任何工作表、不寫 Git、不回前端、不放 URL。
+Sheet 選單「🔗 旅系統 → 🔑 顯示 API KEY（交 ADMIN）」只提供 D，不再自動提供 B；旅團編號在 ADMIN FORM 填，不要求在 GS 設定，C 由 ADMIN 填。B 的權威來源是 Google 部署視窗，不新增要求用戶貼網址到 GS 的設定步驟。B/D 在既有登記流程只落 Script Properties 及 Vercel env，A 只在 Vercel env；四者及其值不寫任何工作表、不寫 Git、不回前端、不放 URL。
 
 換 D 必須同步三處：下游刪除 `API_KEY` 後重新 `showApiKey()`、上游重新登記下游、ADMIN 更新 Vercel env 後 Redeploy。
 

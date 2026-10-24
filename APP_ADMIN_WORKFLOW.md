@@ -30,18 +30,25 @@
 
 ## 旅團做（佢哋只做 3 步，唔會掂功能變數）
 
-1. 建新 Google Sheet → 擴充功能 → Apps Script → 貼 `apps-script/Code.gs`（v5.8）→ 儲存
+1. 建新 Google Sheet → 擴充功能 → Apps Script → 貼最新 `apps-script/Code.gs`（GS 2026.10.24）→ 儲存
 2. 執行 `initializeSheets()` → 授權
-   - **只生成 API Key**（彈窗只顯示：旅團編號 / 部署 URL / API Key）
+   - **生成／保留 API Key**（彈窗只提供 API Key，不顯示自動取得的部署 URL；不要求輸入或設定旅團編號）
    - 順手**清走舊版遺留喺指令碼屬性嘅 `SUPER_KEY`**（值只應該存在你嘅 Vercel）
    - 彈窗**永不顯示**超管帳號或任何密碼
-3. 部署為網頁應用程式（執行身分：我；存取：任何人）→ 交 3 樣俾你：
+3. 部署為網頁應用程式（執行身分：我；存取：任何人）→ 取得 Google 部署視窗的 URL → 在 ADMIN FORM 填旅團編號、名稱及以下資料：
 
 ```
 旅團編號：0082
-TROOP_0082_BACKEND：https://script.google.com/macros/s/.../exec
-TROOP_0082_APIKEY：sc_xxxxxxxx
+部署 URL：https://script.google.com/macros/s/.../exec
+API Key：sc_xxxxxxxx
 ```
+
+> ⚠️ GS 2026.10.24 **不再顯示自動取得的 BACKEND URL**，避免初始化、選單及快取各顯示另一條網址。
+> 旅團編號只需在 ADMIN FORM 填寫，不在 GS 預先設定；既有 Script Properties 中的編號仍原樣保留。
+> 旅團 API Key 在「🔗 旅系統 → 🔑 顯示 API KEY（交 ADMIN）」查看。
+> 正式 URL 由 Google「部署 → 管理部署」中選定的網頁應用程式提供，不由 GS 彈窗猜測。
+> **不增加叫用戶貼網址／設定 BACKEND 的 GS 步驟**；原有登記資料及 APP ADMIN 設環境變數流程不變。
+> 不再以「✅ 已核實」、開過一次 `/exec` 或部署 ID 長度判定 URL 正確。
 
 （第 3 樣 `TROOP_0082_NAME` 係**你**話事：例如「第 82 旅」。）
 
@@ -70,7 +77,7 @@ TROOP_0082_APIKEY：sc_xxxxxxxx
 - **改超管密碼**：Vercel → Settings → Environment Variables → `SUPER_KEY` → Redeploy（系統唔會喺 leaf 改）
 - 超管登入失敗一律回同一句通用訊息（`帳號或密碼錯誤`），唔會透露隱藏帳戶存在
 - 超管唔會出現喺：Users 表、用戶管理、成員名單、全團總覽、**操作紀錄**（非超管見唔到）
-- GS 彈窗（`initializeSheets()` / `showApiKey()` / `showVercelEnv()`）只顯示旅團要交嘅 3 樣，永不顯示超管密碼
+- GS 登記資料彈窗（`initializeSheets()` / `showApiKey()` / `showVercelEnv()`）只提供 API Key，不要求預先設定旅團編號，亦不顯示自動取得的部署 URL，永不顯示超管密碼
 
 ## 紅線
 

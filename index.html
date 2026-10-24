@@ -57,6 +57,23 @@ html[lang="en"] body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","No
 .welcome-nav button:hover{transform:translateY(-1px)}
 .welcome-section{display:none;animation:fadeIn .3s ease}.welcome-section.active{display:block}
 @keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+/* 系統介紹：沿用領袖說明圖；圖檔與文字分開，方便放大及中英閱讀。 */
+.system-intro-heading{margin-bottom:18px}
+.system-intro-heading h2{font-size:23px;color:#145837;margin-bottom:7px}
+.system-intro-heading p{font-size:13px;line-height:1.8;color:var(--text-light)}
+.system-intro-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:20px;align-items:start}
+.system-intro-figure{margin:0;padding:10px;background:var(--card);border:1px solid var(--border);border-radius:16px;box-shadow:var(--shadow)}
+.system-intro-figure img{display:block;width:100%;height:auto;border-radius:10px}
+.system-intro-figure figcaption{font-size:12px;line-height:1.7;color:var(--text-light);padding:10px 4px 2px}
+.system-intro-copy{display:grid;gap:14px}
+.system-intro-copy .info-card{border-left-color:#26724d}
+.system-intro-copy .info-card h3{color:#145837}
+.system-intro-copy .info-card p{font-size:13px}
+.system-intro-note{background:#fff6da;border:1px solid #e5c16b;border-radius:12px;padding:14px;font-size:12px;line-height:1.8;color:#654a12}
+.system-intro-actions{display:flex;gap:8px;flex-wrap:wrap}
+.setup-intro-link{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;background:#f0f7ef;border:1px solid #cfdfcd;border-radius:12px;padding:14px 16px;margin-bottom:18px}
+.setup-intro-link p{font-size:12px;color:#315940;line-height:1.7}
+@media(max-width:740px){.system-intro-grid{grid-template-columns:minmax(0,1fr)}.system-intro-heading h2{font-size:20px}.system-intro-figure{max-width:520px;margin:0 auto}}
 .level-structure{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:20px}
 .level-box{background:var(--card);border:2px solid var(--border);border-radius:10px;padding:12px;text-align:center;transition:.2s}
 .level-box:hover{border-color:var(--maroon);transform:translateY(-2px)}
@@ -303,6 +320,7 @@ html[lang="en"] body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","No
     <div class="header-subtitle" data-i18n="app_subtitle">基於2026年8月15日生效的《幼童軍訓練綱要》第十版• 全部領袖填寫•家長/成員只看•活動履歷家長申報領袖審批•中英一鍵切換</div>
     <div class="welcome-nav">
       <button class="active" data-tab="enter" onclick="showWelcomeTab('enter', this)" data-i18n="tab_enter">🏠 進入系統</button>
+      <button data-tab="intro" onclick="showWelcomeTab('intro', this)" data-i18n="tab_intro">🌿 系統介紹</button>
       <button data-tab="setup" onclick="showWelcomeTab('setup', this)" data-i18n="tab_setup">📋 新旅團部署</button>
       <button data-tab="guide" onclick="showWelcomeTab('guide', this)" data-i18n="tab_guide">📖 使用教學</button>
       <button class="welcome-feedback" onclick="openScoutReport()" title="問題回報 / 意見回饋（經 Scout Admin 統一回收，可匿名）" data-i18n="btn_report_feedback">🐛💬 回報 · 意見</button>
@@ -334,8 +352,37 @@ html[lang="en"] body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","No
         </div>
       </div>
     </div>
+    <section id="welcome-intro" class="welcome-section" aria-labelledby="systemIntroTitle">
+      <div class="system-intro-heading">
+        <h2 id="systemIntroTitle" data-i18n="intro_h2">支部進度追蹤系統</h2>
+        <p data-i18n="intro_subtitle">一張圖了解資料放在哪裏、為何需要 Google 授權，以及帳戶如何登入。</p>
+      </div>
+      <div class="system-intro-grid">
+        <figure class="system-intro-figure">
+          <a href="assets/system-introduction-zh-hant.webp" target="_blank" rel="noopener noreferrer">
+            <img src="assets/system-introduction-zh-hant.webp" width="768" height="1376" loading="lazy" decoding="async" lang="zh-Hant" alt="支部進度追蹤系統介紹圖：使用者、系統網站與伺服器、旅團 Apps Script、私人 Google Sheet；Google 授權、帳號密碼與資料存取的分別。" data-i18n-alt="intro_image_alt">
+          </a>
+          <figcaption data-i18n="intro_image_caption">繁體中文說明圖，點圖可放大；亦可下載給領袖參考。中英文字說明見本頁。</figcaption>
+        </figure>
+        <div class="system-intro-copy">
+          <div class="info-card"><p data-i18n="intro_data">每團使用自己的 Google Sheet。使用者透過網站及伺服器轉接，由你團的 Apps Script 讀寫資料主檔。</p></div>
+          <div class="info-card"><h3 data-i18n="intro_auth_h">① 為何需要 Google 授權？</h3><p data-i18n="intro_auth_p">讓你部署的程式讀寫 Sheet、備份到 Drive 及連接系統。權限確實較廣，建議使用旅團專用 Google 帳戶，並核對程式來源；毋須交出 Google 密碼。</p></div>
+          <div class="info-card"><h3 data-i18n="intro_sheet_h">② 為何程式選「任何人」，Sheet 卻不用？</h3><p data-i18n="intro_sheet_p">「任何人」是網頁應用程式的連線入口設定，不是試算表的分享設定。Sheet 仍設為「限制存取」，不必分享給所有領袖、家長或成員。</p></div>
+          <div class="info-card"><h3 data-i18n="intro_login_h">③ 登入點樣核對身份？</h3><p data-i18n="intro_login_p">使用帳號密碼登入時，每次均核實帳號及密碼。系統密碼由用戶自行設定，首次登入須更改臨時密碼；這不是 Google 密碼。API Key 是系統連接用的鑰匙，不是個人登入密碼。</p></div>
+          <aside class="system-intro-note" data-i18n="intro_caution">重要：私人 Sheet 不等於所有資料 API 自動安全。目前部分資料讀取入口的登入／權限驗證仍待補強；本頁是架構與授權說明，並非獨立安全認證。</aside>
+          <div class="system-intro-actions">
+            <a class="btn btn-outline btn-sm" href="assets/system-introduction-zh-hant.webp" download="system-introduction-zh-hant.webp" data-i18n="intro_download">⬇️ 下載介紹圖</a>
+            <button class="btn btn-primary btn-sm" onclick="showWelcomeTab('setup')" data-i18n="intro_setup">📋 前往新旅團部署</button>
+          </div>
+        </div>
+      </div>
+    </section>
     <div id="welcome-setup" class="welcome-section">
       <h2 style="font-size:18px;color:#8B5A00;margin-bottom:12px" data-i18n="setup_h2">📋 新旅團部署指南 (10分鐘)</h2>
+      <div class="setup-intro-link">
+        <p data-i18n="setup_intro_p">先了解資料流向及 Google 授權，再跟下面步驟部署。</p>
+        <button class="btn btn-outline btn-sm" onclick="showWelcomeTab('intro')" data-i18n="setup_intro_btn">🌿 查看系統介紹</button>
+      </div>
       <!-- [主系統暫時隱藏 2026-10] 主系統（scoutsystem-2.0）未開發完成，暫停對外介紹；現階段只推廣進度追蹤系統。
            完成後解除本註解（連同下方 dict 內 setup_portal_card／setup_map_card 已保留嘅鍵）即可重啟介紹。
       <div class="info-card" style="background:var(--blue-light);border-color:var(--blue);margin-bottom:12px" data-i18n-html="setup_portal_card">
@@ -351,9 +398,9 @@ html[lang="en"] body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","No
       -->
       <div class="tutorial">
         <div class="steps">
-          <div class="step"><div class="step-number">1</div><div class="step-content"><h4 data-i18n="s1h">下載最新 GS（2026.10.23）</h4><p data-i18n="s1p">最新 GS 2026.10.23：2026 訓練綱要配套、版本／初始化核對、活動履歷及既有行政功能</p><a href="apps-script/Code.gs?gs=2026.10.23" download="Code.gs" class="btn btn-primary btn-sm" style="margin-top:6px" data-i18n="s1btn">⬇️ 下載 Code.gs（GS 2026.10.23）</a></div></div>
-          <div class="step"><div class="step-number">2</div><div class="step-content"><h4 data-i18n="s2h">建立 Google Sheet 並部署</h4><p data-i18n-html="s2p">建新試算表 → 擴充功能 → Apps Script 貼上 Code.gs → 儲存 → 執行 initializeSheets 授權（本次必須；補齊設定並保留現有 API Key）→ 部署為網頁應用程式（執行身分我，任何人可存取）→ 跑 showApiKey() 睇返 API Key</p></div></div>
-          <div class="step"><div class="step-number">3</div><div class="step-content"><h4 data-i18n="s3h">提交給 APP ADMIN</h4><p data-i18n="s3p">只交 3 樣：旅團編號、部署 URL、API Key。Vercel 功能變數全部由 APP ADMIN 設定，旅團毋須設定任何功能變數</p></div></div>
+          <div class="step"><div class="step-number">1</div><div class="step-content"><h4 data-i18n="s1h">下載最新 GS（2026.10.24）</h4><p data-i18n="s1p">最新 GS 2026.10.24：初始化及 API Key 彈窗不再顯示自動取得的部署網址；保留現有資料及 API Key</p><a href="apps-script/Code.gs?gs=2026.10.24" download="Code.gs" class="btn btn-primary btn-sm" style="margin-top:6px" data-i18n="s1btn">⬇️ 下載 Code.gs（GS 2026.10.24）</a></div></div>
+          <div class="step"><div class="step-number">2</div><div class="step-content"><h4 data-i18n="s2h">建立 Google Sheet 並部署</h4><p data-i18n-html="s2p">建新試算表 → 擴充功能 → Apps Script 貼上 Code.gs → 儲存 → 執行 initializeSheets 授權（本次必須；保留現有資料及 API Key）→ 部署為網頁應用程式（執行身分我，任何人可存取）。Google 部署視窗提供部署網址；GS 彈窗及選單只提供 API Key，不顯示自動取得的網址；旅團編號毋須在 Sheet／Apps Script 預先設定</p></div></div>
+          <div class="step"><div class="step-number">3</div><div class="step-content"><h4 data-i18n="s3h">提交給 APP ADMIN</h4><p data-i18n="s3p">取得 API Key 及 Google 部署視窗提供的部署 URL 後，填寫下方接入申請（ADMIN FORM）。旅團編號直接在 ADMIN FORM 填寫，毋須在 GS 設定。API Key 可在「🔗 旅系統 → 🔑 顯示 API KEY（交 ADMIN）」查看</p></div></div>
           <div class="step"><div class="step-number">4</div><div class="step-content"><h4 data-i18n="s_fl_h">首次登入（預設管理員帳號）</h4><p data-i18n-html="s_fl_p">登記完成後，首頁揀該旅團卡片 → 用「<b>👤 家長/成員</b>」分頁登入：<br>YMIS <b>1111111111</b>　密碼 <b>changeme</b>（initializeSheets 自動建立嘅預設管理員，唔好用「領袖=Email」分頁）<br>首次登入會<b>強制改密碼</b>（4-8 位）。之後喺「審批中心」批成員申請、喺「用戶管理」開返各領袖真電郵嘅帳號並設權限</p></div></div>
           <!-- [主系統暫時隱藏 2026-10] 軌道B（接上主系統）未開放，完成後解除註解並自行重排步驟號（而家 4=首次登入、5=私隱選擇）：
           <div class="step"><div class="step-number">4</div><div class="step-content"><h4 data-i18n="s4h">軌道B：有主系統並想接上 - 額外提交給主系統管理員</h4><p data-i18n="s4p">將同一組 URL+Key 交主系統管理員，填入旅團設定→元件設定 卡片 backend+apikey。之後成員點 Dashboard 卡片自動帶入身份，無需密碼</p></div></div>
@@ -361,7 +408,7 @@ html[lang="en"] body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","No
           <div class="step"><div class="step-number">5</div><div class="step-content"><h4 data-i18n="s5h">私隱選擇</h4><p data-i18n="s5p">幼童軍成員預設只看自己；若想互相鼓勵，旅長可在用戶管理→私隱設定開啟「允許成員互相查看進度」，並可選查看範圍（只看自己／全隊／全團）</p></div></div>
         </div>
       </div>
-      <div class="info-card" style="border-color:var(--blue);background:var(--blue-light)"><h3 style="color:var(--blue)" data-i18n="setup_submit_h">📧 完成後提交</h3><p style="font-size:11px" data-i18n="setup_submit_p">將旅團編號、名稱、URL、API Key 交 cubbadge 管理員登記<br>登記完成後首頁會出現旅團卡片，選團即可登入</p><button class="btn btn-blue" onclick="showContactModal()" style="width:100%" data-i18n="submit_contact">📧 提交旅團接入申請</button></div>
+      <div class="info-card" style="border-color:var(--blue);background:var(--blue-light)"><h3 style="color:var(--blue)" data-i18n="setup_submit_h">📧 完成後提交</h3><p style="font-size:11px" data-i18n="setup_submit_p">在 ADMIN FORM 填寫旅團編號、名稱，連同 Google 提供的部署 URL 及 API Key 提交；毋須預先在 GS 設定旅團編號。登記完成後首頁會出現旅團卡片</p><button class="btn btn-blue" onclick="showContactModal()" style="width:100%" data-i18n="submit_contact">📧 提交旅團接入申請</button></div>
     </div>
     <div id="welcome-guide" class="welcome-section">
       <h2 style="font-size:18px;color:#8B5A00;margin-bottom:12px" data-i18n="guide_h2">📖 使用教學 - 幼童軍專用</h2>
@@ -656,6 +703,23 @@ zh:{
   nav_primary_aria:'主要功能',nav_leader_aria:'領袖功能',alt_logo:'幼童軍',
   app_h1:'幼童軍進度追蹤系統',app_tagline:'Cub Scout Progress Tracker v6.0 • 幼童軍支部 • 2026年第十版訓練綱要 + 中英對照',app_subtitle:'基於2026年8月15日生效的《幼童軍訓練綱要》第十版• 全部領袖填寫•家長/成員只看•活動履歷家長申報領袖審批•中英一鍵切換',
   tab_enter:'🏠 進入系統',tab_setup:'📋 新旅團部署',tab_guide:'📖 使用教學',
+  tab_intro:"🌿 系統介紹",
+  intro_h2:"支部進度追蹤系統",
+  intro_subtitle:"一張圖了解資料放在哪裏、為何需要 Google 授權，以及帳戶如何登入。",
+  intro_data:"每團使用自己的 Google Sheet。使用者透過網站及伺服器轉接，由你團的 Apps Script 讀寫資料主檔。",
+  intro_auth_h:"① 為何需要 Google 授權？",
+  intro_auth_p:"讓你部署的程式讀寫 Sheet、備份到 Drive 及連接系統。權限確實較廣，建議使用旅團專用 Google 帳戶，並核對程式來源；毋須交出 Google 密碼。",
+  intro_sheet_h:"② 為何程式選「任何人」，Sheet 卻不用？",
+  intro_sheet_p:"「任何人」是網頁應用程式的連線入口設定，不是試算表的分享設定。Sheet 仍設為「限制存取」，不必分享給所有領袖、家長或成員。",
+  intro_login_h:"③ 登入點樣核對身份？",
+  intro_login_p:"使用帳號密碼登入時，每次均核實帳號及密碼。系統密碼由用戶自行設定，首次登入須更改臨時密碼；這不是 Google 密碼。API Key 是系統連接用的鑰匙，不是個人登入密碼。",
+  intro_caution:"重要：私人 Sheet 不等於所有資料 API 自動安全。目前部分資料讀取入口的登入／權限驗證仍待補強；本頁是架構與授權說明，並非獨立安全認證。",
+  intro_image_alt:"支部進度追蹤系統介紹圖：使用者、系統網站與伺服器、旅團 Apps Script、私人 Google Sheet；Google 授權、帳號密碼與資料存取的分別。",
+  intro_image_caption:"繁體中文說明圖，點圖可放大；亦可下載給領袖參考。中英文字說明見本頁。",
+  intro_download:"⬇️ 下載介紹圖",
+  intro_setup:"📋 前往新旅團部署",
+  setup_intro_p:"先了解資料流向及 Google 授權，再跟下面步驟部署。",
+  setup_intro_btn:"🌿 查看系統介紹",
   home_badges_title:'幼童軍進度獎章 • 現行綱要',
   home_cub_note:'💡 <b>幼童軍年紀小，全部由領袖填寫，家長/成員只看</b>。進度性獎章（會員章至金紫荊）不可由成員申請完成，僅限領袖勾選。<br>但 <b>📅 活動履歷（服務／活動／訓練班）可由家長/成員帳號申報，領袖審批</b>，由幼童軍領袖審批（所謂家長=成員帳號）。',
   home_pick_troop:'📍 請選擇您的旅團',home_reload:'🔄 重新載入',home_demo_l:'👀 示範：領袖',home_demo_m:'👤 示範：家長/成員',loading:'載入中...',troop_stale_hint:'若您之前用過本系統，可能是瀏覽器仍顯示舊快取頁面，請按下方按鈕強制重新整理（或按 Ctrl+F5 / Cmd+Shift+R）。',
@@ -664,12 +728,12 @@ zh:{
   // 鍵值保留未刪，重啟時解除 HTML 註解即可。
   setup_h2:'📋 新旅團部署指南 (10分鐘)',setup_portal_card:'<h3 style="color:var(--blue)">🌟 主系統平台是什麼？</h3><p style="font-size:12px">本系統可獨立用，亦可接入 <b>scoutsystem-2.0 主系統平台</b>：Dashboard、考勤、財務、活動報名，單一登入。</p><p style="font-size:11px;margin-top:6px;background:#fff;padding:6px;border-radius:6px"><b>有主系統 ≠ 一定要接上</b>，兩條路並存。</p>',
   setup_map_card:'<h3>🗺️ 部署地圖</h3><p style="font-size:11px">旅團只做 3 樣：① 下載 Code.gs → 建 Sheet → 部署 ② 執行 initializeSheets（補齊設定並記錄最新版本）③ 把「旅團編號 + 部署 URL + API Key」交 APP ADMIN<br>Vercel 功能變數全部由 APP ADMIN 設定，旅團毋須（亦唔會）設定任何功能變數<br>軌道B 接入主系統：同時交主系統管理員</p><p style="font-size:10px;color:var(--red);margin-top:6px">⚠️ 功能變數由 APP ADMIN 設定：旅團毋須設定任何功能變數，SETUP 彈窗只會顯示要交嘅 API Key。</p>',
-  s1h:'下載最新 GS（2026.10.23）',s1p:'最新 GS 2026.10.23：2026 訓練綱要配套、版本／初始化核對、活動履歷及既有行政功能',s1btn:'⬇️ 下載 Code.gs（GS 2026.10.23）',s2h:'建立 Google Sheet 並部署',s2p:'建新試算表 → 擴充功能 → Apps Script 貼上 Code.gs → 儲存 → 執行 initializeSheets 授權（本次必須；補齊設定並保留現有 API Key）→ 部署為網頁應用程式（執行身分我，任何人可存取）→ 跑 showApiKey() 睇返 API Key',s3h:'提交給 APP ADMIN',s3p:'只交 3 樣：旅團編號、部署 URL、API Key。Vercel 功能變數全部由 APP ADMIN 設定，旅團毋須設定任何功能變數',
+  s1h:'下載最新 GS（2026.10.24）',s1p:"最新 GS 2026.10.24：初始化及 API Key 彈窗不再顯示自動取得的部署網址；保留現有資料及 API Key",s1btn:'⬇️ 下載 Code.gs（GS 2026.10.24）',s2h:'建立 Google Sheet 並部署',s2p:"建新試算表 → 擴充功能 → Apps Script 貼上 Code.gs → 儲存 → 執行 initializeSheets 授權（本次必須；保留現有資料及 API Key）→ 部署為網頁應用程式（執行身分我，任何人可存取）。Google 部署視窗提供部署網址；GS 彈窗及選單只提供 API Key，不顯示自動取得的網址；旅團編號毋須在 Sheet／Apps Script 預先設定",s3h:'提交給 APP ADMIN',s3p:"取得 API Key 及 Google 部署視窗提供的部署 URL 後，填寫下方接入申請（ADMIN FORM）。旅團編號直接在 ADMIN FORM 填寫，毋須在 GS 設定。API Key 可在「🔗 旅系統 → 🔑 顯示 API KEY（交 ADMIN）」查看",
   s_fl_h:'首次登入（預設管理員帳號）',s_fl_p:'登記完成後，首頁揀該旅團卡片 → 用「<b>👤 家長/成員</b>」分頁登入：<br>YMIS <b>1111111111</b>　密碼 <b>changeme</b>（initializeSheets 自動建立嘅預設管理員，唔好用「領袖=Email」分頁）<br>首次登入會<b>強制改密碼</b>（4-8 位）。之後喺「審批中心」批成員申請、喺「用戶管理」開返各領袖真電郵嘅帳號並設權限',
   // [主系統暫時隱藏 2026-10] s4h／s4p（軌道B 接主系統）保留未刪，對應步驟已註解隱藏。
   s4h:'軌道B：有主系統並想接上 - 額外提交給主系統管理員',s4p:'將同一組 URL+Key 交主系統管理員，填入旅團設定→元件設定 卡片 backend+apikey。之後成員點 Dashboard 卡片自動帶入身份，無需密碼',
   s5h:'私隱選擇',s5p:'幼童軍成員預設只看自己；若想互相鼓勵，旅長可在用戶管理→私隱設定開啟「允許成員互相查看進度」，並可選查看範圍（只看自己／全隊／全團）',
-  setup_submit_h:'📧 完成後提交',setup_submit_p:'將旅團編號、名稱、URL、API Key 交 cubbadge 管理員登記<br>登記完成後首頁會出現旅團卡片，選團即可登入',submit_contact:'📧 提交旅團接入申請',
+  setup_submit_h:'📧 完成後提交',setup_submit_p:'在 ADMIN FORM 填寫旅團編號、名稱，連同 Google 提供的部署 URL 及 API Key 提交；毋須預先在 GS 設定旅團編號。登記完成後首頁會出現旅團卡片',submit_contact:'📧 提交旅團接入申請',
   guide_h2:'📖 使用教學 - 幼童軍專用',g1h:'選擇旅團',g1p:'首頁點旅團卡片',g2h:'登入',g2p:'成員/家長：YMIS 10位 + 密碼；領袖：Email + 密碼。首次登入強制改密。',g3h:'家長/成員：只看進度，可申報活動履歷',g3p:'幼童軍年紀小，所有進度由領袖填寫，家長/成員帳號只能查看。但活動履歷（服務／活動／訓練班）可由家長/成員自行申報 → 領袖審批。',g4h:'領袖：勾選+日期',g4p:'領袖直接勾選，自動填今日日期，可手改。先暫存瀏覽器，底部確認寫入雲端。',g5h:'其他功能',g5p:'全團總覽批量、按項目統計、新制金紫荊資料核對、舊制表格下載、中英切換。',
   guide_roles_h3:'👥 角色功能',guide_member_card:'<b>👤 家長/成員 member</b><ul style="font-size:11px;margin:6px 0 0 16px"><li>只能看自己進度（不可勾選）</li><li>活動履歷可自行申報（服務/活動/訓練班）</li><li>可取消待批申報</li><li>已批紀錄可申請修改（需領袖重批）</li></ul>',guide_leader_card:'<b>👨‍💼 領袖 leader</b><ul style="font-size:11px;margin:6px 0 0 16px"><li>全部功能</li><li>我的進度選任何成員</li><li>全團總覽批量一鍵剔</li><li>審批中心：用戶+活動履歷申報</li><li>活動履歷可直接新增/編輯/刪除+批量</li><li>用戶管理、批量開戶 YMIS PDF</li></ul>',
   guide_onboard_h3:'🆕 帳戶申請／批量開戶',guide_onboard_intro:'個人：登入頁按「申請帳戶」→ 選擇成員或領袖身份 → 幼童軍團長／領袖審批。<br>批量：用戶管理 → 批量開戶 → 上載 YMIS 自訂報表 PDF（自動讀編號/姓名/電郵）→ 預覽後開戶。',
@@ -798,6 +862,23 @@ en:{
   nav_primary_aria:'Primary functions',nav_leader_aria:'Leader functions',alt_logo:'Cub Scouts',
   app_h1:'Cub Scout Progress Tracker',app_tagline:'Cub Scout Progress Tracker v6.0 • Cub Section • 2026 Tenth-edition Scheme + Bilingual',app_subtitle:'Based on the Cub Scout Training Scheme, tenth edition (effective 2026-08-15) • Leader-only progress • Parents/members view-only • Activity logs: parents/members claim, leaders approve • One-click EN/ZH',
   tab_enter:'🏠 Enter',tab_setup:'📋 Setup',tab_guide:'📖 Guide',
+  tab_intro:"🌿 System introduction",
+  intro_h2:"Section Progress Tracking System",
+  intro_subtitle:"One diagram explains where records are kept, why Google authorisation is needed, and how accounts sign in.",
+  intro_data:"Each troop has its own Google Sheet. The website and its server relay requests to your troop’s Apps Script, which reads and writes the master records.",
+  intro_auth_h:"① Why authorise with Google?",
+  intro_auth_p:"Your deployed script needs permission to read and write Sheets, back up to Drive, and connect to the system. These permissions are broad: use a dedicated troop Google account and check the script’s source. Never hand over your Google password.",
+  intro_sheet_h:"② Why “Anyone” for the app, but not the Sheet?",
+  intro_sheet_p:"“Anyone” controls access to the web-app endpoint, not sharing of the spreadsheet file. Keep the Sheet set to “Restricted”; you do not need to share it with every leader, parent or member.",
+  intro_login_h:"③ How does account sign-in work?",
+  intro_login_p:"Each password sign-in checks the account and password. Users choose their own system password and must change the temporary password on first login. It is not their Google password. The API Key connects systems; it is not a personal login password.",
+  intro_caution:"Important: a private Sheet does not automatically secure every data API. Authentication and permission checks on some data-reading endpoints still need strengthening. This page explains architecture and authorisation; it is not an independent security certification.",
+  intro_image_alt:"System architecture diagram: user devices, website and relay server, troop Apps Script, and a private Google Sheet; Google authorisation, account passwords, and data access explained.",
+  intro_image_caption:"Traditional Chinese diagram — select it to enlarge, or download it for your leaders. The text on this page is available in Chinese and English.",
+  intro_download:"⬇️ Download diagram",
+  intro_setup:"📋 Go to troop setup",
+  setup_intro_p:"Understand the data flow and Google authorisation before following the setup steps below.",
+  setup_intro_btn:"🌿 Read system introduction",
   home_badges_title:'Cub Scout Progressive Awards • Current scheme',
   home_cub_note:'💡 <b>Cubs are young: leaders fill all progress, parents/members view only</b>. Progressive awards (Membership to Golden Bauhinia) are leader-only.<br>But <b>📅 Activity logs (service/activity/training) can be claimed by parents/members (parent = member account), leaders approve</b>, with leader approval.',
   home_pick_troop:'📍 Pick your Troop',home_reload:'🔄 Reload',home_demo_l:'👀 Demo: Leader',home_demo_m:'👤 Demo: Parent/Member',loading:'Loading...',troop_stale_hint:'If you have used this system before, your browser may be showing a stale cached page — press the button below to force reload (or Ctrl+F5 / Cmd+Shift+R).',
@@ -805,12 +886,12 @@ en:{
   // [主系統暫時隱藏 2026-10] setup_portal_card／setup_map_card／s4h／s4p kept unused while the main-platform intro is hidden.
   setup_h2:'📋 New Troop Setup (10 min)',setup_portal_card:'<h3 style="color:var(--blue)">🌟 What is main system?</h3><p style="font-size:12px">This is a Tier 3 plugin, can be standalone or linked to <b>scoutsystem-2.0</b>: Dashboard, attendance, finance, events, SSO.</p><p style="font-size:11px;margin-top:6px;background:#fff;padding:6px;border-radius:6px"><b>Main system ≠ must link</b>, both routes co-exist.</p>',
   setup_map_card:'<h3>🗺️ Deployment Map</h3><p style="font-size:11px">Troops do only 3 things: ① download Code.gs → create Sheet → deploy ② run initializeSheets (required; records the latest initialisation version) ③ send “troop ID + deploy URL + API Key” to the APP ADMIN<br>All Vercel env vars are set by the APP ADMIN — troops never set any env var<br>Track B portal: also give to main system admin</p><p style="font-size:10px;color:var(--red);margin-top:6px">⚠️ Env vars are set by the APP ADMIN only; the setup dialog shows just the API Key you send.</p>',
-  s1h:'Download latest GS (2026.10.23)',s1p:'Latest GS 2026.10.23: 2026 scheme support, release/initialisation checks, activity logs and existing administration features',s1btn:'⬇️ Download Code.gs (GS 2026.10.23)',s2h:'Create Google Sheet & Deploy',s2p:'New spreadsheet → Extensions → Apps Script paste Code.gs → Save → run initializeSheets once (required; preserves the existing API Key) → Deploy as web app (Me, Anyone) → run showApiKey() to read the API Key',s3h:'Submit to the APP ADMIN',s3p:'Send only 3 items: troop ID, deploy URL, API Key. All Vercel env vars are set by the APP ADMIN — troops never set any env var',
+  s1h:'Download latest GS (2026.10.24)',s1p:"Latest GS 2026.10.24: initialization and API-key dialogs no longer suggest automatically discovered deployment URLs; existing data and API Keys are preserved",s1btn:'⬇️ Download Code.gs (GS 2026.10.24)',s2h:'Create Google Sheet & Deploy',s2p:"New spreadsheet → Extensions → Apps Script → paste Code.gs → Save → run initializeSheets once (required; preserves existing data and API Key) → deploy as a web app (Me, Anyone). Google provides the deployment URL in its deployment dialog; GS dialogs and menus provide only the API Key, never an automatically discovered URL; no troop ID needs to be configured in the Sheet or Apps Script",s3h:'Submit to the APP ADMIN',s3p:"After obtaining the API Key and the deployment URL from Google, use the join request below (ADMIN FORM). Enter the troop ID directly in the ADMIN FORM; no GS setting is needed. Read the key under the troop-system API KEY menu",
   s_fl_h:'First login (default admin account)',s_fl_p:'After registration, pick your troop card on the home page → sign in on the <b>👤 Parent/Member</b> tab:<br>YMIS <b>1111111111</b>　password <b>changeme</b> (the default admin created automatically by initializeSheets — do not use the Leader = Email tab)<br>First login <b>forces a password change</b> (4-8 characters). Then approve member applications in Approvals and create each leader\'s own account (real email) in User Management',
   // [主系統暫時隱藏 2026-10] s4h／s4p kept unused while the main-platform intro is hidden.
   s4h:'Track B: with the main platform — also submit to the main-system admin',s4p:'Give the same URL + API Key to the main-system admin and fill in the card backend + apikey. Members then tap the Dashboard card and the identity is carried over automatically, no password',
   s5h:'Privacy choice',s5p:'Cub members view only themselves by default. To encourage each other, the GSL can turn on “Allow members to view each other progress” in User Management → Privacy Settings and choose the scope (self only / Six / whole troop)',
-  setup_submit_h:'📧 After setup submit',setup_submit_p:'Send the troop ID, name, URL and API Key to the cubbadge admin for registration<br>Once registered, the troop card appears on the home page — pick the troop and sign in',submit_contact:'📧 Submit troop join request',
+  setup_submit_h:'📧 After setup submit',setup_submit_p:'Fill in the troop ID and name in the ADMIN FORM, together with the deployment URL from Google and the API Key. No troop ID needs to be configured in GS first. Once registered, your troop card appears on the home page',submit_contact:'📧 Submit troop join request',
   guide_h2:'📖 Guide - Cub Specific',g1h:'Pick Troop',g1p:'Tap troop card',g2h:'Login',g2p:'Members/parents: YMIS 10 digits + password; Leaders: Email + password. Force change on first login.',g3h:'Parents/Members: view progress, can claim activity logs',g3p:'Cubs young: leaders fill all progress, parents/members view only. But activity logs (service/activity/training) can be claimed by parents/members → leader approves.',g4h:'Leaders: tick + date',g4p:'Leaders tick directly, auto today date, editable. Cached in browser, confirm to write to cloud.',g5h:'Other features',g5p:'Troop overview batch, by-item stats, current-scheme Golden Bauhinia checklists, legacy-form downloads, bilingual.',
   guide_roles_h3:'👥 Roles',guide_member_card:'<b>👤 Parent/Member</b><ul style="font-size:11px;margin:6px 0 0 16px"><li>View own progress only (no tick)</li><li>Can claim activity logs (service/activity/training)</li><li>Can cancel pending claims</li><li>Approved records can request edit (leader re-approves)</li></ul>',guide_leader_card:'<b>👨‍💼 Leader</b><ul style="font-size:11px;margin:6px 0 0 16px"><li>All functions</li><li>My progress: any member</li><li>Troop overview batch tick</li><li>Approval centre: users + log claims</li><li>Activity logs direct add/edit/delete + batch</li><li>User management, bulk onboard YMIS PDF</li></ul>',
   guide_onboard_h3:'🆕 Account apply / Bulk onboard',guide_onboard_intro:'Individual: login page → Apply for an account → choose member or leader → GSL / leader approves.<br>Bulk: User Management → Bulk onboard → upload YMIS custom report PDF (auto reads ID/name/email) → preview → onboard.',
@@ -909,7 +990,7 @@ let _ongoingRequests=new Set();
 let editingLogRecordId=null;
 
 /* 最新發佈：只列目前版本，不設逐級升級表。GS 同時回報程式及初始化版本。 */
-const LATEST_RELEASE=Object.freeze({updated:'2026-10-23',gsVersion:'2026.10.23',initializeRequired:true});
+const LATEST_RELEASE=Object.freeze({updated:'2026-10-24',gsVersion:'2026.10.24',initializeRequired:true});
 let backendReleaseState={troopId:'',status:'idle',reportedVersion:'',initializedGsVersion:'',error:''};
 let _releaseCheckSequence=0;
 function resetBackendRelease(){
@@ -1237,10 +1318,13 @@ async function handlePortalParams(){
 }
 
 function showWelcomeTab(name, btn){
+  const section=document.getElementById('welcome-'+name);
+  if(!section) return;
   document.querySelectorAll('.welcome-section').forEach(s=>s.classList.remove('active'));
   document.querySelectorAll('.welcome-nav button').forEach(b=>b.classList.remove('active'));
-  document.getElementById('welcome-'+name).classList.add('active');
-  if(btn) btn.classList.add('active');
+  section.classList.add('active');
+  const navButton=btn||document.querySelector('.welcome-nav button[data-tab="'+name+'"]');
+  if(navButton) navButton.classList.add('active');
 }
 function backToHome(){
   document.getElementById('loginPage').style.display='none';

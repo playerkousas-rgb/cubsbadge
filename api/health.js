@@ -41,7 +41,9 @@ module.exports = async function handler(req, res) {
       name: config.name,
       backendHost: (() => { try { return new URL(config.backend).hostname; } catch(e){ return 'invalid'; } })(),
       hasApikey: !!config.apikey,
-      backendConfigured: !!config.backend       // B/D 值唔回前端：只講「有冇設定」
+      backendConfigured: !!config.backend,      // B/D 值唔回前端：只講「有冇設定」
+      // 功能變數填咗 Workspace 網域內網址（/a/<domain>/…）→ 已自動轉公開網址。
+      backendDomainScoped: !!(config._env && config._env.domainScoped)
     } : null,
     registry: {
       totalKeys: Object.keys(registry).length,
@@ -106,6 +108,13 @@ module.exports = async function handler(req, res) {
         diagnosis: null
       };
       if (json && json.diagnose) health.backendLiveCheck.diagnosis = json.diagnose;
+      if (!json) {
+        // 非 JSON 只說明回應格式不符；不能單憑此判定部署 ID 錯誤或 Google 內部原因。
+        health.backendLiveCheck.hint = '後端回應唔係 JSON，可能係登入頁、錯誤頁或存取設定問題。' +
+          '請 APP ADMIN 核對 TROOP_<id>_BACKEND 同 Google「部署 → 管理部署」視窗提供嘅 URL，' +
+          '並檢查「執行身分＝我」、「存取權＝任何人」。' +
+          '網址格式正規化及本連線檢查都唔代表已核實選定部署，亦唔會改變 Google 存取權限。';
+      }
       if (json && json.success !== false) {
         try {
           const loadUrl = new URL(backendUrl);

@@ -234,5 +234,30 @@ check('vercel.json 為 /apps-script/(.*) 設定 UTF-8 純文字、附件下載�
   assert.match(hmap['cache-control'] || '', /no-cache/);
 });
 
+console.log('=== 8. 系統介紹及簡化登記流程 ===');
+check('系統介紹有獨立分頁、部署指南雙向入口及可公開下載的圖檔', () => {
+  const intro=html.match(/<section id="welcome-intro"[\s\S]*?<\/section>/)?.[0]||'';
+  assert.ok(intro,'缺少系統介紹分頁');
+  assert.match(html,/data-tab="intro" onclick="showWelcomeTab\('intro', this\)"/);
+  assert.match(intro,/showWelcomeTab\('setup'\)/);
+  assert.match(html, /class="setup-intro-link"[\s\S]*?showWelcomeTab\('intro'\)/);
+  const asset='assets/system-introduction-zh-hant.webp';
+  assert.match(intro, /<img[^>]*src="assets\/system-introduction-zh-hant\.webp"[^>]*width="768" height="1376"[^>]*loading="lazy"/);
+  assert.equal(isIgnoredByVercel(asset,parseVercelIgnoreRules()),false);
+  const image=fs.readFileSync(asset);
+  assert.equal(image.toString('ascii',0,4),'RIFF');
+  assert.equal(image.toString('ascii',8,12),'WEBP');
+});
+check('介紹中英說明保留安全邊界，並說明編號只需在 ADMIN FORM 填寫', () => {
+  const i18n=extractI18N();
+  assert.match(i18n.zh.intro_login_p,/每次均核實帳號及密碼/);
+  assert.match(i18n.en.intro_login_p,/Each password sign-in checks the account and password/);
+  assert.match(i18n.zh.intro_caution,/仍待補強/);
+  assert.match(i18n.en.intro_caution,/still need strengthening/);
+  assert.match(i18n.zh.s3p,/旅團編號直接在 ADMIN FORM 填寫/);
+  assert.match(i18n.en.s3p,/Enter the troop ID directly in the ADMIN FORM/);
+  assert.doesNotMatch(gas,/ui\.prompt\('旅團編號'|addItem\('設定旅團編號'/);
+});
+
 console.log(`\n== integrity 結果：${passed} 通過，${failed} 失敗 ==`);
 if (failed > 0) process.exit(1);
