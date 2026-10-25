@@ -8,7 +8,7 @@
 // 本檔永不生成、永不顯示、永不回傳任何密碼；initializeSheets／showApiKey 只顯示旅團自己嗰隻 API Key。
 // 版本同改動紀錄一律寫喺 docs/CHANGE_LOG_*.md；呢度只保留最新 GS 發佈識別供前端核對，不設逐級升級表。
 // ============================================================
-const CUB_GS_VERSION = '2026.10.24';
+const CUB_GS_VERSION = '2026.10.25';
 const CUB_GS_INITIALIZED_PROP = 'CUB_GS_INITIALIZED_VERSION';
 function getCubGsReleaseStatus(){
   let initialized='';
@@ -427,7 +427,17 @@ function getActiveGroupLeader(){ return findActiveGroupLeader(''); }
 // ：公開申請入口只接受 member / branch_leader（按幼童軍角色權限）
 // 旅長／管理員必須由現任管理層在「用戶管理」直接開立，不可自行申請。
 const VALID_ROLES = ['admin','group_leader','branch_leader','member'];
+const VALID_SQUAD_ROLES = ['member','sixer','vice_captain'];
 const APPLY_ROLES = ['member','branch_leader'];
+function normalizeSquadRole(value){
+  const raw=String(value===undefined||value===null?'':value).trim();
+  if(!raw) return 'member';
+  const role=raw.toLowerCase();
+  if(role==='member'||raw==='隊員') return 'member';
+  if(role==='sixer'||raw==='隊長') return 'sixer';
+  if(role==='vice_captain'||raw==='副隊長') return 'vice_captain';
+  return role;
+}
 // 申請批核後初始臨時密碼統一預設 1234（首次登入強制更改）。
 function generateTemporaryPassword(){ return DEFAULT_TEMP_PASSWORD; }
 
@@ -506,6 +516,7 @@ function getUsersTable(){
   const data=sheet.getDataRange().getValues();
   if(data.length<2) return {sheet:sheet,data:data,col:Object.assign({},USER_DEFAULT_COLS),list:[]};
   const headers=data[0].map(function(h){return String(h===undefined||h===null?'':h).trim().toLowerCase();});
+  const hasSquadRole=headers.indexOf('squad_role')>=0;
   const col={};
   Object.keys(USER_DEFAULT_COLS).forEach(function(k){ const i=headers.indexOf(k); col[k]=i>=0?i:USER_DEFAULT_COLS[k]; });
   const list=[];
@@ -524,7 +535,7 @@ function getUsersTable(){
       can_tick:data[r][col.can_tick]===true||String(data[r][col.can_tick]).toUpperCase()==='TRUE',
       allowed_badges:String(data[r][col.allowed_badges]||''),
       squad:String(data[r][col.squad]||''),
-      squad_role:String(data[r][col.squad_role]||'member'),
+      squad_role:hasSquadRole?String(data[r][col.squad_role]||'member'):'member',
       status:statusRaw||'active',
       force_change_password:data[r][col.force_change_password]===true||String(data[r][col.force_change_password]).toUpperCase()==='TRUE'
     });
@@ -592,6 +603,17 @@ function findMemberListRow(ymis){
   }
   return null;
 }
+// 小隊職務是成員名單以外的可選欄；只在首次編輯純成員時補到最右，不搬動或改寫既有欄位。
+function getMemberListSquadRoleColumn(sheet,createIfMissing){
+  if(!sheet) return -1;
+  const lastColumn=Math.max(sheet.getLastColumn(),1);
+  const headers=sheet.getRange(1,1,1,lastColumn).getValues()[0].map(function(h){return String(h===undefined||h===null?'':h).trim().toLowerCase();});
+  const existing=headers.indexOf('squad_role');
+  if(existing>=0) return existing;
+  if(!createIfMissing) return -1;
+  sheet.getRange(1,lastColumn+1).setValue('squad_role');
+  return lastColumn;
+}
 function getUser(ymis){
   // 保留帳號 (super_admin) 為「只在後端存在」的虛擬帳號，免 Users 表，直接返回最高權限。
   // Reserved account (super_admin role) is a backend-only virtual account: never stored in the Users sheet, always full rights.
@@ -640,24 +662,28 @@ function getUserByEmail(email){
 function getAllUsers(includeInactive){
   const t=getUsersTable();
   const users=[];
+  const seen={};
   if(t){
     t.list.forEach(function(r){
       // 保留帳號不會出現在用戶列表（USER 表單）。舊部署若曾把保留帳號寫入 Users，亦在此排除。
       if(isSuperAdminReserved(r.ymis,r.email)) return;
+      // 已停用帳戶即使仍保留在成員名單，也不可被錯誤地重新列作「純成員」。
+      seen[String(r.ymis||'').trim()]=true;
       if(!includeInactive && !isActiveStatus(r.status)) return;
-      users.push({ymis:r.ymis,name:r.name,email:r.email,role:r.role,can_tick:r.can_tick,branch:r.branch,allowed_badges:r.allowed_badges,squad:r.squad,status:isActiveStatus(r.status)?'active':'inactive',password_set:!!r.password_hash});
+      users.push({ymis:r.ymis,name:r.name,email:r.email,role:r.role,can_tick:r.can_tick,branch:r.branch,allowed_badges:r.allowed_badges,squad:r.squad,squad_role:normalizeSquadRole(r.squad_role),status:isActiveStatus(r.status)?'active':'inactive',password_set:!!r.password_hash});
     });
   }
   // 純成員（只在成員名單、未開帳號）→ 合併列出（member_only 標記），可在用戶管理修改／刪除／設定密碼開通
   const mSheet=tbl('成員名單');
   if(mSheet){
-    const seen={}; users.forEach(function(u){ seen[u.ymis]=true; });
     const md=mSheet.getDataRange().getValues();
+    const squadRoleCol=getMemberListSquadRoleColumn(mSheet,false);
     for(let i=1;i<md.length;i++){
       const y=md[i][0]?String(md[i][0]).trim():'';
       if(!y||seen[y]||isSuperAdminId(y)) continue;
       const em=String(md[i][4]||'').trim();
-      users.push({ymis:y,name:md[i][1]?String(md[i][1]):'',email:/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(em)?em:'',role:'member',can_tick:false,branch:'',allowed_badges:'',squad:md[i][5]?String(md[i][5]):'',status:'active',member_only:true,password_set:false});
+      const squadRole=squadRoleCol>=0?normalizeSquadRole(md[i][squadRoleCol]):'member';
+      users.push({ymis:y,name:md[i][1]?String(md[i][1]):'',email:/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(em)?em:'',role:'member',can_tick:false,branch:'',allowed_badges:'',squad:md[i][5]?String(md[i][5]):'',squad_role:squadRole,status:'active',member_only:true,password_set:false});
       seen[y]=true;
     }
   }
@@ -884,6 +910,10 @@ function doPost(e){
     if(action==='updatePermissions'){
       if(getRoleLevel(user.role)<40) return jsonResponse({success:false,error:'權限不足'});
       return handleUpdateUserRole(body.target_ymis,body.new_role||null,body.can_tick,ymis, body.allowed_badges);
+    }
+    if(action==='updateMemberSquadRole'){
+      if(getRoleLevel(user.role)<40) return jsonResponse({success:false,error:'權限不足'});
+      return handleUpdateMemberSquadRole(body.target_ymis,body.squad_role,user);
     }
     if(action==='updateConfig'){
       // allow_member_view_others 可由旅長以上設定，其他設定需管理員
@@ -1236,6 +1266,8 @@ function handleReviewApplication(appId,decision,note,manager,tempPassword){
   return jsonResponse({success:true,message:'已批准並建立帳戶',temp_password:password,final_role:finalRole,ymis:ymis});
 }
 function handleUpdateUserRole(targetYmis,newRole,canTick,managerYmis, allowedBadges, squad, squadRole, managerOverride){
+  const normalizedSquadRole=squadRole===undefined?undefined:normalizeSquadRole(squadRole);
+  if(normalizedSquadRole!==undefined&&VALID_SQUAD_ROLES.indexOf(normalizedSquadRole)<0) return jsonResponse({success:false,error:'無效的小隊職務'});
   const manager=managerOverride||getUser(managerYmis);
   if(!manager) return jsonResponse({success:false,error:'找不到管理員'});
   // super_admin 可以改任何人，admin 可改旅長／幼童軍領袖／成員，旅長可改幼童軍領袖／成員，幼童軍領袖可改成員
@@ -1252,12 +1284,17 @@ function handleUpdateUserRole(targetYmis,newRole,canTick,managerYmis, allowedBad
     const r=t.list[i];
     if(r.ymis===targetYmis && isActiveStatus(r.status)){
       const sheet=t.sheet;
+      let squadRoleCol=-1;
+      if(normalizedSquadRole!==undefined){
+        squadRoleCol=ensureUserHeaders(sheet).indexOf('squad_role');
+        if(squadRoleCol<0) return jsonResponse({success:false,error:'Users 表缺少 squad_role 欄'});
+      }
       sheet.getRange(r.rowIndex,t.col.role+1).setValue(newRole);
       sheet.getRange(r.rowIndex,t.col.can_tick+1).setValue(canTick);
       sheet.getRange(r.rowIndex,t.col.auth_by+1).setValue(sheetActor(managerYmis));
       sheet.getRange(r.rowIndex,t.col.auth_date+1).setValue(now());
       if(squad!==undefined) sheet.getRange(r.rowIndex,t.col.squad+1).setValue(squad||'');
-      if(squadRole!==undefined) sheet.getRange(r.rowIndex,t.col.squad_role+1).setValue(squadRole||'member');
+      if(normalizedSquadRole!==undefined) sheet.getRange(r.rowIndex,squadRoleCol+1).setValue(normalizedSquadRole);
       // 處理細緻權限：若提供 allowedBadges，寫入 allowed_badges 欄
       if(allowedBadges!==undefined && allowedBadges!==null){
         sheet.getRange(r.rowIndex,t.col.allowed_badges+1).setValue(allowedBadges);
@@ -1274,6 +1311,41 @@ function handleUpdateUserRole(targetYmis,newRole,canTick,managerYmis, allowedBad
     }
   }
   return jsonResponse({success:false,error:'找不到用戶'});
+}
+// 更新小隊職務（隊員／隊長／副隊長），不改登入角色或進度權限；純成員首次編輯時只在成員名單最右新增相容欄。
+function handleUpdateMemberSquadRole(targetYmis,squadRole,manager){
+  targetYmis=String(targetYmis||'').trim();
+  squadRole=normalizeSquadRole(squadRole);
+  if(!targetYmis) return jsonResponse({success:false,error:'請提供 YMIS'});
+  if(VALID_SQUAD_ROLES.indexOf(squadRole)<0) return jsonResponse({success:false,error:'無效的小隊職務'});
+  if(!manager || getRoleLevel(manager.role)<40) return jsonResponse({success:false,error:'權限不足'});
+  if(String(manager.ymis||'')===targetYmis) return jsonResponse({success:false,error:'不能修改自己的小隊職務'});
+  if(!canManageUser(manager,'member')) return jsonResponse({success:false,error:'權限不足，不可修改此成員'});
+
+  const t=getUsersTable();
+  if(t){
+    const row=findUserRowByYmis(t,targetYmis);
+    if(row){
+      if(!isActiveStatus(row.status)) return jsonResponse({success:false,error:'帳號已停用，請先重新啟用'});
+      if(row.role!=='member') return jsonResponse({success:false,error:'只有幼童軍成員可設定小隊職務'});
+      const headers=ensureUserHeaders(t.sheet);
+      const squadRoleCol=headers.indexOf('squad_role');
+      if(squadRoleCol<0) return jsonResponse({success:false,error:'Users 表缺少 squad_role 欄'});
+      t.sheet.getRange(row.rowIndex,squadRoleCol+1).setValue(squadRole);
+      writeAudit(manager.ymis,'update_squad_role',targetYmis,squadRole);
+      return jsonResponse({success:true});
+    }
+  }
+
+  // 純成員沒有 Users 列，仍可設定小隊職務；新增欄位只寫在最右，不更動舊欄資料。
+  const mSheet=tbl('成員名單');
+  const member=findMemberListRow(targetYmis);
+  if(!mSheet||!member) return jsonResponse({success:false,error:'找不到成員'});
+  const squadRoleCol=getMemberListSquadRoleColumn(mSheet,true);
+  if(squadRoleCol<0) return jsonResponse({success:false,error:'無法建立小隊職務欄'});
+  mSheet.getRange(member.rowIndex,squadRoleCol+1).setValue(squadRole);
+  writeAudit(manager.ymis,'update_squad_role',targetYmis,squadRole);
+  return jsonResponse({success:true});
 }
 function handleUpdateConfig(key,value,ymis){
   ymis=sheetActor(ymis);
@@ -1407,6 +1479,8 @@ function handleSave(changes, confirmer){
   return jsonResponse({success:true,processed:processed});
 }
 function handleAddMember(ymis,name,squad,squadRole){
+  squadRole=normalizeSquadRole(squadRole);
+  if(VALID_SQUAD_ROLES.indexOf(squadRole)<0) return jsonResponse({success:false,error:'無效的小隊職務'});
   let sheet=tbl('成員名單');
   if(!sheet){ sheet=getSheet().insertSheet('成員名單'); _sheetCache['成員名單']=sheet; sheet.appendRow(['YMIS','姓名','加入日期']); }
   ymis=String(ymis||'').trim();
@@ -1416,7 +1490,10 @@ function handleAddMember(ymis,name,squad,squadRole){
     const dup=findDuplicateAccountError(ymis,'');
     if(dup) return jsonResponse({success:false,error:dup});
   }
+  const squadRoleCol=squadRole==='member'?-1:getMemberListSquadRoleColumn(sheet,true);
+  if(squadRole!=='member'&&squadRoleCol<0) return jsonResponse({success:false,error:'無法建立小隊職務欄'});
   sheet.appendRow([ymis,name,new Date(),'','',squad||'']);
+  if(squadRoleCol>=0) sheet.getRange(sheet.getLastRow(),squadRoleCol+1).setValue(squadRole);
   return jsonResponse({success:true});
 }
 
@@ -1429,11 +1506,12 @@ function createUserRecord(body,mgr){
   const email=(body.email||'').toString().trim();
   const password=(body.password||'').toString();
   const squad=(body.squad||'').toString().trim();
-  const squadRole=(body.squad_role||'member').toString().trim();
+  const squadRole=normalizeSquadRole(body.squad_role);
   const canTick=body.can_tick===true||body.can_tick==='true'||body.can_tick==='TRUE';
   // 角色嚴格驗證＋權限收緊 —— 開戶者只可開立自己等級可管理的角色
   // （保留帳號經 getUser 取回 role==='super_admin'，canManageUser 一律通過，行為不變）
   if(VALID_ROLES.indexOf(role)<0) return {success:false,error:'無效角色：'+role};
+  if(VALID_SQUAD_ROLES.indexOf(squadRole)<0) return {success:false,error:'無效的小隊職務：'+squadRole};
   if(!canManageUser(mgr,role)) return {success:false,error:'權限不足，你的等級不可開立此角色'};
   // 領袖免 YMIS（用電郵登入）—— 領袖留空 YMIS 且有 Email 即自動編配內部 L 編號
   if(!ymis && role!=='member'){
@@ -2141,7 +2219,7 @@ const LINK_HASH_RE=/^[0-9a-f]{64}$/i;
 const LINK_RESERVED_BODY_KEYS=['sig','sig_ts','sig_nonce'];
 // 上游以 sig 可以在下游執行的 action。login／apply／logout／changePassword 等本地憑證操作永不接受。
 const LINK_SIG_READ_ACTIONS=['load','getLoginMode','getLinkState','getMembers','getConfig','getAllUsers','getOtherBadges','getPendingRequests','getApplications','getLogRecords','getLogRequests','getAuditLog'];
-const LINK_SIG_WRITE_ACTIONS=['save','saveOtherBadge','requestComplete','reviewRequest','addMember','addUser','bulkAddUsers','upsertUser','importUsers','resetPassword','updateUserProfile','deactivateUser','reactivateUser','deleteUser','updateUserRole','updatePermissions','saveLogRecord','deleteLogRecord','reviewLogRequest','setLocalLogin'];
+const LINK_SIG_WRITE_ACTIONS=['save','saveOtherBadge','requestComplete','reviewRequest','addMember','addUser','bulkAddUsers','upsertUser','importUsers','resetPassword','updateUserProfile','deactivateUser','reactivateUser','deleteUser','updateUserRole','updateMemberSquadRole','updatePermissions','saveLogRecord','deleteLogRecord','reviewLogRequest','setLocalLogin'];
 const USER_EXPORT_FORMAT='cubsbadge-users-export';
 
 function linkProps(){ return PropertiesService.getScriptProperties(); }
@@ -2659,7 +2737,7 @@ function handleSignedRequest(action,body){
   if(action==='getLoginMode') return jsonResponse({success:true,login_mode:'standalone',local_login:localLoginAllowed(),upstream_only:!localLoginAllowed()});
   if(action==='getMembers') return jsonResponse({success:true,members:getMembers()});
   if(action==='getConfig') return handleGetConfig();
-  if(action==='getAllUsers') return jsonResponse({success:true,users:getAllUsers()});
+  if(action==='getAllUsers') return jsonResponse({success:true,users:getAllUsers(!!body.include_inactive)});
   if(action==='getOtherBadges') return handleGetOtherBadges(String(body.target_ymis||''));
   if(action==='getPendingRequests') return handleGetPendingRequests();
   if(action==='getApplications') return handleGetApplications();
@@ -2681,6 +2759,7 @@ function handleSignedRequest(action,body){
   if(action==='reactivateUser') return handleReactivateUser(body,manager);
   if(action==='deleteUser') return handleDeleteMemberEntry(Object.assign({},body,{token:body.token||''}),manager);
   if(action==='updateUserRole'||action==='updatePermissions') return handleUpdateUserRole(body.target_ymis,body.new_role,body.can_tick,actor,body.allowed_badges,body.squad,body.squad_role,manager);
+  if(action==='updateMemberSquadRole') return handleUpdateMemberSquadRole(body.target_ymis,body.squad_role,manager);
   if(action==='saveLogRecord') return handleSaveLogRecord(body.records||(body.record?[body.record]:[]),actor,String(body.recorder_name||''));
   if(action==='deleteLogRecord') return handleDeleteLogRecord(body.record_id,actor);
   if(action==='reviewLogRequest') return handleReviewLogRequest(body.request_id,body.decision,body.review_note,manager);

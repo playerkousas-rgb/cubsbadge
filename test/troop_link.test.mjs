@@ -464,9 +464,19 @@ test('上游以 sig 批量匯入下游（importUsers）與讀取用戶清單', (
   const pushed = up.context.callDownstream('progress', 'importUsers', { users, on_behalf: '1111111111' });
   assert.equal(pushed.success, true, JSON.stringify(pushed));
   assert.equal(pushed.created, 2);
-  const list = up.context.callDownstream('progress', 'getAllUsers', { on_behalf: '1111111111' });
+  const table=down.context.getUsersTable();
+  const deactivated=table.list.find(u=>u.ymis==='2345678901');
+  table.sheet.getRange(deactivated.rowIndex,table.col.status+1).setValue('inactive');
+  assert.equal(down.context.getUsersTable().list.find(u=>u.ymis==='2345678901').status,'inactive','test fixture must mark the intended account inactive');
+  const activeList = up.context.callDownstream('progress', 'getAllUsers', { on_behalf: '1111111111' });
+  assert.equal(activeList.success, true);
+  assert.equal(activeList.users.some(u => u.ymis === '2345678901'), false, 'default signed list keeps inactive accounts hidden');
+  const list = up.context.callDownstream('progress', 'getAllUsers', { on_behalf: '1111111111', include_inactive:true });
   assert.equal(list.success, true);
-  assert.equal(list.users.some(u => u.ymis === '2345678901'), true);
+  assert.equal(list.users.some(u => u.ymis === '2345678901'), true, 'signed user management can request inactive accounts for reactivation');
+  const roleUpdate=up.context.callDownstream('progress','updateMemberSquadRole',{on_behalf:'1111111111',target_ymis:'1234567890',squad_role:'vice_captain'});
+  assert.equal(roleUpdate.success,true,JSON.stringify(roleUpdate));
+  assert.equal(down.context.getAllUsers().find(u=>u.ymis==='1234567890').squad_role,'vice_captain','signed update route stores the canonical squad role');
   // 簽名請求唔會洩漏 password_hash
   assert.equal(JSON.stringify(list).includes(sha256('wxyz')), false, 'getAllUsers 不可回傳 hash');
 });

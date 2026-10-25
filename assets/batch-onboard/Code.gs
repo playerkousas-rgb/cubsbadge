@@ -16,7 +16,7 @@
 //   name      ：姓名（必填）
 //   email     ：電郵（開立可登入帳號時建議填）
 //   squad     ：小隊名稱（例如 紅隊）
-//   squad_role：member / 隊長 / 副隊長
+//   squad_role：member（隊員）/ sixer（隊長）/ vice_captain（副隊長）；儲存值須用代碼
 //   role      ：member / branch_leader / group_leader / admin
 //   can_tick  ：true / false（可否勾選進度）
 //   password  ：有填則開立可登入帳號（直接寫入會以 SHA-256 雜湊儲存，與 app 後端完全一致）
@@ -63,6 +63,15 @@ function readRows() {
   return rows;
 }
 
+function normalizeSquadRole(value) {
+  var raw = String(value || 'member').trim();
+  var role = raw.toLowerCase();
+  if (!role || role === 'member' || raw === '隊員') return 'member';
+  if (role === 'sixer' || raw === '隊長') return 'sixer';
+  if (role === 'vice_captain' || raw === '副隊長') return 'vice_captain';
+  return role;
+}
+
 function toJson(rows) {
   return rows.map(function (r) {
     return {
@@ -70,7 +79,7 @@ function toJson(rows) {
       name: String(r.name || '').trim(),
       email: String(r.email || '').trim(),
       squad: String(r.squad || '').trim(),
-      squad_role: String(r.squad_role || 'member').trim(),
+      squad_role: normalizeSquadRole(r.squad_role),
       role: String(r.role || 'member').trim(),
       can_tick: ['true', '1', 'yes', 'y'].indexOf(String(r.can_tick || '').trim().toLowerCase()) >= 0,
       password: String(r.password || '').trim()
@@ -168,6 +177,7 @@ function writeToMainSheet() {
   json.forEach(function (m) {
     if (existing.indexOf(m.ymis) >= 0) { dup++; return; }
     if (!/^\d{10}$/.test(m.ymis)) { skipped++; return; } // 防呆：YMIS 須 10 位數字
+    if (['member', 'sixer', 'vice_captain'].indexOf(m.squad_role) < 0) { skipped++; return; }
     var row = new Array(headers.length).fill('');
     function set(name, val) { var c = headers.indexOf(name); if (c >= 0) row[c] = (val === undefined ? '' : val); }
     set('ymis', m.ymis);

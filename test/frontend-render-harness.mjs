@@ -99,8 +99,8 @@ run('renderInfoTab()');
 assert.match(element('tab-info').innerHTML,/prog\.scouting\.org\.hk\/cub/);
 
 run('renderReleaseNotices()');
-assert.match(element('homeReleaseNotice').innerHTML,/2026-10-24/);
-assert.match(element('homeReleaseNotice').innerHTML,/2026\.10\.24/);
+assert.match(element('homeReleaseNotice').innerHTML,/2026-10-25/);
+assert.match(element('homeReleaseNotice').innerHTML,/2026\.10\.25/);
 assert.match(element('homeReleaseNotice').innerHTML,/initializeSheets\(\)/);
 assert.match(element('homeReleaseNotice').innerHTML,/無須逐級/);
 run("currentTroopId='0082'; currentUser.ymis='TEST_LEADER'; resetBackendRelease(); applyBackendRelease({gsVersion:'cub-leaf',backendVersion:'cub-leaf'})");
@@ -124,6 +124,60 @@ run("fetch=async()=>({ok:true,status:200,text:async()=>JSON.stringify({success:t
 await run('checkBackendRelease()');
 assert.equal(run('backendReleaseState.status'),'current',run('backendReleaseState.error'));
 run("currentLang='zh'; currentTroopId='DEMO'; currentUser.ymis='DEMO_LEADER'; resetBackendRelease()");
+
+// Regression coverage for user management's previously unreachable recovery and role-update paths.
+{
+  const requests=[];
+  context.__userApiRequests=requests;
+  run(`
+    currentTroopId='0082'; currentToken='leader-session'; troopConnected=true;
+    currentUser={ymis:'L0001',name:'旅長',role:'group_leader',can_tick:true,allowed_badges:'*'};
+    apiRequest=async (payload,opts)=>{ __userApiRequests.push({payload,opts}); return {success:false,error:'expected test response'}; };
+  `);
+  await run('loadUsers()');
+  assert.equal(requests.length,1);
+  assert.equal(requests[0].payload.action,'getAllUsers');
+  assert.equal(requests[0].payload.include_inactive,true,'user management must fetch inactive accounts so they can be reactivated');
+
+  requests.length=0;
+  run(`
+    apiRequest=async (payload,opts)=>{ __userApiRequests.push({payload,opts}); return {success:true}; };
+    showToast=()=>{};
+    loadUsers=()=>Promise.resolve();
+  `);
+  await run("updateUserRole('1234567890','branch_leader','member',false,false)");
+  assert.equal(requests.length,1);
+  assert.equal(requests[0].payload.action,'updateUserRole','role changes must pass an action object to apiRequest');
+  assert.equal(requests[0].payload.token,'leader-session');
+  assert.equal(requests[0].payload.target_ymis,'1234567890');
+  assert.equal(requests[0].payload.new_role,'branch_leader');
+  assert.equal(requests[0].opts.method,'POST');
+  assert.equal(requests[0].opts.allowFail,true);
+
+  requests.length=0;
+  await run("updateMemberSquadRole('1234567892','vice_captain')");
+  assert.equal(requests[0].payload.action,'updateMemberSquadRole');
+  assert.equal(requests[0].payload.squad_role,'vice_captain');
+  assert.equal(requests[0].payload.target_ymis,'1234567892');
+  const pureMemberRow=run("renderUserRow({ymis:'1234567892',name:'純成員',role:'member',squad_role:'vice_captain',squad:'紅隊',can_tick:false,allowed_badges:'',status:'active',member_only:true,password_set:false},{holder:null,count:0})");
+  assert.match(pureMemberRow,/副隊長/);
+  assert.match(pureMemberRow,/value="vice_captain" selected/);
+  assert.match(pureMemberRow,/updateMemberSquadRole\('1234567892'/);
+  const unknownRoleRow=run("renderUserRow({ymis:'1234567895',name:'舊職務',role:'member',squad_role:'legacy-role',squad:'紅隊',can_tick:false,allowed_badges:'',status:'active',member_only:true,password_set:false},{holder:null,count:0})");
+  assert.match(unknownRoleRow,/value="" selected disabled/);
+  assert.match(unknownRoleRow,/未識別職務/);
+  assert.doesNotMatch(unknownRoleRow,/value="member" selected/,'unknown saved roles must not silently appear as member');
+  const oldBackendRow=run("renderUserRow({ymis:'1234567896',name:'舊後端成員',role:'member',squad:'紅隊',can_tick:false,allowed_badges:'',status:'active',member_only:false,password_set:true},{holder:null,count:0})");
+  assert.doesNotMatch(oldBackendRow,/updateMemberSquadRole/,'do not show an unbacked role editor when an older GS omits squad_role');
+  const inactiveRow=run("renderUserRow({ymis:'1234567894',name:'已停用成員',role:'member',squad_role:'member',squad:'紅隊',can_tick:false,allowed_badges:'',status:'inactive',member_only:false,password_set:true},{holder:null,count:0})");
+  assert.match(inactiveRow,/reactivateUserAcct\('1234567894'/);
+  assert.doesNotMatch(inactiveRow,/updateMemberSquadRole/,'inactive members must be reactivated before changing their squad role');
+  requests.length=0;
+  await run("reactivateUserAcct('1234567894','已停用成員')");
+  assert.equal(requests[0].payload.action,'reactivateUser');
+  assert.equal(requests[0].payload.token,'leader-session');
+  assert.equal(requests[0].payload.target_ymis,'1234567894');
+}
 
 // Exercise the actual welcome navigation and language switch, including cross-links
 // which do not pass a nav button (intro → setup and setup → intro).

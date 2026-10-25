@@ -109,6 +109,100 @@ function seedUser(sandbox, o) {
   });
 }
 
+// ---------- 用戶管理：一般成員可轉為幼童軍領袖／副團長 ----------
+{
+  const b = buildBackend();
+  seedUser(b, { ymis: '1111111111', name: '管理員', email: 'admin@example.org', role: 'admin', pwd: 'pw', force: false });
+  seedUser(b, { ymis: '1234567890', name: '新領袖', email: 'leader@example.org', role: 'member', pwd: '1234' });
+  seedUser(b, { ymis: '1234567891', name: '副隊長', role: 'member', pwd: '1234' });
+  const token = b.createToken('1111111111');
+  const response = jparse(b.doPost({
+    parameter: {},
+    postData: { contents: JSON.stringify({
+      action: 'updateUserRole', token, target_ymis: '1234567890', new_role: 'branch_leader', can_tick: true
+    }) }
+  }));
+  check('帶 action + session token 的角色更新請求可升級 member 為 branch_leader', () => assert.equal(response.success, true));
+  check('升級後用戶清單回報 branch_leader', () => {
+    const user = b.getAllUsers().find(u => u.ymis === '1234567890');
+    assert.ok(user);
+    assert.equal(user.role, 'branch_leader');
+    assert.equal(user.can_tick, true);
+  });
+  const viceCaptain = jparse(b.doPost({ parameter: {}, postData: { contents: JSON.stringify({
+    action: 'updateMemberSquadRole', token, target_ymis: '1234567891', squad_role: 'vice_captain'
+  }) } }));
+  check('登入成員可由 member 改為小隊副隊長（vice_captain）', () => assert.equal(viceCaptain.success, true));
+  check('getAllUsers 回傳正式副隊長值，且帳戶角色／進度權限不變', () => {
+    const user = b.getAllUsers().find(u => u.ymis === '1234567891');
+    assert.ok(user);
+    assert.equal(user.squad_role, 'vice_captain');
+    assert.equal(user.role, 'member');
+    assert.equal(user.can_tick, false);
+  });
+  const viceCaptainRow=b.__ss.sheets.Users.rows.find(row=>String(row[0])==='1234567891');
+  viceCaptainRow[14]='副隊長';
+  check('舊資料中的中文副隊長標籤讀取時映射為正式值，不改寫原資料', () => {
+    const user=b.getAllUsers().find(u=>u.ymis==='1234567891');
+    assert.equal(user.squad_role,'vice_captain');
+    assert.equal(viceCaptainRow[14],'副隊長');
+  });
+  const rejectedAlias=jparse(b.doPost({parameter:{},postData:{contents:JSON.stringify({
+    action:'updateMemberSquadRole',token,target_ymis:'1234567891',squad_role:'seconder'
+  })}}));
+  check('不接受 seconder 作副隊長儲存值',()=>assert.equal(rejectedAlias.success,false));
+  const rejectedAccountRole=jparse(b.doPost({parameter:{},postData:{contents:JSON.stringify({
+    action:'updateMemberSquadRole',token,target_ymis:'1234567891',squad_role:'branch_leader'
+  })}}));
+  check('不把帳戶角色 branch_leader 當成小隊副隊長職務',()=>assert.equal(rejectedAccountRole.success,false));
+  const sixer=jparse(b.doPost({parameter:{},postData:{contents:JSON.stringify({
+    action:'updateMemberSquadRole',token,target_ymis:'1234567891',squad_role:'sixer'
+  })}}));
+  check('隊長使用正式值 sixer',()=>assert.equal(sixer.success,true));
+  check('隊長職務更新後 Users 儲存值為 sixer',()=>{
+    const user=b.getAllUsers().find(u=>u.ymis==='1234567891');
+    assert.equal(user.squad_role,'sixer');
+  });
+
+  const memberRows = b.__ss.sheets['成員名單'].rows;
+  memberRows.push(['1234567892','純成員',new Date(),'','', '紅隊']);
+  const originalMemberData = memberRows[memberRows.length-1].slice(0,6);
+  const pureViceCaptain = jparse(b.doPost({ parameter: {}, postData: { contents: JSON.stringify({
+    action: 'updateMemberSquadRole', token, target_ymis: '1234567892', squad_role: 'vice_captain'
+  }) } }));
+  check('無 Users 帳號的純成員亦可設定小隊副隊長', () => assert.equal(pureViceCaptain.success, true));
+  check('純成員職務存入最右新欄，既有成員名單資料不變', () => {
+    const row = memberRows.find(r => String(r[0]) === '1234567892');
+    assert.deepEqual(row.slice(0,6), originalMemberData);
+    assert.equal(memberRows[0][6], 'squad_role');
+    assert.equal(row[6], 'vice_captain');
+  });
+  check('純成員小隊職務更新後可從用戶清單讀回', () => {
+    const user = b.getAllUsers().find(u => u.ymis === '1234567892');
+    assert.ok(user);
+    assert.equal(user.squad_role, 'vice_captain');
+  });
+  const addedPureMember=jparse(b.doPost({parameter:{},postData:{contents:JSON.stringify({
+    action:'addMember',token,ymis:'1234567893',name:'新增純成員',squad:'藍隊',squad_role:'vice_captain'
+  })}}));
+  check('新增純成員可直接指定正式副隊長值',()=>assert.equal(addedPureMember.success,true));
+  check('新純成員職務寫入小隊職務欄並可讀回',()=>{
+    const row=memberRows.find(r=>String(r[0])==='1234567893');
+    const user=b.getAllUsers().find(u=>u.ymis==='1234567893');
+    assert.ok(row&&user);
+    assert.equal(row[6],'vice_captain');
+    assert.equal(user.squad_role,'vice_captain');
+  });
+  const legacyUsersRows=b.__ss.sheets.Users.rows;
+  const legacySquadRoleColumn=legacyUsersRows[0].indexOf('squad_role');
+  legacyUsersRows.forEach(row=>row.splice(legacySquadRoleColumn,1));
+  check('舊 Users 表缺少 squad_role 時不會誤讀相鄰欄，預設顯示隊員',()=>{
+    const user=b.getAllUsers().find(u=>u.ymis==='1234567891');
+    assert.ok(user);
+    assert.equal(user.squad_role,'member');
+  });
+}
+
 // ---------- 【10f】權限收緊：幼童軍領袖只能開 member ----------
 {
   const b = buildBackend();
@@ -229,8 +323,9 @@ function seedUser(sandbox, o) {
   rows.push(['1234560002', '王小迪', '', 'member', sha256Hex('1234'), 'b4', false, 'x', '', '', '', '', '', '', '', '']);
   // 純成員（只在成員名單）
   b.__ss.sheets['成員名單'].rows.push(['1234560003', '李純成員', '', '', '', '紅隊']);
-  // 已停用帳號
+  // 已停用帳號；成員名單仍保留對應列，不應被誤列成純成員
   seedUser(b, { ymis: '1234560004', name: '舊人', email: 'old@example.org', role: 'member', pwd: 'x', status: 'inactive' });
+  b.__ss.sheets['成員名單'].rows.push(['1234560004','舊人',new Date(),'','old@example.org','紅隊']);
   const def = b.getAllUsers();
   check('status 空白的成員在 getAllUsers 可見', () => assert.ok(def.some(u => u.ymis === '1234560002')));
   check('純成員合併列出（member_only 標記）', () => {
