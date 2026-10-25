@@ -68,7 +68,7 @@ auth_date, created_at, last_login, status, allowed_badges, squad, squad_role, fo
    - 只填 `ymis` + `name` → 只加入成員（後端 `addMember`，不可登入）。
 5. 亦可把 JSON 陣列貼到文字框，按 **🚀 由 JSON 批量開戶**。
 
-> 前端 Excel 解析在瀏覽器完成（SheetJS），轉出與 CSV 相同的 JSON 後仍呼叫後端既有的 `addUser`／`addMember`，**後端 Code.gs 毋須因 Excel 上傳而更新**。若旅團後端過舊、批量開戶回傳「Unknown action」，才需要貼上最新 Code.gs → 執行 initializeSheets() → 重新部署。
+> 前端 Excel 解析在瀏覽器完成（SheetJS），轉出與 CSV 相同的 JSON 後仍呼叫後端既有的 `addUser`／`addMember`，**後端 Code.gs 毋須因 Excel 上傳而更新**。若旅團後端過舊、批量開戶回傳「Unknown action」，請換上最新 GS 並重新部署；已有正常 Sheet 不用重跑 `initializeSheets()`，新建 Sheet 首次使用仍須初始化。
 
 ### 範本欄位（CSV）
 
@@ -78,7 +78,7 @@ auth_date, created_at, last_login, status, allowed_badges, squad, squad_role, fo
 | name | 姓名（必填） |
 | email | 電郵（領袖/家長登入用，建議填） |
 | squad | 小隊名稱（例如 紅隊） |
-| squad_role | member / 隊長 / 副隊長 |
+| squad_role | 正式儲存值：`member`（隊員）／`sixer`（隊長）／`vice_captain`（副隊長）。請填代碼，不要填顯示名稱。 |
 | role | member / branch_leader / group_leader / admin |
 | can_tick | true / false（可否勾選進度，領袖用） |
 | password | 有填則開立可登入帳號（首次登入強制改密） |
