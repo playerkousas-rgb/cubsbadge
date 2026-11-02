@@ -112,7 +112,8 @@ function makeNode({ name, apikey, url }) {
           getId: () => fileId, getUrl: () => 'https://drive.google.com/file/d/' + fileId + '/view',
           getName: () => fileName, getMimeType: () => mime,
           getBlob: () => ({ getDataAsString: () => content }),
-          setSharingAccess: () => file, setSharingPermission: () => file
+          setSharingAccess: () => file, setSharingPermission: () => file,
+          setTrashed: value => { file.trashed=value; return file; }
         };
         driveFiles.set(fileId, { file, content, fileName });
         return file;
@@ -423,6 +424,7 @@ test('吐 JSON：匯出含 hash，匯入逐個 upsertUser 直插 hash（保留�
   // 新支部匯入
   const imported = newNode.context.importUsersFromDrive(exported.file_url, 'menu-import');
   assert.equal(imported.success, true, JSON.stringify(imported));
+  assert.equal(imported.deleted_file,false); assert.equal(stored.file.trashed,undefined, '搬數不可刪除使用者 Drive 檔');
   // 新支部 initializeSheets() 已有內置管理員 → 同 YMIS 會被 upsert 更新而不是重複開戶
   assert.equal(imported.created, 2);
   assert.equal(imported.updated, 1);
@@ -613,4 +615,16 @@ test('signed reset enforces the signed manager role and preserves denied hashes'
   assert.equal(send('1234567809','member').success,false);
   assert.equal(send('1234567809','branch_leader').success,true);
   assert.equal(ctx.verifyPassword('new1',ctx.findUserRecord('1234567809').user.password_hash),true);
+});
+
+test('signed upsert and batch import enforce on-behalf role on existing and new users', () => {
+ const {down}=buildPair(), ctx=down.context;
+ const before=ctx.findUserRecord('1111111111').user.password_hash;
+ function send(action,body){ const payload={action,on_behalf:'upstream-label',...body}; return postTo(down,payload,signRequest(down,action,JSON.stringify(payload))); }
+ assert.equal(send('upsertUser',{on_behalf_role:'admin',user:{ymis:'1111111111',role:'member',password_hash:sha256('new1')}}).success,false);
+ assert.equal(ctx.findUserRecord('1111111111').user.password_hash,before);
+ const batch=send('importUsers',{on_behalf_role:'branch_leader',users:[{ymis:'1234567801',name:'X',role:'admin',password_hash:sha256('new1')}]});
+ assert.equal(batch.success,false); assert.equal(batch.failed,1); assert.equal(ctx.findUserRecord('1234567801'),null);
+ const ok=send('upsertUser',{on_behalf_role:'super_admin',user:{ymis:'1111111111',role:'admin',password_hash:sha256('new1')}});
+ assert.equal(ok.success,true); assert.equal(ctx.findUserRecord('1111111111').user.password_hash,sha256('new1'));
 });

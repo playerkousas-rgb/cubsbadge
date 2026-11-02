@@ -42,7 +42,7 @@ test('GS version and initialization are independently verified; initialization i
 
   const before = json(backend.ecStatus('0082'));
   assert.equal(before.success, true);
-  assert.equal(before.gsVersion, '2026.11.02.2');
+  assert.equal(before.gsVersion, '2026.11.02.3');
   assert.equal(before.initializedGsVersion, '', 'new Code.gs alone must not count as initialized');
   assert.equal(before.gsInitializationCurrent, false);
 

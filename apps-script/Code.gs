@@ -8,7 +8,7 @@
 // 本檔永不生成、永不顯示、永不回傳任何密碼；initializeSheets／showApiKey 只顯示旅團自己嗰隻 API Key。
 // 版本同改動紀錄一律寫喺 docs/CHANGE_LOG_*.md；呢度只保留最新 GS 發佈識別供前端核對，不設逐級升級表。
 // ============================================================
-const CUB_GS_VERSION = '2026.11.02.2';
+const CUB_GS_VERSION = '2026.11.02.3';
 const CUB_GS_RELEASE_DATE = '2026-11-02';
 const CUB_GS_INITIALIZED_PROP = 'CUB_GS_INITIALIZED_VERSION';
 function getCubGsReleaseStatus(){
@@ -878,7 +878,8 @@ function doPost(e){
         if (!uTmp || getRoleLevel(uTmp.role)<40) return jsonResponse({success:false, error:'需領袖權限'});
       }
       const rec = body.user || body.record || body;
-      const r = upsertUser(rec, body.on_behalf || (hasKey ? 'apikey' : 'legacy'));
+      const manager=body.token?getUser(validateToken(body.token)):null;
+      const r = upsertUser(rec, body.on_behalf || (hasKey ? 'apikey' : 'legacy'),manager);
       if (!r.success) return jsonResponse({success:false, error:r.error});
       // 冪等：若提供 transferId 亦記錄
       if (body.transferId || body.transfer_id) {
@@ -2890,9 +2891,9 @@ function syncMemberRow(ymis,name,branch,email,status){
   }
   mSheet.appendRow([ymis,name||'',new Date(),branch||'',email||'']);
 }
-// upsertUser：搬數專用寫入。只接受 64 位 SHA-256 password_hash，不接受明文密碼；
+// upsertUser：搬數專用寫入，接受 SHA-256 或 PBKDF2，不接受明文密碼；
 // 既有帳戶（同 YMIS，或同 Email 認回同一身份）→ 更新；冇提供 hash 就保留原密碼。
-function upsertUser(raw,actor){
+function upsertUser(raw,actor,manager){
   raw=raw||{};
   actor=linkActorLabel(actor);
   const ymis=String(raw.ymis||'').trim();
@@ -2922,6 +2923,9 @@ function upsertUser(raw,actor){
     const existingRole=row>0?String(data[row-1][map.role]||'member'):'member';
     const effectiveRole=row>0&&!hasRole?existingRole:role;
     if(VALID_ROLES.indexOf(effectiveRole)<0) return {success:false,ymis:ymis,error:'無效角色：'+effectiveRole};
+    // 在同一把寫入鎖下檢查原角色與新角色，包含以電郵匹配的既有列。
+    if(manager && ((row>0 && (existingRole==='super_admin' || !canManageUser(manager,existingRole))) || !canManageUser(manager,effectiveRole)))
+      return {success:false,ymis:ymis,error:'權限不足，不能匯入或修改該角色'};
     const conflict=identifierConflict(ymis,email,row>0?ymis:'');
     if(conflict) return {success:false,ymis:ymis,error:conflict};
     const existingName=row>0?String(data[row-1][map.name]||''):'';
@@ -2942,7 +2946,15 @@ function upsertUser(raw,actor){
       setCol('can_tick',canTick);
       setCol('status',status);
       setCol('force_change_password',force);
-      if(hash) setCol('password_hash',hash);
+      if(hash){
+        const hashChanged=!safeEqualText(String(data[row-1][map.password_hash]||''),hash);
+        setCol('password_hash',hash);
+        if(hashChanged){
+          const actualYmis=String(data[row-1][map.ymis]||'');
+          PropertiesService.getScriptProperties().deleteProperty('LOGIN_FAIL:'+actualYmis);
+          destroyUserTokens(actualYmis);
+        }
+      }
       if(allowed!=='') setCol('allowed_badges',allowed);
       else if(!String(data[row-1][map.allowed_badges]||'')) setCol('allowed_badges',defaultAllowedBadges(effectiveRole));
       setCol('auth_by',sheetActor(actor));
@@ -2967,8 +2979,8 @@ function upsertUser(raw,actor){
     return {success:true,ymis:ymis,action:'created',password_kept:false};
   } finally { lock.releaseLock(); }
 }
-function handleUpsertUser(raw,actor){ return jsonResponse(upsertUser(raw,actor)); }
-function importUsersFromText(text,actor){
+function handleUpsertUser(raw,actor,manager){ return jsonResponse(upsertUser(raw,actor,manager)); }
+function importUsersFromText(text,actor,manager){
   actor=linkActorLabel(actor);
   let parsed=null;
   try{ parsed=JSON.parse(String(text||'')); }catch(e){ return {success:false,error:'JSON 格式不正確：'+((e&&e.message)||e)}; }
@@ -2979,7 +2991,7 @@ function importUsersFromText(text,actor){
   const results=[];
   let created=0,updated=0,failed=0;
   for(let i=0;i<list.length;i++){
-    const r=upsertUser(list[i],actor);
+    const r=upsertUser(list[i],actor,manager);
     if(r&&r.success){ if(r.action==='created') created++; else updated++; }
     else failed++;
     results.push({ymis:String((list[i]&&list[i].ymis)||''),success:!!(r&&r.success),action:(r&&r.action)||'',error:(r&&r.error)||''});
@@ -2987,7 +2999,7 @@ function importUsersFromText(text,actor){
   writeAudit(actor,'link_import_users','新增 '+created+'／更新 '+updated,'失敗 '+failed+'（共 '+list.length+' 筆）');
   return {success:failed===0,count:list.length,created:created,updated:updated,failed:failed,results:results,message:'匯入完成：新增 '+created+'、更新 '+updated+'、失敗 '+failed};
 }
-function importUsersFromDrive(fileIdOrUrl,actor){
+function importUsersFromDrive(fileIdOrUrl,actor,manager){
   const input=String(fileIdOrUrl||'').trim();
   if(!input) return {success:false,error:'請貼上 Drive 檔案 ID 或連結'};
   const matched=input.match(/\/d\/([A-Za-z0-9_-]{10,})/);
@@ -2995,20 +3007,15 @@ function importUsersFromDrive(fileIdOrUrl,actor){
   let text='';
   try{ text=DriveApp.getFileById(fileId).getBlob().getDataAsString(); }
   catch(e){ return {success:false,error:'讀不到 Drive 檔案：'+((e&&e.message)||e)}; }
-  const result=importUsersFromText(text,actor);
-  if(result && result.success){
-    try{
-      const file=DriveApp.getFileById(fileId);
-      if(file && typeof file.setTrashed==='function') file.setTrashed(true);
-      result.deleted_file=true;
-    }catch(e){ result.deleted_file=false; }
-  }
+  // 匯入不會移除使用者的 Drive 檔案。
+  const result=importUsersFromText(text,actor,manager);
+  if(result && result.success) result.deleted_file=false;
   return result;
 }
-function handleSignedImport(body,actor){
-  if(Array.isArray(body.users)) return jsonResponse(importUsersFromText(JSON.stringify({users:body.users}),actor));
-  if(typeof body.json==='string') return jsonResponse(importUsersFromText(body.json,actor));
-  if(typeof body.drive_file_id==='string') return jsonResponse(importUsersFromDrive(body.drive_file_id,actor));
+function handleSignedImport(body,actor,manager){
+  if(Array.isArray(body.users)) return jsonResponse(importUsersFromText(JSON.stringify({users:body.users}),actor,manager));
+  if(typeof body.json==='string') return jsonResponse(importUsersFromText(body.json,actor,manager));
+  if(typeof body.drive_file_id==='string') return jsonResponse(importUsersFromDrive(body.drive_file_id,actor,manager));
   return jsonResponse({success:false,error:'importUsers 需要 users[]、json 字串或 drive_file_id'});
 }
 
@@ -3050,8 +3057,8 @@ function handleSignedRequest(action,body){
   if(action==='addMember') return handleAddMember(body.ymis,body.name,body.squad||body.branch||'',body.squad_role||'member');
   if(action==='addUser') return handleAddUser(body,manager);
   if(action==='bulkAddUsers') return handleBulkAddUsers(body.users||[],manager);
-  if(action==='upsertUser') return handleUpsertUser(body.user||body,actor);
-  if(action==='importUsers') return handleSignedImport(body,actor);
+  if(action==='upsertUser') return handleUpsertUser(body.user||body,actor,manager);
+  if(action==='importUsers') return handleSignedImport(body,actor,manager);
   if(action==='resetPassword') return handleResetPassword(body.target_ymis,manager,body.new_password);
   if(action==='updateUserProfile') return handleUpdateUserProfile(body,manager);
   if(action==='deactivateUser') return handleDeactivateUser(body,manager);
@@ -3211,7 +3218,8 @@ function handleImportAll(body) {
       failed.push({ymis:String(rec.ymis||''), error:'Email 已存在（撞號阻擋）'});
       continue;
     }
-    const r = upsertUser(rec,actor);
+    const manager=body.token?getUser(validateToken(body.token)):null;
+    const r = upsertUser(rec,actor,manager);
     if (r.success) ok++; else failed.push({ymis:String(rec.ymis||''), error:r.error});
   }
   // 記錄 transferId（只要有嘗試就記錄，避免重放；若全部失敗亦記錄防止重試轟炸——改為僅 ok>0 時記錄，失敗可重試不記）

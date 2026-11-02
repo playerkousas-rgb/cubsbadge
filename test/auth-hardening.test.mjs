@@ -61,3 +61,30 @@ test('injected key cannot override an invalid or unprivileged session',()=>{
  assert.equal(call({action:'upsertUser',token:'member-session',user:{ymis:'1234567880',name:'X',password_hash:sha256Hex('abcd')}}).success,false);
  assert.equal(call({action:'save',token:'member-session',changes:[]}).success,false);
 });
+test('token upsert and import enforce existing and new roles even with injected key',()=>{
+ const b=buildBackend(), admin=seed(b,'1234567810','admin'), leader=seed(b,'1234567811','branch_leader');
+ b.__ss.sheets.Tokens.rows.push(['leader-token','1234567811','','2099-01-01']);
+ const key=b.getApiKey(); const call=payload=>result(b.doPost({postData:{contents:JSON.stringify({...payload,apikey:key,token:'leader-token'})},parameter:{}}));
+ const old=admin[4];
+ assert.equal(call({action:'upsertUser',user:{ymis:'1234567810',password_hash:sha256Hex('new1'),role:'member'}}).success,false);
+ assert.equal(admin[4],old); assert.equal(admin[3],'admin');
+ assert.equal(call({action:'upsertUser',user:{ymis:'1234567810',password_hash:sha256Hex('new1')}}).success,false);
+ assert.equal(admin[4],old);
+ const imp=call({action:'importAll',transferId:'import-test',data:[{ymis:'1234567812',name:'New',role:'admin',password_hash:sha256Hex('new1')}]});
+ assert.equal(imp.ok,0); assert.equal(imp.failed.length,1); assert.ok(!b.__ss.sheets.Users.rows.some(r=>r[0]==='1234567812'));
+ assert.equal(leader[4],sha256Hex('old1'));
+});
+test('upsert by email protects the matched role and clears sessions only for a changed hash',()=>{
+ const b=buildBackend(); const target=seed(b,'1234567820','admin');
+ const old=target[4], mgr={ymis:'leader',role:'branch_leader'};
+ assert.equal(b.upsertUser({ymis:'1234567821',email:target[2],password_hash:sha256Hex('new1')},'leader',mgr).success,false);
+ assert.equal(target[4],old);
+ const member=seed(b,'1234567822','member');
+ b.__ss.sheets.Tokens.rows.push(['old-session','1234567822','','2099-01-01']);
+ b.PropertiesService.getScriptProperties().setProperty('LOGIN_FAIL:1234567822','locked');
+ assert.equal(b.upsertUser({ymis:'1234567822',password_hash:member[4]},'leader',mgr).success,true);
+ assert.ok(b.__ss.sheets.Tokens.rows.some(r=>r[0]==='old-session'));
+ assert.equal(b.upsertUser({ymis:'1234567822',password_hash:sha256Hex('new1')},'leader',mgr).success,true);
+ assert.ok(!b.__ss.sheets.Tokens.rows.some(r=>r[0]==='old-session'));
+ assert.equal(b.PropertiesService.getScriptProperties().getProperty('LOGIN_FAIL:1234567822'),null);
+});
