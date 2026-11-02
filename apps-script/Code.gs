@@ -8,7 +8,8 @@
 // 本檔永不生成、永不顯示、永不回傳任何密碼；initializeSheets／showApiKey 只顯示旅團自己嗰隻 API Key。
 // 版本同改動紀錄一律寫喺 docs/CHANGE_LOG_*.md；呢度只保留最新 GS 發佈識別供前端核對，不設逐級升級表。
 // ============================================================
-const CUB_GS_VERSION = '2026.11.02';
+const CUB_GS_VERSION = '2026.11.03.1';
+const CUB_GS_RELEASE_DATE = '2026-11-03';
 const CUB_GS_INITIALIZED_PROP = 'CUB_GS_INITIALIZED_VERSION';
 function getCubGsReleaseStatus(){
   let initialized='';
@@ -125,7 +126,14 @@ function sheetMap(ss) {
 // 建立缺咗嘅工作表（有就唔郁，唔會洗走資料）
 function ensureTable(ss, name, headers, color, existing) {
   let sh = (existing && existing[name]) || ss.getSheetByName(name);
-  if (sh) return sh;
+  if (sh) {
+    // 只補空白欄頭，不覆蓋現有名稱或任何資料。
+    const current=sh.getRange(1,1,1,Math.max(sh.getLastColumn(),headers.length)).getValues()[0];
+    for (let i=0; i<headers.length; i++) {
+      if (!current[i] && current.indexOf(headers[i])<0) { sh.getRange(1,i+1).setValue(headers[i]); current[i]=headers[i]; }
+    }
+    return sh;
+  }
   sh = ss.insertSheet(name);
   if (existing) existing[name] = sh;
   _sheetCache[name] = sh;
@@ -375,6 +383,65 @@ function hashPassword(p) {
   const raw = Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, p, Utilities.Charset.UTF_8);
   return raw.map(function(b){return ('0' + (b & 0xFF).toString(16)).slice(-2);}).join('');
 }
+/*
+ * PBKDF2/SHA-256: bundled @noble/hashes 1.8.0 (MIT), https://github.com/paulmillr/noble-hashes
+ * Bundled to avoid a Google Apps Script service call for every KDF iteration.
+ * The complete upstream licence is included below.
+The MIT License (MIT)
+
+Copyright (c) 2022 Paul Miller (https://paulmillr.com)
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the “Software”), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE.
+*/
+var CubPbkdf2=(()=>{var F=(t,e)=>()=>(e||t((e={exports:{}}).exports,e),e.exports);var At=F(Y=>{"use strict";Object.defineProperty(Y,"__esModule",{value:!0});Y.crypto=void 0;Y.crypto=typeof globalThis=="object"&&"crypto"in globalThis?globalThis.crypto:void 0});var N=F(f=>{"use strict";Object.defineProperty(f,"__esModule",{value:!0});f.wrapXOFConstructorWithOpts=f.wrapConstructorWithOpts=f.wrapConstructor=f.Hash=f.nextTick=f.swap32IfBE=f.byteSwapIfBE=f.swap8IfBE=f.isLE=void 0;f.isBytes=_t;f.anumber=ft;f.abytes=R;f.ahash=oe;f.aexists=ie;f.aoutput=ce;f.u8=ae;f.u32=he;f.clean=fe;f.createView=de;f.rotr=ue;f.rotl=le;f.byteSwap=ut;f.byteSwap32=St;f.bytesToHex=be;f.hexToBytes=He;f.asyncLoop=Ae;f.utf8ToBytes=lt;f.bytesToUtf8=ye;f.toBytes=Z;f.kdfInputToBytes=_e;f.concatBytes=Se;f.checkOpts=ge;f.createHasher=It;f.createOptHasher=wt;f.createXOFer=Lt;f.randomBytes=Ie;var q=At();function _t(t){return t instanceof Uint8Array||ArrayBuffer.isView(t)&&t.constructor.name==="Uint8Array"}function ft(t){if(!Number.isSafeInteger(t)||t<0)throw new Error("positive integer expected, got "+t)}function R(t,...e){if(!_t(t))throw new Error("Uint8Array expected");if(e.length>0&&!e.includes(t.length))throw new Error("Uint8Array expected of length "+e+", got length="+t.length)}function oe(t){if(typeof t!="function"||typeof t.create!="function")throw new Error("Hash should be wrapped by utils.createHasher");ft(t.outputLen),ft(t.blockLen)}function ie(t,e=!0){if(t.destroyed)throw new Error("Hash instance has been destroyed");if(e&&t.finished)throw new Error("Hash#digest() has already been called")}function ce(t,e){R(t);let s=e.outputLen;if(t.length<s)throw new Error("digestInto() expects output buffer of length at least "+s)}function ae(t){return new Uint8Array(t.buffer,t.byteOffset,t.byteLength)}function he(t){return new Uint32Array(t.buffer,t.byteOffset,Math.floor(t.byteLength/4))}function fe(...t){for(let e=0;e<t.length;e++)t[e].fill(0)}function de(t){return new DataView(t.buffer,t.byteOffset,t.byteLength)}function ue(t,e){return t<<32-e|t>>>e}function le(t,e){return t<<e|t>>>32-e>>>0}f.isLE=new Uint8Array(new Uint32Array([287454020]).buffer)[0]===68;function ut(t){return t<<24&4278190080|t<<8&16711680|t>>>8&65280|t>>>24&255}f.swap8IfBE=f.isLE?t=>t:t=>ut(t);f.byteSwapIfBE=f.swap8IfBE;function St(t){for(let e=0;e<t.length;e++)t[e]=ut(t[e]);return t}f.swap32IfBE=f.isLE?t=>t:St;var gt=typeof Uint8Array.from([]).toHex=="function"&&typeof Uint8Array.fromHex=="function",xe=Array.from({length:256},(t,e)=>e.toString(16).padStart(2,"0"));function be(t){if(R(t),gt)return t.toHex();let e="";for(let s=0;s<t.length;s++)e+=xe[t[s]];return e}var T={_0:48,_9:57,A:65,F:70,a:97,f:102};function yt(t){if(t>=T._0&&t<=T._9)return t-T._0;if(t>=T.A&&t<=T.F)return t-(T.A-10);if(t>=T.a&&t<=T.f)return t-(T.a-10)}function He(t){if(typeof t!="string")throw new Error("hex string expected, got "+typeof t);if(gt)return Uint8Array.fromHex(t);let e=t.length,s=e/2;if(e%2)throw new Error("hex string expected, got unpadded hex of length "+e);let r=new Uint8Array(s);for(let n=0,o=0;n<s;n++,o+=2){let i=yt(t.charCodeAt(o)),c=yt(t.charCodeAt(o+1));if(i===void 0||c===void 0){let u=t[o]+t[o+1];throw new Error('hex string expected, got non-hex character "'+u+'" at index '+o)}r[n]=i*16+c}return r}var pe=async()=>{};f.nextTick=pe;async function Ae(t,e,s){let r=Date.now();for(let n=0;n<t;n++){s(n);let o=Date.now()-r;o>=0&&o<e||(await(0,f.nextTick)(),r+=o)}}function lt(t){if(typeof t!="string")throw new Error("string expected");return new Uint8Array(new TextEncoder().encode(t))}function ye(t){return new TextDecoder().decode(t)}function Z(t){return typeof t=="string"&&(t=lt(t)),R(t),t}function _e(t){return typeof t=="string"&&(t=lt(t)),R(t),t}function Se(...t){let e=0;for(let r=0;r<t.length;r++){let n=t[r];R(n),e+=n.length}let s=new Uint8Array(e);for(let r=0,n=0;r<t.length;r++){let o=t[r];s.set(o,n),n+=o.length}return s}function ge(t,e){if(e!==void 0&&{}.toString.call(e)!=="[object Object]")throw new Error("options should be object or undefined");return Object.assign(t,e)}var dt=class{};f.Hash=dt;function It(t){let e=r=>t().update(Z(r)).digest(),s=t();return e.outputLen=s.outputLen,e.blockLen=s.blockLen,e.create=()=>t(),e}function wt(t){let e=(r,n)=>t(n).update(Z(r)).digest(),s=t({});return e.outputLen=s.outputLen,e.blockLen=s.blockLen,e.create=r=>t(r),e}function Lt(t){let e=(r,n)=>t(n).update(Z(r)).digest(),s=t({});return e.outputLen=s.outputLen,e.blockLen=s.blockLen,e.create=r=>t(r),e}f.wrapConstructor=It;f.wrapConstructorWithOpts=wt;f.wrapXOFConstructorWithOpts=Lt;function Ie(t=32){if(q.crypto&&typeof q.crypto.getRandomValues=="function")return q.crypto.getRandomValues(new Uint8Array(t));if(q.crypto&&typeof q.crypto.randomBytes=="function")return Uint8Array.from(q.crypto.randomBytes(t));throw new Error("crypto.getRandomValues must be defined")}});var Bt=F(P=>{"use strict";Object.defineProperty(P,"__esModule",{value:!0});P.hmac=P.HMAC=void 0;var v=N(),X=class extends v.Hash{constructor(e,s){super(),this.finished=!1,this.destroyed=!1,(0,v.ahash)(e);let r=(0,v.toBytes)(s);if(this.iHash=e.create(),typeof this.iHash.update!="function")throw new Error("Expected instance of class which extends utils.Hash");this.blockLen=this.iHash.blockLen,this.outputLen=this.iHash.outputLen;let n=this.blockLen,o=new Uint8Array(n);o.set(r.length>n?e.create().update(r).digest():r);for(let i=0;i<o.length;i++)o[i]^=54;this.iHash.update(o),this.oHash=e.create();for(let i=0;i<o.length;i++)o[i]^=106;this.oHash.update(o),(0,v.clean)(o)}update(e){return(0,v.aexists)(this),this.iHash.update(e),this}digestInto(e){(0,v.aexists)(this),(0,v.abytes)(e,this.outputLen),this.finished=!0,this.iHash.digestInto(e),this.oHash.update(e),this.oHash.digestInto(e),this.destroy()}digest(){let e=new Uint8Array(this.oHash.outputLen);return this.digestInto(e),e}_cloneInto(e){e||(e=Object.create(Object.getPrototypeOf(this),{}));let{oHash:s,iHash:r,finished:n,destroyed:o,blockLen:i,outputLen:c}=this;return e=e,e.finished=n,e.destroyed=o,e.blockLen=i,e.outputLen=c,e.oHash=s._cloneInto(e.oHash),e.iHash=r._cloneInto(e.iHash),e}clone(){return this._cloneInto()}destroy(){this.destroyed=!0,this.oHash.destroy(),this.iHash.destroy()}};P.HMAC=X;var we=(t,e,s)=>new X(t,e).update(s).digest();P.hmac=we;P.hmac.create=(t,e)=>new X(t,e)});var Ut=F($=>{"use strict";Object.defineProperty($,"__esModule",{value:!0});$.pbkdf2=Be;$.pbkdf2Async=Ve;var Le=Bt(),m=N();function Vt(t,e,s,r){(0,m.ahash)(t);let n=(0,m.checkOpts)({dkLen:32,asyncTick:10},r),{c:o,dkLen:i,asyncTick:c}=n;if((0,m.anumber)(o),(0,m.anumber)(i),(0,m.anumber)(c),o<1)throw new Error("iterations (c) should be >= 1");let u=(0,m.kdfInputToBytes)(e),b=(0,m.kdfInputToBytes)(s),H=new Uint8Array(i),h=Le.hmac.create(t,u),x=h._cloneInto().update(b);return{c:o,dkLen:i,asyncTick:c,DK:H,PRF:h,PRFSalt:x}}function mt(t,e,s,r,n){return t.destroy(),e.destroy(),r&&r.destroy(),(0,m.clean)(n),s}function Be(t,e,s,r){let{c:n,dkLen:o,DK:i,PRF:c,PRFSalt:u}=Vt(t,e,s,r),b,H=new Uint8Array(4),h=(0,m.createView)(H),x=new Uint8Array(c.outputLen);for(let p=1,S=0;S<o;p++,S+=c.outputLen){let y=i.subarray(S,S+c.outputLen);h.setInt32(0,p,!1),(b=u._cloneInto(b)).update(H).digestInto(x),y.set(x.subarray(0,y.length));for(let I=1;I<n;I++){c._cloneInto(b).update(x).digestInto(x);for(let B=0;B<y.length;B++)y[B]^=x[B]}}return mt(c,u,i,b,x)}async function Ve(t,e,s,r){let{c:n,dkLen:o,asyncTick:i,DK:c,PRF:u,PRFSalt:b}=Vt(t,e,s,r),H,h=new Uint8Array(4),x=(0,m.createView)(h),p=new Uint8Array(u.outputLen);for(let S=1,y=0;y<o;S++,y+=u.outputLen){let I=c.subarray(y,y+u.outputLen);x.setInt32(0,S,!1),(H=b._cloneInto(H)).update(h).digestInto(p),I.set(p.subarray(0,I.length)),await(0,m.asyncLoop)(n-1,i,()=>{u._cloneInto(H).update(p).digestInto(p);for(let B=0;B<I.length;B++)I[B]^=p[B]})}return mt(u,b,c,H,p)}});var kt=F(V=>{"use strict";Object.defineProperty(V,"__esModule",{value:!0});V.SHA512_IV=V.SHA384_IV=V.SHA224_IV=V.SHA256_IV=V.HashMD=void 0;V.setBigUint64=Et;V.Chi=me;V.Maj=Ue;var U=N();function Et(t,e,s,r){if(typeof t.setBigUint64=="function")return t.setBigUint64(e,s,r);let n=BigInt(32),o=BigInt(4294967295),i=Number(s>>n&o),c=Number(s&o),u=r?4:0,b=r?0:4;t.setUint32(e+u,i,r),t.setUint32(e+b,c,r)}function me(t,e,s){return t&e^~t&s}function Ue(t,e,s){return t&e^t&s^e&s}var xt=class extends U.Hash{constructor(e,s,r,n){super(),this.finished=!1,this.length=0,this.pos=0,this.destroyed=!1,this.blockLen=e,this.outputLen=s,this.padOffset=r,this.isLE=n,this.buffer=new Uint8Array(e),this.view=(0,U.createView)(this.buffer)}update(e){(0,U.aexists)(this),e=(0,U.toBytes)(e),(0,U.abytes)(e);let{view:s,buffer:r,blockLen:n}=this,o=e.length;for(let i=0;i<o;){let c=Math.min(n-this.pos,o-i);if(c===n){let u=(0,U.createView)(e);for(;n<=o-i;i+=n)this.process(u,i);continue}r.set(e.subarray(i,i+c),this.pos),this.pos+=c,i+=c,this.pos===n&&(this.process(s,0),this.pos=0)}return this.length+=e.length,this.roundClean(),this}digestInto(e){(0,U.aexists)(this),(0,U.aoutput)(e,this),this.finished=!0;let{buffer:s,view:r,blockLen:n,isLE:o}=this,{pos:i}=this;s[i++]=128,(0,U.clean)(this.buffer.subarray(i)),this.padOffset>n-i&&(this.process(r,0),i=0);for(let h=i;h<n;h++)s[h]=0;Et(r,n-8,BigInt(this.length*8),o),this.process(r,0);let c=(0,U.createView)(e),u=this.outputLen;if(u%4)throw new Error("_sha2: outputLen should be aligned to 32bit");let b=u/4,H=this.get();if(b>H.length)throw new Error("_sha2: outputLen bigger than state");for(let h=0;h<b;h++)c.setUint32(4*h,H[h],o)}digest(){let{buffer:e,outputLen:s}=this;this.digestInto(e);let r=e.slice(0,s);return this.destroy(),r}_cloneInto(e){e||(e=new this.constructor),e.set(...this.get());let{blockLen:s,buffer:r,length:n,finished:o,destroyed:i,pos:c}=this;return e.destroyed=i,e.finished=o,e.length=n,e.pos=c,n%s&&e.buffer.set(r),e}clone(){return this._cloneInto()}};V.HashMD=xt;V.SHA256_IV=Uint32Array.from([1779033703,3144134277,1013904242,2773480762,1359893119,2600822924,528734635,1541459225]);V.SHA224_IV=Uint32Array.from([3238371032,914150663,812702999,4144912697,4290775857,1750603025,1694076839,3204075428]);V.SHA384_IV=Uint32Array.from([3418070365,3238371032,1654270250,914150663,2438529370,812702999,355462360,4144912697,1731405415,4290775857,2394180231,1750603025,3675008525,1694076839,1203062813,3204075428]);V.SHA512_IV=Uint32Array.from([1779033703,4089235720,3144134277,2227873595,1013904242,4271175723,2773480762,1595750129,1359893119,2917565137,2600822924,725511199,528734635,4215389547,1541459225,327033209])});var $t=F(d=>{"use strict";Object.defineProperty(d,"__esModule",{value:!0});d.toBig=d.shrSL=d.shrSH=d.rotrSL=d.rotrSH=d.rotrBL=d.rotrBH=d.rotr32L=d.rotr32H=d.rotlSL=d.rotlSH=d.rotlBL=d.rotlBH=d.add5L=d.add5H=d.add4L=d.add4H=d.add3L=d.add3H=void 0;d.add=Nt;d.fromBig=Ht;d.split=Ct;var tt=BigInt(2**32-1),bt=BigInt(32);function Ht(t,e=!1){return e?{h:Number(t&tt),l:Number(t>>bt&tt)}:{h:Number(t>>bt&tt)|0,l:Number(t&tt)|0}}function Ct(t,e=!1){let s=t.length,r=new Uint32Array(s),n=new Uint32Array(s);for(let o=0;o<s;o++){let{h:i,l:c}=Ht(t[o],e);[r[o],n[o]]=[i,c]}return[r,n]}var Ft=(t,e)=>BigInt(t>>>0)<<bt|BigInt(e>>>0);d.toBig=Ft;var Tt=(t,e,s)=>t>>>s;d.shrSH=Tt;var Dt=(t,e,s)=>t<<32-s|e>>>s;d.shrSL=Dt;var Ot=(t,e,s)=>t>>>s|e<<32-s;d.rotrSH=Ot;var Gt=(t,e,s)=>t<<32-s|e>>>s;d.rotrSL=Gt;var Mt=(t,e,s)=>t<<64-s|e>>>s-32;d.rotrBH=Mt;var jt=(t,e,s)=>t>>>s-32|e<<64-s;d.rotrBL=jt;var vt=(t,e)=>e;d.rotr32H=vt;var Pt=(t,e)=>t;d.rotr32L=Pt;var Wt=(t,e,s)=>t<<s|e>>>32-s;d.rotlSH=Wt;var qt=(t,e,s)=>e<<s|t>>>32-s;d.rotlSL=qt;var Rt=(t,e,s)=>e<<s-32|t>>>64-s;d.rotlBH=Rt;var Kt=(t,e,s)=>t<<s-32|e>>>64-s;d.rotlBL=Kt;function Nt(t,e,s,r){let n=(e>>>0)+(r>>>0);return{h:t+s+(n/2**32|0)|0,l:n|0}}var Xt=(t,e,s)=>(t>>>0)+(e>>>0)+(s>>>0);d.add3L=Xt;var Jt=(t,e,s,r)=>e+s+r+(t/2**32|0)|0;d.add3H=Jt;var zt=(t,e,s,r)=>(t>>>0)+(e>>>0)+(s>>>0)+(r>>>0);d.add4L=zt;var Qt=(t,e,s,r,n)=>e+s+r+n+(t/2**32|0)|0;d.add4H=Qt;var Yt=(t,e,s,r,n)=>(t>>>0)+(e>>>0)+(s>>>0)+(r>>>0)+(n>>>0);d.add5L=Yt;var Zt=(t,e,s,r,n,o)=>e+s+r+n+o+(t/2**32|0)|0;d.add5H=Zt;var Ee={fromBig:Ht,split:Ct,toBig:Ft,shrSH:Tt,shrSL:Dt,rotrSH:Ot,rotrSL:Gt,rotrBH:Mt,rotrBL:jt,rotr32H:vt,rotr32L:Pt,rotlSH:Wt,rotlSL:qt,rotlBH:Rt,rotlBL:Kt,add:Nt,add3L:Xt,add3H:Jt,add4L:zt,add4H:Qt,add5H:Zt,add5L:Yt};d.default=Ee});var ee=F(A=>{"use strict";Object.defineProperty(A,"__esModule",{value:!0});A.sha512_224=A.sha512_256=A.sha384=A.sha512=A.sha224=A.sha256=A.SHA512_256=A.SHA512_224=A.SHA384=A.SHA512=A.SHA224=A.SHA256=void 0;var a=kt(),l=$t(),g=N(),ke=Uint32Array.from([1116352408,1899447441,3049323471,3921009573,961987163,1508970993,2453635748,2870763221,3624381080,310598401,607225278,1426881987,1925078388,2162078206,2614888103,3248222580,3835390401,4022224774,264347078,604807628,770255983,1249150122,1555081692,1996064986,2554220882,2821834349,2952996808,3210313671,3336571891,3584528711,113926993,338241895,666307205,773529912,1294757372,1396182291,1695183700,1986661051,2177026350,2456956037,2730485921,2820302411,3259730800,3345764771,3516065817,3600352804,4094571909,275423344,430227734,506948616,659060556,883997877,958139571,1322822218,1537002063,1747873779,1955562222,2024104815,2227730452,2361852424,2428436474,2756734187,3204031479,3329325298]),G=new Uint32Array(64),J=class extends a.HashMD{constructor(e=32){super(64,e,8,!1),this.A=a.SHA256_IV[0]|0,this.B=a.SHA256_IV[1]|0,this.C=a.SHA256_IV[2]|0,this.D=a.SHA256_IV[3]|0,this.E=a.SHA256_IV[4]|0,this.F=a.SHA256_IV[5]|0,this.G=a.SHA256_IV[6]|0,this.H=a.SHA256_IV[7]|0}get(){let{A:e,B:s,C:r,D:n,E:o,F:i,G:c,H:u}=this;return[e,s,r,n,o,i,c,u]}set(e,s,r,n,o,i,c,u){this.A=e|0,this.B=s|0,this.C=r|0,this.D=n|0,this.E=o|0,this.F=i|0,this.G=c|0,this.H=u|0}process(e,s){for(let h=0;h<16;h++,s+=4)G[h]=e.getUint32(s,!1);for(let h=16;h<64;h++){let x=G[h-15],p=G[h-2],S=(0,g.rotr)(x,7)^(0,g.rotr)(x,18)^x>>>3,y=(0,g.rotr)(p,17)^(0,g.rotr)(p,19)^p>>>10;G[h]=y+G[h-7]+S+G[h-16]|0}let{A:r,B:n,C:o,D:i,E:c,F:u,G:b,H}=this;for(let h=0;h<64;h++){let x=(0,g.rotr)(c,6)^(0,g.rotr)(c,11)^(0,g.rotr)(c,25),p=H+x+(0,a.Chi)(c,u,b)+ke[h]+G[h]|0,y=((0,g.rotr)(r,2)^(0,g.rotr)(r,13)^(0,g.rotr)(r,22))+(0,a.Maj)(r,n,o)|0;H=b,b=u,u=c,c=i+p|0,i=o,o=n,n=r,r=p+y|0}r=r+this.A|0,n=n+this.B|0,o=o+this.C|0,i=i+this.D|0,c=c+this.E|0,u=u+this.F|0,b=b+this.G|0,H=H+this.H|0,this.set(r,n,o,i,c,u,b,H)}roundClean(){(0,g.clean)(G)}destroy(){this.set(0,0,0,0,0,0,0,0),(0,g.clean)(this.buffer)}};A.SHA256=J;var et=class extends J{constructor(){super(28),this.A=a.SHA224_IV[0]|0,this.B=a.SHA224_IV[1]|0,this.C=a.SHA224_IV[2]|0,this.D=a.SHA224_IV[3]|0,this.E=a.SHA224_IV[4]|0,this.F=a.SHA224_IV[5]|0,this.G=a.SHA224_IV[6]|0,this.H=a.SHA224_IV[7]|0}};A.SHA224=et;var te=l.split(["0x428a2f98d728ae22","0x7137449123ef65cd","0xb5c0fbcfec4d3b2f","0xe9b5dba58189dbbc","0x3956c25bf348b538","0x59f111f1b605d019","0x923f82a4af194f9b","0xab1c5ed5da6d8118","0xd807aa98a3030242","0x12835b0145706fbe","0x243185be4ee4b28c","0x550c7dc3d5ffb4e2","0x72be5d74f27b896f","0x80deb1fe3b1696b1","0x9bdc06a725c71235","0xc19bf174cf692694","0xe49b69c19ef14ad2","0xefbe4786384f25e3","0x0fc19dc68b8cd5b5","0x240ca1cc77ac9c65","0x2de92c6f592b0275","0x4a7484aa6ea6e483","0x5cb0a9dcbd41fbd4","0x76f988da831153b5","0x983e5152ee66dfab","0xa831c66d2db43210","0xb00327c898fb213f","0xbf597fc7beef0ee4","0xc6e00bf33da88fc2","0xd5a79147930aa725","0x06ca6351e003826f","0x142929670a0e6e70","0x27b70a8546d22ffc","0x2e1b21385c26c926","0x4d2c6dfc5ac42aed","0x53380d139d95b3df","0x650a73548baf63de","0x766a0abb3c77b2a8","0x81c2c92e47edaee6","0x92722c851482353b","0xa2bfe8a14cf10364","0xa81a664bbc423001","0xc24b8b70d0f89791","0xc76c51a30654be30","0xd192e819d6ef5218","0xd69906245565a910","0xf40e35855771202a","0x106aa07032bbd1b8","0x19a4c116b8d2d0c8","0x1e376c085141ab53","0x2748774cdf8eeb99","0x34b0bcb5e19b48a8","0x391c0cb3c5c95a63","0x4ed8aa4ae3418acb","0x5b9cca4f7763e373","0x682e6ff3d6b2b8a3","0x748f82ee5defb2fc","0x78a5636f43172f60","0x84c87814a1f0ab72","0x8cc702081a6439ec","0x90befffa23631e28","0xa4506cebde82bde9","0xbef9a3f7b2c67915","0xc67178f2e372532b","0xca273eceea26619c","0xd186b8c721c0c207","0xeada7dd6cde0eb1e","0xf57d4f7fee6ed178","0x06f067aa72176fba","0x0a637dc5a2c898a6","0x113f9804bef90dae","0x1b710b35131c471b","0x28db77f523047d84","0x32caab7b40c72493","0x3c9ebe0a15c9bebc","0x431d67c49c100d4c","0x4cc5d4becb3e42b6","0x597f299cfc657e2a","0x5fcb6fab3ad6faec","0x6c44198c4a475817"].map(t=>BigInt(t))),Ce=te[0],Fe=te[1],M=new Uint32Array(80),j=new Uint32Array(80),W=class extends a.HashMD{constructor(e=64){super(128,e,16,!1),this.Ah=a.SHA512_IV[0]|0,this.Al=a.SHA512_IV[1]|0,this.Bh=a.SHA512_IV[2]|0,this.Bl=a.SHA512_IV[3]|0,this.Ch=a.SHA512_IV[4]|0,this.Cl=a.SHA512_IV[5]|0,this.Dh=a.SHA512_IV[6]|0,this.Dl=a.SHA512_IV[7]|0,this.Eh=a.SHA512_IV[8]|0,this.El=a.SHA512_IV[9]|0,this.Fh=a.SHA512_IV[10]|0,this.Fl=a.SHA512_IV[11]|0,this.Gh=a.SHA512_IV[12]|0,this.Gl=a.SHA512_IV[13]|0,this.Hh=a.SHA512_IV[14]|0,this.Hl=a.SHA512_IV[15]|0}get(){let{Ah:e,Al:s,Bh:r,Bl:n,Ch:o,Cl:i,Dh:c,Dl:u,Eh:b,El:H,Fh:h,Fl:x,Gh:p,Gl:S,Hh:y,Hl:I}=this;return[e,s,r,n,o,i,c,u,b,H,h,x,p,S,y,I]}set(e,s,r,n,o,i,c,u,b,H,h,x,p,S,y,I){this.Ah=e|0,this.Al=s|0,this.Bh=r|0,this.Bl=n|0,this.Ch=o|0,this.Cl=i|0,this.Dh=c|0,this.Dl=u|0,this.Eh=b|0,this.El=H|0,this.Fh=h|0,this.Fl=x|0,this.Gh=p|0,this.Gl=S|0,this.Hh=y|0,this.Hl=I|0}process(e,s){for(let _=0;_<16;_++,s+=4)M[_]=e.getUint32(s),j[_]=e.getUint32(s+=4);for(let _=16;_<80;_++){let D=M[_-15]|0,O=j[_-15]|0,it=l.rotrSH(D,O,1)^l.rotrSH(D,O,8)^l.shrSH(D,O,7),ct=l.rotrSL(D,O,1)^l.rotrSL(D,O,8)^l.shrSL(D,O,7),k=M[_-2]|0,C=j[_-2]|0,z=l.rotrSH(k,C,19)^l.rotrBH(k,C,61)^l.shrSH(k,C,6),at=l.rotrSL(k,C,19)^l.rotrBL(k,C,61)^l.shrSL(k,C,6),Q=l.add4L(ct,at,j[_-7],j[_-16]),ht=l.add4H(Q,it,z,M[_-7],M[_-16]);M[_]=ht|0,j[_]=Q|0}let{Ah:r,Al:n,Bh:o,Bl:i,Ch:c,Cl:u,Dh:b,Dl:H,Eh:h,El:x,Fh:p,Fl:S,Gh:y,Gl:I,Hh:B,Hl:K}=this;for(let _=0;_<80;_++){let D=l.rotrSH(h,x,14)^l.rotrSH(h,x,18)^l.rotrBH(h,x,41),O=l.rotrSL(h,x,14)^l.rotrSL(h,x,18)^l.rotrBL(h,x,41),it=h&p^~h&y,ct=x&S^~x&I,k=l.add5L(K,O,ct,Fe[_],j[_]),C=l.add5H(k,B,D,it,Ce[_],M[_]),z=k|0,at=l.rotrSH(r,n,28)^l.rotrBH(r,n,34)^l.rotrBH(r,n,39),Q=l.rotrSL(r,n,28)^l.rotrBL(r,n,34)^l.rotrBL(r,n,39),ht=r&o^r&c^o&c,ne=n&i^n&u^i&u;B=y|0,K=I|0,y=p|0,I=S|0,p=h|0,S=x|0,{h,l:x}=l.add(b|0,H|0,C|0,z|0),b=c|0,H=u|0,c=o|0,u=i|0,o=r|0,i=n|0;let pt=l.add3L(z,Q,ne);r=l.add3H(pt,C,at,ht),n=pt|0}({h:r,l:n}=l.add(this.Ah|0,this.Al|0,r|0,n|0)),{h:o,l:i}=l.add(this.Bh|0,this.Bl|0,o|0,i|0),{h:c,l:u}=l.add(this.Ch|0,this.Cl|0,c|0,u|0),{h:b,l:H}=l.add(this.Dh|0,this.Dl|0,b|0,H|0),{h,l:x}=l.add(this.Eh|0,this.El|0,h|0,x|0),{h:p,l:S}=l.add(this.Fh|0,this.Fl|0,p|0,S|0),{h:y,l:I}=l.add(this.Gh|0,this.Gl|0,y|0,I|0),{h:B,l:K}=l.add(this.Hh|0,this.Hl|0,B|0,K|0),this.set(r,n,o,i,c,u,b,H,h,x,p,S,y,I,B,K)}roundClean(){(0,g.clean)(M,j)}destroy(){(0,g.clean)(this.buffer),this.set(0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0)}};A.SHA512=W;var st=class extends W{constructor(){super(48),this.Ah=a.SHA384_IV[0]|0,this.Al=a.SHA384_IV[1]|0,this.Bh=a.SHA384_IV[2]|0,this.Bl=a.SHA384_IV[3]|0,this.Ch=a.SHA384_IV[4]|0,this.Cl=a.SHA384_IV[5]|0,this.Dh=a.SHA384_IV[6]|0,this.Dl=a.SHA384_IV[7]|0,this.Eh=a.SHA384_IV[8]|0,this.El=a.SHA384_IV[9]|0,this.Fh=a.SHA384_IV[10]|0,this.Fl=a.SHA384_IV[11]|0,this.Gh=a.SHA384_IV[12]|0,this.Gl=a.SHA384_IV[13]|0,this.Hh=a.SHA384_IV[14]|0,this.Hl=a.SHA384_IV[15]|0}};A.SHA384=st;var w=Uint32Array.from([2352822216,424955298,1944164710,2312950998,502970286,855612546,1738396948,1479516111,258812777,2077511080,2011393907,79989058,1067287976,1780299464,286451373,2446758561]),L=Uint32Array.from([573645204,4230739756,2673172387,3360449730,596883563,1867755857,2520282905,1497426621,2519219938,2827943907,3193839141,1401305490,721525244,746961066,246885852,2177182882]),rt=class extends W{constructor(){super(28),this.Ah=w[0]|0,this.Al=w[1]|0,this.Bh=w[2]|0,this.Bl=w[3]|0,this.Ch=w[4]|0,this.Cl=w[5]|0,this.Dh=w[6]|0,this.Dl=w[7]|0,this.Eh=w[8]|0,this.El=w[9]|0,this.Fh=w[10]|0,this.Fl=w[11]|0,this.Gh=w[12]|0,this.Gl=w[13]|0,this.Hh=w[14]|0,this.Hl=w[15]|0}};A.SHA512_224=rt;var nt=class extends W{constructor(){super(32),this.Ah=L[0]|0,this.Al=L[1]|0,this.Bh=L[2]|0,this.Bl=L[3]|0,this.Ch=L[4]|0,this.Cl=L[5]|0,this.Dh=L[6]|0,this.Dl=L[7]|0,this.Eh=L[8]|0,this.El=L[9]|0,this.Fh=L[10]|0,this.Fl=L[11]|0,this.Gh=L[12]|0,this.Gl=L[13]|0,this.Hh=L[14]|0,this.Hl=L[15]|0}};A.SHA512_256=nt;A.sha256=(0,g.createHasher)(()=>new J);A.sha224=(0,g.createHasher)(()=>new et);A.sha512=(0,g.createHasher)(()=>new W);A.sha384=(0,g.createHasher)(()=>new st);A.sha512_256=(0,g.createHasher)(()=>new nt);A.sha512_224=(0,g.createHasher)(()=>new rt)});var se=F(E=>{"use strict";Object.defineProperty(E,"__esModule",{value:!0});E.sha224=E.SHA224=E.sha256=E.SHA256=void 0;var ot=ee();E.SHA256=ot.SHA256;E.sha256=ot.sha256;E.SHA224=ot.SHA224;E.sha224=ot.sha224});var Oe=F(re=>{var{pbkdf2:Te}=Ut(),{sha256:De}=se();re.derive=(t,e,s)=>Te(De,Uint8Array.from(t,r=>r&255),Uint8Array.from(e,r=>r&255),{c:s,dkLen:32})});return Oe();})();
+/*! Bundled license information:
+
+@noble/hashes/utils.js:
+  (*! noble-hashes - MIT License (c) 2022 Paul Miller (paulmillr.com) *)
+*/
+
+// PBKDF2-HMAC-SHA256, one 32-byte block; hashes are stored in the existing column.
+const PBKDF2_ITERATIONS=120000;
+const DUMMY_PASSWORD_HASH='pbkdf2$120000$00000000000000000000000000000000$2dd555d0a6332d090565bfd00b1de43947d66e4efbdd1bde8fed3856983d1966';
+function hexBytes_(hex){ const out=[]; for(let i=0;i<hex.length;i+=2) out.push(parseInt(hex.slice(i,i+2),16)); return out; }
+function pbkdf2HmacSha256_(password,salt,iterations){
+  const key=Utilities.newBlob(String(password)).getBytes();
+  return toHex(CubPbkdf2.derive(key,salt,iterations));
+}
+function isLegacyPasswordHash_(hash){return /^[0-9a-f]{64}$/i.test(String(hash||''));}
+function isPasswordHash_(hash){
+  if(isLegacyPasswordHash_(hash)) return true;
+  const m=/^pbkdf2\$(\d{6,7})\$[0-9a-f]{32}\$[0-9a-f]{64}$/i.exec(String(hash||''));
+  return !!m && Number(m[1])>=100000 && Number(m[1])<=1000000;
+}
+function hashPasswordV2(password){
+  // Two UUIDs provide independent random bits; hash to remove fixed UUID version bits.
+  const salt=sha256Hex(Utilities.getUuid()+Utilities.getUuid()).slice(0,32);
+  return 'pbkdf2$'+PBKDF2_ITERATIONS+'$'+salt+'$'+pbkdf2HmacSha256_(password,hexBytes_(salt),PBKDF2_ITERATIONS);
+}
+function verifyPassword(password,stored){
+  stored=String(stored||'');
+  if(isLegacyPasswordHash_(stored)) return safeEqualText(hashPassword(String(password||'')),stored.toLowerCase());
+  if(!isPasswordHash_(stored)) return false;
+  const parts=stored.split('$');
+  return safeEqualText(pbkdf2HmacSha256_(String(password||''),hexBytes_(parts[2]),Number(parts[1])),parts[3].toLowerCase());
+}
 function generateToken(){ return Utilities.getUuid().replace(/-/g,'') + Date.now().toString(36); }
 function now(){ return Utilities.formatDate(new Date(), 'Asia/Hong_Kong', 'yyyy-MM-dd HH:mm:ss'); }
 function formatDate(d){ if(!d) return ''; if(d instanceof Date) return Utilities.formatDate(d,'Asia/Hong_Kong','yyyy-MM-dd'); return d.toString().split(' ')[0]; }
@@ -467,7 +534,10 @@ function initializeSheets() {
 
   // 進度追蹤（舊表缺欄就補）
   const pSheet = ensureTable(ss, '進度追蹤', ['YMIS','項目 ID','完成日期','更新時間','確認者','備註'], null, X);
-  if (pSheet.getLastColumn() < 6) { pSheet.getRange(1,5).setValue('確認者'); pSheet.getRange(1,6).setValue('備註'); }
+  if (pSheet.getLastColumn() < 6) {
+    if (!pSheet.getRange(1,5).getValue()) pSheet.getRange(1,5).setValue('確認者');
+    if (!pSheet.getRange(1,6).getValue()) pSheet.getRange(1,6).setValue('備註');
+  }
 
   ensureTable(ss, '成員名單', ['YMIS','姓名','加入日期','支部','聯絡','小隊'], null, X);
 
@@ -475,7 +545,7 @@ function initializeSheets() {
   const usersNew = !X['Users'];
   const uSheet = ensureTable(ss, 'Users', USER_HEADERS, null, X);
   if (usersNew) {
-    uSheet.getRange(2,1,1,13).setValues([[ADMIN_YMIS, ADMIN_NAME, ADMIN_EMAIL, 'admin', hashPassword(ADMIN_PASS),
+    uSheet.getRange(2,1,1,13).setValues([[ADMIN_YMIS, ADMIN_NAME, ADMIN_EMAIL, 'admin', hashPasswordV2(ADMIN_PASS),
       'b4', true, 'system', now(), now(), '', 'active', '*']]);
     uSheet.getRange(1,16).setValue('force_change_password');
     uSheet.getRange(2,16).setValue(true);       // 首次登入強制改密
@@ -484,11 +554,6 @@ function initializeSheets() {
     if (lack > 0) uSheet.getRange(1, uSheet.getLastColumn() + 1, 1, lack)
       .setValues([['allowed_badges','squad','squad_role','force_change_password'].slice(4 - lack)]);
   }
-  // 保留帳號只在後端（程式碼）存在；自動移除舊部署可能已寫入 Users 的保留帳號列
-  // 及 Tokens 表舊版保留帳號 session 行（舊版登入紀錄；新 token 無狀態、唔會再寫入）
-  removeSuperAdminRows();
-  try{ removeSuperAdminTokenRows(); }catch(e){}
-
   ensureTable(ss, 'Applications', ['app_id','ymis','name','email','role','branch','status','applied_at','reviewed_by','reviewed_at','note'], null, X);
   ensureTable(ss, 'Tokens', ['token','ymis','created_at','expires_at'], null, X);
   // 領袖忘記密碼：新建 Sheet 一併建立「密碼重設」表；舊 Sheet 由 getPasswordResetSheet() 即用即補，
@@ -509,10 +574,6 @@ function initializeSheets() {
   ensureTable(ss, LOG_REQ_SHEET_NAME, LOG_REQ_HEADERS, null, X);   // 待批履歷
 
   const apiKey = getApiKey();
-  // 保留帳號密碼唔會喺 leaf 出現（只存在 APP 層）；舊部署遺留嘅指令碼屬性順手清走。
-  const purgedLegacySuperKey = purgeLegacySuperKeyProperty();
-  const superLabelRowsFixed = purgeSuperAdminLabels();   // 舊部署寫過保留帳號識別字就改成中性代號
-  if (superLabelRowsFixed) removeSuperAdminRows();       // 順手再確保 Users／成員名單冇保留帳號列
   setConfigDefaults(cfgSheet);                  // allow_member_requests／view_others／progress_scope 等預設值
   // 只有所有補表及預設值步驟完成後，才記錄最新初始化版本；只貼新 Code.gs 不會被誤當完成。
   PropertiesService.getScriptProperties().setProperty(CUB_GS_INITIALIZED_PROP,CUB_GS_VERSION);
@@ -758,6 +819,11 @@ function destroyToken(token){
 }
 
 // ===== API =====
+function mustChangePassword_(ymis){
+  if(!ymis || isSuperAdminId(ymis)) return false;
+  const t=getUsersTable(); const row=t?findUserRowByYmis(t,ymis):null;
+  return !!(row && row.force_change_password);
+}
 function doGet(e){
   e=e||{};
   const params=e.parameter||{};
@@ -773,6 +839,7 @@ function doGet(e){
     const reqToken=params.token;
     if(reqKey && reqKey!==getApiKey()) return jsonResponse({success:false,error:'Invalid API Key'});
     if(reqToken && !validateToken(reqToken)) return jsonResponse({success:false,error:'Token 無效或過期'});
+    if(reqToken && mustChangePassword_(validateToken(reqToken))) return jsonResponse({success:false,code:'CHANGE_PASSWORD_REQUIRED',error:'請先更改密碼'});
     // 有 token 時，待批履歷只回傳該登入者可見範圍（領袖全部；團員只見自己的申報）
     let loadUser=null;
     if(reqToken){ const ly=validateToken(reqToken); if(ly) loadUser=getUser(ly); }
@@ -799,6 +866,11 @@ function doPost(e){
     const queryParams=(e&&e.parameter)||{};
     const hasSigEnvelope=!!(queryParams.sig||queryParams.sts||queryParams.snonce||body.sig||body.sig_ts||body.sig_nonce);
     if(hasSigEnvelope) return jsonResponse({success:false,error:'SIG 驗證失敗',code:'BAD_SIG'});
+    if(body.token && ['changePassword','logout','login','apply','requestPasswordReset','confirmPasswordReset'].indexOf(action)<0){
+      const tokenUser=validateToken(body.token);
+      if(!tokenUser) return jsonResponse({success:false,error:'Token 無效或過期'});
+      if(mustChangePassword_(tokenUser)) return jsonResponse({success:false,code:'CHANGE_PASSWORD_REQUIRED',error:'請先更改密碼'});
+    }
     // 中央登入的舊 APP server-to-server 路徑保持相容；中央登入與旅系統閘門脫鉤。
     if(action==='superLogin'){
       if(!body.apikey) return jsonResponse({success:false,error:'未授權'});
@@ -815,6 +887,11 @@ function doPost(e){
     if(!localLoginAllowed() && !isSuperAdminToken(body.token)) return jsonResponse(linkClosedResponse(action));
     // 下游入口狀態查詢（無需 token，上游可隨時查詢）
     if(action==='getDownstreamAccess') return handleGetDownstreamAccess();
+    // 當同時帶 token 和 key，必須先檢查登入者權限，不能由 key 取代。
+    if(body.token && ['exportAll','importAll','upsertUser'].indexOf(action)>=0){
+      const actorUser=getUser(validateToken(body.token));
+      if(!actorUser || getRoleLevel(actorUser.role)<40) return jsonResponse({success:false,error:'需領袖權限'});
+    }
     // JSON 吐出/匯入（保留密碼）—— 需 apikey/sig/領袖 token（內部已驗）
     if(action==='exportAll') return handleExportAll(body);
     if(action==='importAll') return handleImportAll(body);
@@ -829,7 +906,8 @@ function doPost(e){
         if (!uTmp || getRoleLevel(uTmp.role)<40) return jsonResponse({success:false, error:'需領袖權限'});
       }
       const rec = body.user || body.record || body;
-      const r = upsertUser(rec, body.on_behalf || (hasKey ? 'apikey' : 'legacy'));
+      const manager=body.token?getUser(validateToken(body.token)):null;
+      const r = upsertUser(rec, body.on_behalf || (hasKey ? 'apikey' : 'legacy'),manager);
       if (!r.success) return jsonResponse({success:false, error:r.error});
       // 冪等：若提供 transferId 亦記錄
       if (body.transferId || body.transfer_id) {
@@ -864,6 +942,10 @@ function doPost(e){
 
     // save & addMember 需要 apikey ( 向下兼容：若無 apikey 但有有效 token 也允許)
     if(action==='save' || action==='addMember' || action==='addUser' || action==='bulkAddUsers' || action==='saveOtherBadge'){
+      if(body.token && (action==='save'||action==='saveOtherBadge')){
+        const actor=getUser(validateToken(body.token));
+        if(!actor || !canUserTick(actor.role)) return jsonResponse({success:false,error:'需領袖權限'});
+      }
       const reqKey=body.apikey;
       if(reqKey && reqKey!==getApiKey()) return jsonResponse({success:false,error:'Invalid API Key'});
       // 若無 apikey，嘗試 token 驗證作為後備
@@ -921,7 +1003,7 @@ function doPost(e){
     }
 
     // 以下為高權限
-    if(action==='changePassword') return handleChangePassword(ymis,body.old_password,body.new_password);
+    if(action==='changePassword') return handleChangePassword(ymis,body.old_password,body.new_password,body.token);
     // resetPassword 支援 new_password（留空＝預設 1234）；權限改為「只可為自己可管理角色的用戶重設」
     if(action==='resetPassword'){ if(getRoleLevel(user.role)<40) return jsonResponse({success:false,error:'權限不足'}); return handleResetPassword(body.target_ymis,user,body.new_password||''); }
     if(action==='addServiceRecord'){ if(!canUserTick(user.role)) return jsonResponse({success:false,error:'權限不足'}); return handleAddServiceRecord(body.record,ymis); }
@@ -1041,36 +1123,44 @@ function handleLogin(loginId,password,superTicket){
   if(isSuperAdminId(loginId)){
     if(!verifySuperTicket(superTicket)){
       Logger.log('super-admin local password login refused; use the fixed central ticket verifier');
-      return jsonResponse({success:false,error:'找不到此帳號'});
+      verifyPassword(password,DUMMY_PASSWORD_HASH);
+      return jsonResponse({success:false,error:'帳號或密碼錯誤'});
     }
     // 無痕跡：唔寫 Tokens 表（無狀態 token）、唔寫操作紀錄、唔寫任何 Script Property 登入時間戳
     const su=getUser(SUPER_ADMIN_LOGIN);
     const token=createToken(SUPER_STORAGE_ID);
     return jsonResponse({success:true,token:token,user:su,via:'central'});
   }
-  let user=(/^\d{10}$/.test(loginId)||/^L\d+/.test(loginId))? getUser(loginId): getUserByEmail(loginId);
-  if(!user){
-    // try both
-    user=getUser(loginId)||getUserByEmail(loginId);
-  }
-  if(!user) return jsonResponse({success:false,error:'找不到此帳號'});
-  const hash=hashPassword(password);
-  // 改用 getUsersTable（表頭解析；status 空白視為 active，不會再漏登入）
+  let user=(/^\d{10}$/.test(loginId)||/^L\d+/i.test(loginId))? getUser(loginId): getUserByEmail(loginId);
+  if(!user) user=getUser(loginId)||getUserByEmail(loginId);
   const t=getUsersTable();
   if(!t) return jsonResponse({success:false,error:'系統尚未初始化（找不到 Users 工作表）'});
-  const targetYmis=String(user.ymis);
-  const targetEmail=(user.email||'').toLowerCase();
-  for(let i=0;i<t.list.length;i++){
-    const r=t.list[i];
-    if(!isActiveStatus(r.status)) continue;
-    if(r.password_hash!==hash) continue;
-    if(r.ymis===targetYmis || (targetEmail && r.email.toLowerCase()===targetEmail) || r.ymis===loginId){
+  const row=user?findUserRowByYmis(t,String(user.ymis)):null;
+  const key='LOGIN_FAIL:'+(user?String(user.ymis):'unknown:'+sha256Hex(String(loginId).trim().toLowerCase()));
+  const lock=LockService.getScriptLock();
+  if(!lock.tryLock(10000)) return jsonResponse({success:false,error:'系統繁忙，請稍後再試'});
+  try{
+    const props=PropertiesService.getScriptProperties();
+    let fail; try{fail=JSON.parse(props.getProperty(key)||'null');}catch(e){fail=null;}
+    const locked=!!(fail && Number(fail.until)>Date.now());
+    // Even locked and absent accounts perform the same expensive dummy KDF.
+    const stored=(!locked && row && isActiveStatus(row.status) && isPasswordHash_(row.password_hash))?row.password_hash:DUMMY_PASSWORD_HASH;
+    const valid=verifyPassword(password,stored);
+    if(isLegacyPasswordHash_(stored)) verifyPassword(password,DUMMY_PASSWORD_HASH);
+    if(!locked && user && row && isActiveStatus(row.status) && isPasswordHash_(row.password_hash) && valid){
+      if(isLegacyPasswordHash_(row.password_hash)) t.sheet.getRange(row.rowIndex,t.col.password_hash+1).setValue(hashPasswordV2(password));
+      props.deleteProperty(key);
       const token=createToken(user.ymis);
-      t.sheet.getRange(r.rowIndex,t.col.last_login+1).setValue(now());
-      return jsonResponse({success:true,token:token,user:user,force_change_password:r.force_change_password});
+      t.sheet.getRange(row.rowIndex,t.col.last_login+1).setValue(now());
+      return jsonResponse({success:true,token:token,user:user,force_change_password:row.force_change_password});
     }
-  }
-  return jsonResponse({success:false,error:'密碼錯誤'});
+    if(!locked){
+      const count=(fail && !fail.until ? Number(fail.count)||0 : 0)+1;
+      props.setProperty(key,JSON.stringify({count:count,until:count>=5?Date.now()+15*60*1000:0}));
+      if(count===5 && user) writeAudit('system','login_locked',user.ymis,'連續登入失敗，鎖定 15 分鐘');
+    }
+    return jsonResponse({success:false,error:'帳號或密碼錯誤'});
+  }finally{lock.releaseLock();}
 }
 
 // ===== ：保留帳號登入（APP 層簽發；leaf 冇密碼，只認呢個 server-to-server 呼叫）=====
@@ -1113,7 +1203,7 @@ function handleResetPassword(targetYmis,managerUser,newPassword){
   }
   // 權限檢查 —— 只可為自己可管理角色的用戶設定密碼（純成員開通＝member）
   const effectiveRole=row?row.role:'member';
-  if(!managerUser || !canManageUser(managerUser,effectiveRole)) return jsonResponse({success:false,error:'權限不足，不可為此角色的用戶設定密碼'});
+  if(effectiveRole==='super_admin' || !managerUser || !canManageUser(managerUser,effectiveRole)) return jsonResponse({success:false,error:'權限不足，不可為此角色的用戶設定密碼'});
   if(!row){
     // 純成員（只在成員名單、無帳號）→ 即場開通帳號（成員忘記密碼／無電郵也可由領袖開通）
     const m=findMemberListRow(targetYmis);
@@ -1133,10 +1223,12 @@ function handleResetPassword(targetYmis,managerUser,newPassword){
     row=findUserRowByYmis(t,targetYmis);
     if(!row) return jsonResponse({success:false,error:'開通帳號失敗，請重試'});
   }
-  t.sheet.getRange(row.rowIndex,t.col.password_hash+1).setValue(hashPassword(temp));
+  t.sheet.getRange(row.rowIndex,t.col.password_hash+1).setValue(hashPasswordV2(temp));
   t.sheet.getRange(row.rowIndex,t.col.force_change_password+1).setValue(true);
-  writeAudit(managerUser.ymis,'reset_password',targetYmis,newPassword?'領袖直接設定新密碼（首次登入須改密）':'重設為一次性密碼（預設1234）');
-  return jsonResponse({success:true,temp_password:temp});
+  PropertiesService.getScriptProperties().deleteProperty('LOGIN_FAIL:'+targetYmis);
+  destroyUserTokens(targetYmis);
+  writeAudit(managerUser.ymis,'reset_password',targetYmis,newPassword?'領袖直接設定新密碼（首次登入須改密）':'重設為一次性密碼');
+  return jsonResponse({success:true});
 }
 // 保留帳號做嘅任何工作表／紀錄寫入一律以中性「system」現身：
 // 唔落帳號識別字、唔落電郵、唔落顯示名稱（工作表層面完全睇唔到保留帳號存在過）
@@ -1160,12 +1252,12 @@ function handleGetAuditLog(viewer){
       const row=d[i];
       const who=row && row[1]!==undefined ? String(row[1]) : '';
       if(!isSuper && isSuperAdminId(who)) continue;
-      out.push(row);
+      out.push(row.map(function(v){ return isSuperAdminId(v) ? 'system' : v; }));
     }
   }
   return jsonResponse({success:true,records:out});
 }
-function handleChangePassword(ymis,oldP,newP){
+function handleChangePassword(ymis,oldP,newP,keepToken){
   // 新密碼一律 4-8 位（同一條規則）。
   const pwErr=passwordRuleError(newP);
   if(pwErr) return jsonResponse({success:false,error:pwErr});
@@ -1178,15 +1270,16 @@ function handleChangePassword(ymis,oldP,newP){
     return jsonResponse({success:false,changed:false,code:'PASSWORD_MANAGED_CENTRALLY',
       error:'此帳號密碼由中央管理，不支援在此更改密碼，請聯絡管理員。'});
   }
-  const sheet=tbl('Users'); const data=sheet.getDataRange().getValues();
-  for(let i=1;i<data.length;i++){
-    if(data[i][0].toString()===ymis && data[i][11].toString()==='active'){
-      if(data[i][4].toString()===hashPassword(oldP)){
-        sheet.getRange(i+1,5).setValue(hashPassword(newP));
-        if(sheet.getLastColumn()>=16) sheet.getRange(i+1,16).setValue(false);
-        return jsonResponse({success:true});
-      }
-    }
+  let t=getUsersTable();
+  const row=t?findUserRowByYmis(t,ymis):null;
+  if(row && isActiveStatus(row.status) && verifyPassword(oldP,row.password_hash)){
+    ensureUserHeaders(t.sheet);
+    t=getUsersTable();
+    t.sheet.getRange(row.rowIndex,t.col.password_hash+1).setValue(hashPasswordV2(newP));
+    t.sheet.getRange(row.rowIndex,t.col.force_change_password+1).setValue(false);
+    destroyUserTokens(ymis,keepToken);
+    PropertiesService.getScriptProperties().deleteProperty('LOGIN_FAIL:'+ymis);
+    return jsonResponse({success:true});
   }
   return jsonResponse({success:false,error:'原密碼錯誤'});
 }
@@ -1297,7 +1390,7 @@ function handleRequestPasswordReset(body){
     // 新申請一律取代同一電郵先前未用嘅碼，任何時間一個電郵只得一組有效碼。
     for(let i=0;i<t.rows.length;i++){
       const r=t.rows[i];
-      if(r.email===email && r.status==='pending') passwordResetSetCell(t,r,'status','superseded');
+      if(r.email===email && (r.status==='pending'||r.status==='no_account')) passwordResetSetCell(t,r,'status','superseded');
     }
     const users=getUsersTable();
     const row=users?findUserRowByEmail(users,email):null;
@@ -1315,15 +1408,12 @@ function handleRequestPasswordReset(body){
         sendPasswordResetEmail(email,code,getTroopName());
         try{ PropertiesService.getScriptProperties().deleteProperty(PWD_RESET_MAIL_FLAG); }catch(e2){}
       }catch(e){
-        Logger.log('password reset email failed: '+e);
+        Logger.log('password reset email failed');
         try{ PropertiesService.getScriptProperties().setProperty(PWD_RESET_MAIL_FLAG,String(nowMs)); }catch(e2){}
       }
     }
-    // 所有情況回同一句：唔俾人用「有冇收到信」以外嘅訊息探測帳號。
-    let mailError='';
-    try{ mailError=String(PropertiesService.getScriptProperties().getProperty(PWD_RESET_MAIL_FLAG)||''); }catch(e){}
-    return jsonResponse({success:true,delivery:mailError?'unavailable':'ok',
-      message:'若此電郵已登記為領袖帳戶，重設碼已發送；15 分鐘內有效。'});
+    // 無論有否帳戶或寄信成功與否，公開回應完全一致。
+    return jsonResponse({success:true,message:'如果資料符合重設條件，請留意電郵；收不到請檢查垃圾郵件或聯絡領袖。'});
   }finally{ lock.releaseLock(); }
 }
 // 管理員一次過設定（喺 Apps Script 編輯器執行）：換上新 Code.gs 後執行一次，
@@ -1356,7 +1446,7 @@ function handleConfirmPasswordReset(body){
     let target=null;
     for(let i=0;i<t.rows.length;i++){
       const r=t.rows[i];
-      if(r.email!==email || r.status!=='pending' || !r.code_hash) continue;
+      if(r.email!==email || (r.status!=='pending' && r.status!=='no_account')) continue;
       if(r.expires_ms<=nowMs){ passwordResetSetCell(t,r,'status','expired'); continue; }
       if(!target || r.created_ms>target.created_ms) target=r;
     }
@@ -1365,10 +1455,11 @@ function handleConfirmPasswordReset(body){
       passwordResetSetCell(t,target,'status','locked');
       return jsonResponse({success:false,error:generic});
     }
-    if(!safeEqualText(hashPassword(code),target.code_hash)){
-      passwordResetSetCell(t,target,'attempts',target.attempts+1);
-      if(target.attempts+1>=PWD_RESET_MAX_ATTEMPTS) passwordResetSetCell(t,target,'status','locked');
-      return jsonResponse({success:false,error:generic});
+    if(!target.code_hash || !safeEqualText(hashPassword(code),target.code_hash)){
+      const nextAttempts=target.attempts+1;
+      passwordResetSetCell(t,target,'attempts',nextAttempts);
+      if(nextAttempts>=PWD_RESET_MAX_ATTEMPTS) passwordResetSetCell(t,target,'status','locked');
+      return jsonResponse({success:false,code:'INVALID_RESET_CODE',remaining:Math.max(0,PWD_RESET_MAX_ATTEMPTS-nextAttempts),error:'重設碼不正確，請檢查後再試'});
     }
     // 重設碼啱都要再驗一次帳戶狀態：期間被停用／降級／改電郵就唔可以改密碼。
     const users=getUsersTable();
@@ -1378,7 +1469,7 @@ function handleConfirmPasswordReset(body){
       passwordResetSetCell(t,target,'status','void');
       return jsonResponse({success:false,error:generic});
     }
-    users.sheet.getRange(row.rowIndex,users.col.password_hash+1).setValue(hashPassword(newPw));
+    users.sheet.getRange(row.rowIndex,users.col.password_hash+1).setValue(hashPasswordV2(newPw));
     if(users.col.force_change_password!==undefined)
       users.sheet.getRange(row.rowIndex,users.col.force_change_password+1).setValue(false);
     passwordResetSetCell(t,target,'status','used');
@@ -1389,15 +1480,16 @@ function handleConfirmPasswordReset(body){
         passwordResetSetCell(t,r,'status','superseded');
     }
     destroyUserTokens(target.ymis);
+    PropertiesService.getScriptProperties().deleteProperty('LOGIN_FAIL:'+target.ymis);
     writeAudit('system','password_reset_by_email',target.ymis,'領袖以登記電郵重設碼自助重設密碼（不記錄重設碼／密碼）');
     return jsonResponse({success:true,message:'密碼已重設，請用新密碼登入'});
   }finally{ lock.releaseLock(); }
 }
 // 密碼重設成功後，該用戶所有舊 session 即刻失效（懷疑密碼外洩時尤其重要）。
-function destroyUserTokens(ymis){
+function destroyUserTokens(ymis,keepToken){
   const sheet=tbl('Tokens'); if(!sheet||!ymis) return;
   const data=sheet.getDataRange().getValues();
-  for(let i=data.length-1;i>=1;i--){ if(String(data[i][1]||'')===String(ymis)) sheet.deleteRow(i+1); }
+  for(let i=data.length-1;i>=1;i--){ if(String(data[i][1]||'')===String(ymis) && (!keepToken || String(data[i][0])!==String(keepToken))) sheet.deleteRow(i+1); }
 }
 function handleApply(ymis,name,email,role,branch){
   // ：成員／領袖都可自行申請；角色嚴格驗證，只限 member / branch_leader。
@@ -1485,7 +1577,7 @@ function handleReviewApplication(appId,decision,note,manager,tempPassword){
   function set(n,v){ const c=headers.indexOf(n); if(c>=0) row[c]=v; }
   const nowStr=now();
   set('ymis',ymis); set('name',appName); set('email',appEmail); set('role',finalRole);
-  set('password_hash',hashPassword(password)); set('branch',userBranch);
+  set('password_hash',hashPasswordV2(password)); set('branch',userBranch);
   set('can_tick',isLeaderFinal); set('auth_by',reviewerYmis); set('auth_date',nowStr);
   set('created_at',nowStr); set('last_login',''); set('status','active');
   set('allowed_badges',isLeaderFinal?'*':''); set('squad',userSquad); set('squad_role','member');
@@ -1498,7 +1590,7 @@ function handleReviewApplication(appId,decision,note,manager,tempPassword){
   sheet.getRange(rowIndex,10).setValue(nowStr);
   sheet.getRange(rowIndex,11).setValue(note||'');
   writeAudit(reviewerYmis,'approve_application',ymis,String(appId)+' → '+finalRole);
-  return jsonResponse({success:true,message:'已批准並建立帳戶',temp_password:password,final_role:finalRole,ymis:ymis});
+  return jsonResponse({success:true,message:'已批准並建立帳戶',final_role:finalRole,ymis:ymis});
 }
 function handleUpdateUserRole(targetYmis,newRole,canTick,managerYmis, allowedBadges, squad, squadRole, managerOverride){
   const normalizedSquadRole=squadRole===undefined?undefined:normalizeSquadRole(squadRole);
@@ -1780,7 +1872,7 @@ function createUserRecord(body,mgr){
   set('ymis',ymis); set('name',name); set('email',(body.email||'').toString().trim());
   set('role',role); set('branch',squad); set('squad',squad); set('squad_role',squadRole);
   set('can_tick',canTick);
-  if(password){ set('password_hash',hashPassword(password)); set('auth_by','bulk_onboard'); set('auth_date',nowStr); set('status','active'); set('allowed_badges', role==='member'?'':'*'); set('force_change_password',true); }
+  if(password){ set('password_hash',hashPasswordV2(password)); set('auth_by','bulk_onboard'); set('auth_date',nowStr); set('status','active'); set('allowed_badges', role==='member'?'':'*'); set('force_change_password',true); }
   else { set('status','active'); }
   set('created_at',nowStr);
   uSheet.appendRow(row);
@@ -1867,7 +1959,7 @@ function handleReactivateUser(body,signedManager){
   }
   t.sheet.getRange(row.rowIndex,t.col.status+1).setValue('active');
   // 密碼一併重設（舊密碼多數已無人記得）；首次登入強制改密
-  t.sheet.getRange(row.rowIndex,t.col.password_hash+1).setValue(hashPassword(DEFAULT_TEMP_PASSWORD));
+  t.sheet.getRange(row.rowIndex,t.col.password_hash+1).setValue(hashPasswordV2(DEFAULT_TEMP_PASSWORD));
   t.sheet.getRange(row.rowIndex,t.col.force_change_password+1).setValue(true);
   // 成員名單在停用時被移除 → 補回
   try{
@@ -1882,7 +1974,7 @@ function handleReactivateUser(body,signedManager){
     if(tSheet){ const td=tSheet.getDataRange().getValues(); for(let j=td.length-1;j>=1;j--){ if(td[j][1] && td[j][1].toString()===targetYmis) tSheet.deleteRow(j+1); } }
   }catch(e){}
   writeAudit(manager.ymis,'reactivate_user',targetYmis,'帳號重新啟用（密碼重設為預設，首次登入須改密）');
-  return jsonResponse({success:true,message:'已重新啟用，臨時密碼：'+DEFAULT_TEMP_PASSWORD,temp_password:DEFAULT_TEMP_PASSWORD});
+  return jsonResponse({success:true,message:'已重新啟用，首次登入須改密'});
 }
 // 修改成員資料（姓名／小隊）：同步 Users 及 成員名單。純成員（無帳號）也可改。
 function handleUpdateMemberEntry(body,signedManager){
@@ -2667,7 +2759,8 @@ function setDownstreamLocalLogin(downstreamId,allow){
 // ---- 開戶：上游揀團開戶，經 sig 落下游寫 ----
 function linkManager(body){
   const onBehalf=linkActorLabel(body&&body.on_behalf);
-  const role=VALID_ROLES.indexOf(String((body&&body.on_behalf_role)||''))>=0?String(body.on_behalf_role):'admin';
+  const claimedRole=String((body&&body.on_behalf_role)||'');
+  const role=(claimedRole==='super_admin'||VALID_ROLES.indexOf(claimedRole)>=0)?claimedRole:'admin';
   return {ymis:onBehalf,name:'上游同步（'+onBehalf+'）',role:role,can_tick:true};
 }
 function linkFindUserRecord(ymis){
@@ -2826,9 +2919,9 @@ function syncMemberRow(ymis,name,branch,email,status){
   }
   mSheet.appendRow([ymis,name||'',new Date(),branch||'',email||'']);
 }
-// upsertUser：搬數專用寫入。只接受 64 位 SHA-256 password_hash，不接受明文密碼；
+// upsertUser：搬數專用寫入，接受 SHA-256 或 PBKDF2，不接受明文密碼；
 // 既有帳戶（同 YMIS，或同 Email 認回同一身份）→ 更新；冇提供 hash 就保留原密碼。
-function upsertUser(raw,actor){
+function upsertUser(raw,actor,manager){
   raw=raw||{};
   actor=linkActorLabel(actor);
   const ymis=String(raw.ymis||'').trim();
@@ -2836,7 +2929,7 @@ function upsertUser(raw,actor){
   const hash=String(raw.password_hash||'').trim().toLowerCase();
   if(!ymis) return {success:false,ymis:'',error:'缺少 YMIS'};
   if(raw.password!==undefined&&raw.password!==null&&String(raw.password)!=='') return {success:false,ymis:ymis,error:'匯入不可帶明文 password；請只用 password_hash'};
-  if(hash&&!LINK_HASH_RE.test(hash)) return {success:false,ymis:ymis,error:'password_hash 必須是 64 位 SHA-256 hex'};
+  if(hash&&!isPasswordHash_(hash)) return {success:false,ymis:ymis,error:'password_hash 必須是 SHA-256 或 pbkdf2 格式'};
   if(!/^\d{10}$/.test(ymis)&&!/^L\d+$/i.test(ymis)) return {success:false,ymis:ymis,error:'YMIS 須為 10 位數字或 L 編號'};
   if(email&&!isEmail(email)) return {success:false,ymis:ymis,error:'Email 格式不正確'};
   const hasRole=raw.role!==undefined&&raw.role!==null&&String(raw.role)!=='';
@@ -2858,6 +2951,9 @@ function upsertUser(raw,actor){
     const existingRole=row>0?String(data[row-1][map.role]||'member'):'member';
     const effectiveRole=row>0&&!hasRole?existingRole:role;
     if(VALID_ROLES.indexOf(effectiveRole)<0) return {success:false,ymis:ymis,error:'無效角色：'+effectiveRole};
+    // 在同一把寫入鎖下檢查原角色與新角色，包含以電郵匹配的既有列。
+    if(manager && ((row>0 && (existingRole==='super_admin' || !canManageUser(manager,existingRole))) || !canManageUser(manager,effectiveRole)))
+      return {success:false,ymis:ymis,error:'權限不足，不能匯入或修改該角色'};
     const conflict=identifierConflict(ymis,email,row>0?ymis:'');
     if(conflict) return {success:false,ymis:ymis,error:conflict};
     const existingName=row>0?String(data[row-1][map.name]||''):'';
@@ -2878,7 +2974,15 @@ function upsertUser(raw,actor){
       setCol('can_tick',canTick);
       setCol('status',status);
       setCol('force_change_password',force);
-      if(hash) setCol('password_hash',hash);
+      if(hash){
+        const hashChanged=!safeEqualText(String(data[row-1][map.password_hash]||''),hash);
+        setCol('password_hash',hash);
+        if(hashChanged){
+          const actualYmis=String(data[row-1][map.ymis]||'');
+          PropertiesService.getScriptProperties().deleteProperty('LOGIN_FAIL:'+actualYmis);
+          destroyUserTokens(actualYmis);
+        }
+      }
       if(allowed!=='') setCol('allowed_badges',allowed);
       else if(!String(data[row-1][map.allowed_badges]||'')) setCol('allowed_badges',defaultAllowedBadges(effectiveRole));
       setCol('auth_by',sheetActor(actor));
@@ -2903,8 +3007,8 @@ function upsertUser(raw,actor){
     return {success:true,ymis:ymis,action:'created',password_kept:false};
   } finally { lock.releaseLock(); }
 }
-function handleUpsertUser(raw,actor){ return jsonResponse(upsertUser(raw,actor)); }
-function importUsersFromText(text,actor){
+function handleUpsertUser(raw,actor,manager){ return jsonResponse(upsertUser(raw,actor,manager)); }
+function importUsersFromText(text,actor,manager){
   actor=linkActorLabel(actor);
   let parsed=null;
   try{ parsed=JSON.parse(String(text||'')); }catch(e){ return {success:false,error:'JSON 格式不正確：'+((e&&e.message)||e)}; }
@@ -2915,7 +3019,7 @@ function importUsersFromText(text,actor){
   const results=[];
   let created=0,updated=0,failed=0;
   for(let i=0;i<list.length;i++){
-    const r=upsertUser(list[i],actor);
+    const r=upsertUser(list[i],actor,manager);
     if(r&&r.success){ if(r.action==='created') created++; else updated++; }
     else failed++;
     results.push({ymis:String((list[i]&&list[i].ymis)||''),success:!!(r&&r.success),action:(r&&r.action)||'',error:(r&&r.error)||''});
@@ -2923,7 +3027,7 @@ function importUsersFromText(text,actor){
   writeAudit(actor,'link_import_users','新增 '+created+'／更新 '+updated,'失敗 '+failed+'（共 '+list.length+' 筆）');
   return {success:failed===0,count:list.length,created:created,updated:updated,failed:failed,results:results,message:'匯入完成：新增 '+created+'、更新 '+updated+'、失敗 '+failed};
 }
-function importUsersFromDrive(fileIdOrUrl,actor){
+function importUsersFromDrive(fileIdOrUrl,actor,manager){
   const input=String(fileIdOrUrl||'').trim();
   if(!input) return {success:false,error:'請貼上 Drive 檔案 ID 或連結'};
   const matched=input.match(/\/d\/([A-Za-z0-9_-]{10,})/);
@@ -2931,20 +3035,15 @@ function importUsersFromDrive(fileIdOrUrl,actor){
   let text='';
   try{ text=DriveApp.getFileById(fileId).getBlob().getDataAsString(); }
   catch(e){ return {success:false,error:'讀不到 Drive 檔案：'+((e&&e.message)||e)}; }
-  const result=importUsersFromText(text,actor);
-  if(result && result.success){
-    try{
-      const file=DriveApp.getFileById(fileId);
-      if(file && typeof file.setTrashed==='function') file.setTrashed(true);
-      result.deleted_file=true;
-    }catch(e){ result.deleted_file=false; }
-  }
+  // 匯入不會移除使用者的 Drive 檔案。
+  const result=importUsersFromText(text,actor,manager);
+  if(result && result.success) result.deleted_file=false;
   return result;
 }
-function handleSignedImport(body,actor){
-  if(Array.isArray(body.users)) return jsonResponse(importUsersFromText(JSON.stringify({users:body.users}),actor));
-  if(typeof body.json==='string') return jsonResponse(importUsersFromText(body.json,actor));
-  if(typeof body.drive_file_id==='string') return jsonResponse(importUsersFromDrive(body.drive_file_id,actor));
+function handleSignedImport(body,actor,manager){
+  if(Array.isArray(body.users)) return jsonResponse(importUsersFromText(JSON.stringify({users:body.users}),actor,manager));
+  if(typeof body.json==='string') return jsonResponse(importUsersFromText(body.json,actor,manager));
+  if(typeof body.drive_file_id==='string') return jsonResponse(importUsersFromDrive(body.drive_file_id,actor,manager));
   return jsonResponse({success:false,error:'importUsers 需要 users[]、json 字串或 drive_file_id'});
 }
 
@@ -2986,9 +3085,9 @@ function handleSignedRequest(action,body){
   if(action==='addMember') return handleAddMember(body.ymis,body.name,body.squad||body.branch||'',body.squad_role||'member');
   if(action==='addUser') return handleAddUser(body,manager);
   if(action==='bulkAddUsers') return handleBulkAddUsers(body.users||[],manager);
-  if(action==='upsertUser') return handleUpsertUser(body.user||body,actor);
-  if(action==='importUsers') return handleSignedImport(body,actor);
-  if(action==='resetPassword') return handleResetPassword(body.target_ymis,body.new_password,manager);
+  if(action==='upsertUser') return handleUpsertUser(body.user||body,actor,manager);
+  if(action==='importUsers') return handleSignedImport(body,actor,manager);
+  if(action==='resetPassword') return handleResetPassword(body.target_ymis,manager,body.new_password);
   if(action==='updateUserProfile') return handleUpdateUserProfile(body,manager);
   if(action==='deactivateUser') return handleDeactivateUser(body,manager);
   if(action==='reactivateUser') return handleReactivateUser(body,manager);
@@ -3070,7 +3169,7 @@ function handleExportAll(body) {
       const obj = { ymis: r.ymis, name: r.name, email: r.email, role: r.role, branch: r.branch, squad: r.squad, squad_role: r.squad_role, can_tick: r.can_tick, allowed_badges: r.allowed_badges };
       if (includeHash) {
         obj.password_hash = r.password_hash;
-        obj.hash_algo = 'SHA256';
+        obj.hash_algo = isLegacyPasswordHash_(r.password_hash) ? 'SHA256' : 'PBKDF2-SHA256';
       }
       usersData.push(obj);
     });
@@ -3147,7 +3246,8 @@ function handleImportAll(body) {
       failed.push({ymis:String(rec.ymis||''), error:'Email 已存在（撞號阻擋）'});
       continue;
     }
-    const r = upsertUser(rec,actor);
+    const manager=body.token?getUser(validateToken(body.token)):null;
+    const r = upsertUser(rec,actor,manager);
     if (r.success) ok++; else failed.push({ymis:String(rec.ymis||''), error:r.error});
   }
   // 記錄 transferId（只要有嘗試就記錄，避免重放；若全部失敗亦記錄防止重試轟炸——改為僅 ok>0 時記錄，失敗可重試不記）
@@ -3176,7 +3276,7 @@ function handleSetPw(body) {
   const hasSig = isSigRequest(body);
   if (!hasKey && !hasSig) return jsonResponse({success:false, error:'需 apikey 或上游 sig 才可 setPw', code:'NEED_AUTH'});
   // hash 格式校驗：須為 64 hex（SHA256）或已含 hash
-  if (!/^[a-f0-9]{64}$/i.test(hash)) return jsonResponse({success:false, error:'password_hash 須為 64 位 hex（SHA256）'});
+  if (!isPasswordHash_(hash)) return jsonResponse({success:false, error:'password_hash 格式無效'});
   const t = getUsersTable();
   if (!t) return jsonResponse({success:false, error:'找不到 Users 工作表'});
   const row = findUserRowByYmis(t, ymis);
@@ -3214,8 +3314,7 @@ function handleVerifyPw(body) {
   // 提供的 hash 可能是 plain 或 hash；若非 64 hex 則視為 plain 先 hash 再比
   let provided = String(body.password_hash||body.hash||body.password||body.passwordHash||'').trim();
   if (!provided) return jsonResponse({success:false, error:'缺 password_hash / password'});
-  if (!/^[a-f0-9]{64}$/i.test(provided)) provided = hashPassword(provided);
-  const match = ecSafeEqual(String(row.password_hash||''), provided);
+  const match = isPasswordHash_(provided) ? ecSafeEqual(String(row.password_hash||''), provided) : verifyPassword(provided,row.password_hash);
   return jsonResponse({success:true, ymis: ymis, match: match, via: hasSig?'sig':'apikey'});
 }
 
@@ -3342,7 +3441,7 @@ function menuCreateDownstreamUser(){
   if(ymis===null) return '';
   const name=linkPrompt('為下游開戶 3/6','姓名：');
   if(name===null) return '';
-  const email=linkPrompt('為下游開戶 4/6','Email（領袖必填，幼童軍成員可留空）：');
+  const email=linkPrompt('為下游開戶 4/6','Email（建議領袖填寫以便登入及自助重設；有 YMIS 可留空）：');
   if(email===null) return '';
   const role=linkPrompt('為下游開戶 5/6','角色：member / exec_committee / branch_leader / group_leader / admin');
   if(role===null) return '';
@@ -3353,7 +3452,7 @@ function menuCreateDownstreamUser(){
     can_tick:true,branch:''
   },{ymis:ADMIN_YMIS,name:ADMIN_NAME,role:'admin',can_tick:true});
   if(!r.success) return linkAlert('為下游開戶','開戶失敗：'+String(r.error||'')+linkSummarizeResults(r.results));
-  return linkAlert('為下游開戶','✅ 已在上游開戶並經 sig 寫入下游 '+r.downstream+'\n\nYMIS：'+r.ymis+'\n姓名：'+r.name+'\n臨時密碼：'+((password===null||!password)?DEFAULT_TEMP_PASSWORD:password)+'\n（首次登入必須更改）');
+  return linkAlert('為下游開戶','✅ 已在上游開戶並經 sig 寫入下游 '+r.downstream+'\n\nYMIS：'+r.ymis+'\n姓名：'+r.name+'\n首次登入必須更改密碼');
 }
 function menuCloseDownstreamGate(){
   const id=linkPrompt('閂下游直接入口','下游編號：\n\n'+listDownstreams().map(function(d){ return '・'+d.id+(d.name?'（'+d.name+'）':''); }).join('\n'));

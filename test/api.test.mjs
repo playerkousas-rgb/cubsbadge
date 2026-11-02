@@ -887,5 +887,24 @@ await check('proxy：普通帳號登入完全唔受影響（照舊 action=login�
   } finally { restoreFetch(); }
 });
 
+await check('proxy：已配置 key 也不可讓未登入者借用 key 寫入或同步密碼', async () => {
+  clearEnv();
+  process.env.TROOP_0082_BACKEND='https://script.google.com/macros/s/AKfycbREALXXXXXXXXXX/exec';
+  process.env.TROOP_0082_APIKEY='sc_injected_key';
+  let called=false;
+  stubFetch([['script.google.com', async () => {called=true;return {body:{success:true}}; }]]);
+  try {
+    const handler=freshModule('../api/proxy.js');
+    for(const action of ['save','addUser','bulkAddUsers','upsertUser','importAll','exportAll','requestComplete']){
+      const res=mockRes(); await handler(mockReq({method:'POST',body:{troopId:'82',action}}),res);
+      assert.equal(res.statusCode,401,action); assert.equal(called,false,action);
+    }
+    for(const action of ['setPw','verifyPw']){
+      const res=mockRes(); await handler(mockReq({method:'POST',body:{troopId:'82',action,token:'anything'}}),res);
+      assert.equal(res.statusCode,403,action); assert.equal(called,false,action);
+    }
+  } finally {restoreFetch();clearEnv();}
+});
+
 console.log(`\n== api 結果：${passed} 通過，${failed} 失敗 ==`);
 if (failed > 0) process.exit(1);

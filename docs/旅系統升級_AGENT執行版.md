@@ -157,7 +157,7 @@ GAS 收到 `login` 嘅 `super_ticket` 後，只會回打上述固定端點驗票
 
 `upsertUser` 規則：
 
-- 新戶一定要 64 位 hex `password_hash`；帶明文 `password` 一律拒絕；
+- 新戶須提供 64 位 SHA-256 或 PBKDF2 格式的 `password_hash`；帶明文 `password` 一律拒絕；
 - 同 YMIS 或同 Email 對回同一身份時更新，不新增重複列；
 - 有 hash 就更新密碼，無 hash 就保留既有密碼；
 - 無 `branch` 不洗走下游既有 branch；
@@ -174,7 +174,7 @@ GAS 收到 `login` 嘅 `super_ticket` 後，只會回打上述固定端點驗票
 - 建立後設為 `Access.PRIVATE` + `Permission.NONE`；
 - Drive 失敗時完整 JSON 只寫 Logger 作後備；
 - 不開新工作表、不將 hash 寫操作紀錄，只記筆數及檔案 ID；
-- 匯入成功後嘗試刪除／移除 Drive 匯出檔。
+- 匯入後保留 Drive 匯出檔；需要刪除時由用戶自行確認處理。
 
 新支部按「📥 匯入 JSON」：
 

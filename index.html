@@ -4,8 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <meta name="theme-color" content="#FFD60A">
-<meta name="cubsbadge-build" content="2026.11.02.1">
-<script src="assets/frontend-freshness.js?build=2026.11.02.1" defer></script>
+<meta name="cubsbadge-build" content="2026.11.03.2">
+<script src="assets/frontend-freshness.js?build=2026.11.03.2" defer></script>
 <!-- App icon：金紫荊獎章（favicon + PWA / iOS 主畫面圖示） -->
 <!-- 使用 assets 內的高解像度圖示，避免 favicon／頁首圖示顯示模糊 -->
 <link rel="icon" type="image/png" sizes="256x256" href="assets/app-icon-256.png">
@@ -225,7 +225,7 @@ html[lang="en"] body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","No
 .bulk-progress{background:#FAFAFA;border:1px solid var(--border);border-radius:8px;padding:8px;max-height:160px;overflow-y:auto;font-size:11px;margin-top:10px;display:none}
 .bulk-progress .ok{color:var(--green)}.bulk-progress .fail{color:var(--red)}
 .history-item{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:8px 10px;margin-bottom:6px;font-size:12px;line-height:1.6}
-.temp-pw-box{font-size:26px;font-weight:800;letter-spacing:3px;text-align:center;background:var(--bg);border:2px dashed var(--maroon);border-radius:10px;padding:14px;margin:10px 0;color:#8B5A00;user-select:all}
+.temp-pw-box{font-size:26px;font-weight:800;letter-spacing:3px;text-align:center;background:var(--bg);border:2px dashed var(--maroon);border-radius:10px;padding:14px;margin:10px 0;color:#8B5A00;-webkit-user-select:all;user-select:all}
 .tutorial{background:var(--card);border-radius:10px;padding:18px;margin-bottom:16px;box-shadow:var(--shadow)}
 .steps{margin-top:12px}.step{display:flex;gap:12px;margin-bottom:12px;padding:12px;background:var(--bg);border-radius:10px;border-left:4px solid var(--maroon)}
 .step-number{width:32px;height:32px;background:var(--maroon);color:#000;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;flex-shrink:0}
@@ -400,8 +400,8 @@ html[lang="en"] body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","No
       -->
       <div class="tutorial">
         <div class="steps">
-          <div class="step"><div class="step-number">1</div><div class="step-content"><h4 data-i18n="s1h">下載最新 GS（2026.11.02）</h4><p data-i18n="s1p">最新 GS 2026.11.02：領袖登入新增「忘記密碼」電郵重設碼；已有正常 Sheet 更新只需部署，不用重跑初始化；保留資料及 API Key</p><a href="apps-script/Code.gs?gs=2026.11.02" download="Code.gs" class="btn btn-primary btn-sm" style="margin-top:6px" data-i18n="s1btn">⬇️ 下載 Code.gs（GS 2026.11.02）</a></div></div>
-          <div class="step"><div class="step-number">2</div><div class="step-content"><h4 data-i18n="s2h">建立 Google Sheet 並部署</h4><p data-i18n-html="s2p">建新試算表 → 擴充功能 → Apps Script 貼上 Code.gs → 儲存 → 執行 initializeSheets 授權（僅新建 Sheet 首次使用需要；已有正常 Sheet 更新毋須重跑，保留資料及 API Key）→ 部署為網頁應用程式（執行身分我，任何人可存取；首次使用「忘記密碼」發信時 Google 會要求授權傳送電郵，請按提示允許）。Google 部署視窗提供部署網址；GS 彈窗及選單只提供 API Key，不顯示自動取得的網址；旅團編號毋須在 Sheet／Apps Script 預先設定</p></div></div>
+          <div class="step"><div class="step-number">1</div><div class="step-content"><h4 data-i18n="s1h">下載最新 GS（2026.11.03.1）</h4><p data-i18n="s1p">最新 GS 2026.11.03.1：改善登入驗證速度；本版無新增必要欄；建議更新後執行初始化，跨多版本升級必須執行；保留資料及 API Key</p><a href="apps-script/Code.gs?gs=2026.11.03.1" download="Code.gs" class="btn btn-primary btn-sm" style="margin-top:6px" data-i18n="s1btn">⬇️ 下載 Code.gs（GS 2026.11.03.1）</a></div></div>
+          <div class="step"><div class="step-number">2</div><div class="step-content"><h4 data-i18n="s2h">建立 Google Sheet 並部署</h4><p data-i18n-html="s2p">建新試算表 → 擴充功能 → Apps Script 貼上 Code.gs → 儲存 → 執行 initializeSheets 授權（建議每次更新後執行；跨多版本升級必須執行，保留資料及 API Key）→ 部署為網頁應用程式（執行身分我，任何人可存取；首次使用「忘記密碼」發信時 Google 會要求授權傳送電郵，請按提示允許）。Google 部署視窗提供部署網址；GS 彈窗及選單只提供 API Key，不顯示自動取得的網址；旅團編號毋須在 Sheet／Apps Script 預先設定</p></div></div>
           <div class="step"><div class="step-number">3</div><div class="step-content"><h4 data-i18n="s3h">提交給 APP ADMIN</h4><p data-i18n="s3p">取得 API Key 及 Google 部署視窗提供的部署 URL 後，填寫下方接入申請（ADMIN FORM）。旅團編號直接在 ADMIN FORM 填寫，毋須在 GS 設定。API Key 可在「🔗 旅系統 → 🔑 顯示 API KEY（交 ADMIN）」查看</p></div></div>
           <div class="step"><div class="step-number">4</div><div class="step-content"><h4 data-i18n="s_fl_h">首次登入（預設管理員帳號）</h4><p data-i18n-html="s_fl_p">登記完成後，首頁揀該旅團卡片 → 用「<b>👤 家長/成員</b>」分頁登入：<br>YMIS <b>1111111111</b>　密碼 <b>changeme</b>（initializeSheets 自動建立嘅預設管理員，唔好用「領袖=Email」分頁）<br>首次登入會<b>強制改密碼</b>（4-8 位）。之後喺「審批中心」批成員申請、喺「用戶管理」開返各領袖真電郵嘅帳號並設權限</p></div></div>
           <!-- [主系統暫時隱藏 2026-10] 軌道B（接上主系統）未開放，完成後解除註解並自行重排步驟號（而家 4=首次登入、5=私隱選擇）：
@@ -457,7 +457,7 @@ html[lang="en"] body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","No
       <div class="form-group"><label id="loginIdLabel">YMIS（10位數字）</label><input type="text" id="loginId" placeholder="例如 1234567890" maxlength="10"></div>
       <div class="form-group"><label data-i18n="login_pw_label">密碼</label><input type="password" id="loginPassword" data-i18n-ph="login_pw_ph" placeholder="請輸入密碼"></div>
       <button class="btn btn-primary" onclick="doLogin()" style="width:100%" id="btnLogin" data-i18n="login_btn">登入</button>
-      <div id="forgotPwWrap" style="display:none;text-align:right;margin-top:8px"><a href="#" onclick="openForgotPasswordModal();return false" style="font-size:11px" data-i18n="fpw_link">🔑 忘記密碼？</a></div>
+      <div id="forgotPwWrap" style="display:none;text-align:right;margin-top:8px"><a href="#" onclick="openForgotPasswordModal();return false" style="font-size:15px;font-weight:700" data-i18n="fpw_link">🔑 忘記密碼？</a></div>
       <div style="text-align:center;margin-top:12px;display:flex;justify-content:center;gap:12px;flex-wrap:wrap">
         <a href="#" onclick="showAccountApplyModal();return false" style="font-size:11px" data-i18n="login_apply">🆕 申請帳戶（成員／領袖）</a>
         <a href="#" onclick="showContactModal();return false" style="font-size:11px" data-i18n="login_join">旅團接入</a>
@@ -665,7 +665,7 @@ html[lang="en"] body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","No
 <div id="forgotPasswordModal" class="modal"><div class="modal-content" style="max-width:440px">
   <h3 data-i18n="fpw_title">🔑 忘記密碼（領袖）</h3>
   <div id="fpwStep1">
-    <p style="font-size:11px;line-height:1.7;color:var(--text-light)" data-i18n="fpw_step1_desc">輸入開戶時登記的電郵，系統會傳送一組 15 分鐘有效的重設碼。只適用於領袖／管理員帳戶；家長／成員請聯絡領袖在「用戶管理」重設密碼。</p>
+    <p style="font-size:11px;line-height:1.7;color:var(--text-light)" data-i18n="fpw_step1_desc">輸入開戶時登記的電郵；如符合重設條件，可用 15 分鐘有效的重設碼設定新密碼。只適用於領袖／管理員帳戶；家長／成員請聯絡領袖在「用戶管理」重設密碼。</p>
     <div class="form-group"><label data-i18n="fpw_email_label">登記電郵 *</label><input type="email" id="fpwEmail" maxlength="120" autocomplete="email" data-i18n-ph="fpw_email_ph" placeholder="your@email.com"></div>
     <div id="fpwMsg" class="login-msg"></div>
     <div class="modal-actions"><button class="btn btn-secondary" onclick="closeForgotPasswordModal()" data-i18n="cancel">取消</button><button class="btn btn-primary" id="btnFpwSend" onclick="submitForgotPasswordRequest()" data-i18n="fpw_send">📧 發送重設碼</button></div>
@@ -704,9 +704,9 @@ html[lang="en"] body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","No
 </footer>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<script src="assets/ymis-parse.js?build=2026.11.02.1"></script>
-<script src="assets/cub-progress.js?build=2026.11.02.1"></script>
-<script src="assets/form-generator.js?build=2026.11.02.1"></script>
+<script src="assets/ymis-parse.js?build=2026.11.03.2"></script>
+<script src="assets/cub-progress.js?build=2026.11.03.2"></script>
+<script src="assets/form-generator.js?build=2026.11.03.2"></script>
 <!-- Scout Admin 統一回報 widget（統一回報格式 v1，見 scout-admin SCOUT_ADMIN.md）：問題回報／意見回饋直達 scout-admin 後台。
      data-app="幼童軍進度追蹤"＝來源系統正式名稱；本 APP 各頁的「🐛💬 回報 · 意見」按鈕
      （登入前 welcome-nav／登入頁連結／登入後 header 常駐）一律經 openScoutReport() 開啟這個 widget 的 modal；
@@ -751,7 +751,7 @@ zh:{
   // 鍵值保留未刪，重啟時解除 HTML 註解即可。
   setup_h2:'📋 新旅團部署指南 (10分鐘)',setup_portal_card:'<h3 style="color:var(--blue)">🌟 主系統平台是什麼？</h3><p style="font-size:12px">本系統可獨立用，亦可接入 <b>scoutsystem-2.0 主系統平台</b>：Dashboard、考勤、財務、活動報名，單一登入。</p><p style="font-size:11px;margin-top:6px;background:#fff;padding:6px;border-radius:6px"><b>有主系統 ≠ 一定要接上</b>，兩條路並存。</p>',
   setup_map_card:'<h3>🗺️ 部署地圖</h3><p style="font-size:11px">旅團只做 3 樣：① 下載 Code.gs → 建 Sheet → 部署 ② 執行 initializeSheets（補齊設定並記錄最新版本）③ 把「旅團編號 + 部署 URL + API Key」交 APP ADMIN<br>Vercel 功能變數全部由 APP ADMIN 設定，旅團毋須（亦唔會）設定任何功能變數<br>軌道B 接入主系統：同時交主系統管理員</p><p style="font-size:10px;color:var(--red);margin-top:6px">⚠️ 功能變數由 APP ADMIN 設定：旅團毋須設定任何功能變數，SETUP 彈窗只會顯示要交嘅 API Key。</p>',
-  s1h:'下載最新 GS（2026.11.02）',s1p:"最新 GS 2026.11.02：領袖登入新增「忘記密碼」電郵重設碼；已有正常 Sheet 更新只需部署，不用重跑初始化；保留資料及 API Key",s1btn:'⬇️ 下載 Code.gs（GS 2026.11.02）',s2h:'建立 Google Sheet 並部署',s2p:"建新試算表 → 擴充功能 → Apps Script 貼上 Code.gs → 儲存 → 執行 initializeSheets 授權（僅新建 Sheet 首次使用需要；已有正常 Sheet 更新毋須重跑，保留資料及 API Key）→ 部署為網頁應用程式（執行身分我，任何人可存取；首次使用「忘記密碼」發信時 Google 會要求授權傳送電郵，請按提示允許）。Google 部署視窗提供部署網址；GS 彈窗及選單只提供 API Key，不顯示自動取得的網址；旅團編號毋須在 Sheet／Apps Script 預先設定",s3h:'提交給 APP ADMIN',s3p:"取得 API Key 及 Google 部署視窗提供的部署 URL 後，填寫下方接入申請（ADMIN FORM）。旅團編號直接在 ADMIN FORM 填寫，毋須在 GS 設定。API Key 可在「🔗 旅系統 → 🔑 顯示 API KEY（交 ADMIN）」查看",
+  s1h:'下載最新 GS（2026.11.03.1）',s1p:"最新 GS 2026.11.03.1：改善登入驗證速度；本版無新增必要欄；建議更新後執行初始化，跨多版本升級必須執行；保留資料及 API Key",s1btn:'⬇️ 下載 Code.gs（GS 2026.11.03.1）',s2h:'建立 Google Sheet 並部署',s2p:"建新試算表 → 擴充功能 → Apps Script 貼上 Code.gs → 儲存 → 執行 initializeSheets 授權（建議每次更新後執行；跨多版本升級必須執行，保留資料及 API Key）→ 部署為網頁應用程式（執行身分我，任何人可存取；首次使用「忘記密碼」發信時 Google 會要求授權傳送電郵，請按提示允許）。Google 部署視窗提供部署網址；GS 彈窗及選單只提供 API Key，不顯示自動取得的網址；旅團編號毋須在 Sheet／Apps Script 預先設定",s3h:'提交給 APP ADMIN',s3p:"取得 API Key 及 Google 部署視窗提供的部署 URL 後，填寫下方接入申請（ADMIN FORM）。旅團編號直接在 ADMIN FORM 填寫，毋須在 GS 設定。API Key 可在「🔗 旅系統 → 🔑 顯示 API KEY（交 ADMIN）」查看",
   s_fl_h:'首次登入（預設管理員帳號）',s_fl_p:'登記完成後，首頁揀該旅團卡片 → 用「<b>👤 家長/成員</b>」分頁登入：<br>YMIS <b>1111111111</b>　密碼 <b>changeme</b>（initializeSheets 自動建立嘅預設管理員，唔好用「領袖=Email」分頁）<br>首次登入會<b>強制改密碼</b>（4-8 位）。之後喺「審批中心」批成員申請、喺「用戶管理」開返各領袖真電郵嘅帳號並設權限',
   // [主系統暫時隱藏 2026-10] s4h／s4p（軌道B 接主系統）保留未刪，對應步驟已註解隱藏。
   s4h:'軌道B：有主系統並想接上 - 額外提交給主系統管理員',s4p:'將同一組 URL+Key 交主系統管理員，填入旅團設定→元件設定 卡片 backend+apikey。之後成員點 Dashboard 卡片自動帶入身份，無需密碼',
@@ -760,7 +760,7 @@ zh:{
   guide_h2:'📖 使用教學 - 幼童軍專用',g1h:'選擇旅團',g1p:'首頁點旅團卡片',g2h:'登入',g2p:'成員/家長：YMIS 10位 + 密碼；領袖：Email + 密碼。首次登入強制改密。領袖忘記密碼：喺登入頁按「🔑 忘記密碼？」用登記電郵收一次性重設碼。',g3h:'家長/成員：只看進度，可申報活動履歷',g3p:'幼童軍年紀小，所有進度由領袖填寫，家長/成員帳號只能查看。但活動履歷（服務／活動／訓練班）可由家長/成員自行申報 → 領袖審批。',g4h:'領袖：勾選+日期',g4p:'領袖直接勾選，自動填今日日期，可手改。先暫存瀏覽器，底部確認寫入雲端。',g5h:'其他功能',g5p:'全團總覽批量、按項目統計、新制金紫荊資料核對、舊制表格下載、中英切換。',
   guide_roles_h3:'👥 角色功能',guide_member_card:'<b>👤 家長/成員 member</b><ul style="font-size:11px;margin:6px 0 0 16px"><li>只能看自己進度（不可勾選）</li><li>活動履歷可自行申報（服務/活動/訓練班）</li><li>可取消待批申報</li><li>已批紀錄可申請修改（需領袖重批）</li></ul>',guide_leader_card:'<b>👨‍💼 領袖 leader</b><ul style="font-size:11px;margin:6px 0 0 16px"><li>全部功能</li><li>我的進度選任何成員</li><li>全團總覽批量一鍵剔</li><li>審批中心：用戶+活動履歷申報</li><li>活動履歷可直接新增/編輯/刪除+批量</li><li>用戶管理、批量開戶 YMIS PDF</li></ul>',
   guide_onboard_h3:'🆕 帳戶申請／批量開戶',guide_onboard_intro:'個人：登入頁按「申請帳戶」→ 選擇成員或領袖身份 → 幼童軍團長／領袖審批。<br>批量：用戶管理 → 批量開戶 → 上載 YMIS 自訂報表 PDF（自動讀編號/姓名/電郵）→ 預覽後開戶。',
-  fpw_link:'🔑 忘記密碼？',fpw_title:'🔑 忘記密碼（領袖）',fpw_step1_desc:'輸入開戶時登記的電郵，系統會傳送一組 15 分鐘有效的重設碼。只適用於領袖／管理員帳戶；家長／成員請聯絡領袖在「用戶管理」重設密碼。',fpw_email_label:'登記電郵 *',fpw_email_ph:'your@email.com',fpw_send:'📧 發送重設碼',fpw_sending:'發送中...',fpw_step2_title:'輸入重設碼並設定新密碼',fpw_sent_desc:'若此電郵已登記為領袖帳戶，重設碼已送到收件匣（請同時檢查垃圾郵件）。10 分鐘內收不到，可重新申請或聯絡幼童軍團長／管理員在「用戶管理」重設密碼。',fpw_code_label:'重設碼（電郵內 8 位）',fpw_code_ph:'例如 A1B2-C3D4',fpw_new_label:'新密碼（4-8 位）',fpw_new2_label:'確認新密碼',fpw_submit:'💾 設定新密碼',fpw_submitting:'處理中...',fpw_back:'← 重新發送',fpw_done:'密碼已重設，請用新密碼登入。',fpw_done_hint:'所有舊登入階段已登出；如非你本人操作，請立即通知團長。',fpw_err_email:'請輸入有效的電郵地址',fpw_err_code:'請輸入電郵內的 8 位重設碼',fpw_err_pw:'新密碼需 4-8 位',fpw_err_match:'兩次輸入的新密碼不一致',fpw_backend_old:'此旅團的 Apps Script 尚未支援忘記密碼。請通知團長更換最新 Code.gs 並部署新版本；在此之前可請團長在「用戶管理」直接重設密碼。',fpw_mail_unavailable:'⚠️ 本旅團電郵發信服務暫未能使用（可能換 Code.gs 後未重新授權）：請通知團長喺 Apps Script 執行一次 testPasswordResetMail()，或直接請團長喺「用戶管理」重設密碼。',fpw_rate_limited:'請求過於頻密，請約 30 分鐘後再試',fpw_busy:'系統繁忙，請稍後再試',fpw_invalid:'重設碼不正確或已過期，請重新申請',fpw_fail:'重設失敗：',
+  fpw_link:'🔑 忘記密碼？',fpw_title:'🔑 忘記密碼（領袖）',fpw_step1_desc:'輸入開戶時登記的電郵；如符合重設條件，可用 15 分鐘有效的重設碼設定新密碼。只適用於領袖／管理員帳戶；家長／成員請聯絡領袖在「用戶管理」重設密碼。',fpw_email_label:'登記電郵 *',fpw_email_ph:'your@email.com',fpw_send:'📧 發送重設碼',fpw_sending:'發送中...',fpw_step2_title:'輸入重設碼並設定新密碼',fpw_sent_desc:'如果資料符合重設條件，請留意電郵。收唔到信？先查垃圾郵件，確認登記電郵，再請同團領袖或部署者幫手。',fpw_code_label:'重設碼（電郵內 8 位）',fpw_code_ph:'例如 A1B2-C3D4',fpw_new_label:'新密碼（4-8 位）',fpw_new2_label:'確認新密碼',fpw_submit:'💾 設定新密碼',fpw_submitting:'處理中...',fpw_back:'← 重新發送',fpw_done:'密碼已重設，請用新密碼登入。密碼須為 4-8 位。',fpw_done_hint:'所有舊登入階段已登出；如非你本人操作，請立即通知團長。',fpw_err_email:'請輸入有效的電郵地址',fpw_err_code:'請輸入電郵內的 8 位重設碼',fpw_err_pw:'新密碼需 4-8 位',fpw_err_match:'兩次輸入的新密碼不一致',fpw_backend_old:'此旅團的 Apps Script 尚未支援忘記密碼。請通知團長更換最新 Code.gs 並部署新版本；在此之前可請團長在「用戶管理」直接重設密碼。',fpw_mail_unavailable:'⚠️ 本旅團電郵發信服務暫未能使用（可能換 Code.gs 後未重新授權）：請通知團長喺 Apps Script 執行一次 testPasswordResetMail()，或直接請團長喺「用戶管理」重設密碼。',fpw_rate_limited:'請求過於頻密，請約 30 分鐘後再試',fpw_busy:'系統繁忙，請稍後再試',fpw_invalid:'碼已過期或無效，請重新申請',fpw_wrong_remaining:'碼不正確，剩 {0} 次機會',fpw_fail:'重設失敗：',
   login_page_h1:'幼童軍進度追蹤 v6.0',login_h2:'🔐 登入系統',login_member_tab:'👤 家長/成員<br><small>YMIS 10位</small>',login_leader_tab:'👨‍💼 領袖<br><small>Email</small>',login_pw_label:'密碼',login_pw_ph:'請輸入密碼',login_btn:'登入',login_apply:'🆕 申請帳戶（成員／領袖）',login_join:'旅團接入',login_back:'← 返回首頁',btn_report_feedback:'🐛💬 回報 · 意見',
   fb_title:'🐛💬 問題回報 / 意見回饋',fb_type:'類型 *',fb_type_issue:'🐛 問題回報',fb_type_feedback:'💬 意見回饋',fb_category:'意見類型',fb_cat_suggestion:'💡 建議',fb_cat_praise:'👍 讚',fb_cat_criticism:'👎 批評',fb_cat_other:'📝 其他',fb_message:'問題詳情 *',fb_feedback_message:'意見內容 *',fb_message_ph:'簡單描述問題或希望改善的地方',fb_contact:'聯絡方式（電郵／電話） *',fb_contact_ph:'方便回覆你的電郵或電話',fb_submit:'送出',fb_need:'請描述需要協助的事，並留下聯絡方式。',fb_sending_hint:'⏳ 正在傳送回報，請勿重複按「送出」。收到回覆後會在此清楚顯示結果。',fb_confirmed:'✅ 已成功送出；收件系統已確認收到。請等待開發者通知。此視窗不會自動關閉。',fb_not_accepted:'收件系統表示未接收這次回報；內容已保留，請稍後再試。',fb_unknown:'⚠️ 連線中斷，暫時未能確認收件系統是否收到。請先不要重複提交，稍後查看通知；如仍未收到，可按「確認重送」。重送可能造成重複回報。',fb_sending:'傳送中…',fb_sent_button:'已送出 ✓',fb_retry_unknown:'確認重送',fb_retry_unknown_confirm:'目前未能確認上一筆回報是否送達。重送可能產生重複回報；你確定要再傳送一次嗎？',fb_close:'關閉',
   nav_progress:'📊 我的進度',nav_overview:'👥 全團總覽',nav_requests:'✅ 審批中心',nav_logs:'📅 活動履歷',nav_forms:'🏅 金紫荊申請',nav_help:'❓ 教學',nav_info:'📚 資料庫',nav_users:'👥 用戶管理',logout:'登出',
@@ -910,7 +910,7 @@ en:{
   // [主系統暫時隱藏 2026-10] setup_portal_card／setup_map_card／s4h／s4p kept unused while the main-platform intro is hidden.
   setup_h2:'📋 New Troop Setup (10 min)',setup_portal_card:'<h3 style="color:var(--blue)">🌟 What is main system?</h3><p style="font-size:12px">This is a Tier 3 plugin, can be standalone or linked to <b>scoutsystem-2.0</b>: Dashboard, attendance, finance, events, SSO.</p><p style="font-size:11px;margin-top:6px;background:#fff;padding:6px;border-radius:6px"><b>Main system ≠ must link</b>, both routes co-exist.</p>',
   setup_map_card:'<h3>🗺️ Deployment Map</h3><p style="font-size:11px">Troops do only 3 things: ① download Code.gs → create Sheet → deploy ② run initializeSheets (required; records the latest initialisation version) ③ send “troop ID + deploy URL + API Key” to the APP ADMIN<br>All Vercel env vars are set by the APP ADMIN — troops never set any env var<br>Track B portal: also give to main system admin</p><p style="font-size:10px;color:var(--red);margin-top:6px">⚠️ Env vars are set by the APP ADMIN only; the setup dialog shows just the API Key you send.</p>',
-  s1h:'Download latest GS (2026.11.02)',s1p:"Latest GS 2026.11.02: Leader sign-in now has an email-code Forgot password flow; existing working Sheets need deployment only, no reinitialisation; data and API Keys are preserved",s1btn:'⬇️ Download Code.gs (GS 2026.11.02)',s2h:'Create Google Sheet & Deploy',s2p:"New spreadsheet → Extensions → Apps Script → paste Code.gs → Save → run initializeSheets for first-time setup of a new Sheet (existing working Sheets do not need to rerun it for this release; data and API Keys are preserved) → deploy as a web app (Me, Anyone; the first Forgot password email asks Google for permission to send mail — allow it). Google provides the deployment URL in its deployment dialog; GS dialogs and menus provide only the API Key, never an automatically discovered URL; no troop ID needs to be configured in the Sheet or Apps Script",s3h:'Submit to the APP ADMIN',s3p:"After obtaining the API Key and the deployment URL from Google, use the join request below (ADMIN FORM). Enter the troop ID directly in the ADMIN FORM; no GS setting is needed. Read the key under the troop-system API KEY menu",
+  s1h:'Download latest GS (2026.11.03.1)',s1p:"Latest GS 2026.11.03.1: Faster sign-in verification; no new required columns; run initialization after updates (required when skipping versions); data and API Keys are preserved",s1btn:'⬇️ Download Code.gs (GS 2026.11.03.1)',s2h:'Create Google Sheet & Deploy',s2p:"New spreadsheet → Extensions → Apps Script → paste Code.gs → Save → run initializeSheets for first-time setup of a new Sheet (recommended after each update; required when skipping versions; data and API Keys are preserved) → deploy as a web app (Me, Anyone; the first Forgot password email asks Google for permission to send mail — allow it). Google provides the deployment URL in its deployment dialog; GS dialogs and menus provide only the API Key, never an automatically discovered URL; no troop ID needs to be configured in the Sheet or Apps Script",s3h:'Submit to the APP ADMIN',s3p:"After obtaining the API Key and the deployment URL from Google, use the join request below (ADMIN FORM). Enter the troop ID directly in the ADMIN FORM; no GS setting is needed. Read the key under the troop-system API KEY menu",
   s_fl_h:'First login (default admin account)',s_fl_p:'After registration, pick your troop card on the home page → sign in on the <b>👤 Parent/Member</b> tab:<br>YMIS <b>1111111111</b>　password <b>changeme</b> (the default admin created automatically by initializeSheets — do not use the Leader = Email tab)<br>First login <b>forces a password change</b> (4-8 characters). Then approve member applications in Approvals and create each leader\'s own account (real email) in User Management',
   // [主系統暫時隱藏 2026-10] s4h／s4p kept unused while the main-platform intro is hidden.
   s4h:'Track B: with the main platform — also submit to the main-system admin',s4p:'Give the same URL + API Key to the main-system admin and fill in the card backend + apikey. Members then tap the Dashboard card and the identity is carried over automatically, no password',
@@ -919,7 +919,7 @@ en:{
   guide_h2:'📖 Guide - Cub Specific',g1h:'Pick Troop',g1p:'Tap troop card',g2h:'Login',g2p:'Members/parents: YMIS 10 digits + password; Leaders: Email + password. Force change on first login. Leaders who forget a password tap Forgot password? to get a one-time code by email.',g3h:'Parents/Members: view progress, can claim activity logs',g3p:'Cubs young: leaders fill all progress, parents/members view only. But activity logs (service/activity/training) can be claimed by parents/members → leader approves.',g4h:'Leaders: tick + date',g4p:'Leaders tick directly, auto today date, editable. Cached in browser, confirm to write to cloud.',g5h:'Other features',g5p:'Troop overview batch, by-item stats, current-scheme Golden Bauhinia checklists, legacy-form downloads, bilingual.',
   guide_roles_h3:'👥 Roles',guide_member_card:'<b>👤 Parent/Member</b><ul style="font-size:11px;margin:6px 0 0 16px"><li>View own progress only (no tick)</li><li>Can claim activity logs (service/activity/training)</li><li>Can cancel pending claims</li><li>Approved records can request edit (leader re-approves)</li></ul>',guide_leader_card:'<b>👨‍💼 Leader</b><ul style="font-size:11px;margin:6px 0 0 16px"><li>All functions</li><li>My progress: any member</li><li>Troop overview batch tick</li><li>Approval centre: users + log claims</li><li>Activity logs direct add/edit/delete + batch</li><li>User management, bulk onboard YMIS PDF</li></ul>',
   guide_onboard_h3:'🆕 Account apply / Bulk onboard',guide_onboard_intro:'Individual: login page → Apply for an account → choose member or leader → GSL / leader approves.<br>Bulk: User Management → Bulk onboard → upload YMIS custom report PDF (auto reads ID/name/email) → preview → onboard.',
-  fpw_link:'🔑 Forgot password?',fpw_title:'🔑 Forgot password (Leader)',fpw_step1_desc:'Enter the email registered with your leader account. A one-time reset code valid for 15 minutes will be sent. Leaders/admins only; parents and cubs should ask a leader to reset it in User Management.',fpw_email_label:'Registered email *',fpw_email_ph:'your@email.com',fpw_send:'📧 Send reset code',fpw_sending:'Sending...',fpw_step2_title:'Enter the code and set a new password',fpw_sent_desc:'If this email is registered as a leader account, the reset code has been sent (check spam too). If it does not arrive within 10 minutes, request a new code or ask your Group Scout Leader to reset it in User Management.',fpw_code_label:'Reset code (8 characters from the email)',fpw_code_ph:'e.g. A1B2-C3D4',fpw_new_label:'New password (4-8 characters)',fpw_new2_label:'Confirm new password',fpw_submit:'💾 Set new password',fpw_submitting:'Working...',fpw_back:'← Resend code',fpw_done:'Password updated. Please sign in with your new password.',fpw_done_hint:'All previous sessions were signed out. If this was not you, tell your leader immediately.',fpw_err_email:'Please enter a valid email address',fpw_err_code:'Enter the 8-character code from the email',fpw_err_pw:'Password must be 4-8 characters',fpw_err_match:'The two passwords do not match',fpw_backend_old:'This troop Apps Script does not support forgot password yet. Ask the leader to install the latest Code.gs and deploy a new version; until then a leader can reset your password in User Management.',fpw_mail_unavailable:'⚠️ This troop cannot send email yet (often: authorisation was not renewed after replacing Code.gs). Ask the leader to run testPasswordResetMail() once in Apps Script, or to reset your password in User Management.',fpw_rate_limited:'Too many requests, please try again in about 30 minutes',fpw_busy:'System busy, please try again shortly',fpw_invalid:'Incorrect or expired reset code, please request a new one',fpw_fail:'Reset failed: ',
+  fpw_link:'🔑 Forgot password?',fpw_title:'🔑 Forgot password (Leader)',fpw_step1_desc:'Enter the email registered with your leader account. If your details qualify, use the one-time code valid for 15 minutes. Leaders/admins only; parents and cubs should ask a leader to reset it in User Management.',fpw_email_label:'Registered email *',fpw_email_ph:'your@email.com',fpw_send:'📧 Send reset code',fpw_sending:'Sending...',fpw_step2_title:'Enter the code and set a new password',fpw_sent_desc:'If your details qualify for a reset, check your email. No message? Check spam, confirm your registered email, then ask a troop leader or the deployer for help.',fpw_code_label:'Reset code (8 characters from the email)',fpw_code_ph:'e.g. A1B2-C3D4',fpw_new_label:'New password (4-8 characters)',fpw_new2_label:'Confirm new password',fpw_submit:'💾 Set new password',fpw_submitting:'Working...',fpw_back:'← Resend code',fpw_done:'Password updated. Sign in with your new 4-8 character password.',fpw_done_hint:'All previous sessions were signed out. If this was not you, tell your leader immediately.',fpw_err_email:'Please enter a valid email address',fpw_err_code:'Enter the 8-character code from the email',fpw_err_pw:'Password must be 4-8 characters',fpw_err_match:'The two passwords do not match',fpw_backend_old:'This troop Apps Script does not support forgot password yet. Ask the leader to install the latest Code.gs and deploy a new version; until then a leader can reset your password in User Management.',fpw_mail_unavailable:'⚠️ This troop cannot send email yet (often: authorisation was not renewed after replacing Code.gs). Ask the leader to run testPasswordResetMail() once in Apps Script, or to reset your password in User Management.',fpw_rate_limited:'Too many requests, please try again in about 30 minutes',fpw_busy:'System busy, please try again shortly',fpw_invalid:'Code expired or invalid. Please request a new one.',fpw_wrong_remaining:'Incorrect code. {0} attempts remaining.',fpw_fail:'Reset failed: ',
   login_page_h1:'Cub Progress Tracker v6.0',login_h2:'🔐 Login',login_member_tab:'👤 Parent/Member<br><small>YMIS 10 digits</small>',login_leader_tab:'👨‍💼 Leader<br><small>Email</small>',login_pw_label:'Password',login_pw_ph:'Enter password',login_btn:'Sign In',login_no_account:'✅ Backend connection is fine — this account just is not provisioned yet (account not found). New troops: sign in with the default admin and onboard accounts in User Management (initial password is shown by initializeSheets); members can tap "🆕 Apply for an account" or contact a leader.',login_apply:'🆕 Apply for an account (member / leader)',login_join:'Troop join',login_back:'← Back to home',btn_report_feedback:'🐛💬 Report · Feedback',
   fb_title:'🐛💬 Bug report / Feedback',fb_type:'Type *',fb_type_issue:'🐛 Bug report',fb_type_feedback:'💬 Feedback',fb_category:'Feedback type',fb_cat_suggestion:'💡 Suggestion',fb_cat_praise:'👍 Praise',fb_cat_criticism:'👎 Criticism',fb_cat_other:'📝 Other',fb_message:'Issue details *',fb_feedback_message:'Feedback content *',fb_message_ph:'Briefly describe the problem or suggestion',fb_contact:'Contact (email / phone) *',fb_contact_ph:'An email address or phone number for our reply',fb_submit:'Send',fb_need:'Please describe what help you need and leave a contact method.',fb_sending_hint:'⏳ Sending your report. Please do not press Send again; the result will appear here.',fb_confirmed:'✅ Sent successfully; the receiving system confirmed receipt. Please wait for a reply. This dialog will stay open.',fb_not_accepted:'The receiving system did not accept this report. Your text is still here; please try again later.',fb_unknown:'⚠️ The connection ended before we could confirm receipt. Please do not submit again yet. Check for a notification later; if none arrives, choose “Resend anyway”. Resending may create a duplicate report.',fb_sending:'Sending…',fb_sent_button:'Sent ✓',fb_retry_unknown:'Resend anyway',fb_retry_unknown_confirm:'We could not confirm whether the previous report was received. Resending may create a duplicate. Do you still want to send it again?',fb_close:'Close',
   nav_progress:'📊 My Progress',nav_overview:'👥 Troop Overview',nav_requests:'✅ Approvals',nav_logs:'📅 Activity Logs',nav_forms:'🏅 Golden Bauhinia',nav_help:'❓ Guide',nav_info:'📚 Library',nav_users:'👥 User Management',logout:'Logout',
@@ -1015,7 +1015,7 @@ let _ongoingRequests=new Set();
 let editingLogRecordId=null;
 
 /* 最新發佈：只列目前版本，不設逐級升級表。GS 同時回報程式及初始化版本。 */
-const LATEST_RELEASE=Object.freeze({updated:'2026-11-02',gsVersion:'2026.11.02',initializeRequired:false});
+const LATEST_RELEASE=Object.freeze({updated:'2026-11-03',gsVersion:'2026.11.03.1',initializeRequired:false});
 let backendReleaseState={troopId:'',status:'idle',reportedVersion:'',initializedGsVersion:'',error:''};
 let _releaseCheckSequence=0;
 function resetBackendRelease(){
@@ -1023,11 +1023,23 @@ function resetBackendRelease(){
   backendReleaseState={troopId:currentTroopId||'',status:currentTroopId==='DEMO'?'demo':'idle',reportedVersion:'',initializedGsVersion:'',error:''};
   renderReleaseNotices();
 }
+// Compare numeric release components; malformed versions cannot justify a downgrade.
+function compareGsVersions(actual,required){
+  const parse=value=>/^\d+(?:\.\d+)*$/.test(value)?value.split('.').map(Number):null;
+  const a=parse(actual),b=parse(required);
+  if(!a||!b||a.some(n=>!Number.isSafeInteger(n))||b.some(n=>!Number.isSafeInteger(n))) return null;
+  for(let i=0;i<Math.max(a.length,b.length);i++){
+    const x=a[i]||0,y=b[i]||0;
+    if(x!==y) return x<y?-1:1;
+  }
+  return 0;
+}
 function applyBackendRelease(payload){
   const source=payload&&payload.release?payload.release:(payload||{});
   const actual=String(source.gsVersion||'').trim();
   const initialized=String(source.initializedGsVersion||'').trim();
-  const status=actual!==LATEST_RELEASE.gsVersion?'update':(LATEST_RELEASE.initializeRequired&&initialized!==LATEST_RELEASE.gsVersion?'initialize':'current');
+  const order=compareGsVersions(actual,LATEST_RELEASE.gsVersion);
+  const status=order===null?'unknown':order>0?'ahead':order<0?'update':(LATEST_RELEASE.initializeRequired&&initialized!==LATEST_RELEASE.gsVersion?'initialize':'current');
   backendReleaseState={troopId:currentTroopId||'',status,reportedVersion:actual||String(source.backendVersion||'').trim()||'unknown',initializedGsVersion:initialized,error:''};
   renderReleaseNotices();
   return status;
@@ -1060,14 +1072,20 @@ function renderReleaseNotices(){
     const cardClass=state.status==='current'?'release-current':(state.status==='checking'?'release-checking':'');
     const title=inEn()?`📣 Latest update · ${LATEST_RELEASE.updated}`:`📣 最新更新公告｜${LATEST_RELEASE.updated}`;
     let statusText='';
-    if(isHome) statusText=LATEST_RELEASE.initializeRequired?(inEn()?'Each troop needs the required GS update and initialisation for this release.':'每個旅團須完成本版要求的 GS 更新及初始化。'):(inEn()?'This release does not require reinitialisation. A troop already on GS '+LATEST_RELEASE.gsVersion+' needs no further change; an older GS still needs replacement and redeployment.':'本版毋須重跑初始化。旅團 GS 已是 '+LATEST_RELEASE.gsVersion+' 就不用再改；舊版 GS 仍須更換及重新部署。');
+    if(isHome) statusText=LATEST_RELEASE.initializeRequired?(inEn()?'Each troop needs the required GS update and initialisation for this release.':'每個旅團須完成本版要求的 GS 更新及初始化。'):(inEn()?'No new required columns in this release. Running initializeSheets() after updating is recommended and required when skipping multiple versions. A troop already on GS '+LATEST_RELEASE.gsVersion+' needs no further change; an older GS still needs replacement and redeployment.':'本版無新增必要欄，建議更新後執行 initializeSheets()；跨多版本升級必須執行。旅團 GS 已是 '+LATEST_RELEASE.gsVersion+' 就不用再改；舊版 GS 仍須更換及重新部署。');
     else if(state.status==='demo') statusText=inEn()?'DEMO does not connect to a troop GS. A real troop still needs this update.':'示範模式不連接旅團 GS；正式旅團仍須完成這次更新。';
     else if(state.status==='checking') statusText=inEn()?'Checking the GS version deployed by this troop…':'正在核對此旅團實際部署的 GS 版本…';
     else if(state.status==='current') statusText=LATEST_RELEASE.initializeRequired?(inEn()?`✅ Verified: GS ${LATEST_RELEASE.gsVersion}; initialisation for this release is complete.`:`✅ 已核對：GS ${LATEST_RELEASE.gsVersion}，此版本的初始化亦已完成。`):(inEn()?`✅ Verified: GS ${LATEST_RELEASE.gsVersion}; no reinitialisation is required for this release.`:`✅ 已核對：GS ${LATEST_RELEASE.gsVersion}；本次更新毋須重跑初始化。`);
+    else if(state.status==='ahead') statusText=inEn()?`ℹ️ This backend reports GS ${state.reportedVersion}, newer than this website (${LATEST_RELEASE.gsVersion}). Do not replace it with this site's older download; update the website first.`:`ℹ️ 此旅團回報 GS ${state.reportedVersion}，比網站公告的 ${LATEST_RELEASE.gsVersion} 新。請勿用此網站的舊下載覆蓋；請先更新網站。`;
+    else if(state.status==='unknown') statusText=inEn()?'⚠️ The reported GS version is unrecognised. Do not replace the backend until the version is verified.':'⚠️ 無法識別回報的 GS 版本。請先核實版本，勿覆蓋後端。';
     else if(state.status==='update') statusText=inEn()?`⚠️ GS update is still required (reported: ${state.reportedVersion||'unknown'}). Leader Forgot password needs GS ${LATEST_RELEASE.gsVersion}: replace Code.gs and redeploy (authorise email sending on first use); no reinitialisation needed.`:`⚠️ 此旅團尚未完成 GS 更新（回報版本：${state.reportedVersion||'未知'}）。舊 GS 無領袖「忘記密碼」；請換上 GS ${LATEST_RELEASE.gsVersion} 並重新部署（首次發信須重新授權），毋須重跑初始化。`;
     else if(state.status==='initialize') statusText=inEn()?`⚠️ GS ${LATEST_RELEASE.gsVersion} is deployed, but initializeSheets() has not completed for this release (record: ${state.initializedGsVersion||'none'}). Run it once, then re-check.`:`⚠️ GS 已是 ${LATEST_RELEASE.gsVersion}，但此版本的 initializeSheets() 尚未完成（初始化紀錄：${state.initializedGsVersion||'未記錄'}）。請執行一次，然後重新檢查。`;
     else if(state.status==='error') statusText=inEn()?'⚠️ The GS version cannot be verified right now. Do not assume the update is complete; use Re-check later.':'⚠️ 暫時未能核對 GS 版本。請不要當作已經更新；稍後按「重新檢查」。';
     else statusText=inEn()?'Select a troop to verify its deployed GS version.':'選擇旅團後，系統會核對實際部署的 GS 版本。';
+    if(state.status==='ahead'||state.status==='unknown'){
+      host.innerHTML=`<section class="release-notice" role="status" aria-live="polite"><div class="release-head"><span>${title}</span></div><div class="release-status">${escapeHtmlText(statusText)}</div><button type="button" class="btn btn-sm btn-outline" onclick="checkBackendRelease()">🔄 ${inEn()?'Re-check':'重新檢查'}</button></section>`;
+      continue;
+    }
     const steps=inEn()?[
       ...(LATEST_RELEASE.initializeRequired?[
         'Download the latest Code.gs below, replace the troop Apps Script content and save it.'
@@ -1509,10 +1527,7 @@ async function submitForgotPasswordRequest(){
   try{
     const d=await apiRequest({action:'requestPasswordReset',email},{method:'POST',allowFail:true});
     if(!d.success){ fpwSetMsg('fpwMsg',fpwErrorText(d.error),'error'); return; }
-    // delivery=unavailable：後端發信失敗（常見：換 Code.gs 後未重新授權電郵範圍）。
-    // 呢個旗標係全團共通，唔會洩漏邊個電郵先係有效帳戶。
-    fpwSetMsg('fpwMsg2',d.delivery==='unavailable'?(t('fpw_mail_unavailable')+' '+t('fpw_sent_desc')):t('fpw_sent_desc'),
-      d.delivery==='unavailable'?'warning':'success');
+    fpwSetMsg('fpwMsg2',t('fpw_sent_desc'),'success');
     showForgotPwStep(2);
     setTimeout(()=>{ const el=document.getElementById('fpwCode'); if(el) el.focus(); },250);
   }catch(e){ fpwSetMsg('fpwMsg',fpwErrorText(e.message),'error'); }
@@ -1528,7 +1543,7 @@ async function submitForgotPasswordConfirm(){
   if(btn){ btn.disabled=true; btn.textContent=t('fpw_submitting'); }
   try{
     const d=await apiRequest({action:'confirmPasswordReset',email:_fpwEmail,code,new_password:p1},{method:'POST',allowFail:true});
-    if(!d.success){ fpwSetMsg('fpwMsg2',fpwErrorText(d.error),'error'); return; }
+    if(!d.success){ fpwSetMsg('fpwMsg2',d.code==='INVALID_RESET_CODE'?tf('fpw_wrong_remaining',d.remaining):fpwErrorText(d.error),'error'); return; }
     closeForgotPasswordModal();
     const lid=document.getElementById('loginId'); if(lid) lid.value=_fpwEmail;
     const lpw=document.getElementById('loginPassword'); if(lpw){ lpw.value=''; lpw.focus(); }
@@ -1552,7 +1567,7 @@ function doLogout(){
   localStorage.removeItem(LS.session);
   currentUser=null; currentToken=''; currentTroopId=''; currentTroopName=''; feedbackSubmitState='idle';
   ['feedbackMessage','feedbackContact'].forEach(id=>{ const field=document.getElementById(id); if(field) field.value=''; });
-  document.querySelectorAll('.modal.active').forEach(m=>m.classList.remove('active'));
+  document.querySelectorAll('.modal.active').forEach(m=>closeModal(m.id));
   document.getElementById('mainApp').style.display='none'; document.getElementById('homePage').style.display='block';
   resetBackendRelease();
   document.getElementById('saveBar').classList.remove('visible'); pendingChanges=[];
@@ -1624,6 +1639,8 @@ function closeContactModal(){ document.getElementById('contactModal').classList.
 function closeModal(id){
   if(id==='feedbackModal'&&feedbackSubmitState==='sending') return;
   document.getElementById(id).classList.remove('active');
+  if(id==='resetPwModal') document.getElementById('rpwInput').value='';
+  if(id==='tempPwModal'){ _lastTempPw=''; document.getElementById('tempPwValue').textContent=''; document.getElementById('tempPwName').textContent=''; }
 }
 async function submitRegistration(){
   const ti=document.getElementById('c_troopId').value.trim(), tn=document.getElementById('c_troopName').value.trim(), su=document.getElementById('c_scriptUrl').value.trim(), ak=document.getElementById('c_apiKey').value.trim(), nt=document.getElementById('c_note').value.trim();
@@ -1754,7 +1771,7 @@ function switchTab(name, btn){
 document.addEventListener('keydown', (e)=>{
   if(e.key==='Escape'){
     if(feedbackSubmitState==='sending'&&document.getElementById('feedbackModal')?.classList.contains('active')){ e.preventDefault(); return; }
-    document.querySelectorAll('.modal.active').forEach(m=>m.classList.remove('active'));
+    document.querySelectorAll('.modal.active').forEach(m=>closeModal(m.id));
     document.getElementById('savingOverlay')?.classList.remove('active');
     const activeTab=document.querySelector('.tab-content.active');
     if(activeTab && activeTab.id!=='tab-progress'){ switchTab('progress'); showToast(t('tab_escape'),'warning'); }
@@ -2784,7 +2801,7 @@ async function reactivateUserAcct(ymis,name){
     const d=await apiRequest({action:'reactivateUser',token:currentToken,target_ymis:ymis},{method:'POST',allowFail:true});
     if(!d.success) throw new Error(d.error||'');
     showToast('✅ '+t('reactivated'),'success');
-    _lastTempPw=d.temp_password; document.getElementById('tempPwName').textContent=`${name||''} (${ymis})`; document.getElementById('tempPwValue').textContent=d.temp_password; document.getElementById('tempPwModal').classList.add('active'); applyStaticI18n();
+    _lastTempPw='1234'; document.getElementById('tempPwName').textContent=`${name||''} (${ymis})`; document.getElementById('tempPwValue').textContent=_lastTempPw; document.getElementById('tempPwModal').classList.add('active'); applyStaticI18n();
     loadUsers();
   }catch(e){ showToast(t('reactivate_fail')+e.message,'error'); }
 }
@@ -3132,7 +3149,7 @@ async function submitResetPassword(){
     const d=await apiRequest(payload,{method:'POST',allowFail:true});
     if(!d.success) throw new Error(d.error||'');
     closeModal('resetPwModal');
-    _lastTempPw=d.temp_password; document.getElementById('tempPwName').textContent=`${_resetPwTarget.name||''} (${_resetPwTarget.ymis})`; document.getElementById('tempPwValue').textContent=d.temp_password; document.getElementById('tempPwModal').classList.add('active'); applyStaticI18n();
+    _lastTempPw=pw||'1234'; document.getElementById('tempPwName').textContent=`${_resetPwTarget.name||''} (${_resetPwTarget.ymis})`; document.getElementById('tempPwValue').textContent=_lastTempPw; document.getElementById('tempPwModal').classList.add('active'); applyStaticI18n();
     loadUsers();
   }catch(e){ showToast(t('reset_pw_fail')+e.message,'error'); }
   finally{ btn.disabled=false; btn.textContent=t('rpw_submit'); }
