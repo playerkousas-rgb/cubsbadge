@@ -8,7 +8,8 @@
 // 本檔永不生成、永不顯示、永不回傳任何密碼；initializeSheets／showApiKey 只顯示旅團自己嗰隻 API Key。
 // 版本同改動紀錄一律寫喺 docs/CHANGE_LOG_*.md；呢度只保留最新 GS 發佈識別供前端核對，不設逐級升級表。
 // ============================================================
-const CUB_GS_VERSION = '2026.11.02';
+const CUB_GS_VERSION = '2026.11.02.2';
+const CUB_GS_RELEASE_DATE = '2026-11-02';
 const CUB_GS_INITIALIZED_PROP = 'CUB_GS_INITIALIZED_VERSION';
 function getCubGsReleaseStatus(){
   let initialized='';
@@ -125,7 +126,14 @@ function sheetMap(ss) {
 // 建立缺咗嘅工作表（有就唔郁，唔會洗走資料）
 function ensureTable(ss, name, headers, color, existing) {
   let sh = (existing && existing[name]) || ss.getSheetByName(name);
-  if (sh) return sh;
+  if (sh) {
+    // 只補空白欄頭，不覆蓋現有名稱或任何資料。
+    const current=sh.getRange(1,1,1,Math.max(sh.getLastColumn(),headers.length)).getValues()[0];
+    for (let i=0; i<headers.length; i++) {
+      if (!current[i] && current.indexOf(headers[i])<0) { sh.getRange(1,i+1).setValue(headers[i]); current[i]=headers[i]; }
+    }
+    return sh;
+  }
   sh = ss.insertSheet(name);
   if (existing) existing[name] = sh;
   _sheetCache[name] = sh;
@@ -375,6 +383,37 @@ function hashPassword(p) {
   const raw = Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, p, Utilities.Charset.UTF_8);
   return raw.map(function(b){return ('0' + (b & 0xFF).toString(16)).slice(-2);}).join('');
 }
+// PBKDF2-HMAC-SHA256, one 32-byte block; hashes are stored in the existing column.
+const PBKDF2_ITERATIONS=120000;
+const DUMMY_PASSWORD_HASH='pbkdf2$120000$00000000000000000000000000000000$2dd555d0a6332d090565bfd00b1de43947d66e4efbdd1bde8fed3856983d1966';
+function hexBytes_(hex){ const out=[]; for(let i=0;i<hex.length;i+=2) out.push(parseInt(hex.slice(i,i+2),16)); return out; }
+function pbkdf2HmacSha256_(password,salt,iterations){
+  const key=Utilities.newBlob(String(password)).getBytes();
+  let u=Utilities.computeHmacSha256Signature(salt.concat([0,0,0,1]),key), result=u.slice();
+  for(let i=1;i<iterations;i++){
+    u=Utilities.computeHmacSha256Signature(u,key);
+    for(let j=0;j<32;j++) result[j]=(result[j]^u[j]) & 255;
+  }
+  return toHex(result);
+}
+function isLegacyPasswordHash_(hash){return /^[0-9a-f]{64}$/i.test(String(hash||''));}
+function isPasswordHash_(hash){
+  if(isLegacyPasswordHash_(hash)) return true;
+  const m=/^pbkdf2\$(\d{6,7})\$[0-9a-f]{32}\$[0-9a-f]{64}$/i.exec(String(hash||''));
+  return !!m && Number(m[1])>=100000 && Number(m[1])<=1000000;
+}
+function hashPasswordV2(password){
+  // Two UUIDs provide independent random bits; hash to remove fixed UUID version bits.
+  const salt=sha256Hex(Utilities.getUuid()+Utilities.getUuid()).slice(0,32);
+  return 'pbkdf2$'+PBKDF2_ITERATIONS+'$'+salt+'$'+pbkdf2HmacSha256_(password,hexBytes_(salt),PBKDF2_ITERATIONS);
+}
+function verifyPassword(password,stored){
+  stored=String(stored||'');
+  if(isLegacyPasswordHash_(stored)) return safeEqualText(hashPassword(String(password||'')),stored.toLowerCase());
+  if(!isPasswordHash_(stored)) return false;
+  const parts=stored.split('$');
+  return safeEqualText(pbkdf2HmacSha256_(String(password||''),hexBytes_(parts[2]),Number(parts[1])),parts[3].toLowerCase());
+}
 function generateToken(){ return Utilities.getUuid().replace(/-/g,'') + Date.now().toString(36); }
 function now(){ return Utilities.formatDate(new Date(), 'Asia/Hong_Kong', 'yyyy-MM-dd HH:mm:ss'); }
 function formatDate(d){ if(!d) return ''; if(d instanceof Date) return Utilities.formatDate(d,'Asia/Hong_Kong','yyyy-MM-dd'); return d.toString().split(' ')[0]; }
@@ -467,7 +506,10 @@ function initializeSheets() {
 
   // 進度追蹤（舊表缺欄就補）
   const pSheet = ensureTable(ss, '進度追蹤', ['YMIS','項目 ID','完成日期','更新時間','確認者','備註'], null, X);
-  if (pSheet.getLastColumn() < 6) { pSheet.getRange(1,5).setValue('確認者'); pSheet.getRange(1,6).setValue('備註'); }
+  if (pSheet.getLastColumn() < 6) {
+    if (!pSheet.getRange(1,5).getValue()) pSheet.getRange(1,5).setValue('確認者');
+    if (!pSheet.getRange(1,6).getValue()) pSheet.getRange(1,6).setValue('備註');
+  }
 
   ensureTable(ss, '成員名單', ['YMIS','姓名','加入日期','支部','聯絡','小隊'], null, X);
 
@@ -475,7 +517,7 @@ function initializeSheets() {
   const usersNew = !X['Users'];
   const uSheet = ensureTable(ss, 'Users', USER_HEADERS, null, X);
   if (usersNew) {
-    uSheet.getRange(2,1,1,13).setValues([[ADMIN_YMIS, ADMIN_NAME, ADMIN_EMAIL, 'admin', hashPassword(ADMIN_PASS),
+    uSheet.getRange(2,1,1,13).setValues([[ADMIN_YMIS, ADMIN_NAME, ADMIN_EMAIL, 'admin', hashPasswordV2(ADMIN_PASS),
       'b4', true, 'system', now(), now(), '', 'active', '*']]);
     uSheet.getRange(1,16).setValue('force_change_password');
     uSheet.getRange(2,16).setValue(true);       // 首次登入強制改密
@@ -484,11 +526,6 @@ function initializeSheets() {
     if (lack > 0) uSheet.getRange(1, uSheet.getLastColumn() + 1, 1, lack)
       .setValues([['allowed_badges','squad','squad_role','force_change_password'].slice(4 - lack)]);
   }
-  // 保留帳號只在後端（程式碼）存在；自動移除舊部署可能已寫入 Users 的保留帳號列
-  // 及 Tokens 表舊版保留帳號 session 行（舊版登入紀錄；新 token 無狀態、唔會再寫入）
-  removeSuperAdminRows();
-  try{ removeSuperAdminTokenRows(); }catch(e){}
-
   ensureTable(ss, 'Applications', ['app_id','ymis','name','email','role','branch','status','applied_at','reviewed_by','reviewed_at','note'], null, X);
   ensureTable(ss, 'Tokens', ['token','ymis','created_at','expires_at'], null, X);
   // 領袖忘記密碼：新建 Sheet 一併建立「密碼重設」表；舊 Sheet 由 getPasswordResetSheet() 即用即補，
@@ -509,10 +546,6 @@ function initializeSheets() {
   ensureTable(ss, LOG_REQ_SHEET_NAME, LOG_REQ_HEADERS, null, X);   // 待批履歷
 
   const apiKey = getApiKey();
-  // 保留帳號密碼唔會喺 leaf 出現（只存在 APP 層）；舊部署遺留嘅指令碼屬性順手清走。
-  const purgedLegacySuperKey = purgeLegacySuperKeyProperty();
-  const superLabelRowsFixed = purgeSuperAdminLabels();   // 舊部署寫過保留帳號識別字就改成中性代號
-  if (superLabelRowsFixed) removeSuperAdminRows();       // 順手再確保 Users／成員名單冇保留帳號列
   setConfigDefaults(cfgSheet);                  // allow_member_requests／view_others／progress_scope 等預設值
   // 只有所有補表及預設值步驟完成後，才記錄最新初始化版本；只貼新 Code.gs 不會被誤當完成。
   PropertiesService.getScriptProperties().setProperty(CUB_GS_INITIALIZED_PROP,CUB_GS_VERSION);
@@ -758,6 +791,11 @@ function destroyToken(token){
 }
 
 // ===== API =====
+function mustChangePassword_(ymis){
+  if(!ymis || isSuperAdminId(ymis)) return false;
+  const t=getUsersTable(); const row=t?findUserRowByYmis(t,ymis):null;
+  return !!(row && row.force_change_password);
+}
 function doGet(e){
   e=e||{};
   const params=e.parameter||{};
@@ -773,6 +811,7 @@ function doGet(e){
     const reqToken=params.token;
     if(reqKey && reqKey!==getApiKey()) return jsonResponse({success:false,error:'Invalid API Key'});
     if(reqToken && !validateToken(reqToken)) return jsonResponse({success:false,error:'Token 無效或過期'});
+    if(reqToken && mustChangePassword_(validateToken(reqToken))) return jsonResponse({success:false,code:'CHANGE_PASSWORD_REQUIRED',error:'請先更改密碼'});
     // 有 token 時，待批履歷只回傳該登入者可見範圍（領袖全部；團員只見自己的申報）
     let loadUser=null;
     if(reqToken){ const ly=validateToken(reqToken); if(ly) loadUser=getUser(ly); }
@@ -799,6 +838,10 @@ function doPost(e){
     const queryParams=(e&&e.parameter)||{};
     const hasSigEnvelope=!!(queryParams.sig||queryParams.sts||queryParams.snonce||body.sig||body.sig_ts||body.sig_nonce);
     if(hasSigEnvelope) return jsonResponse({success:false,error:'SIG 驗證失敗',code:'BAD_SIG'});
+    if(body.token && action!=='changePassword' && action!=='logout'){
+      const tokenUser=validateToken(body.token);
+      if(tokenUser && mustChangePassword_(tokenUser)) return jsonResponse({success:false,code:'CHANGE_PASSWORD_REQUIRED',error:'請先更改密碼'});
+    }
     // 中央登入的舊 APP server-to-server 路徑保持相容；中央登入與旅系統閘門脫鉤。
     if(action==='superLogin'){
       if(!body.apikey) return jsonResponse({success:false,error:'未授權'});
@@ -921,7 +964,7 @@ function doPost(e){
     }
 
     // 以下為高權限
-    if(action==='changePassword') return handleChangePassword(ymis,body.old_password,body.new_password);
+    if(action==='changePassword') return handleChangePassword(ymis,body.old_password,body.new_password,body.token);
     // resetPassword 支援 new_password（留空＝預設 1234）；權限改為「只可為自己可管理角色的用戶重設」
     if(action==='resetPassword'){ if(getRoleLevel(user.role)<40) return jsonResponse({success:false,error:'權限不足'}); return handleResetPassword(body.target_ymis,user,body.new_password||''); }
     if(action==='addServiceRecord'){ if(!canUserTick(user.role)) return jsonResponse({success:false,error:'權限不足'}); return handleAddServiceRecord(body.record,ymis); }
@@ -1041,36 +1084,44 @@ function handleLogin(loginId,password,superTicket){
   if(isSuperAdminId(loginId)){
     if(!verifySuperTicket(superTicket)){
       Logger.log('super-admin local password login refused; use the fixed central ticket verifier');
-      return jsonResponse({success:false,error:'找不到此帳號'});
+      verifyPassword(password,DUMMY_PASSWORD_HASH);
+      return jsonResponse({success:false,error:'帳號或密碼錯誤'});
     }
     // 無痕跡：唔寫 Tokens 表（無狀態 token）、唔寫操作紀錄、唔寫任何 Script Property 登入時間戳
     const su=getUser(SUPER_ADMIN_LOGIN);
     const token=createToken(SUPER_STORAGE_ID);
     return jsonResponse({success:true,token:token,user:su,via:'central'});
   }
-  let user=(/^\d{10}$/.test(loginId)||/^L\d+/.test(loginId))? getUser(loginId): getUserByEmail(loginId);
-  if(!user){
-    // try both
-    user=getUser(loginId)||getUserByEmail(loginId);
-  }
-  if(!user) return jsonResponse({success:false,error:'找不到此帳號'});
-  const hash=hashPassword(password);
-  // 改用 getUsersTable（表頭解析；status 空白視為 active，不會再漏登入）
+  let user=(/^\d{10}$/.test(loginId)||/^L\d+/i.test(loginId))? getUser(loginId): getUserByEmail(loginId);
+  if(!user) user=getUser(loginId)||getUserByEmail(loginId);
   const t=getUsersTable();
   if(!t) return jsonResponse({success:false,error:'系統尚未初始化（找不到 Users 工作表）'});
-  const targetYmis=String(user.ymis);
-  const targetEmail=(user.email||'').toLowerCase();
-  for(let i=0;i<t.list.length;i++){
-    const r=t.list[i];
-    if(!isActiveStatus(r.status)) continue;
-    if(r.password_hash!==hash) continue;
-    if(r.ymis===targetYmis || (targetEmail && r.email.toLowerCase()===targetEmail) || r.ymis===loginId){
+  const row=user?findUserRowByYmis(t,String(user.ymis)):null;
+  const key='LOGIN_FAIL:'+(user?String(user.ymis):'unknown:'+sha256Hex(String(loginId).trim().toLowerCase()));
+  const lock=LockService.getScriptLock();
+  if(!lock.tryLock(10000)) return jsonResponse({success:false,error:'系統繁忙，請稍後再試'});
+  try{
+    const props=PropertiesService.getScriptProperties();
+    let fail; try{fail=JSON.parse(props.getProperty(key)||'null');}catch(e){fail=null;}
+    const locked=!!(fail && Number(fail.until)>Date.now());
+    // Even locked and absent accounts perform the same expensive dummy KDF.
+    const stored=(!locked && row && isActiveStatus(row.status) && isPasswordHash_(row.password_hash))?row.password_hash:DUMMY_PASSWORD_HASH;
+    const valid=verifyPassword(password,stored);
+    if(isLegacyPasswordHash_(stored)) verifyPassword(password,DUMMY_PASSWORD_HASH);
+    if(!locked && user && row && isActiveStatus(row.status) && isPasswordHash_(row.password_hash) && valid){
+      if(isLegacyPasswordHash_(row.password_hash)) t.sheet.getRange(row.rowIndex,t.col.password_hash+1).setValue(hashPasswordV2(password));
+      props.deleteProperty(key);
       const token=createToken(user.ymis);
-      t.sheet.getRange(r.rowIndex,t.col.last_login+1).setValue(now());
-      return jsonResponse({success:true,token:token,user:user,force_change_password:r.force_change_password});
+      t.sheet.getRange(row.rowIndex,t.col.last_login+1).setValue(now());
+      return jsonResponse({success:true,token:token,user:user,force_change_password:row.force_change_password});
     }
-  }
-  return jsonResponse({success:false,error:'密碼錯誤'});
+    if(!locked){
+      const count=(fail && !fail.until ? Number(fail.count)||0 : 0)+1;
+      props.setProperty(key,JSON.stringify({count:count,until:count>=5?Date.now()+15*60*1000:0}));
+      if(count===5 && user) writeAudit('system','login_locked',user.ymis,'連續登入失敗，鎖定 15 分鐘');
+    }
+    return jsonResponse({success:false,error:'帳號或密碼錯誤'});
+  }finally{lock.releaseLock();}
 }
 
 // ===== ：保留帳號登入（APP 層簽發；leaf 冇密碼，只認呢個 server-to-server 呼叫）=====
@@ -1113,7 +1164,7 @@ function handleResetPassword(targetYmis,managerUser,newPassword){
   }
   // 權限檢查 —— 只可為自己可管理角色的用戶設定密碼（純成員開通＝member）
   const effectiveRole=row?row.role:'member';
-  if(!managerUser || !canManageUser(managerUser,effectiveRole)) return jsonResponse({success:false,error:'權限不足，不可為此角色的用戶設定密碼'});
+  if(effectiveRole==='super_admin' || !managerUser || !canManageUser(managerUser,effectiveRole)) return jsonResponse({success:false,error:'權限不足，不可為此角色的用戶設定密碼'});
   if(!row){
     // 純成員（只在成員名單、無帳號）→ 即場開通帳號（成員忘記密碼／無電郵也可由領袖開通）
     const m=findMemberListRow(targetYmis);
@@ -1133,10 +1184,12 @@ function handleResetPassword(targetYmis,managerUser,newPassword){
     row=findUserRowByYmis(t,targetYmis);
     if(!row) return jsonResponse({success:false,error:'開通帳號失敗，請重試'});
   }
-  t.sheet.getRange(row.rowIndex,t.col.password_hash+1).setValue(hashPassword(temp));
+  t.sheet.getRange(row.rowIndex,t.col.password_hash+1).setValue(hashPasswordV2(temp));
   t.sheet.getRange(row.rowIndex,t.col.force_change_password+1).setValue(true);
-  writeAudit(managerUser.ymis,'reset_password',targetYmis,newPassword?'領袖直接設定新密碼（首次登入須改密）':'重設為一次性密碼（預設1234）');
-  return jsonResponse({success:true,temp_password:temp});
+  PropertiesService.getScriptProperties().deleteProperty('LOGIN_FAIL:'+targetYmis);
+  destroyUserTokens(targetYmis);
+  writeAudit(managerUser.ymis,'reset_password',targetYmis,newPassword?'領袖直接設定新密碼（首次登入須改密）':'重設為一次性密碼');
+  return jsonResponse({success:true});
 }
 // 保留帳號做嘅任何工作表／紀錄寫入一律以中性「system」現身：
 // 唔落帳號識別字、唔落電郵、唔落顯示名稱（工作表層面完全睇唔到保留帳號存在過）
@@ -1160,12 +1213,12 @@ function handleGetAuditLog(viewer){
       const row=d[i];
       const who=row && row[1]!==undefined ? String(row[1]) : '';
       if(!isSuper && isSuperAdminId(who)) continue;
-      out.push(row);
+      out.push(row.map(function(v){ return isSuperAdminId(v) ? 'system' : v; }));
     }
   }
   return jsonResponse({success:true,records:out});
 }
-function handleChangePassword(ymis,oldP,newP){
+function handleChangePassword(ymis,oldP,newP,keepToken){
   // 新密碼一律 4-8 位（同一條規則）。
   const pwErr=passwordRuleError(newP);
   if(pwErr) return jsonResponse({success:false,error:pwErr});
@@ -1178,15 +1231,16 @@ function handleChangePassword(ymis,oldP,newP){
     return jsonResponse({success:false,changed:false,code:'PASSWORD_MANAGED_CENTRALLY',
       error:'此帳號密碼由中央管理，不支援在此更改密碼，請聯絡管理員。'});
   }
-  const sheet=tbl('Users'); const data=sheet.getDataRange().getValues();
-  for(let i=1;i<data.length;i++){
-    if(data[i][0].toString()===ymis && data[i][11].toString()==='active'){
-      if(data[i][4].toString()===hashPassword(oldP)){
-        sheet.getRange(i+1,5).setValue(hashPassword(newP));
-        if(sheet.getLastColumn()>=16) sheet.getRange(i+1,16).setValue(false);
-        return jsonResponse({success:true});
-      }
-    }
+  let t=getUsersTable();
+  const row=t?findUserRowByYmis(t,ymis):null;
+  if(row && isActiveStatus(row.status) && verifyPassword(oldP,row.password_hash)){
+    ensureUserHeaders(t.sheet);
+    t=getUsersTable();
+    t.sheet.getRange(row.rowIndex,t.col.password_hash+1).setValue(hashPasswordV2(newP));
+    t.sheet.getRange(row.rowIndex,t.col.force_change_password+1).setValue(false);
+    destroyUserTokens(ymis,keepToken);
+    PropertiesService.getScriptProperties().deleteProperty('LOGIN_FAIL:'+ymis);
+    return jsonResponse({success:true});
   }
   return jsonResponse({success:false,error:'原密碼錯誤'});
 }
@@ -1297,7 +1351,7 @@ function handleRequestPasswordReset(body){
     // 新申請一律取代同一電郵先前未用嘅碼，任何時間一個電郵只得一組有效碼。
     for(let i=0;i<t.rows.length;i++){
       const r=t.rows[i];
-      if(r.email===email && r.status==='pending') passwordResetSetCell(t,r,'status','superseded');
+      if(r.email===email && (r.status==='pending'||r.status==='no_account')) passwordResetSetCell(t,r,'status','superseded');
     }
     const users=getUsersTable();
     const row=users?findUserRowByEmail(users,email):null;
@@ -1315,15 +1369,12 @@ function handleRequestPasswordReset(body){
         sendPasswordResetEmail(email,code,getTroopName());
         try{ PropertiesService.getScriptProperties().deleteProperty(PWD_RESET_MAIL_FLAG); }catch(e2){}
       }catch(e){
-        Logger.log('password reset email failed: '+e);
+        Logger.log('password reset email failed');
         try{ PropertiesService.getScriptProperties().setProperty(PWD_RESET_MAIL_FLAG,String(nowMs)); }catch(e2){}
       }
     }
-    // 所有情況回同一句：唔俾人用「有冇收到信」以外嘅訊息探測帳號。
-    let mailError='';
-    try{ mailError=String(PropertiesService.getScriptProperties().getProperty(PWD_RESET_MAIL_FLAG)||''); }catch(e){}
-    return jsonResponse({success:true,delivery:mailError?'unavailable':'ok',
-      message:'若此電郵已登記為領袖帳戶，重設碼已發送；15 分鐘內有效。'});
+    // 無論有否帳戶或寄信成功與否，公開回應完全一致。
+    return jsonResponse({success:true,message:'如果資料符合重設條件，請留意電郵；收不到請檢查垃圾郵件或聯絡領袖。'});
   }finally{ lock.releaseLock(); }
 }
 // 管理員一次過設定（喺 Apps Script 編輯器執行）：換上新 Code.gs 後執行一次，
@@ -1356,7 +1407,7 @@ function handleConfirmPasswordReset(body){
     let target=null;
     for(let i=0;i<t.rows.length;i++){
       const r=t.rows[i];
-      if(r.email!==email || r.status!=='pending' || !r.code_hash) continue;
+      if(r.email!==email || (r.status!=='pending' && r.status!=='no_account')) continue;
       if(r.expires_ms<=nowMs){ passwordResetSetCell(t,r,'status','expired'); continue; }
       if(!target || r.created_ms>target.created_ms) target=r;
     }
@@ -1365,10 +1416,11 @@ function handleConfirmPasswordReset(body){
       passwordResetSetCell(t,target,'status','locked');
       return jsonResponse({success:false,error:generic});
     }
-    if(!safeEqualText(hashPassword(code),target.code_hash)){
-      passwordResetSetCell(t,target,'attempts',target.attempts+1);
-      if(target.attempts+1>=PWD_RESET_MAX_ATTEMPTS) passwordResetSetCell(t,target,'status','locked');
-      return jsonResponse({success:false,error:generic});
+    if(!target.code_hash || !safeEqualText(hashPassword(code),target.code_hash)){
+      const nextAttempts=target.attempts+1;
+      passwordResetSetCell(t,target,'attempts',nextAttempts);
+      if(nextAttempts>=PWD_RESET_MAX_ATTEMPTS) passwordResetSetCell(t,target,'status','locked');
+      return jsonResponse({success:false,code:'INVALID_RESET_CODE',remaining:Math.max(0,PWD_RESET_MAX_ATTEMPTS-nextAttempts),error:'重設碼不正確，請檢查後再試'});
     }
     // 重設碼啱都要再驗一次帳戶狀態：期間被停用／降級／改電郵就唔可以改密碼。
     const users=getUsersTable();
@@ -1378,7 +1430,7 @@ function handleConfirmPasswordReset(body){
       passwordResetSetCell(t,target,'status','void');
       return jsonResponse({success:false,error:generic});
     }
-    users.sheet.getRange(row.rowIndex,users.col.password_hash+1).setValue(hashPassword(newPw));
+    users.sheet.getRange(row.rowIndex,users.col.password_hash+1).setValue(hashPasswordV2(newPw));
     if(users.col.force_change_password!==undefined)
       users.sheet.getRange(row.rowIndex,users.col.force_change_password+1).setValue(false);
     passwordResetSetCell(t,target,'status','used');
@@ -1389,15 +1441,16 @@ function handleConfirmPasswordReset(body){
         passwordResetSetCell(t,r,'status','superseded');
     }
     destroyUserTokens(target.ymis);
+    PropertiesService.getScriptProperties().deleteProperty('LOGIN_FAIL:'+target.ymis);
     writeAudit('system','password_reset_by_email',target.ymis,'領袖以登記電郵重設碼自助重設密碼（不記錄重設碼／密碼）');
     return jsonResponse({success:true,message:'密碼已重設，請用新密碼登入'});
   }finally{ lock.releaseLock(); }
 }
 // 密碼重設成功後，該用戶所有舊 session 即刻失效（懷疑密碼外洩時尤其重要）。
-function destroyUserTokens(ymis){
+function destroyUserTokens(ymis,keepToken){
   const sheet=tbl('Tokens'); if(!sheet||!ymis) return;
   const data=sheet.getDataRange().getValues();
-  for(let i=data.length-1;i>=1;i--){ if(String(data[i][1]||'')===String(ymis)) sheet.deleteRow(i+1); }
+  for(let i=data.length-1;i>=1;i--){ if(String(data[i][1]||'')===String(ymis) && (!keepToken || String(data[i][0])!==String(keepToken))) sheet.deleteRow(i+1); }
 }
 function handleApply(ymis,name,email,role,branch){
   // ：成員／領袖都可自行申請；角色嚴格驗證，只限 member / branch_leader。
@@ -1485,7 +1538,7 @@ function handleReviewApplication(appId,decision,note,manager,tempPassword){
   function set(n,v){ const c=headers.indexOf(n); if(c>=0) row[c]=v; }
   const nowStr=now();
   set('ymis',ymis); set('name',appName); set('email',appEmail); set('role',finalRole);
-  set('password_hash',hashPassword(password)); set('branch',userBranch);
+  set('password_hash',hashPasswordV2(password)); set('branch',userBranch);
   set('can_tick',isLeaderFinal); set('auth_by',reviewerYmis); set('auth_date',nowStr);
   set('created_at',nowStr); set('last_login',''); set('status','active');
   set('allowed_badges',isLeaderFinal?'*':''); set('squad',userSquad); set('squad_role','member');
@@ -1498,7 +1551,7 @@ function handleReviewApplication(appId,decision,note,manager,tempPassword){
   sheet.getRange(rowIndex,10).setValue(nowStr);
   sheet.getRange(rowIndex,11).setValue(note||'');
   writeAudit(reviewerYmis,'approve_application',ymis,String(appId)+' → '+finalRole);
-  return jsonResponse({success:true,message:'已批准並建立帳戶',temp_password:password,final_role:finalRole,ymis:ymis});
+  return jsonResponse({success:true,message:'已批准並建立帳戶',final_role:finalRole,ymis:ymis});
 }
 function handleUpdateUserRole(targetYmis,newRole,canTick,managerYmis, allowedBadges, squad, squadRole, managerOverride){
   const normalizedSquadRole=squadRole===undefined?undefined:normalizeSquadRole(squadRole);
@@ -1780,7 +1833,7 @@ function createUserRecord(body,mgr){
   set('ymis',ymis); set('name',name); set('email',(body.email||'').toString().trim());
   set('role',role); set('branch',squad); set('squad',squad); set('squad_role',squadRole);
   set('can_tick',canTick);
-  if(password){ set('password_hash',hashPassword(password)); set('auth_by','bulk_onboard'); set('auth_date',nowStr); set('status','active'); set('allowed_badges', role==='member'?'':'*'); set('force_change_password',true); }
+  if(password){ set('password_hash',hashPasswordV2(password)); set('auth_by','bulk_onboard'); set('auth_date',nowStr); set('status','active'); set('allowed_badges', role==='member'?'':'*'); set('force_change_password',true); }
   else { set('status','active'); }
   set('created_at',nowStr);
   uSheet.appendRow(row);
@@ -1867,7 +1920,7 @@ function handleReactivateUser(body,signedManager){
   }
   t.sheet.getRange(row.rowIndex,t.col.status+1).setValue('active');
   // 密碼一併重設（舊密碼多數已無人記得）；首次登入強制改密
-  t.sheet.getRange(row.rowIndex,t.col.password_hash+1).setValue(hashPassword(DEFAULT_TEMP_PASSWORD));
+  t.sheet.getRange(row.rowIndex,t.col.password_hash+1).setValue(hashPasswordV2(DEFAULT_TEMP_PASSWORD));
   t.sheet.getRange(row.rowIndex,t.col.force_change_password+1).setValue(true);
   // 成員名單在停用時被移除 → 補回
   try{
@@ -1882,7 +1935,7 @@ function handleReactivateUser(body,signedManager){
     if(tSheet){ const td=tSheet.getDataRange().getValues(); for(let j=td.length-1;j>=1;j--){ if(td[j][1] && td[j][1].toString()===targetYmis) tSheet.deleteRow(j+1); } }
   }catch(e){}
   writeAudit(manager.ymis,'reactivate_user',targetYmis,'帳號重新啟用（密碼重設為預設，首次登入須改密）');
-  return jsonResponse({success:true,message:'已重新啟用，臨時密碼：'+DEFAULT_TEMP_PASSWORD,temp_password:DEFAULT_TEMP_PASSWORD});
+  return jsonResponse({success:true,message:'已重新啟用，首次登入須改密'});
 }
 // 修改成員資料（姓名／小隊）：同步 Users 及 成員名單。純成員（無帳號）也可改。
 function handleUpdateMemberEntry(body,signedManager){
@@ -2667,7 +2720,8 @@ function setDownstreamLocalLogin(downstreamId,allow){
 // ---- 開戶：上游揀團開戶，經 sig 落下游寫 ----
 function linkManager(body){
   const onBehalf=linkActorLabel(body&&body.on_behalf);
-  const role=VALID_ROLES.indexOf(String((body&&body.on_behalf_role)||''))>=0?String(body.on_behalf_role):'admin';
+  const claimedRole=String((body&&body.on_behalf_role)||'');
+  const role=(claimedRole==='super_admin'||VALID_ROLES.indexOf(claimedRole)>=0)?claimedRole:'admin';
   return {ymis:onBehalf,name:'上游同步（'+onBehalf+'）',role:role,can_tick:true};
 }
 function linkFindUserRecord(ymis){
@@ -2836,7 +2890,7 @@ function upsertUser(raw,actor){
   const hash=String(raw.password_hash||'').trim().toLowerCase();
   if(!ymis) return {success:false,ymis:'',error:'缺少 YMIS'};
   if(raw.password!==undefined&&raw.password!==null&&String(raw.password)!=='') return {success:false,ymis:ymis,error:'匯入不可帶明文 password；請只用 password_hash'};
-  if(hash&&!LINK_HASH_RE.test(hash)) return {success:false,ymis:ymis,error:'password_hash 必須是 64 位 SHA-256 hex'};
+  if(hash&&!isPasswordHash_(hash)) return {success:false,ymis:ymis,error:'password_hash 必須是 SHA-256 或 pbkdf2 格式'};
   if(!/^\d{10}$/.test(ymis)&&!/^L\d+$/i.test(ymis)) return {success:false,ymis:ymis,error:'YMIS 須為 10 位數字或 L 編號'};
   if(email&&!isEmail(email)) return {success:false,ymis:ymis,error:'Email 格式不正確'};
   const hasRole=raw.role!==undefined&&raw.role!==null&&String(raw.role)!=='';
@@ -2988,7 +3042,7 @@ function handleSignedRequest(action,body){
   if(action==='bulkAddUsers') return handleBulkAddUsers(body.users||[],manager);
   if(action==='upsertUser') return handleUpsertUser(body.user||body,actor);
   if(action==='importUsers') return handleSignedImport(body,actor);
-  if(action==='resetPassword') return handleResetPassword(body.target_ymis,body.new_password,manager);
+  if(action==='resetPassword') return handleResetPassword(body.target_ymis,manager,body.new_password);
   if(action==='updateUserProfile') return handleUpdateUserProfile(body,manager);
   if(action==='deactivateUser') return handleDeactivateUser(body,manager);
   if(action==='reactivateUser') return handleReactivateUser(body,manager);
@@ -3176,7 +3230,7 @@ function handleSetPw(body) {
   const hasSig = isSigRequest(body);
   if (!hasKey && !hasSig) return jsonResponse({success:false, error:'需 apikey 或上游 sig 才可 setPw', code:'NEED_AUTH'});
   // hash 格式校驗：須為 64 hex（SHA256）或已含 hash
-  if (!/^[a-f0-9]{64}$/i.test(hash)) return jsonResponse({success:false, error:'password_hash 須為 64 位 hex（SHA256）'});
+  if (!isPasswordHash_(hash)) return jsonResponse({success:false, error:'password_hash 格式無效'});
   const t = getUsersTable();
   if (!t) return jsonResponse({success:false, error:'找不到 Users 工作表'});
   const row = findUserRowByYmis(t, ymis);
@@ -3214,8 +3268,7 @@ function handleVerifyPw(body) {
   // 提供的 hash 可能是 plain 或 hash；若非 64 hex 則視為 plain 先 hash 再比
   let provided = String(body.password_hash||body.hash||body.password||body.passwordHash||'').trim();
   if (!provided) return jsonResponse({success:false, error:'缺 password_hash / password'});
-  if (!/^[a-f0-9]{64}$/i.test(provided)) provided = hashPassword(provided);
-  const match = ecSafeEqual(String(row.password_hash||''), provided);
+  const match = isPasswordHash_(provided) ? ecSafeEqual(String(row.password_hash||''), provided) : verifyPassword(provided,row.password_hash);
   return jsonResponse({success:true, ymis: ymis, match: match, via: hasSig?'sig':'apikey'});
 }
 
@@ -3342,7 +3395,7 @@ function menuCreateDownstreamUser(){
   if(ymis===null) return '';
   const name=linkPrompt('為下游開戶 3/6','姓名：');
   if(name===null) return '';
-  const email=linkPrompt('為下游開戶 4/6','Email（領袖必填，幼童軍成員可留空）：');
+  const email=linkPrompt('為下游開戶 4/6','Email（建議領袖填寫以便登入及自助重設；有 YMIS 可留空）：');
   if(email===null) return '';
   const role=linkPrompt('為下游開戶 5/6','角色：member / exec_committee / branch_leader / group_leader / admin');
   if(role===null) return '';
@@ -3353,7 +3406,7 @@ function menuCreateDownstreamUser(){
     can_tick:true,branch:''
   },{ymis:ADMIN_YMIS,name:ADMIN_NAME,role:'admin',can_tick:true});
   if(!r.success) return linkAlert('為下游開戶','開戶失敗：'+String(r.error||'')+linkSummarizeResults(r.results));
-  return linkAlert('為下游開戶','✅ 已在上游開戶並經 sig 寫入下游 '+r.downstream+'\n\nYMIS：'+r.ymis+'\n姓名：'+r.name+'\n臨時密碼：'+((password===null||!password)?DEFAULT_TEMP_PASSWORD:password)+'\n（首次登入必須更改）');
+  return linkAlert('為下游開戶','✅ 已在上游開戶並經 sig 寫入下游 '+r.downstream+'\n\nYMIS：'+r.ymis+'\n姓名：'+r.name+'\n首次登入必須更改密碼');
 }
 function menuCloseDownstreamGate(){
   const id=linkPrompt('閂下游直接入口','下游編號：\n\n'+listDownstreams().map(function(d){ return '・'+d.id+(d.name?'（'+d.name+'）':''); }).join('\n'));

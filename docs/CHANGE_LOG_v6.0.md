@@ -146,3 +146,11 @@
 **部署**：GS `2026.11.02` 必須更換 `Code.gs` 並重新部署新版本（沿用原 URL）。換檔後請喺 Apps Script 編輯器執行一次 `testPasswordResetMail()`，容許 Google 嘅「傳送電郵」授權並收一封測試信；呢個函式唔寫任何工作表、唔改任何帳號資料。已有正常 Sheet 毋須 `initializeSheets()`；新建 Sheet 首次使用仍須初始化。完整安全設計見 [docs/PASSWORD_RESET.md](PASSWORD_RESET.md)。
 
 **測試**：`test/password-reset.test.mjs`（12 項，經真正 `doPost` 路由）覆蓋完整重設流程、不洩漏帳號、雜湊入表、錯碼計次／鎖定、過期、限速、舊碼作廢、提權欄位無效、中途停用降級、舊 Sheet 自動補表、發信故障旗標、前端／proxy／版本一致性；`test/api.test.mjs` 新增 2 項 proxy 防線測試。`npm test` 全數通過。
+
+## 14. 密碼重設及初始化安全修補（2026-11-02，GS 2026.11.02.2）
+- `resetPassword` 的簽章路由修正參數次序；handler 拒絕重設保留角色，並於成功後清除登入失敗記錄、撤銷目標的舊 session，保留強制改密標記。
+- `requestPasswordReset` 無論寄信成功或失敗均回相同中性訊息，前端不再宣稱已寄出。
+- `initializeSheets()` 不再清理舊帳戶、session 或改寫歷史標籤；進度表表頭只補空格，不覆蓋已有值。既有資料不刪改。
+- 本次不新增表或欄；建議更新 Code.gs 後執行一次 `initializeSheets()`，跨多版本升級必須執行，以補齊缺失表及欄。回滾可部署上一版 Code.gs；回滾後舊 session 不會復原。
+- 新密碼改用 PBKDF2-HMAC-SHA256（120,000 次、16-byte salt）；舊 SHA-256 成功登入後升級，搬數接受兩種格式。登入錯誤訊息統一並補鎖定及稽核；改密撤銷其他 session。管理重設和審批等回應不再回傳明文密碼。
+- 沒新增 action 或必需工作表；影響登入、改密、重設、搬數與部署初始化。PBKDF2 在 Google Apps Script 的實際效能及部署授權仍需在測試旅團驗證。

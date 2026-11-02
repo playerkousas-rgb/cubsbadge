@@ -83,7 +83,7 @@ test('完整流程：寄碼 → 雜湊入表 → 錯碼計次 → 改密成功 �
   assert.equal(ok.success, true, JSON.stringify(ok));
 
   const u = b.__ss.sheets.Users.rows[1];
-  assert.equal(u[4], sha256Hex('newpw'));
+  assert.match(u[4], /^pbkdf2\$/); assert.equal(b.verifyPassword('newpw',u[4]),true);
   assert.equal(u[15], false, '用戶自己揀嘅新密碼，毋須再強制改密');
   assert.equal(JSON.parse(b.handleLogin(EMAIL, 'oldpw').getContent()).success, false);
   const login = JSON.parse(b.handleLogin(EMAIL, 'newpw').getContent());
@@ -98,7 +98,7 @@ test('完整流程：寄碼 → 雜湊入表 → 錯碼計次 → 改密成功 �
 
   assert.equal(resetRows(b)[0][7], 'used');
   assert.equal(confirm(b, EMAIL, code, 'otherpw').success, false, '重設碼只可用一次');
-  assert.equal(b.__ss.sheets.Users.rows[1][4], sha256Hex('newpw'), '重用唔可以再改密碼');
+  assert.equal(b.verifyPassword('newpw', b.__ss.sheets.Users.rows[1][4]), true, '重用唔可以再改密碼');
 });
 
 test('不洩漏帳號存在與否：不存在／成員／停用／保留／超管角色一律唔寄信，回應完全相同', () => {
@@ -139,7 +139,7 @@ test('電郵格式無效即時拒絕；新申請取代舊碼；舊碼作廢', ()
   // 任何錯碼（包括已作廢嘅舊碼）都計入目前有效碼嘅嘗試次數，防止無限試碼。
   assert.equal(resetRows(b)[1][6], 1);
   assert.equal(confirm(b, EMAIL, second.code, 'secondpw').success, true);
-  assert.equal(b.__ss.sheets.Users.rows[1][4], sha256Hex('secondpw'));
+  assert.equal(b.verifyPassword('secondpw',b.__ss.sheets.Users.rows[1][4]),true);
 });
 
 test('限速：同一電郵 30 分鐘內最多 3 次；全團每小時最多 30 次', () => {
@@ -183,7 +183,7 @@ test('不可挾帶身份欄位提權：token／apikey／指定 YMIS 一律唔影
   assert.equal(resetRows(b)[0][1], 'L0001', '目標只可以由電郵查出來');
   const ok = confirm(b, EMAIL, code, 'newpw', injected);
   assert.equal(ok.success, true);
-  assert.equal(b.__ss.sheets.Users.rows[1][4], sha256Hex('newpw'), '只改申請電郵所屬帳戶');
+  assert.equal(b.verifyPassword('newpw', b.__ss.sheets.Users.rows[1][4]),true, '只改申請電郵所屬帳戶');
   assert.equal(b.__ss.sheets.Users.rows[2][4], sha256Hex('victimpw'), '另一位領袖密碼不可被改');
 });
 
@@ -220,21 +220,15 @@ test('舊 Sheet 唔使重跑初始化：第一次申請自動補建「密碼重�
   assert.deepEqual(fresh.__ss.sheets['密碼重設'].rows[0], ['reset_id','ymis','email','code_hash','created_ms','expires_ms','attempts','status','used_at']);
 });
 
-test('發信失敗唔靜默：全團 delivery=unavailable，回應一致唔洩漏有效帳戶', () => {
+test('發信失敗、成功和未知帳號的公開回應一致', () => {
   const b = newLeaderBackend();
   b.MailApp.sendEmail = () => { throw new Error('no mail permission'); };
   const failed = call(b, { action: 'requestPasswordReset', email: EMAIL });
-  assert.equal(failed.success, true);
-  assert.equal(failed.delivery, 'unavailable');
-  assert.equal(b.__mail.length, 0);
   const unknown = call(b, { action: 'requestPasswordReset', email: 'nobody2@example.org' });
-  assert.equal(unknown.delivery, 'unavailable', '發信故障係全團狀態，唔可以用嚟分辦帳號存在');
-  assert.equal(unknown.message, failed.message);
-
-  // 管理員重新授權後，下一次成功發信會清走旗標
-  b.MailApp.sendEmail = (m) => { b.__mail.push({ ...m }); return b.MailApp; };
+  b.MailApp.sendEmail = (m) => { b.__mail.push({ ...m }); };
   const recovered = call(b, { action: 'requestPasswordReset', email: EMAIL });
-  assert.equal(recovered.delivery, 'ok');
+  assert.deepEqual(failed, unknown);
+  assert.deepEqual(failed, recovered);
   assert.equal(b.__mail.length, 1);
 });
 
@@ -269,16 +263,26 @@ test('前端：登入頁領袖專用入口、兩步 modal、中英字典、版�
   assert.ok(keys.length >= 20, `fpw_ key 太少：${keys.length}`);
   assert.deepEqual(keys.filter(k => !I18N.en[k]), [], '英文模式唔可以 fallback 中文');
   assert.ok(I18N.zh.fpw_mail_unavailable && I18N.en.fpw_mail_unavailable, '發信故障提示要中英對照');
-  assert.match(html, /d\.delivery==='unavailable'/, '前端要處理後端發信失敗狀態');
+  assert.doesNotMatch(html, /d\.delivery==='unavailable'/);
 
   // 版本：HTML build = manifest；GS 版本 = 前端要求 = 下載連結
   assert.equal(html.match(/<meta name="cubsbadge-build" content="([^"]+)"/)[1], manifest.build);
   const gsVersion = gs.match(/const CUB_GS_VERSION = '([^']+)'/)[1];
-  assert.equal(gsVersion, '2026.11.02');
+  assert.equal(gsVersion, '2026.11.02.2');
   assert.ok(html.includes(`gsVersion:'${gsVersion}'`));
   assert.ok(html.includes(`href="apps-script/Code.gs?gs=${gsVersion}"`));
 
   // proxy：兩個 action 唔可以收客戶端自帶身份欄位
   assert.match(proxy, /action === 'requestPasswordReset' \|\| action === 'confirmPasswordReset'/);
   assert.match(proxy, /\['token', 'ymis', 'target_ymis', 'role', 'password_hash', 'code_hash', 'user'\]/);
+});
+
+test('已申請的存在及不存在帳號，錯碼次數與回應一致', () => {
+  const b=newLeaderBackend(); issueCode(b); call(b,{action:'requestPasswordReset',email:'missing@example.org'});
+  for(let i=0;i<5;i++){
+    const real=confirm(b,EMAIL,'ZZZZZZZZ','newpw');
+    const missing=confirm(b,'missing@example.org','ZZZZZZZZ','newpw');
+    assert.deepEqual(real,missing);
+    assert.equal(real.remaining,4-i);
+  }
 });

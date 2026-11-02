@@ -374,7 +374,7 @@ console.log('\n=== 超管隱藏（leaf 完全冇 SUPER_KEY）＋ APP ADMIN 層�
     ['1234', 'changeme', 'sheep', 'sk_legacy_leftover', '0728'].forEach((p) => {
       const r = jparse(b.handleLogin('sheep', p));
       assert.equal(r.success, false, `「${p}」唔應該登入到`);
-      assert.equal(r.error, '找不到此帳號', '要同「唔存在帳號」一模一樣，唔可以透露隱藏帳戶');
+      assert.equal(r.error, '帳號或密碼錯誤', '要同「唔存在帳號」一模一樣，唔可以透露隱藏帳戶');
     });
     assert.equal(jparse(b.handleLogin('sheep@cubbadge.local', 'sk_legacy_leftover')).success, false);
   });
@@ -475,18 +475,10 @@ console.log('\n=== 超管隱藏（leaf 完全冇 SUPER_KEY）＋ APP ADMIN 層�
     post({ action: 'superLogin', apikey: KEY });
     post({ action: 'getDownstreamAccess' });
     post({ action: 'login', login_id: 'sheep', password: 'whatever' });
-    // 模擬舊部署已經寫過嘅超管帳號名（操作紀錄）＋ 舊版 Tokens 登入紀錄行 ＋ 一次 initializeSheets 清掃
-    b.__ss.getSheetByName('操作紀錄').appendRow(['2026-01-01 00:00:00', 'sheep', 'super_login', 'sheep', '舊部署遺留']);
-    b.__ss.getSheetByName('Tokens').appendRow(['legacy_tok_a', 'sheep', '2026-01-01', '2026-02-01']);
-    b.__ss.getSheetByName('Tokens').appendRow(['legacy_tok_b', 'APP_ADMIN', '2026-01-01', '2026-02-01']);
     const init = b.initializeSheets();
     assert.equal(init.success, true);
     const initOut = JSON.stringify(init);
-    assert.ok(!initOut.includes('sheep') && !/APP_ADMIN|SUPER_KEY|superKey/i.test(initOut), 'initializeSheets 回傳唔可以提超管資訊');
-    const tokAfter = b.__ss.getSheetByName('Tokens').getDataRange().getValues();
-    assert.ok(!tokAfter.some((r) => /sheep|APP_ADMIN/i.test(String(r[0])) || /sheep|APP_ADMIN/i.test(String(r[1]))), 'Tokens 表要清走舊版超管 session 行（登入紀錄）');
-    const auditAfter = b.__ss.getSheetByName('操作紀錄').getDataRange().getValues();
-    assert.ok(!auditAfter.some((r) => r.some((c) => /sheep/i.test(String(c)))), '操作紀錄要清走舊超管帳號名（改成 system）');
+    assert.ok(!initOut.includes('sheep') && !/APP_ADMIN|SUPER_KEY|superKey/i.test(initOut));
     const hits = [];
     b.__ss.getSheets().forEach((sh) => {
       const name = sh.getName();
@@ -530,14 +522,14 @@ console.log('\n=== 超管隱藏（leaf 完全冇 SUPER_KEY）＋ APP ADMIN 層�
     assert.equal(String(prow[4]), 'system', '確認者欄要係中性 system');
   });
 
-  check('initializeSheets：只生成 API KEY + 靜音清走舊部署遺留嘅 SUPER_KEY property（回傳零超管資訊）', () => {
+  check('initializeSheets：保留舊部署屬性，不在回應透露' , () => {
     const b = buildBackend();
     const KEY = 'sk_init_secret';
     b.PropertiesService.getScriptProperties().setProperty('SUPER_KEY', KEY);
     const r = b.handleInitializeSheets ? b.handleInitializeSheets() : b.initializeSheets();
     assert.equal(r.success, true);
     assert.ok(/^sc_/.test(r.apiKey), '要生成 API KEY 俾旅團交');
-    assert.equal(b.PropertiesService.getScriptProperties().getProperty('SUPER_KEY'), null, '清完應該冇咗');
+    assert.equal(b.PropertiesService.getScriptProperties().getProperty('SUPER_KEY'), KEY, '初始化不可刪改舊屬性');
     const out = JSON.stringify(r);
     assert.ok(!out.includes(KEY), '回傳唔可以帶超管密碼');
     assert.ok(!/SUPER_KEY|superKey|sheep|APP_ADMIN|超管/i.test(out), '回傳唔可以提任何超管機制資訊');

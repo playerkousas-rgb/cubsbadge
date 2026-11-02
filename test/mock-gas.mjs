@@ -167,10 +167,11 @@ function buildBackend() {
       DigestAlgorithm: { SHA_256: 'SHA_256' },
       Charset: { UTF_8: 'UTF_8' },
       getUuid: () => crypto.randomUUID().replace(/-/g, ''),
+      newBlob: text => ({getBytes: () => [...Buffer.from(String(text),'utf8')]}),
       formatDate(d, tz, fmt) { return String(fmt || ''); },
       // EC_SIG：HMAC-SHA256 + base64（回傳 signed byte array，同 Apps Script 一致）
       computeHmacSha256Signature(msg, key) {
-        return [...crypto.createHmac('sha256', String(key)).update(String(msg), 'utf8').digest()]
+        return [...crypto.createHmac('sha256', Array.isArray(key) ? Buffer.from(key.map(x=>x&255)) : String(key)).update(Array.isArray(msg) ? Buffer.from(msg.map(x=>x&255)) : String(msg)).digest()]
           .map(b => (b > 127 ? b - 256 : b));
       },
       base64Encode(bytes) {

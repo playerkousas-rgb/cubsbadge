@@ -135,10 +135,11 @@ function makeNode({ name, apikey, url }) {
     SpreadsheetApp: { getActiveSpreadsheet: () => ss, getUi: () => null },
     Utilities: {
       getUuid: () => randomUUID(),
+      newBlob: value => ({getBytes:()=>Array.from(Buffer.from(String(value),'utf8'))}),
       DigestAlgorithm: { SHA_256: 'SHA_256' },
       Charset: { UTF_8: 'UTF_8' },
       computeDigest: (algo, value) => Array.from(createHash('sha256').update(String(value), 'utf8').digest()),
-      computeHmacSha256Signature: (value, key) => Array.from(createHmac('sha256', String(key)).update(String(value), 'utf8').digest()),
+      computeHmacSha256Signature: (value, key) => Array.from(createHmac('sha256', Array.isArray(key)?Buffer.from(key.map(x=>x&255)):String(key)).update(Array.isArray(value)?Buffer.from(value.map(x=>x&255)):String(value)).digest()),
       formatDate: formatDateStub
     },
     DriveApp: {
@@ -232,6 +233,8 @@ test('直接入口掣：未設定時現有旅團行為完全不變', () => {
   assert.ok(String(login.token).length > 10);
   const load = g.doGet({ parameter: { action: 'load' } });
   assert.equal(load.success, true);
+  assert.equal(g.doPost({ parameter: {}, postData: { contents: JSON.stringify({ action: 'getAllUsers', token: login.token }) } }).code, 'CHANGE_PASSWORD_REQUIRED');
+  assert.equal(g.doPost({ parameter: {}, postData: { contents: JSON.stringify({ action: 'changePassword', token: login.token, old_password: 'changeme', new_password: 'newpass1' }) } }).success, true);
   assert.equal(g.doPost({ parameter: {}, postData: { contents: JSON.stringify({ action: 'getAllUsers', token: login.token }) } }).success, true);
 });
 
@@ -370,7 +373,7 @@ test('開戶：上游揀團開戶，經 sig 落下游寫（兩邊同一 password
     String(downstreamHash.data[downstreamHash.map.password_hash]),
     '下游必須直插同一 hash'
   );
-  assert.equal(String(downstreamHash.data[downstreamHash.map.password_hash]), sha256('4321'));
+  assert.equal(down.context.verifyPassword('4321',downstreamHash.data[downstreamHash.map.password_hash]),true);
   assert.equal(downstreamHash.user.role, 'branch_leader');
   // 下游已閂口，但上游仍可直接寫下游進度
   assert.equal(up.context.callDownstream('progress', 'save', { changes: [{ ymis: '2345678901', itemId: '1.1.1', date: '2026-04-04' }] }).success, true);
@@ -386,7 +389,7 @@ test('開戶：上游揀團開戶，經 sig 落下游寫（兩邊同一 password
   assert.equal(mirrored.password_kept, true, '冇帶 hash 時必須保留原密碼');
   assert.equal(down.context.findUserRecord('2345678901').user.name, '李四（改名）');
   assert.equal(down.context.findUserRecord('2345678901').user.branch, '第 82 旅幼童軍', '冇帶 branch 不可洗走既有支部');
-  assert.equal(String(down.context.findUserRecord('2345678901').data[down.context.findUserRecord('2345678901').map.password_hash]), sha256('4321'));
+  assert.equal(String(down.context.findUserRecord('2345678901').data[down.context.findUserRecord('2345678901').map.password_hash]), String(upstreamHash.data[upstreamHash.map.password_hash]));
   assert.equal(sheetRows(down, 'Users').filter(r => String(r[0]) === '2345678901').length, 1, '不可出現重複列');
 });
 
@@ -412,7 +415,7 @@ test('吐 JSON：匯出含 hash，匯入逐個 upsertUser 直插 hash（保留�
   const payload = JSON.parse(stored.content);
   assert.equal(payload.format, 'cubsbadge-users-export');
   const chen = payload.users.find(u => u.ymis === '1234567890');
-  assert.equal(chen.password_hash, sha256('newpass1'), '匯出必須含 hash');
+  assert.match(chen.password_hash,/^pbkdf2\$/, '匯出必須含 hash'); assert.equal(oldNode.context.verifyPassword('newpass1',chen.password_hash),true);
   assert.equal(chen.email, 'chan@example.com');
   assert.equal(JSON.stringify(sheetRows(oldNode, '操作紀錄')).includes(chen.password_hash), false, 'hash 不可寫入操作紀錄');
   assert.equal(oldNode.ss.getSheets().some(sh => sh.getName().includes('匯出')), false, '匯出不可另開工作表');
@@ -425,7 +428,7 @@ test('吐 JSON：匯出含 hash，匯入逐個 upsertUser 直插 hash（保留�
   assert.equal(imported.updated, 1);
   assert.equal(imported.failed, 0);
   const rec = newNode.context.findUserRecord('1234567890');
-  assert.equal(String(rec.data[rec.map.password_hash]), sha256('newpass1'), '舊密碼必須保留');
+  assert.equal(String(rec.data[rec.map.password_hash]), chen.password_hash, '舊密碼必須保留');
   assert.equal(rec.user.force_change_password, false, '搬舊數唔應該強制改密碼');
   // 舊密碼喺新支部直接可用
   const login = newNode.context.doPost({ parameter: {}, postData: { contents: JSON.stringify({ action: 'login', login_id: '1234567890', password: 'newpass1' }) } });
@@ -442,7 +445,7 @@ test('吐 JSON：匯出含 hash，匯入逐個 upsertUser 直插 hash（保留�
   // 匯入守衛：明文密碼、假 hash、壞 JSON、缺 YMIS
   assert.equal(newNode.context.importUsersFromText(JSON.stringify({ users: [{ ymis: '3456789012', name: '王五', password: 'plain1' }] }), 'x').success, false);
   assert.match(newNode.context.upsertUser({ ymis: '3456789012', name: '王五', password: 'plain1' }, 'x').error, /明文/);
-  assert.match(newNode.context.upsertUser({ ymis: '3456789012', name: '王五', password_hash: 'not-a-hash' }, 'x').error, /64 位/);
+  assert.match(newNode.context.upsertUser({ ymis: '3456789012', name: '王五', password_hash: 'not-a-hash' }, 'x').error, /SHA-256|pbkdf2/);
   assert.equal(newNode.context.upsertUser({ ymis: '3456789012', name: '王五' }, 'x').success, false, '新帳戶冇 hash 要被拒');
   assert.equal(newNode.context.upsertUser({ name: '無 YMIS', password_hash: sha256('x') }, 'x').success, false);
   assert.equal(newNode.context.importUsersFromText('{ 壞 JSON', 'x').success, false);
@@ -591,4 +594,23 @@ test('關門防繞：偽造保留帳號 token、一般 token、一般帳號帶�
   // 一般帳號帶假 super_ticket 唔可以繞閘（票據例外只限保留帳號）
   const fakeTicket = g.doPost({ parameter: {}, postData: { contents: JSON.stringify({ action: 'login', login_id: '1111111111', password: 'whatever', super_ticket: 'not-a-real-ticket' }) } });
   assert.equal(fakeTicket.success, false, '一般帳號＋假票據唔可以繞過閘門');
+});
+
+test('signed reset enforces the signed manager role and preserves denied hashes', () => {
+  const {down} = buildPair();
+  const ctx=down.context;
+  const manager={ymis:'external label',role:'super_admin'};
+  assert.equal(ctx.handleAddUser({ymis:'1234567809',name:'Member',role:'member',password:'old1'},manager).success,true);
+  const oldAdmin=ctx.findUserRecord('1111111111').user.password_hash;
+  function send(target,role){
+    const body={action:'resetPassword',target_ymis:target,new_password:'new1',on_behalf:'external label',on_behalf_role:role};
+    return postTo(down,body,signRequest(down,body.action,JSON.stringify(body)));
+  }
+  assert.equal(send('1111111111','admin').success,false);
+  assert.equal(ctx.findUserRecord('1111111111').user.password_hash,oldAdmin);
+  assert.equal(send('1111111111','super_admin').success,true);
+  assert.equal(ctx.verifyPassword('new1',ctx.findUserRecord('1111111111').user.password_hash),true);
+  assert.equal(send('1234567809','member').success,false);
+  assert.equal(send('1234567809','branch_leader').success,true);
+  assert.equal(ctx.verifyPassword('new1',ctx.findUserRecord('1234567809').user.password_hash),true);
 });

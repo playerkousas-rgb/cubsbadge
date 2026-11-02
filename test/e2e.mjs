@@ -355,14 +355,14 @@ function seedUser(sandbox, o) {
   const tok = admin.token;
   // 自訂新密碼
   const r1 = jparse(b.handleResetPassword('1234560001', admin.user, 'mei2026'));
-  check('領袖可直接設定自訂新密碼', () => { assert.equal(r1.success, true); assert.equal(r1.temp_password, 'mei2026'); });
+  check('領袖可直接設定自訂新密碼', () => { assert.equal(r1.success, true); assert.equal(r1.temp_password, undefined); });
   const l1 = jparse(b.handleLogin('1234560001', 'mei2026'));
   check('成員可用領袖設定的新密碼登入（強制改密）', () => {
     assert.equal(l1.success, true); assert.equal(l1.force_change_password, true);
   });
   // 留空 → 預設 1234
   const r2 = jparse(b.handleResetPassword('1234560001', admin.user, ''));
-  check('留空＝預設 1234', () => { assert.equal(r2.success, true); assert.equal(r2.temp_password, '1234'); });
+  check('留空＝預設 1234', () => { assert.equal(r2.success, true); assert.equal(r2.temp_password, undefined); });
   // 太短被拒
   const r3 = jparse(b.handleResetPassword('1234560001', admin.user, 'abc'));
   check('新密碼少於 4 位被拒', () => { assert.equal(r3.success, false); assert.ok(r3.error.includes('4')); });
@@ -376,7 +376,7 @@ function seedUser(sandbox, o) {
   // 純成員 → 設定密碼即場開通帳號
   b.__ss.sheets['成員名單'].rows.push(['1234560005', '李純成員', '', '', 'lee@example.org', '']);
   const r5 = jparse(b.handleResetPassword('1234560005', admin.user, 'open2026'));
-  check('純成員設定密碼＝即場開通帳號', () => { assert.equal(r5.success, true); assert.equal(r5.temp_password, 'open2026'); });
+  check('純成員設定密碼＝即場開通帳號', () => { assert.equal(r5.success, true); assert.equal(r5.temp_password, undefined); });
   const l5 = jparse(b.handleLogin('1234560005', 'open2026'));
   check('開通後可用 YMIS＋新密碼登入', () => { assert.equal(l5.success, true); assert.equal(l5.user.name, '李純成員'); });
   // 舊資料重複列（inactive 在前、active 在後）→ 只寫 active 列
@@ -389,7 +389,7 @@ function seedUser(sandbox, o) {
   check('密碼寫入 active 列（不是 inactive 列）', () => {
     const inactiveRow = dupRows.find(r => r[11] === 'inactive');
     const activeRow = dupRows.find(r => r[11] === 'active');
-    assert.equal(activeRow[4], hash1234);
+    assert.match(activeRow[4], /^pbkdf2\$/); assert.equal(b.verifyPassword('1234',activeRow[4]),true);
     assert.notEqual(inactiveRow[4], hash1234);
   });
   // 已停用帳號 → 要求先重新啟用
@@ -407,7 +407,7 @@ function seedUser(sandbox, o) {
   // 停用時成員名單已被移除 → 重新啟用會補回
   const re1 = jparse(b.handleReactivateUser({ target_ymis: '1234560001', token: tok }));
   check('重新啟用成功並回傳臨時密碼 1234', () => {
-    assert.equal(re1.success, true); assert.equal(re1.temp_password, '1234');
+    assert.equal(re1.success, true); assert.equal(re1.temp_password, undefined);
   });
   check('成員名單已補回', () => assert.ok(b.__ss.sheets['成員名單'].rows.some(r => String(r[0]) === '1234560001')));
   const l1 = jparse(b.handleLogin('1234560001', '1234'));
