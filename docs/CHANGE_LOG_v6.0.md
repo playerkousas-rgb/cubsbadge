@@ -128,3 +128,21 @@
 - 停用帳戶查詢亦適用於上游簽名路徑；隱藏停用帳戶時會避免它因仍留在成員名單而被誤列成純成員。
 - Apps Script 原有重新啟用、帳戶角色權限及旅長唯一鎖不變。GS 2026.10.25 須更換並重新部署，已有正常 Sheet 毋須執行 `initializeSheets()`；新建 Sheet 首次使用仍須初始化。
 - 新增回歸測試，覆蓋包含停用帳戶的查詢、帳戶角色 payload、正式小隊職務值／拒絕非正式別名、純成員最右新增欄與原資料保全，以及前端職務選單與請求。
+
+## 13. 領袖登入「忘記密碼」（2026-11-02，frontend 2026.11.02.1；GS 2026.11.02）
+
+**問題**：領袖用 Email 登入，但登入頁無任何自助重設入口；忘記密碼只能靠團長／管理員喺「用戶管理」人手重設。
+
+**做法**（前端 `index.html`、proxy `api/proxy.js`、後端 `apps-script/Code.gs` 三層）：
+
+- 登入頁「👨‍💼 領袖」分頁新增「🔑 忘記密碼？」連結（家長／成員用 YMIS 登入，唔顯示），中英對照兩步 modal：①輸入登記電郵 ②輸入電郵收到嘅 8 位重設碼 + 自訂新密碼（4-8 位）。
+- 後端新增兩個公開 action：`requestPasswordReset`（寄一次性重設碼）／`confirmPasswordReset`（驗碼改密）。授權完全來自「寄到 Users 表登記電郵嘅重設碼」，**唔讀** request 自帶嘅 token／apikey／指定 YMIS／角色；proxy 亦主動剷走呢啲身份欄位。兩個 action 唔列入 `SENSITIVE_ACTIONS`，避免未設 `TROOP_*_APIKEY`、一直靠 token 運作嘅旅團用唔到。
+- 只受理「啟用中＋領袖或以上角色＋已登記電郵＋已設密碼」嘅普通帳戶；保留帳號、`super_admin`、停用帳號、家長／成員帳號一律唔寄信。所有請求（包括帳戶唔存在）回應完全一致，唔可用嚟探測帳號。
+- 重設碼只存 SHA-256 雜湊、15 分鐘到期、最多 5 次嘗試、一次性；新申請作廢舊碼；成功／過期／帳戶中途被停用降級即作廢其餘碼；成功後該用戶所有舊 session token 即刻失效，並寫一條唔含密碼／重設碼嘅中性操作紀錄。
+- 新增「密碼重設」工作表：新建 Sheet 由 `initializeSheets()` 建立；**已有正常 Sheet 毋須重跑初始化**，第一次有人撳「忘記密碼」時由 `getPasswordResetSheet()` 即用即補，只加表、唔郁任何現有資料。24 小時前嘅紀錄自動清走；同一電郵 30 分鐘最多 3 次、全團每小時最多 30 次，防止公開入口被用嚟洗版／耗盡發信配額。
+- 發信失敗（最常見：換 Code.gs 後未重新授權 Google「傳送電郵」範圍）唔再靜默：後端記全團旗標並回 `delivery:'unavailable'`，前端老實提示聯絡團長／執行 `testPasswordResetMail()`。旗標係全團共通，唔會洩漏邊個電郵係有效帳戶。
+- 舊 GS（未換 Code.gs）會回 `Unknown action`，前端顯示明確升級提示，唔會當成「後端斷線」；團長仍可喺「用戶管理」直接重設密碼。
+
+**部署**：GS `2026.11.02` 必須更換 `Code.gs` 並重新部署新版本（沿用原 URL）。換檔後請喺 Apps Script 編輯器執行一次 `testPasswordResetMail()`，容許 Google 嘅「傳送電郵」授權並收一封測試信；呢個函式唔寫任何工作表、唔改任何帳號資料。已有正常 Sheet 毋須 `initializeSheets()`；新建 Sheet 首次使用仍須初始化。完整安全設計見 [docs/PASSWORD_RESET.md](PASSWORD_RESET.md)。
+
+**測試**：`test/password-reset.test.mjs`（12 項，經真正 `doPost` 路由）覆蓋完整重設流程、不洩漏帳號、雜湊入表、錯碼計次／鎖定、過期、限速、舊碼作廢、提權欄位無效、中途停用降級、舊 Sheet 自動補表、發信故障旗標、前端／proxy／版本一致性；`test/api.test.mjs` 新增 2 項 proxy 防線測試。`npm test` 全數通過。

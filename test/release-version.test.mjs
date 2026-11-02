@@ -16,7 +16,7 @@ test('latest frontend release announcement still targets the current Apps Script
   assert.ok(release, 'frontend exposes one latest-release declaration');
   const gs = gas.match(/const CUB_GS_VERSION = '([^']+)'/);
   assert.ok(gs, 'Apps Script exposes its latest GS version');
-  assert.equal(release[1], '2026-10-25');
+  assert.equal(release[1], '2026-11-02');
   assert.equal(release[2], gs[1], 'frontend required GS and backend reported GS must match');
   assert.equal(release[3], 'false', 'existing working Sheets need no reinitialization for this release');
   assert.ok(html.includes(`href="apps-script/Code.gs?gs=${gs[1]}"`), 'setup tab download link carries current GS version query to bust stale cache');
@@ -42,7 +42,7 @@ test('GS version and initialization are independently verified; initialization i
 
   const before = json(backend.ecStatus('0082'));
   assert.equal(before.success, true);
-  assert.equal(before.gsVersion, '2026.10.25');
+  assert.equal(before.gsVersion, '2026.11.02');
   assert.equal(before.initializedGsVersion, '', 'new Code.gs alone must not count as initialized');
   assert.equal(before.gsInitializationCurrent, false);
 
@@ -81,14 +81,14 @@ test('release classification and rendered instructions respect the actual initia
   for(const initializeRequired of [false,true]){
     const hosts=new Map(['homeReleaseNotice','loginReleaseNotice','mainReleaseNotice'].map(id=>[id,{innerHTML:''}]));
     const ctx=vm.createContext({
-      LATEST_RELEASE:Object.freeze({updated:'2026-10-25',gsVersion:'2026.10.25',initializeRequired}),
+      LATEST_RELEASE:Object.freeze({updated:'2026-11-02',gsVersion:'2026.11.02',initializeRequired}),
       currentTroopId:'0082',backendReleaseState:{},document:{getElementById:id=>hosts.get(id)},
       inEn:()=>false,isDemoMode:()=>false,escapeHtmlText:String,encodeURIComponent
     });
     vm.runInContext(apply+'\n'+render,ctx);
-    for(const marker of ['', '2026.10.23', '2026.10.24', '2026.10.25']){
-      const status=vm.runInContext(`applyBackendRelease({gsVersion:'2026.10.25',initializedGsVersion:'${marker}'})`,ctx);
-      assert.equal(status,initializeRequired&&marker!=='2026.10.25'?'initialize':'current');
+    for(const marker of ['', '2026.10.23', '2026.10.24', '2026.10.25', '2026.11.02']){
+      const status=vm.runInContext(`applyBackendRelease({gsVersion:'2026.11.02',initializedGsVersion:'${marker}'})`,ctx);
+      assert.equal(status,initializeRequired&&marker!=='2026.11.02'?'initialize':'current');
       assert.equal(ctx.backendReleaseState.initializedGsVersion,marker,'never rewrite reported initialization metadata');
       const notice=hosts.get('mainReleaseNotice').innerHTML;
       if(!initializeRequired){
@@ -99,6 +99,6 @@ test('release classification and rendered instructions respect the actual initia
         assert.doesNotMatch(notice,/已有正常 Sheet 今次更新毋須重跑|不用再改 GS 或 RUN SCRIPT/);
       }
     }
-    assert.equal(vm.runInContext("applyBackendRelease({gsVersion:'2026.10.24',initializedGsVersion:'2026.10.25'})",ctx),'update','a new init marker cannot mask an old GS');
+    assert.equal(vm.runInContext("applyBackendRelease({gsVersion:'2026.10.25',initializedGsVersion:'2026.11.02'})",ctx),'update','a new init marker cannot mask an old GS');
   }
 });

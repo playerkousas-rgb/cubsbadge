@@ -28,15 +28,16 @@
 
 ---
 
-## 現有旅團本次更新（2026-10-25）
+## 現有旅團本次更新（2026-11-02）
 
-- 用戶管理已修復停用帳戶顯示／重新啟用，以及帳戶角色更新；另新增獨立「小隊職務」隊員／隊長／副隊長選擇，儲存值為 `member`／`sixer`／`vice_captain`（副隊長不可用 `branch_leader` 代替）。
-- 最新 GS 為 `2026.10.25`。旅團換上最新 `Code.gs` 並部署新版本後，**已有正常 Sheet 毋須執行 `initializeSheets()`**；不會重設或遷移用戶資料、成員資料或 API Key。純成員設定小隊職務時只會在成員名單最右補一欄 `squad_role`，原欄位及值不變。
-- 仍使用舊 GS 的旅團須換上最新 `Code.gs` 並部署新版本；下方三步是**新建 Sheet 首次接入**，首次初始化仍不可省略。版本核對不會把舊初始化標記改成新值。
+- **領袖登入新增「忘記密碼」**：領袖分頁輸入登記電郵 → 收一次性重設碼 → 自訂新密碼。安全設計、限速同發信故障處理見 [docs/PASSWORD_RESET.md](docs/PASSWORD_RESET.md)。
+- 最新 GS 為 `2026.11.02`。旅團換上最新 `Code.gs` 並部署新版本後，**已有正常 Sheet 毋須執行 `initializeSheets()`**：新增嘅「密碼重設」工作表會喺第一次使用時自動補建，不會重設或遷移用戶資料、成員資料或 API Key。
+- **換檔後請喺 Apps Script 編輯器執行一次 `testPasswordResetMail()`**，容許 Google「傳送電郵」授權並收測試信；此函式不寫工作表、不改帳號資料。未授權時前端會顯示全團發信故障提示，團長仍可喺「用戶管理」直接重設密碼。
+- 仍使用舊 GS 的旅團須換上最新 `Code.gs` 並部署新版本；舊 GS 無忘記密碼入口，前端會顯示明確升級提示。下方三步是**新建 Sheet 首次接入**，首次初始化仍不可省略。版本核對不會把舊初始化標記改成新值。
 
 ## 旅團做（佢哋只做 3 步，唔會掂功能變數）
 
-1. 建新 Google Sheet → 擴充功能 → Apps Script → 貼最新 `apps-script/Code.gs`（GS 2026.10.25）→ 儲存
+1. 建新 Google Sheet → 擴充功能 → Apps Script → 貼最新 `apps-script/Code.gs`（GS 2026.11.02）→ 儲存
 2. 執行 `initializeSheets()` → 授權
    - **生成／保留 API Key**（彈窗只提供 API Key，不顯示自動取得的部署 URL；不要求輸入或設定旅團編號）
    - 順手**清走舊版遺留喺指令碼屬性嘅 `SUPER_KEY`**（值只應該存在你嘅 Vercel）
@@ -49,7 +50,7 @@
 API Key：sc_xxxxxxxx
 ```
 
-> ⚠️ GS 2026.10.25 **不再顯示自動取得的 BACKEND URL**，避免初始化、選單及快取各顯示另一條網址。
+> ⚠️ GS 2026.11.02 **不再顯示自動取得的 BACKEND URL**，避免初始化、選單及快取各顯示另一條網址。
 > 旅團編號只需在 ADMIN FORM 填寫，不在 GS 預先設定；既有 Script Properties 中的編號仍原樣保留。
 > 旅團 API Key 在「🔗 旅系統 → 🔑 顯示 API KEY（交 ADMIN）」查看。
 > 正式 URL 由 Google「部署 → 管理部署」中選定的網頁應用程式提供，不由 GS 彈窗猜測。
@@ -57,6 +58,8 @@ API Key：sc_xxxxxxxx
 > 不再以「✅ 已核實」、開過一次 `/exec` 或部署 ID 長度判定 URL 正確。
 
 （第 3 樣 `TROOP_0082_NAME` 係**你**話事：例如「第 82 旅」。）
+
+> 📧 領袖「忘記密碼」用 `MailApp` 寄重設碼：換 Code.gs 後喺編輯器執行一次 `testPasswordResetMail()` 完成 Google 授權；Google 免費帳戶每日發信配額有限，系統已有全團每小時 30 次限速。
 
 ---
 
