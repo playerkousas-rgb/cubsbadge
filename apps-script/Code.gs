@@ -838,9 +838,10 @@ function doPost(e){
     const queryParams=(e&&e.parameter)||{};
     const hasSigEnvelope=!!(queryParams.sig||queryParams.sts||queryParams.snonce||body.sig||body.sig_ts||body.sig_nonce);
     if(hasSigEnvelope) return jsonResponse({success:false,error:'SIG 驗證失敗',code:'BAD_SIG'});
-    if(body.token && action!=='changePassword' && action!=='logout'){
+    if(body.token && ['changePassword','logout','login','apply','requestPasswordReset','confirmPasswordReset'].indexOf(action)<0){
       const tokenUser=validateToken(body.token);
-      if(tokenUser && mustChangePassword_(tokenUser)) return jsonResponse({success:false,code:'CHANGE_PASSWORD_REQUIRED',error:'請先更改密碼'});
+      if(!tokenUser) return jsonResponse({success:false,error:'Token 無效或過期'});
+      if(mustChangePassword_(tokenUser)) return jsonResponse({success:false,code:'CHANGE_PASSWORD_REQUIRED',error:'請先更改密碼'});
     }
     // 中央登入的舊 APP server-to-server 路徑保持相容；中央登入與旅系統閘門脫鉤。
     if(action==='superLogin'){
@@ -858,6 +859,11 @@ function doPost(e){
     if(!localLoginAllowed() && !isSuperAdminToken(body.token)) return jsonResponse(linkClosedResponse(action));
     // 下游入口狀態查詢（無需 token，上游可隨時查詢）
     if(action==='getDownstreamAccess') return handleGetDownstreamAccess();
+    // 當同時帶 token 和 key，必須先檢查登入者權限，不能由 key 取代。
+    if(body.token && ['exportAll','importAll','upsertUser'].indexOf(action)>=0){
+      const actorUser=getUser(validateToken(body.token));
+      if(!actorUser || getRoleLevel(actorUser.role)<40) return jsonResponse({success:false,error:'需領袖權限'});
+    }
     // JSON 吐出/匯入（保留密碼）—— 需 apikey/sig/領袖 token（內部已驗）
     if(action==='exportAll') return handleExportAll(body);
     if(action==='importAll') return handleImportAll(body);
@@ -907,6 +913,10 @@ function doPost(e){
 
     // save & addMember 需要 apikey ( 向下兼容：若無 apikey 但有有效 token 也允許)
     if(action==='save' || action==='addMember' || action==='addUser' || action==='bulkAddUsers' || action==='saveOtherBadge'){
+      if(body.token && (action==='save'||action==='saveOtherBadge')){
+        const actor=getUser(validateToken(body.token));
+        if(!actor || !canUserTick(actor.role)) return jsonResponse({success:false,error:'需領袖權限'});
+      }
       const reqKey=body.apikey;
       if(reqKey && reqKey!==getApiKey()) return jsonResponse({success:false,error:'Invalid API Key'});
       // 若無 apikey，嘗試 token 驗證作為後備
@@ -3124,7 +3134,7 @@ function handleExportAll(body) {
       const obj = { ymis: r.ymis, name: r.name, email: r.email, role: r.role, branch: r.branch, squad: r.squad, squad_role: r.squad_role, can_tick: r.can_tick, allowed_badges: r.allowed_badges };
       if (includeHash) {
         obj.password_hash = r.password_hash;
-        obj.hash_algo = 'SHA256';
+        obj.hash_algo = isLegacyPasswordHash_(r.password_hash) ? 'SHA256' : 'PBKDF2-SHA256';
       }
       usersData.push(obj);
     });

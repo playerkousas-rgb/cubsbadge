@@ -52,3 +52,12 @@ test('account creation and manager reset use PBKDF2 and reset unlocks immediatel
  const guarded=result(b.doPost({postData:{contents:JSON.stringify({action:'getMembers',token:logged.token})},parameter:{}}));
  assert.equal(guarded.code,'CHANGE_PASSWORD_REQUIRED');
 });
+
+test('injected key cannot override an invalid or unprivileged session',()=>{
+ const b=buildBackend(); seed(b,'1234567893');
+ const key=b.getApiKey(); b.__ss.sheets.Tokens.rows.push(['member-session','1234567893','','2099-01-01']);
+ const call=payload=>result(b.doPost({postData:{contents:JSON.stringify({...payload,apikey:key})},parameter:{}}));
+ assert.equal(call({action:'addUser',token:'invalid',ymis:'1234567880',name:'X',role:'member',password:'abcd'}).success,false);
+ assert.equal(call({action:'upsertUser',token:'member-session',user:{ymis:'1234567880',name:'X',password_hash:sha256Hex('abcd')}}).success,false);
+ assert.equal(call({action:'save',token:'member-session',changes:[]}).success,false);
+});

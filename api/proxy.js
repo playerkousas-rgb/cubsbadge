@@ -14,7 +14,8 @@ const { getScoutAdminApiUrl, isScoutAdminSuccess } = require('./_lib/scoutAdmin'
 // 放入去會令「未設 TROOP_*_APIKEY、一直靠 token 運作」嘅旅團用唔到忘記密碼。
 const SENSITIVE_ACTIONS = new Set([
   'save', 'saveDbPart', 'saveDbCommit', 'loadDbPart',
-  'addUser', 'addMember', 'updateUser', 'deleteUser', 'resetPassword',
+  'addUser', 'bulkAddUsers', 'addMember', 'updateUser', 'deleteUser', 'resetPassword',
+  'upsertUser', 'importUsers', 'requestComplete',
   'saveOtherBadge', 'approveRequest', 'rejectRequest',
   'setConfig', 'saveConfig', 'initializeSheets',
   'exportAll', 'importAll', 'transferOut', 'transferIn',
@@ -232,25 +233,27 @@ module.exports = async function handler(req, res) {
       ['token', 'ymis', 'target_ymis', 'role', 'password_hash', 'code_hash', 'user'].forEach(k => delete payload[k]);
     }
 
-    // key 未設定 + 連 token 都冇 = 真係零認證，擺明唔做好過無聲無息行落去。
+    // 不可把伺服器注入的 key 當成瀏覽器訪客的授權。
     //
     // 注意：唔可以淨係見到「冇 apikey」就攔。GAS 本身有向下兼容設計
     // （Code.gs：「若無 apikey 但有有效 token 也允許」），好多旅團部署咗
     // 但未喺 Vercel 設 TROOP_<id>_APIKEY，佢哋一直靠 session token 正常運作。
     // 喺呢度一刀切攔截，會即刻整死勾進度／開戶／批量加人。
-    // 認證與否最終由 GAS 判斷，proxy 只負責擋「乜都冇」嗰種。
-    if (!troopConfig.apikey && !payload.token && SENSITIVE_ACTIONS.has(action)) {
-      console.error(`[PROXY] refuse action=${action} troop=${troopId}: no apikey and no token`);
+    // 認證及角色最終由 GAS 判斷；proxy 不容許匿名借用伺服器 key。
+    if (!payload.token && SENSITIVE_ACTIONS.has(action)) {
+      console.error(`[PROXY] refuse action=${action} troop=${troopId}: no session token`);
       return res.status(401).json({
         success: false,
         code: 'no_credentials',
         error: `敏感操作 (${action}) 需要登入。請重新登入後再試。`,
         troubleshooting: {
-          hint: `若此單位長期靠 API Key 運作，請喺 Vercel 設定環境變數 TROOP_${normalizeToPadded4(troopId)}_APIKEY。`,
+          hint: '請登入後再試。',
           action
         }
       });
     }
+    // 密碼同步只接受受信節點直接簽章／key，不可借用 proxy 的 key。
+    if (action === 'setPw' || action === 'verifyPw') return res.status(403).json({success:false,code:'UNSUPPORTED_ACTION',error:'不支援此操作'});
     if (troopConfig.apikey) payload.apikey = troopConfig.apikey;
 
     const controller = new AbortController();
