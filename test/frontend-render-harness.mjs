@@ -184,6 +184,41 @@ run("currentLang='zh'; currentTroopId='DEMO'; currentUser.ymis='DEMO_LEADER'; re
   assert.equal(requests[0].payload.target_ymis,'1234567894');
 }
 
+// The backend deliberately returns no plaintext: the modal must use the local
+// submitted password (or the documented default), not d.temp_password.
+{
+  const requests=[], copies=[];
+  context.__resetRequests=requests;
+  context.navigator.clipboard={writeText:async value=>{copies.push(value);}};
+  run(`currentTroopId='0082'; currentToken='super-session'; troopConnected=true;
+    currentUser={ymis:'SUPERVISOR',name:'Test',role:'super_admin'};
+    apiRequest=async payload=>{__resetRequests.push(payload);return {success:true};};
+    showToast=()=>{}; loadUsers=()=>Promise.resolve();`);
+  for (const [input,expected] of [['','1234'],['Abc#1234','Abc#1234']]) {
+    run("resetMemberPassword('1234567890','Admin',false)");
+    element('rpwInput').value=input;
+    await run('submitResetPassword()');
+    assert.equal(requests.at(-1).action,'resetPassword');
+    assert.equal(requests.at(-1).new_password,input||undefined);
+    assert.equal(element('tempPwValue').textContent,expected);
+    assert.equal(element('tempPwModal').classList.contains('active'),true);
+    assert.equal(element('rpwInput').value,'');
+    await run('copyTempPw()');
+    assert.equal(copies.at(-1),expected);
+    run("closeModal('tempPwModal')");
+    assert.equal(element('tempPwValue').textContent,'');
+    assert.equal(run('_lastTempPw'),'');
+  }
+  await run("reactivateUserAcct('1234567894','Admin')");
+  assert.equal(element('tempPwValue').textContent,'1234');
+  await run('copyTempPw()');
+  assert.equal(copies.at(-1),'1234');
+  run("closeModal('tempPwModal'); apiRequest=async()=>({success:false,error:'denied'});");
+  run("resetMemberPassword('1234567890','Admin',false)");
+  await run('submitResetPassword()');
+  assert.equal(element('tempPwModal').classList.contains('active'),false,'denied reset must not display a password');
+}
+
 // Exercise the actual welcome navigation and language switch, including cross-links
 // which do not pass a nav button (intro → setup and setup → intro).
 {

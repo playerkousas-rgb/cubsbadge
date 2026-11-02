@@ -4,8 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <meta name="theme-color" content="#FFD60A">
-<meta name="cubsbadge-build" content="2026.11.03.1">
-<script src="assets/frontend-freshness.js?build=2026.11.03.1" defer></script>
+<meta name="cubsbadge-build" content="2026.11.03.2">
+<script src="assets/frontend-freshness.js?build=2026.11.03.2" defer></script>
 <!-- App icon：金紫荊獎章（favicon + PWA / iOS 主畫面圖示） -->
 <!-- 使用 assets 內的高解像度圖示，避免 favicon／頁首圖示顯示模糊 -->
 <link rel="icon" type="image/png" sizes="256x256" href="assets/app-icon-256.png">
@@ -225,7 +225,7 @@ html[lang="en"] body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","No
 .bulk-progress{background:#FAFAFA;border:1px solid var(--border);border-radius:8px;padding:8px;max-height:160px;overflow-y:auto;font-size:11px;margin-top:10px;display:none}
 .bulk-progress .ok{color:var(--green)}.bulk-progress .fail{color:var(--red)}
 .history-item{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:8px 10px;margin-bottom:6px;font-size:12px;line-height:1.6}
-.temp-pw-box{font-size:26px;font-weight:800;letter-spacing:3px;text-align:center;background:var(--bg);border:2px dashed var(--maroon);border-radius:10px;padding:14px;margin:10px 0;color:#8B5A00;user-select:all}
+.temp-pw-box{font-size:26px;font-weight:800;letter-spacing:3px;text-align:center;background:var(--bg);border:2px dashed var(--maroon);border-radius:10px;padding:14px;margin:10px 0;color:#8B5A00;-webkit-user-select:all;user-select:all}
 .tutorial{background:var(--card);border-radius:10px;padding:18px;margin-bottom:16px;box-shadow:var(--shadow)}
 .steps{margin-top:12px}.step{display:flex;gap:12px;margin-bottom:12px;padding:12px;background:var(--bg);border-radius:10px;border-left:4px solid var(--maroon)}
 .step-number{width:32px;height:32px;background:var(--maroon);color:#000;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;flex-shrink:0}
@@ -704,9 +704,9 @@ html[lang="en"] body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","No
 </footer>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<script src="assets/ymis-parse.js?build=2026.11.03.1"></script>
-<script src="assets/cub-progress.js?build=2026.11.03.1"></script>
-<script src="assets/form-generator.js?build=2026.11.03.1"></script>
+<script src="assets/ymis-parse.js?build=2026.11.03.2"></script>
+<script src="assets/cub-progress.js?build=2026.11.03.2"></script>
+<script src="assets/form-generator.js?build=2026.11.03.2"></script>
 <!-- Scout Admin 統一回報 widget（統一回報格式 v1，見 scout-admin SCOUT_ADMIN.md）：問題回報／意見回饋直達 scout-admin 後台。
      data-app="幼童軍進度追蹤"＝來源系統正式名稱；本 APP 各頁的「🐛💬 回報 · 意見」按鈕
      （登入前 welcome-nav／登入頁連結／登入後 header 常駐）一律經 openScoutReport() 開啟這個 widget 的 modal；
@@ -1567,7 +1567,7 @@ function doLogout(){
   localStorage.removeItem(LS.session);
   currentUser=null; currentToken=''; currentTroopId=''; currentTroopName=''; feedbackSubmitState='idle';
   ['feedbackMessage','feedbackContact'].forEach(id=>{ const field=document.getElementById(id); if(field) field.value=''; });
-  document.querySelectorAll('.modal.active').forEach(m=>m.classList.remove('active'));
+  document.querySelectorAll('.modal.active').forEach(m=>closeModal(m.id));
   document.getElementById('mainApp').style.display='none'; document.getElementById('homePage').style.display='block';
   resetBackendRelease();
   document.getElementById('saveBar').classList.remove('visible'); pendingChanges=[];
@@ -1639,6 +1639,8 @@ function closeContactModal(){ document.getElementById('contactModal').classList.
 function closeModal(id){
   if(id==='feedbackModal'&&feedbackSubmitState==='sending') return;
   document.getElementById(id).classList.remove('active');
+  if(id==='resetPwModal') document.getElementById('rpwInput').value='';
+  if(id==='tempPwModal'){ _lastTempPw=''; document.getElementById('tempPwValue').textContent=''; document.getElementById('tempPwName').textContent=''; }
 }
 async function submitRegistration(){
   const ti=document.getElementById('c_troopId').value.trim(), tn=document.getElementById('c_troopName').value.trim(), su=document.getElementById('c_scriptUrl').value.trim(), ak=document.getElementById('c_apiKey').value.trim(), nt=document.getElementById('c_note').value.trim();
@@ -1769,7 +1771,7 @@ function switchTab(name, btn){
 document.addEventListener('keydown', (e)=>{
   if(e.key==='Escape'){
     if(feedbackSubmitState==='sending'&&document.getElementById('feedbackModal')?.classList.contains('active')){ e.preventDefault(); return; }
-    document.querySelectorAll('.modal.active').forEach(m=>m.classList.remove('active'));
+    document.querySelectorAll('.modal.active').forEach(m=>closeModal(m.id));
     document.getElementById('savingOverlay')?.classList.remove('active');
     const activeTab=document.querySelector('.tab-content.active');
     if(activeTab && activeTab.id!=='tab-progress'){ switchTab('progress'); showToast(t('tab_escape'),'warning'); }
