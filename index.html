@@ -4,8 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <meta name="theme-color" content="#FFD60A">
-<meta name="cubsbadge-build" content="2026.11.02.3">
-<script src="assets/frontend-freshness.js?build=2026.11.02.3" defer></script>
+<meta name="cubsbadge-build" content="2026.11.02.4">
+<script src="assets/frontend-freshness.js?build=2026.11.02.4" defer></script>
 <!-- App icon：金紫荊獎章（favicon + PWA / iOS 主畫面圖示） -->
 <!-- 使用 assets 內的高解像度圖示，避免 favicon／頁首圖示顯示模糊 -->
 <link rel="icon" type="image/png" sizes="256x256" href="assets/app-icon-256.png">
@@ -704,9 +704,9 @@ html[lang="en"] body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","No
 </footer>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<script src="assets/ymis-parse.js?build=2026.11.02.3"></script>
-<script src="assets/cub-progress.js?build=2026.11.02.3"></script>
-<script src="assets/form-generator.js?build=2026.11.02.3"></script>
+<script src="assets/ymis-parse.js?build=2026.11.02.4"></script>
+<script src="assets/cub-progress.js?build=2026.11.02.4"></script>
+<script src="assets/form-generator.js?build=2026.11.02.4"></script>
 <!-- Scout Admin 統一回報 widget（統一回報格式 v1，見 scout-admin SCOUT_ADMIN.md）：問題回報／意見回饋直達 scout-admin 後台。
      data-app="幼童軍進度追蹤"＝來源系統正式名稱；本 APP 各頁的「🐛💬 回報 · 意見」按鈕
      （登入前 welcome-nav／登入頁連結／登入後 header 常駐）一律經 openScoutReport() 開啟這個 widget 的 modal；
@@ -1023,11 +1023,23 @@ function resetBackendRelease(){
   backendReleaseState={troopId:currentTroopId||'',status:currentTroopId==='DEMO'?'demo':'idle',reportedVersion:'',initializedGsVersion:'',error:''};
   renderReleaseNotices();
 }
+// Compare numeric release components; malformed versions cannot justify a downgrade.
+function compareGsVersions(actual,required){
+  const parse=value=>/^\d+(?:\.\d+)*$/.test(value)?value.split('.').map(Number):null;
+  const a=parse(actual),b=parse(required);
+  if(!a||!b||a.some(n=>!Number.isSafeInteger(n))||b.some(n=>!Number.isSafeInteger(n))) return null;
+  for(let i=0;i<Math.max(a.length,b.length);i++){
+    const x=a[i]||0,y=b[i]||0;
+    if(x!==y) return x<y?-1:1;
+  }
+  return 0;
+}
 function applyBackendRelease(payload){
   const source=payload&&payload.release?payload.release:(payload||{});
   const actual=String(source.gsVersion||'').trim();
   const initialized=String(source.initializedGsVersion||'').trim();
-  const status=actual!==LATEST_RELEASE.gsVersion?'update':(LATEST_RELEASE.initializeRequired&&initialized!==LATEST_RELEASE.gsVersion?'initialize':'current');
+  const order=compareGsVersions(actual,LATEST_RELEASE.gsVersion);
+  const status=order===null?'unknown':order>0?'ahead':order<0?'update':(LATEST_RELEASE.initializeRequired&&initialized!==LATEST_RELEASE.gsVersion?'initialize':'current');
   backendReleaseState={troopId:currentTroopId||'',status,reportedVersion:actual||String(source.backendVersion||'').trim()||'unknown',initializedGsVersion:initialized,error:''};
   renderReleaseNotices();
   return status;
@@ -1064,10 +1076,16 @@ function renderReleaseNotices(){
     else if(state.status==='demo') statusText=inEn()?'DEMO does not connect to a troop GS. A real troop still needs this update.':'示範模式不連接旅團 GS；正式旅團仍須完成這次更新。';
     else if(state.status==='checking') statusText=inEn()?'Checking the GS version deployed by this troop…':'正在核對此旅團實際部署的 GS 版本…';
     else if(state.status==='current') statusText=LATEST_RELEASE.initializeRequired?(inEn()?`✅ Verified: GS ${LATEST_RELEASE.gsVersion}; initialisation for this release is complete.`:`✅ 已核對：GS ${LATEST_RELEASE.gsVersion}，此版本的初始化亦已完成。`):(inEn()?`✅ Verified: GS ${LATEST_RELEASE.gsVersion}; no reinitialisation is required for this release.`:`✅ 已核對：GS ${LATEST_RELEASE.gsVersion}；本次更新毋須重跑初始化。`);
+    else if(state.status==='ahead') statusText=inEn()?`ℹ️ This backend reports GS ${state.reportedVersion}, newer than this website (${LATEST_RELEASE.gsVersion}). Do not replace it with this site's older download; update the website first.`:`ℹ️ 此旅團回報 GS ${state.reportedVersion}，比網站公告的 ${LATEST_RELEASE.gsVersion} 新。請勿用此網站的舊下載覆蓋；請先更新網站。`;
+    else if(state.status==='unknown') statusText=inEn()?'⚠️ The reported GS version is unrecognised. Do not replace the backend until the version is verified.':'⚠️ 無法識別回報的 GS 版本。請先核實版本，勿覆蓋後端。';
     else if(state.status==='update') statusText=inEn()?`⚠️ GS update is still required (reported: ${state.reportedVersion||'unknown'}). Leader Forgot password needs GS ${LATEST_RELEASE.gsVersion}: replace Code.gs and redeploy (authorise email sending on first use); no reinitialisation needed.`:`⚠️ 此旅團尚未完成 GS 更新（回報版本：${state.reportedVersion||'未知'}）。舊 GS 無領袖「忘記密碼」；請換上 GS ${LATEST_RELEASE.gsVersion} 並重新部署（首次發信須重新授權），毋須重跑初始化。`;
     else if(state.status==='initialize') statusText=inEn()?`⚠️ GS ${LATEST_RELEASE.gsVersion} is deployed, but initializeSheets() has not completed for this release (record: ${state.initializedGsVersion||'none'}). Run it once, then re-check.`:`⚠️ GS 已是 ${LATEST_RELEASE.gsVersion}，但此版本的 initializeSheets() 尚未完成（初始化紀錄：${state.initializedGsVersion||'未記錄'}）。請執行一次，然後重新檢查。`;
     else if(state.status==='error') statusText=inEn()?'⚠️ The GS version cannot be verified right now. Do not assume the update is complete; use Re-check later.':'⚠️ 暫時未能核對 GS 版本。請不要當作已經更新；稍後按「重新檢查」。';
     else statusText=inEn()?'Select a troop to verify its deployed GS version.':'選擇旅團後，系統會核對實際部署的 GS 版本。';
+    if(state.status==='ahead'||state.status==='unknown'){
+      host.innerHTML=`<section class="release-notice" role="status" aria-live="polite"><div class="release-head"><span>${title}</span></div><div class="release-status">${escapeHtmlText(statusText)}</div><button type="button" class="btn btn-sm btn-outline" onclick="checkBackendRelease()">🔄 ${inEn()?'Re-check':'重新檢查'}</button></section>`;
+      continue;
+    }
     const steps=inEn()?[
       ...(LATEST_RELEASE.initializeRequired?[
         'Download the latest Code.gs below, replace the troop Apps Script content and save it.'

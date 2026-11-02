@@ -75,9 +75,10 @@ test('GS version and initialization are independently verified; initialization i
 
 test('release classification and rendered instructions respect the actual initialization requirement', () => {
   const html=fs.readFileSync(new URL('../index.html',import.meta.url),'utf8');
+  const compare=html.match(/function compareGsVersions\(actual,required\)\{[\s\S]*?\n\}/)?.[0];
   const apply=html.match(/function applyBackendRelease\(payload\)\{[\s\S]*?\n\}/)?.[0];
   const render=html.match(/function renderReleaseNotices\(\)\{[\s\S]*?\n\}/)?.[0];
-  assert.ok(apply&&render,'execute the actual frontend release functions');
+  assert.ok(compare&&apply&&render,'execute the actual frontend release functions');
   for(const initializeRequired of [false,true]){
     const hosts=new Map(['homeReleaseNotice','loginReleaseNotice','mainReleaseNotice'].map(id=>[id,{innerHTML:''}]));
     const ctx=vm.createContext({
@@ -85,7 +86,7 @@ test('release classification and rendered instructions respect the actual initia
       currentTroopId:'0082',backendReleaseState:{},document:{getElementById:id=>hosts.get(id)},
       inEn:()=>false,isDemoMode:()=>false,escapeHtmlText:String,encodeURIComponent
     });
-    vm.runInContext(apply+'\n'+render,ctx);
+    vm.runInContext(compare+'\n'+apply+'\n'+render,ctx);
     for(const marker of ['', '2026.10.23', '2026.10.24', '2026.10.25', '2026.11.02']){
       const status=vm.runInContext(`applyBackendRelease({gsVersion:'2026.11.02',initializedGsVersion:'${marker}'})`,ctx);
       assert.equal(status,initializeRequired&&marker!=='2026.11.02'?'initialize':'current');
@@ -100,5 +101,13 @@ test('release classification and rendered instructions respect the actual initia
       }
     }
     assert.equal(vm.runInContext("applyBackendRelease({gsVersion:'2026.10.25',initializedGsVersion:'2026.11.02'})",ctx),'update','a new init marker cannot mask an old GS');
+    assert.equal(vm.runInContext("applyBackendRelease({gsVersion:'2026.11.02.3',initializedGsVersion:'2026.11.02.3'})",ctx),'ahead');
+    const ahead=hosts.get('mainReleaseNotice').innerHTML;
+    assert.match(ahead,/請勿用此網站的舊下載覆蓋/);
+    assert.doesNotMatch(ahead,/download=|apps-script\/Code.gs/);
+    assert.equal(vm.runInContext("applyBackendRelease({gsVersion:'garbage'})",ctx),'unknown');
+    assert.doesNotMatch(hosts.get('mainReleaseNotice').innerHTML,/download=|apps-script\/Code.gs/);
+    assert.equal(vm.runInContext("compareGsVersions('2026.11.02.10','2026.11.02.3')",ctx),1);
+    assert.equal(vm.runInContext("compareGsVersions('2026.11.02','2026.11.02.0')",ctx),0);
   }
 });
