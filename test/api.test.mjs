@@ -247,6 +247,50 @@ await check('proxy：前端自帶 apikey 會被丟棄，一律用 registry 嗰�
   } finally { restoreFetch(); }
 });
 
+await check('proxy：領袖忘記密碼 action 剷走客戶端身份欄位（token／YMIS／角色）', async () => {
+  clearEnv();
+  process.env.TROOP_0082_BACKEND = 'https://script.google.com/macros/s/AKfycbREALXXXXXXXXXX/exec';
+  process.env.TROOP_0082_APIKEY = 'sc_server_key';
+  let sentBody = null;
+  stubFetch([['script.google.com', async (u, o) => { sentBody = o.body ? JSON.parse(o.body) : null; return { body: { success: true } }; }]]);
+  try {
+    const handler = freshModule('../api/proxy.js');
+    const res = mockRes();
+    await handler(mockReq({ method: 'POST', body: {
+      troopId: '82', action: 'confirmPasswordReset', email: 'a@b.com', code: 'A1B2C3D4', new_password: 'newpw',
+      token: 'stolen-admin-token', ymis: 'L0001', target_ymis: 'L0001', role: 'super_admin',
+      password_hash: 'x', code_hash: 'y', user: 'admin', apikey: 'attacker_key'
+    } }), res);
+    assert.equal(res.statusCode, 200);
+    assert.equal(sentBody.action, 'confirmPasswordReset');
+    assert.equal(sentBody.email, 'a@b.com');
+    assert.equal(sentBody.code, 'A1B2C3D4');
+    assert.equal(sentBody.new_password, 'newpw');
+    assert.equal(sentBody.apikey, 'sc_server_key', 'server 端注入嘅 key 照舊要有');
+    for (const k of ['token','ymis','target_ymis','role','password_hash','code_hash','user','troopId','attacker_key']) {
+      assert.ok(!(k in sentBody), k + ' 唔應該轉發去 GAS');
+    }
+  } finally { restoreFetch(); }
+});
+
+await check('proxy：未設 apikey 嘅旅團都可以用忘記密碼（兩個新 action 唔屬敏感 action）', async () => {
+  clearEnv();
+  process.env.TROOP_0082_BACKEND = 'https://script.google.com/macros/s/AKfycbREALXXXXXXXXXX/exec';
+  let called = false;
+  stubFetch([['script.google.com', async () => { called = true; return { body: { success: true, delivery: 'ok' } }; }]]);
+  try {
+    const handler = freshModule('../api/proxy.js');
+    for (const action of ['requestPasswordReset', 'confirmPasswordReset']) {
+      called = false;
+      const res = mockRes();
+      await handler(mockReq({ method: 'POST', body: { troopId: '82', action, email: 'a@b.com' } }), res);
+      assert.equal(res.statusCode, 200, action + ' 唔應該被 401 攔截');
+      assert.equal(called, true, action + ' 要轉發去 GAS');
+      assert.equal(res.body.success, true);
+    }
+  } finally { restoreFetch(); }
+});
+
 await check('proxy：未設 apikey 但用戶已登入 → 照行（唔可以整死現有旅團）', async () => {
   // 回歸防線：好多旅團部署咗但未喺 Vercel 設 TROOP_<id>_APIKEY，
   // 一直靠 session token 運作（Code.gs 本身就有呢個向下兼容）。

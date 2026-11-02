@@ -99,8 +99,8 @@ run('renderInfoTab()');
 assert.match(element('tab-info').innerHTML,/prog\.scouting\.org\.hk\/cub/);
 
 run('renderReleaseNotices()');
-assert.match(element('homeReleaseNotice').innerHTML,/2026-10-25/);
-assert.match(element('homeReleaseNotice').innerHTML,/2026\.10\.25/);
+assert.match(element('homeReleaseNotice').innerHTML,/2026-11-02/);
+assert.match(element('homeReleaseNotice').innerHTML,/2026\.11\.02/);
 assert.match(element('homeReleaseNotice').innerHTML,/initializeSheets\(\)/);
 assert.match(element('homeReleaseNotice').innerHTML,/無須逐級/);
 run("currentTroopId='0082'; currentUser.ymis='TEST_LEADER'; resetBackendRelease(); applyBackendRelease({gsVersion:'cub-leaf',backendVersion:'cub-leaf'})");

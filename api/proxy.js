@@ -9,6 +9,9 @@ const { getScoutAdminApiUrl, isScoutAdminSuccess } = require('./_lib/scoutAdmin'
  * 敏感 action：一定要有 server 端 apikey 先可以轉發（BUILD.md §10 施工次序 1）。
  * 匿名可寫面（§3 白名單）唔喺呢度，佢哋本身就設計成無 key 都可以寫入待批表。
  */
+// 註：requestPasswordReset / confirmPasswordReset 刻意唔放入 SENSITIVE_ACTIONS ——
+// 佢哋係登入前嘅公開入口，只認寄到登記電郵嘅一次性重設碼，唔靠 session token。
+// 放入去會令「未設 TROOP_*_APIKEY、一直靠 token 運作」嘅旅團用唔到忘記密碼。
 const SENSITIVE_ACTIONS = new Set([
   'save', 'saveDbPart', 'saveDbCommit', 'loadDbPart',
   'addUser', 'addMember', 'updateUser', 'deleteUser', 'resetPassword',
@@ -221,6 +224,13 @@ module.exports = async function handler(req, res) {
     delete payload.api_key;
     delete payload.backend;   // 前端永遠唔可以自帶 backend URL（SSRF 防線）
     delete payload.scriptUrl;
+
+    // 領袖「忘記密碼」兩個 action 係公開、靠電郵重設碼自我授權：
+    // 唔可以畀請求自帶有效管理員 token／指定 YMIS／角色去影響流程，後端亦完全唔讀呢啲欄位。
+    // 只保留 email／code／new_password，其餘身份欄位一律丟棄（defense in depth）。
+    if (action === 'requestPasswordReset' || action === 'confirmPasswordReset') {
+      ['token', 'ymis', 'target_ymis', 'role', 'password_hash', 'code_hash', 'user'].forEach(k => delete payload[k]);
+    }
 
     // key 未設定 + 連 token 都冇 = 真係零認證，擺明唔做好過無聲無息行落去。
     //

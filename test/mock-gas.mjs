@@ -68,7 +68,8 @@ function makeSheet(name, header) {
     getName() { return sheet.name; },
     rows,
     appendRow(vals) {
-      const target = header.length;
+      // 新插入嘅工作表冇表頭：以傳入嘅欄數為準（貼近真 GAS 行為）
+      const target = header.length || (Array.isArray(vals) ? vals.length : 0);
       const row = [];
       for (let i = 0; i < target; i++) row.push(vals[i] ?? '');
       rows.push(row);
@@ -128,14 +129,11 @@ function newSpreadsheet() {
     getSheetByName(n) { return sheets[n] || null; },
     getSheets() { return Object.values(sheets); },
     insertSheet(n) {
-      const h = {
-        'EC_ACCESS_LOG': ['ts','sub','role','via','event','detail'],
-        'Users': USERS_HEADER,
-        'Applications': ['app_id','ymis','name','email','role','branch','status','applied_at','reviewed_by','reviewed_at','note'],
-        '成員名單': ['YMIS','姓名','加入日期','支部','聯絡','小隊'],
-        'Tokens': ['token','ymis','created_at','expires_at'],
-      }[n] || [];
-      return add(n, h);
+      // 真 GAS insertSheet() 回傳一張完全空白嘅表；表頭由呼叫者 appendRow() 寫入。
+      // 以前呢度預填表頭，會令 ensureTable() 再 appendRow 一次（重複表頭）。
+      const sh = add(n, []);
+      sh.rows.length = 0;
+      return sh;
     },
   };
 }
@@ -145,6 +143,7 @@ function sha256Hex(p) { return crypto.createHash('sha256').update(String(p), 'ut
 
 function buildBackend() {
   const ss = newSpreadsheet();
+  const mailOutbox = [];
 
   // -------- GAS 全域 stub --------
   const textOutputFactory = () => ({
@@ -198,6 +197,16 @@ function buildBackend() {
     })(),
     ContentService: service,
     ScriptApp: { getService: () => ({ getUrl: () => 'https://mock.example/exec' }) },
+    // 領袖忘記密碼：記錄 Apps Script 應該寄出嘅電郵，方便測試重設碼／不洩漏密碼
+    MailApp: {
+      sendEmail(message) {
+        if (message && typeof message === 'object') mailOutbox.push({ ...message });
+        else mailOutbox.push({ to: arguments[0], subject: arguments[1], body: arguments[2] });
+        return this;
+      }
+    },
+    LockService: { getScriptLock: () => ({ tryLock: () => true, waitLock: () => true, releaseLock: () => {} }) },
+    CacheService: { getScriptCache: () => ({ get: () => null, put: () => {}, remove: () => {}, getAll: () => ({}) }) },
     // 讓 doPost/handleLogin 等用到時不致中斷
     Date,
     JSON,
@@ -223,6 +232,7 @@ function buildBackend() {
   vm.runInContext(code, sandbox, { filename: 'Code.gs' });
   sandbox.__ss = ss;
   sandbox.__service = service;
+  sandbox.__mail = mailOutbox;
   return sandbox;
 }
 

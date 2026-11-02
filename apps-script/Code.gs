@@ -8,7 +8,7 @@
 // 本檔永不生成、永不顯示、永不回傳任何密碼；initializeSheets／showApiKey 只顯示旅團自己嗰隻 API Key。
 // 版本同改動紀錄一律寫喺 docs/CHANGE_LOG_*.md；呢度只保留最新 GS 發佈識別供前端核對，不設逐級升級表。
 // ============================================================
-const CUB_GS_VERSION = '2026.10.25';
+const CUB_GS_VERSION = '2026.11.02';
 const CUB_GS_INITIALIZED_PROP = 'CUB_GS_INITIALIZED_VERSION';
 function getCubGsReleaseStatus(){
   let initialized='';
@@ -65,8 +65,27 @@ function passwordRuleError(pw){
   return '';
 }
 
+// ===== 領袖登入「忘記密碼」：電郵一次性重設碼（自助，不經管理員）=====
+// 只認 Users 表內「啟用中＋領袖或以上角色＋已登記電郵＋已設密碼」嘅帳戶。
+// 重設碼只以 SHA-256 雜湊存表、15 分鐘到期、最多 5 次嘗試、一次性；
+// 不論帳戶是否存在都回同一句（唔俾人用呢個入口探測邊個電郵有帳號）；
+// 兩個 action 都唔讀 token／apikey／呼叫者自稱嘅 YMIS，唔存在特權捷徑。
+const PWD_RESET_SHEET = '密碼重設';
+const PWD_RESET_HEADERS = ['reset_id','ymis','email','code_hash','created_ms','expires_ms','attempts','status','used_at'];
+const PWD_RESET_DEFAULT_COLS = {reset_id:0,ymis:1,email:2,code_hash:3,created_ms:4,expires_ms:5,attempts:6,status:7,used_at:8};
+const PWD_RESET_TTL_MS = 15*60*1000;
+const PWD_RESET_MAX_ATTEMPTS = 5;
+const PWD_RESET_EMAIL_WINDOW_MS = 30*60*1000;
+const PWD_RESET_MAX_PER_EMAIL = 3;
+const PWD_RESET_GLOBAL_WINDOW_MS = 60*60*1000;
+const PWD_RESET_MAX_GLOBAL = 30;
+const PWD_RESET_KEEP_MS = 24*60*60*1000;
+// 發信失敗（例如未重新授權 MailApp 範圍）記一個全團旗標：所有請求一律回同一個 delivery 狀態，
+// 等前端可以老實提示「請聯絡團長」，同時唔會洩漏邊個電郵先係有效帳戶。
+const PWD_RESET_MAIL_FLAG = 'PWD_RESET_MAIL_ERROR';
+
 const USER_HEADERS = ['ymis','name','email','role','password_hash','branch','can_tick','auth_by','auth_date','created_at','last_login','status','allowed_badges','squad','squad_role','force_change_password'];
-const INIT_DONE_LINES = 'Sheets：進度追蹤、成員名單、Users、Applications、Tokens、SystemConfig、待批完成、其他獎章、服務紀錄、操作紀錄、活動履歷、待批履歷\n\n' +
+const INIT_DONE_LINES = 'Sheets：進度追蹤、成員名單、Users、Applications、Tokens、密碼重設、SystemConfig、待批完成、其他獎章、服務紀錄、操作紀錄、活動履歷、待批履歷\n\n' +
   '👤 預設管理員 YMIS: ' + ADMIN_YMIS + '（首次登入密碼：' + ADMIN_PASS + '，首次登入強制改密）\n\n' +
   '🔑 旅團 API Key 資料（交 APP ADMIN，請妥善保管）：';
 // 系統設定預設值（缺就補，唔會覆蓋現有設定）
@@ -472,6 +491,9 @@ function initializeSheets() {
 
   ensureTable(ss, 'Applications', ['app_id','ymis','name','email','role','branch','status','applied_at','reviewed_by','reviewed_at','note'], null, X);
   ensureTable(ss, 'Tokens', ['token','ymis','created_at','expires_at'], null, X);
+  // 領袖忘記密碼：新建 Sheet 一併建立「密碼重設」表；舊 Sheet 由 getPasswordResetSheet() 即用即補，
+  // 所以今次更新毋須重跑 initializeSheets()。
+  ensureTable(ss, PWD_RESET_SHEET, PWD_RESET_HEADERS, null, X);
 
   const cfgNew = !X['SystemConfig'];
   const cfgSheet = ensureTable(ss, 'SystemConfig', ['key','value','updated_at','updated_by'], null, X);
@@ -827,6 +849,10 @@ function doPost(e){
     if(action==='logout'){ destroyToken(body.token); return jsonResponse({success:true}); }
     // 公開入口接受成員／領袖申請（角色在 handleApply 內嚴格驗證，只限 member / branch_leader）
     if(action==='apply') return handleApply(body.ymis,body.name,body.email,body.requested_role||'member',body.branch);
+    // 領袖忘記密碼：公開但「自我授權」——只認寄到該帳戶登記電郵嘅一次性重設碼。
+    // 同 apply 一樣放喺 token 驗證之前；handler 完全唔讀 token／apikey／指定 YMIS。
+    if(action==='requestPasswordReset') return handleRequestPasswordReset(body);
+    if(action==='confirmPasswordReset') return handleConfirmPasswordReset(body);
 
     // EC：免 token 嘅接入口（BUILD.md §2 三點進入）
     // ecSigLogin = 上層 sig 換本 leaf token（自己用 apikey 重算驗證）
@@ -1163,6 +1189,215 @@ function handleChangePassword(ymis,oldP,newP){
     }
   }
   return jsonResponse({success:false,error:'原密碼錯誤'});
+}
+// ===== 領袖忘記密碼：電郵一次性重設碼（版號只寫喺 MD 變更紀錄）=====
+// 安全合約：
+//   ① 公開入口唔等於無授權 —— 授權 = 寄到 Users 表登記電郵嘅一次性重設碼。
+//   ② 重設碼只存 SHA-256 雜湊；15 分鐘到期；最多 5 次嘗試；成功／過期／新申請即刻作廢其餘碼。
+//   ③ 回應一律通用，唔洩漏「呢個電郵有冇領袖帳戶」；電郵發送失敗亦只記 log，唔改回應。
+//   ④ 只可重設「啟用中＋領袖或以上角色」嘅普通帳戶；保留帳號、停用帳號、成員帳號一律唔受理。
+//   ⑤ 成功後所有舊 session token 即刻失效，並寫一條唔含密碼／重設碼嘅操作紀錄。
+function normalizeResetEmail(v){
+  return String(v===undefined||v===null?'':v).trim().toLowerCase().substring(0,120);
+}
+function normalizeResetCode(v){
+  return String(v===undefined||v===null?'':v).toUpperCase().replace(/[^0-9A-Z]/g,'').substring(0,16);
+}
+// 電郵會寫入工作表：同 safeSheetText 一樣，唔接受以 = + - @ 開頭，避免儲存格變成算式。
+function validResetEmail(email){
+  return !!email && email.length<=120 && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) && !/^[=+\-@]/.test(email);
+}
+function getPasswordResetSheet(){
+  const ss=getSheet(); if(!ss) return null;
+  // 舊 Sheet 冇呢張表都唔使初始化：第一次有人撳「忘記密碼」就自動補（只加表，唔郁任何現有資料）。
+  return ensureTable(ss,PWD_RESET_SHEET,PWD_RESET_HEADERS,null,sheetMap(ss));
+}
+function passwordResetTable(){
+  const sheet=getPasswordResetSheet(); if(!sheet) return null;
+  const data=sheet.getDataRange().getValues();
+  const headers=(data[0]||[]).map(function(h){return String(h===undefined||h===null?'':h).trim().toLowerCase();});
+  const col={};
+  Object.keys(PWD_RESET_DEFAULT_COLS).forEach(function(k){
+    const i=headers.indexOf(k); col[k]=i>=0?i:PWD_RESET_DEFAULT_COLS[k];
+  });
+  const rows=[];
+  for(let r=1;r<data.length;r++){
+    const d=data[r];
+    rows.push({rowIndex:r+1,
+      reset_id:String(d[col.reset_id]||''), ymis:String(d[col.ymis]||''),
+      email:String(d[col.email]||'').toLowerCase(), code_hash:String(d[col.code_hash]||''),
+      created_ms:Number(d[col.created_ms]||0), expires_ms:Number(d[col.expires_ms]||0),
+      attempts:Number(d[col.attempts]||0), status:String(d[col.status]||''),
+      used_at:String(d[col.used_at]||'')});
+  }
+  return {sheet:sheet,col:col,data:data,rows:rows};
+}
+function passwordResetSetCell(t,row,name,value){
+  t.sheet.getRange(row.rowIndex,t.col[name]+1).setValue(value);
+  row[name]=value;
+}
+function passwordResetRateLimit(t,email,nowMs){
+  let perEmail=0,globalCount=0;
+  for(let i=0;i<t.rows.length;i++){
+    const r=t.rows[i];
+    if(r.created_ms>nowMs-PWD_RESET_GLOBAL_WINDOW_MS) globalCount++;
+    if(r.email===email && r.created_ms>nowMs-PWD_RESET_EMAIL_WINDOW_MS) perEmail++;
+  }
+  if(perEmail>=PWD_RESET_MAX_PER_EMAIL || globalCount>=PWD_RESET_MAX_GLOBAL)
+    return '請求過於頻密，請稍後再試（約 30 分鐘後）';
+  return '';
+}
+function prunePasswordResets(t,nowMs){
+  // 公開入口唔可以俾人無限填表：清走 24 小時前嘅列（由底向上刪，索引唔會錯）。
+  for(let i=t.data.length-1;i>=1;i--){
+    const r=t.rows[i-1]; if(!r) continue;
+    if(r.created_ms && r.created_ms<nowMs-PWD_RESET_KEEP_MS) t.sheet.deleteRow(i+1);
+  }
+}
+function generateResetCode(){
+  return (Utilities.getUuid()+Utilities.getUuid()).replace(/-/g,'').toUpperCase().substring(0,8);
+}
+function sendPasswordResetEmail(email,code,troopName){
+  const label=String(troopName||'').trim()||'幼童軍旅團';
+  const display=code.substring(0,4)+'-'+code.substring(4);
+  const subject='【'+label+'】領袖帳戶密碼重設碼 / Password reset code';
+  const body=[
+    label+' 幼童軍進度追蹤系統',
+    '',
+    '我們收到「忘記密碼」申請。請回到登入頁，選「👨‍💼 領袖」→「🔑 忘記密碼？」，輸入下面嘅重設碼並設定新密碼（4-8 位）。',
+    'We received a password reset request. On the sign-in page choose Leader -> Forgot password?, then enter the code below and set a new password (4-8 characters).',
+    '',
+    '重設碼 / Reset code：'+display,
+    '有效時間 / Valid for：15 分鐘 / 15 minutes',
+    '',
+    '如非你本人申請，請忽略此電郵，密碼不會改變。請勿把重設碼轉發給任何人。',
+    'If you did not request this, ignore this email and never share the code.',
+    '',
+    '收不到或已過期？可重新申請，或聯絡幼童軍團長／管理員喺「用戶管理」重設密碼。',
+    'No email or expired? Request a new code, or ask your leader to reset it in User Management.',
+    '',
+    '（此電郵由旅團 Google Apps Script 自動發出，請勿回覆 / Do not reply）'
+  ].join('\n');
+  MailApp.sendEmail({to:email,subject:subject,body:body});
+}
+function handleRequestPasswordReset(body){
+  body=body||{};
+  const email=normalizeResetEmail(body.email);
+  if(!validResetEmail(email))
+    return jsonResponse({success:false,error:'請輸入有效的登記電郵 / Please enter a valid email'});
+  const nowMs=Date.now();
+  const lock=LockService.getScriptLock();
+  if(!lock.tryLock(8000)) return jsonResponse({success:false,error:'系統繁忙，請稍後再試'});
+  try{
+    const t=passwordResetTable();
+    if(!t) return jsonResponse({success:false,error:'系統尚未初始化'});
+    const rate=passwordResetRateLimit(t,email,nowMs);
+    if(rate) return jsonResponse({success:false,error:rate});
+    prunePasswordResets(t,nowMs);
+    // 新申請一律取代同一電郵先前未用嘅碼，任何時間一個電郵只得一組有效碼。
+    for(let i=0;i<t.rows.length;i++){
+      const r=t.rows[i];
+      if(r.email===email && r.status==='pending') passwordResetSetCell(t,r,'status','superseded');
+    }
+    const users=getUsersTable();
+    const row=users?findUserRowByEmail(users,email):null;
+    const eligible=!!row && isActiveStatus(row.status) && getRoleLevel(row.role)>=40 &&
+                   row.role!=='super_admin' && !!String(row.email||'').trim() &&
+                   !!String(row.password_hash||'').trim() &&
+                   !isSuperAdminId(row.ymis) && !isSuperAdminReserved(row.ymis,email);
+    const code=eligible?generateResetCode():'';
+    const resetId='PWR_'+nowMs+'_'+Utilities.getUuid().replace(/-/g,'').substring(0,8);
+    // 無合資格帳戶照記一列（唔寄信、唔存碼），令限速對所有電郵一致，亦唔透露帳號是否存在。
+    t.sheet.appendRow([resetId,eligible?String(row.ymis):'',email,code?hashPassword(code):'',
+      nowMs,nowMs+PWD_RESET_TTL_MS,0,eligible?'pending':'no_account','']);
+    if(eligible){
+      try{
+        sendPasswordResetEmail(email,code,getTroopName());
+        try{ PropertiesService.getScriptProperties().deleteProperty(PWD_RESET_MAIL_FLAG); }catch(e2){}
+      }catch(e){
+        Logger.log('password reset email failed: '+e);
+        try{ PropertiesService.getScriptProperties().setProperty(PWD_RESET_MAIL_FLAG,String(nowMs)); }catch(e2){}
+      }
+    }
+    // 所有情況回同一句：唔俾人用「有冇收到信」以外嘅訊息探測帳號。
+    let mailError='';
+    try{ mailError=String(PropertiesService.getScriptProperties().getProperty(PWD_RESET_MAIL_FLAG)||''); }catch(e){}
+    return jsonResponse({success:true,delivery:mailError?'unavailable':'ok',
+      message:'若此電郵已登記為領袖帳戶，重設碼已發送；15 分鐘內有效。'});
+  }finally{ lock.releaseLock(); }
+}
+// 管理員一次過設定（喺 Apps Script 編輯器執行）：換上新 Code.gs 後執行一次，
+// Google 會要求授權「傳送電郵」範圍，並寄一封測試信俾執行者自己，確認日後重設碼寄得出去。
+// 唔需要寫任何工作表、唔需要 initializeSheets()、唔會改動任何帳號資料。
+function testPasswordResetMail(){
+  const me=String(Session.getActiveUser().getEmail()||'').trim();
+  if(!me) throw new Error('搵唔到執行者電郵，請喺試算表嘅 Apps Script 執行');
+  MailApp.sendEmail({to:me,subject:'幼童軍進度追蹤：忘記密碼發信測試',
+    body:'這封測試電郵確認本旅團 Apps Script 已取得傳送電郵授權，領袖「忘記密碼」重設碼可以正常寄出。\n請勿回覆。'});
+  try{ PropertiesService.getScriptProperties().deleteProperty(PWD_RESET_MAIL_FLAG); }catch(e){}
+  return '測試電郵已寄出至 '+me;
+}
+function handleConfirmPasswordReset(body){
+  body=body||{};
+  const email=normalizeResetEmail(body.email);
+  const code=normalizeResetCode(body.code);
+  const newPw=String(body.new_password===undefined||body.new_password===null?'':body.new_password);
+  const generic='重設碼不正確或已過期，請重新申請 / Invalid or expired reset code';
+  if(!validResetEmail(email) || code.length!==8)
+    return jsonResponse({success:false,error:generic});
+  const pwErr=passwordRuleError(newPw);
+  if(pwErr) return jsonResponse({success:false,error:pwErr});
+  const nowMs=Date.now();
+  const lock=LockService.getScriptLock();
+  if(!lock.tryLock(8000)) return jsonResponse({success:false,error:'系統繁忙，請稍後再試'});
+  try{
+    const t=passwordResetTable();
+    if(!t) return jsonResponse({success:false,error:'系統尚未初始化'});
+    let target=null;
+    for(let i=0;i<t.rows.length;i++){
+      const r=t.rows[i];
+      if(r.email!==email || r.status!=='pending' || !r.code_hash) continue;
+      if(r.expires_ms<=nowMs){ passwordResetSetCell(t,r,'status','expired'); continue; }
+      if(!target || r.created_ms>target.created_ms) target=r;
+    }
+    if(!target) return jsonResponse({success:false,error:generic});
+    if(target.attempts>=PWD_RESET_MAX_ATTEMPTS){
+      passwordResetSetCell(t,target,'status','locked');
+      return jsonResponse({success:false,error:generic});
+    }
+    if(!safeEqualText(hashPassword(code),target.code_hash)){
+      passwordResetSetCell(t,target,'attempts',target.attempts+1);
+      if(target.attempts+1>=PWD_RESET_MAX_ATTEMPTS) passwordResetSetCell(t,target,'status','locked');
+      return jsonResponse({success:false,error:generic});
+    }
+    // 重設碼啱都要再驗一次帳戶狀態：期間被停用／降級／改電郵就唔可以改密碼。
+    const users=getUsersTable();
+    const row=users?findUserRowByYmis(users,target.ymis):null;
+    if(!row || !isActiveStatus(row.status) || getRoleLevel(row.role)<40 || row.role==='super_admin' ||
+       normalizeResetEmail(row.email)!==email || isSuperAdminId(row.ymis)){
+      passwordResetSetCell(t,target,'status','void');
+      return jsonResponse({success:false,error:generic});
+    }
+    users.sheet.getRange(row.rowIndex,users.col.password_hash+1).setValue(hashPassword(newPw));
+    if(users.col.force_change_password!==undefined)
+      users.sheet.getRange(row.rowIndex,users.col.force_change_password+1).setValue(false);
+    passwordResetSetCell(t,target,'status','used');
+    passwordResetSetCell(t,target,'used_at',now());
+    for(let i=0;i<t.rows.length;i++){
+      const r=t.rows[i];
+      if(r!==target && (r.email===email||r.ymis===target.ymis) && r.status==='pending')
+        passwordResetSetCell(t,r,'status','superseded');
+    }
+    destroyUserTokens(target.ymis);
+    writeAudit('system','password_reset_by_email',target.ymis,'領袖以登記電郵重設碼自助重設密碼（不記錄重設碼／密碼）');
+    return jsonResponse({success:true,message:'密碼已重設，請用新密碼登入'});
+  }finally{ lock.releaseLock(); }
+}
+// 密碼重設成功後，該用戶所有舊 session 即刻失效（懷疑密碼外洩時尤其重要）。
+function destroyUserTokens(ymis){
+  const sheet=tbl('Tokens'); if(!sheet||!ymis) return;
+  const data=sheet.getDataRange().getValues();
+  for(let i=data.length-1;i>=1;i--){ if(String(data[i][1]||'')===String(ymis)) sheet.deleteRow(i+1); }
 }
 function handleApply(ymis,name,email,role,branch){
   // ：成員／領袖都可自行申請；角色嚴格驗證，只限 member / branch_leader。

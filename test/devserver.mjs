@@ -15,6 +15,8 @@ import { createRequire } from 'node:module';
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const require = createRequire(pathToFileURL(path.join(ROOT, 'package.json')));
 const PORT = Number(process.env.PORT || 3000);
+// 只限本機預覽：mock GAS 嘅寄件匣（領袖忘記密碼重設碼），絕不部署（test/ 已被 .vercelignore 排除）
+let previewMail = null;
 
 const MIME = {
   '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8',
@@ -41,6 +43,7 @@ async function ensurePreviewTroop() {
   }
   const { buildBackend, sha256Hex } = await import('./mock-gas.mjs');
   const sandbox = buildBackend();
+  previewMail = sandbox.__mail;
   sandbox.initializeSheets();   // 建齊全部工作表＋生成 API_KEY（同旅團實際跑 initializeSheets 一樣）
   const apiKey = sandbox.getApiKey();
 
@@ -104,6 +107,12 @@ async function ensurePreviewTroop() {
 const server = http.createServer(async (req, res) => {
   const url = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
   let pathname = decodeURIComponent(url.pathname);
+
+  // ---- 本機預覽專用：睇 mock 寄出嘅重設碼電郵（正式 Vercel 冇呢條 route）----
+  if (pathname === '/api/_preview_mail') {
+    res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' });
+    return res.end(JSON.stringify({ success: true, previewOnly: true, mail: previewMail || [] }));
+  }
 
   // ---- /api/* → serverless handler ----
   if (pathname.startsWith('/api/')) {
