@@ -88,3 +88,13 @@ test('upsert by email protects the matched role and clears sessions only for a c
  assert.ok(!b.__ss.sheets.Tokens.rows.some(r=>r[0]==='old-session'));
  assert.equal(b.PropertiesService.getScriptProperties().getProperty('LOGIN_FAIL:1234567822'),null);
 });
+test('PBKDF2 does not invoke a GAS HMAC service per iteration and matches standard vectors',()=>{
+ const b=buildBackend();
+ b.Utilities.computeHmacSha256Signature=()=>{throw new Error('PBKDF2 must not call the GAS HMAC service');};
+ const salt=Buffer.from('00ff0102030405060708090a0b0c0d0e','hex');
+ for(const pw of ['changeme','測試密碼','abc'.repeat(50),'']){
+   const actual=b.pbkdf2HmacSha256_(pw,[...salt],120000);
+   const expected=pbkdf2Sync(pw,salt,120000,32,'sha256').toString('hex');
+   assert.equal(actual,expected);
+ }
+});
