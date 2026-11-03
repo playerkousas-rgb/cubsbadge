@@ -19,6 +19,37 @@ const {
   isScoutAdminSuccess
 } = require('./_lib/scoutAdmin');
 const TIMEOUT_MS = 12000;
+const PROBE_TIMEOUT_MS = 5000;
+
+async function probeAnonymousBackend(backendUrl) {
+  const urlStr = String(backendUrl || '').trim();
+  if (!urlStr) return null;
+  try {
+    const sep = urlStr.includes('?') ? '&' : '?';
+    const probeUrl = urlStr + sep + 'action=ecStatus';
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), PROBE_TIMEOUT_MS);
+    const resp = await fetch(probeUrl, {
+      method: 'GET',
+      redirect: 'follow',
+      signal: controller.signal,
+      headers: { 'User-Agent': 'cubsbadge-register-proxy/1.0' }
+    });
+    clearTimeout(timeoutId);
+    const text = await resp.text();
+    let data;
+    try { data = JSON.parse(text); } catch { return null; }
+    if (!data || typeof data !== 'object') return null;
+    // ecStatus returns {success:true, gsVersion, initializedGsVersion, initRequired, ...}
+    // Support both top-level and nested shapes
+    if (typeof data.initRequired === 'boolean' || typeof data.gsVersion === 'string' || typeof data.initializedGsVersion === 'string') {
+      return data;
+    }
+    return null;
+  } catch (_) {
+    return null;
+  }
+}
 
 async function handler(req, res) {
   res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
@@ -60,6 +91,27 @@ async function handler(req, res) {
   }
   if (!isValidGasUrl(backendUrl)) {
     return res.status(400).json({ success: false, error: 'Invalid backendUrl - must be HTTPS script.google.com /exec URL' });
+  }
+
+  // ── 新旅團申請入閘口：未初始化就 422 攔截，不轉發去 Admin，不洩漏 backendUrl ──
+  // 本版舊用戶 deferred（initRequired=false）：舊標記 2026.11.03.1 視為已初始化，不攔截；
+  // 僅空標記（從未 initializeSheets）才攔截，確保新部署必須先初始化。
+  const probe = await probeAnonymousBackend(backendUrl);
+  if (probe) {
+    const gsVersion = String(probe.gsVersion || '');
+    const initializedGsVersion = String(probe.initializedGsVersion || '');
+    const initRequired = probe.initRequired === true;
+    const needsInit = initRequired ? (initializedGsVersion !== gsVersion) : (!initializedGsVersion);
+    if (needsInit) {
+      console.warn(`[register] block uninitialized troop=${troopId} gs=${gsVersion} initialized=${initializedGsVersion || '(empty)'}`);
+      return res.status(422).json({
+        success: false,
+        code: 'INIT_REQUIRED',
+        error: '此旅團後端尚未完成本版的初始化／更新（initializeSheets），請先完成再申請接入。',
+        gsVersion,
+        initializedGsVersion
+      });
+    }
   }
 
   console.log(`[register] Forwarding apply troop=${troopId} appType=${APP_TYPE}`);

@@ -173,3 +173,14 @@
 ## 18. 臨時密碼視窗回歸測試（2026-11-03，frontend 2026.11.03.2）
 - 舊前端等待後端回傳明文密碼，與新版後端的保密設計不相容，會顯示空白；新版前端顯示本地輸入值或預設值，並支援複製，不要求後端回傳密碼。
 - 為留空、自訂、重新啟用、失敗及複製加入前端回歸測試；關閉視窗時清除顯示及暫存的密碼。
+
+## 19. 初始化閘口及初始化唯一入口（2026-11-03，GS 2026.11.03.2；frontend 2026.11.03.3）
+
+- **單一更新入口**：選單新增「🔧 初始化／更新（執行 initializeSheets）」唯一入口，直達 `initializeSheets()`；保留 `repairSheets` 僅供內部調用，不再分多個「更新」選單造成困惑。`initializeSheets()` 保持冪等只加不改：補建缺少工作表／欄位及預設值，絕不刪改用戶資料或更換 API Key；跨多版本升級必須執行一次。
+- **/exec 網域正規化**：GS `canonicalServiceUrl_()` 與 Vercel `canonicalBackendUrl()` 同時兼容兩種 Workspace 網域形式（`/a/macros/<domain>/s/` 與 `/a/<domain>/macros/s/`），統一正規化為公開 `/macros/s/` 形式；`backendHashes()`/`backendMatches()` 比對兩種形式雜湊，避免因 URL 形式不同誤判為未接入。
+- **完成幻覺阻斷（已就緒，下版啟用）**：GS 新增 `GS_INIT_REQUIRED` 及 `initializedGsVersion` 標記，`getCubGsReleaseStatus()` 回報 `initRequired/gsVersion/initializedGsVersion/gsInitializationCurrent`；`showApiKey()`/`showVercelEnv()`/`menuShowLinkCredentials()` 已具備未初始化頂部 `⚠️ 尚未完成初始化／更新` 警告能力。本版 `GS_INIT_REQUIRED=false`，舊旅團在用中無需重跑初始化即可顯示 `✅ 已核對`；下次有新增必要欄嗰版會改為 `true`，屆時再一次過要求舊團更新。
+- **新旅團申請閘口**：`api/register.js` 以匿名 `GET ?action=ecStatus` 探測 `initRequired`/`initializedGsVersion`，未初始化（空標記）時回 `422 INIT_REQUIRED` 且不轉發至 Scout Admin；回應不包含 backend URL 或 apikey 值，`action=ecStatus` 無需憑證即可探測初始化狀態。本版舊團非空標記（如 `2026.11.03.1`）視為已初始化，不攔截。
+- GS `2026.11.03.2` 建議更換 Code.gs 並部署新版本；舊旅團可沿用連接，下次更新再一併初始化亦可。新旅團首次仍須 `initializeSheets()`。回滾可部署上一版 GS。
+
+**問：領袖更新前用 `showApiKey()` 抄走舊憑證能否繞過閘口？** 舊旅團已連通不受影響；新旅團空 Sheet 根本無 Key，必須先初始化才產生。初始化完成前，新旅團申請會被 422 攔截（探測空標記），不往 Scout Admin 轉發。
+

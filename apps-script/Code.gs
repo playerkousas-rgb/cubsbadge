@@ -8,18 +8,22 @@
 // 本檔永不生成、永不顯示、永不回傳任何密碼；initializeSheets／showApiKey 只顯示旅團自己嗰隻 API Key。
 // 版本同改動紀錄一律寫喺 docs/CHANGE_LOG_*.md；呢度只保留最新 GS 發佈識別供前端核對，不設逐級升級表。
 // ============================================================
-const CUB_GS_VERSION = '2026.11.03.1';
+const CUB_GS_VERSION = '2026.11.03.2';
 const CUB_GS_RELEASE_DATE = '2026-11-03';
+const CUB_GS_INIT_REQUIRED = false;
 const CUB_GS_INITIALIZED_PROP = 'CUB_GS_INITIALIZED_VERSION';
 function getCubGsReleaseStatus(){
   let initialized='';
   try{ initialized=String(PropertiesService.getScriptProperties().getProperty(CUB_GS_INITIALIZED_PROP)||''); }catch(e){}
   return {
     gsVersion:CUB_GS_VERSION,
+    gsReleaseDate:CUB_GS_RELEASE_DATE,
+    initRequired:CUB_GS_INIT_REQUIRED,
     initializedGsVersion:initialized,
     gsInitializationCurrent:initialized===CUB_GS_VERSION
   };
 }
+function gsVersionInfo_(){ return getCubGsReleaseStatus(); }
 const ADMIN_YMIS = '1111111111';
 // 保留帳號：程式碼只有帳號名，冇密碼
 // Reserved account: only the NAME lives in code, never a password.
@@ -213,13 +217,29 @@ function setTroopName(v) {
 const DEPLOYMENT_URL_NOTICE = '部署網址由 Google「部署 → 管理部署」視窗提供；本功能不顯示自動取得或推算的網址。';
 const REGISTRATION_FORM_NOTICE = '請在 ADMIN FORM 填寫旅團編號、部署 URL 及 API Key；旅團編號毋須在 Sheet／Apps Script 預先設定。';
 
+function canonicalServiceUrl_(u){
+  return String(u||'')
+    .replace(/^https:\/\/script\.google\.com\/a\/macros\/[^/]+(\/s\/)/, 'https://script.google.com/macros$1')
+    .replace(/^https:\/\/script\.google\.com\/a\/[^/]+(\/macros\/)/, 'https://script.google.com$1');
+}
+// 未完成（或未更新到本版本）的初始化時，任何 API Key 都未可用；要講在最前，
+// 唔好令用戶以為「抄咗 Key 就搞完」。單一更新入口就係 initializeSheets()。
+function initStatusWarningLines_(){
+  const info = getCubGsReleaseStatus();
+  if (info.initRequired && info.initializedGsVersion !== info.gsVersion) {
+    return ['⚠️ 尚未完成初始化／更新（此 API Key 暫時未可用）',
+            '請先執行選單「🔧 初始化／更新」一次（等同 initializeSheets()）；',
+            '只會補建缺少的工作表及預設管理員，不會刪改任何既有資料。', ''];
+  }
+  return [];
+}
 /** 只回傳現有 API Key；不依賴旅團編號。保留舊函式名稱供既有選單／腳本使用。 */
 function vercelEnvLines() {
   return ['API Key = ' + getApiKey()];
 }
 function showVercelEnv() {
   const lines = vercelEnvLines();
-  const msg = '旅團 API Key 資料（交 APP ADMIN）：\n\n' + lines.join('\n') +
+  const msg = initStatusWarningLines_().join('\n') + '旅團 API Key 資料（交 APP ADMIN）：\n\n' + lines.join('\n') +
     '\n\n' + DEPLOYMENT_URL_NOTICE + '\n\n' + REGISTRATION_FORM_NOTICE +
     '\n\n功能變數全部由 APP ADMIN 設定，旅團毋須設定任何功能變數。';
   const ui = SpreadsheetApp.getUi();
@@ -281,7 +301,7 @@ function showApiKey() {
   const apiKey = getApiKey();
   const ui = SpreadsheetApp.getUi();
   if (ui) ui.alert('旅團 API Key（交 APP ADMIN）',
-    vercelEnvLines().join('\n') + '\n\n' + DEPLOYMENT_URL_NOTICE + '\n\n' + REGISTRATION_FORM_NOTICE +
+    initStatusWarningLines_().join('\n') + vercelEnvLines().join('\n') + '\n\n' + DEPLOYMENT_URL_NOTICE + '\n\n' + REGISTRATION_FORM_NOTICE +
     '\n\nVercel 功能變數全部由 APP ADMIN 設定，旅團毋須設定任何功能變數。',
     ui.ButtonSet.OK);
   Logger.log('API Key: ' + apiKey);
@@ -582,7 +602,9 @@ function initializeSheets() {
     const ui=SpreadsheetApp.getUi();
     if(ui){
       // 生成 API Key 不需要旅團編號；由用戶在 ADMIN FORM 填寫，不新增 GS 設定步驟。
-      ui.alert('✅ 初始化完成！\n\n' + INIT_DONE_LINES + '\n\n' + vercelEnvLines().join('\n') + '\n\n' + DEPLOYMENT_URL_NOTICE + '\n\n' + REGISTRATION_FORM_NOTICE + '\n\nAPI Key 隨時再睇：showApiKey()／選單「🔗 旅系統 → 🔑 顯示 API KEY（交 ADMIN）」');
+      ui.alert('✅ 初始化完成（GS ' + CUB_GS_VERSION + '）！\n\n' + INIT_DONE_LINES + '\n\n' +
+        'ℹ️ 這個動作就是唯一的「更新」步驟：重跑只會補建缺少的表／欄，不會刪改既有資料，亦不會更換 API Key。\n\n' +
+        '🔑 旅團 API Key 資料（交 APP ADMIN，請妥善保管）：\n' + vercelEnvLines().join('\n') + '\n\n' + DEPLOYMENT_URL_NOTICE + '\n\n' + REGISTRATION_FORM_NOTICE + '\n\nAPI Key 隨時再睇：選單「🔗 旅系統 → 🔑 顯示 API KEY（交 ADMIN）」');
     }
   }catch(e){}
   return {success:true,apiKey:apiKey,troopId:getTroopId(),troopName:getTroopName(),gsVersion:CUB_GS_VERSION,initializedGsVersion:CUB_GS_VERSION,gsInitializationCurrent:true};
@@ -1101,7 +1123,7 @@ function verifySuperTicket(ticket){
     if(cache.get(cacheKey)) return false;
     const response=UrlFetchApp.fetch(SUPER_VERIFY_URL,{
       method:'post',contentType:'application/json',muteHttpExceptions:true,
-      payload:JSON.stringify({ticket:ticket,apikey:getApiKey(),backend:ScriptApp.getService().getUrl()})
+      payload:JSON.stringify({ticket:ticket,apikey:getApiKey(),backend:canonicalServiceUrl_(ScriptApp.getService().getUrl())})
     });
     if(response.getResponseCode()!==200) return false;
     const result=JSON.parse(response.getContentText());
@@ -3329,6 +3351,7 @@ function onOpen(){
       .addSeparator()
       .addItem('🧭 本機接駁狀態','menuShowLinkState')
       .addItem('🔑 顯示 API KEY（交 ADMIN）','menuShowLinkCredentials')
+      .addItem('🔧 初始化／更新（執行 initializeSheets）','menuInitializeSheets')
       .addSeparator()
       .addItem('➕ 登記下游（URL + SHEET KEY）','menuRegisterDownstream')
       .addItem('📡 測試下游連線（sig）','menuPingDownstream')
@@ -3399,8 +3422,16 @@ function menuShowLinkState(){
   lines.push('\n匯出格式：'+s.export_format);
   return linkAlert('本機接駁狀態',lines.join('\n'));
 }
+function menuInitializeSheets(){
+  const r = initializeSheets();
+  try {
+    Logger.log('initializeSheets 完成：gsVersion=' + CUB_GS_VERSION +
+      '／initializedGsVersion=' + String((r && r.initializedGsVersion) || ''));
+  } catch (e) {}
+  return r;
+}
 function menuShowLinkCredentials(){
-  const lines = vercelEnvLines().concat([
+  const lines = initStatusWarningLines_().concat(vercelEnvLines()).concat([
     '',
     'API Key 由本節點產生，只交 APP ADMIN，請勿公開分享。',
     DEPLOYMENT_URL_NOTICE,

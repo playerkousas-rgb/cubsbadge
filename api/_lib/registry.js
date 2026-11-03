@@ -55,7 +55,8 @@ function readTroopEnv(idUpper, suffix) {
 
 // ---------- GAS /exec URL 正規化 ----------
 // Google Workspace（例如 xx@scouting.org.hk）部署出嚟嘅 web app，URL 會多一段網域：
-//   https://script.google.com/a/scouting.org.hk/macros/s/<id>/exec   ← 網域內網址
+//   https://script.google.com/a/scouting.org.hk/macros/s/<id>/exec   ← 網域內網址（形式2）
+//   https://script.google.com/a/macros/scouting.org.hk/s/<id>/exec ← 實際 getService().getUrl() 回報形式（形式1）
 //   https://script.google.com/macros/s/<id>/exec                     ← 公開網址
 // 只將合法 HTTPS 網址轉成相同部署 ID 嘅公開路徑格式；唔代表已核實部署身份，
 // 亦唔會改變 Google 存取權限。能否連線仍取決於實際部署及授權設定。
@@ -66,17 +67,58 @@ function normalizeGasUrl(urlString) {
   try { u = new URL(raw); } catch (e) { return raw; }
   if (u.protocol !== 'https:' || u.hostname !== 'script.google.com' ||
       u.search || u.hash || u.username || u.password || u.port) return raw;
-  const m = u.pathname.match(/^\/a\/[^/]+\/macros\/s\/([A-Za-z0-9_-]+)\/exec$/);
+  let m = u.pathname.match(/^\/a\/[^/]+\/macros\/s\/([A-Za-z0-9_-]+)\/exec$/);
+  if (m) return `https://script.google.com/macros/s/${m[1]}/exec`;
+  m = u.pathname.match(/^\/a\/macros\/[^/]+\/s\/([A-Za-z0-9_-]+)\/exec$/);
   if (m) return `https://script.google.com/macros/s/${m[1]}/exec`;
   return raw;
 }
 
-/** 係咪 Workspace 網域內網址（/a/<domain>/macros/s/.../exec）。 */
+/** 係咪 Workspace 網域內網址（/a/<domain>/macros/s/.../exec 或 /a/macros/<domain>/s/.../exec）。 */
 function isDomainScopedGasUrl(urlString) {
   try {
     const u = new URL(String(urlString == null ? '' : urlString).trim());
-    return u.hostname === 'script.google.com' && /^\/a\/[^/]+\/macros\/s\/[A-Za-z0-9_-]+\/exec$/.test(u.pathname);
+    if (u.hostname !== 'script.google.com') return false;
+    return /^\/a\/[^/]+\/macros\/s\/[A-Za-z0-9_-]+\/exec$/.test(u.pathname) ||
+           /^\/a\/macros\/[^/]+\/s\/[A-Za-z0-9_-]+\/exec$/.test(u.pathname);
   } catch (e) { return false; }
+}
+
+function canonicalBackendUrl(backend) {
+  const raw = String(backend || '').trim();
+  try {
+    const target = new URL(raw);
+    if (target.hostname !== 'script.google.com') return raw;
+    const match = target.pathname.match(/^\/a\/macros\/[^/]+(\/s\/.+)$/);
+    if (match) {
+      target.pathname = `/macros${match[1]}`;
+      return target.toString();
+    }
+    const alt = target.pathname.match(/^\/a\/[^/]+(\/macros\/s\/.+)$/);
+    if (alt) {
+      target.pathname = alt[1];
+      return target.toString();
+    }
+    return target.toString();
+  } catch (_) {
+    return raw;
+  }
+}
+
+function backendHash(backend) {
+  return crypto.createHash('sha256').update(String(backend), 'utf8').digest('hex');
+}
+
+function backendHashes(backend) {
+  const canonical = canonicalBackendUrl(backend);
+  return new Set([backendHash(String(backend)), backendHash(canonical)]);
+}
+
+function backendMatches(storedBackend, providedBackend) {
+  const sHashes = backendHashes(storedBackend);
+  const pHashes = backendHashes(providedBackend);
+  for (const h of pHashes) if (sHashes.has(h)) return true;
+  return false;
 }
 
 function getRegistry() {
@@ -197,6 +239,10 @@ module.exports = {
   isValidGasUrl,
   normalizeGasUrl,
   isDomainScopedGasUrl,
+  canonicalBackendUrl,
+  backendHash,
+  backendHashes,
+  backendMatches,
   normalizeToPadded4,
   normalizeStripped,
   getSuperKey,
