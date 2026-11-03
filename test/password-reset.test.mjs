@@ -268,7 +268,7 @@ test('前端：登入頁領袖專用入口、兩步 modal、中英字典、版�
   // 版本：HTML build = manifest；GS 版本 = 前端要求 = 下載連結
   assert.equal(html.match(/<meta name="cubsbadge-build" content="([^"]+)"/)[1], manifest.build);
   const gsVersion = gs.match(/const CUB_GS_VERSION = '([^']+)'/)[1];
-  assert.equal(gsVersion, '2026.11.03.1');
+  assert.equal(gsVersion, '2026.11.03.2');
   assert.ok(html.includes(`gsVersion:'${gsVersion}'`));
   assert.ok(html.includes(`href="apps-script/Code.gs?gs=${gsVersion}"`));
 

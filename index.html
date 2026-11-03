@@ -4,8 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <meta name="theme-color" content="#FFD60A">
-<meta name="cubsbadge-build" content="2026.11.03.2">
-<script src="assets/frontend-freshness.js?build=2026.11.03.2" defer></script>
+<meta name="cubsbadge-build" content="2026.11.03.3">
+<script src="assets/frontend-freshness.js?build=2026.11.03.3" defer></script>
 <!-- App icon：金紫荊獎章（favicon + PWA / iOS 主畫面圖示） -->
 <!-- 使用 assets 內的高解像度圖示，避免 favicon／頁首圖示顯示模糊 -->
 <link rel="icon" type="image/png" sizes="256x256" href="assets/app-icon-256.png">
@@ -400,7 +400,7 @@ html[lang="en"] body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","No
       -->
       <div class="tutorial">
         <div class="steps">
-          <div class="step"><div class="step-number">1</div><div class="step-content"><h4 data-i18n="s1h">下載最新 GS（2026.11.03.1）</h4><p data-i18n="s1p">最新 GS 2026.11.03.1：改善登入驗證速度；本版無新增必要欄；建議更新後執行初始化，跨多版本升級必須執行；保留資料及 API Key</p><a href="apps-script/Code.gs?gs=2026.11.03.1" download="Code.gs" class="btn btn-primary btn-sm" style="margin-top:6px" data-i18n="s1btn">⬇️ 下載 Code.gs（GS 2026.11.03.1）</a></div></div>
+          <div class="step"><div class="step-number">1</div><div class="step-content"><h4 data-i18n="s1h">下載最新 GS（2026.11.03.2）</h4><p data-i18n="s1p">最新 GS 2026.11.03.2：單一初始化入口、新增初始化閘口及初始化警告；本版須執行一次 initializeSheets 初始化；保留資料及 API Key</p><a href="apps-script/Code.gs?gs=2026.11.03.2" download="Code.gs" class="btn btn-primary btn-sm" style="margin-top:6px" data-i18n="s1btn">⬇️ 下載 Code.gs（GS 2026.11.03.1）</a></div></div>
           <div class="step"><div class="step-number">2</div><div class="step-content"><h4 data-i18n="s2h">建立 Google Sheet 並部署</h4><p data-i18n-html="s2p">建新試算表 → 擴充功能 → Apps Script 貼上 Code.gs → 儲存 → 執行 initializeSheets 授權（建議每次更新後執行；跨多版本升級必須執行，保留資料及 API Key）→ 部署為網頁應用程式（執行身分我，任何人可存取；首次使用「忘記密碼」發信時 Google 會要求授權傳送電郵，請按提示允許）。Google 部署視窗提供部署網址；GS 彈窗及選單只提供 API Key，不顯示自動取得的網址；旅團編號毋須在 Sheet／Apps Script 預先設定</p></div></div>
           <div class="step"><div class="step-number">3</div><div class="step-content"><h4 data-i18n="s3h">提交給 APP ADMIN</h4><p data-i18n="s3p">取得 API Key 及 Google 部署視窗提供的部署 URL 後，填寫下方接入申請（ADMIN FORM）。旅團編號直接在 ADMIN FORM 填寫，毋須在 GS 設定。API Key 可在「🔗 旅系統 → 🔑 顯示 API KEY（交 ADMIN）」查看</p></div></div>
           <div class="step"><div class="step-number">4</div><div class="step-content"><h4 data-i18n="s_fl_h">首次登入（預設管理員帳號）</h4><p data-i18n-html="s_fl_p">登記完成後，首頁揀該旅團卡片 → 用「<b>👤 家長/成員</b>」分頁登入：<br>YMIS <b>1111111111</b>　密碼 <b>changeme</b>（initializeSheets 自動建立嘅預設管理員，唔好用「領袖=Email」分頁）<br>首次登入會<b>強制改密碼</b>（4-8 位）。之後喺「審批中心」批成員申請、喺「用戶管理」開返各領袖真電郵嘅帳號並設權限</p></div></div>
@@ -704,9 +704,9 @@ html[lang="en"] body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","No
 </footer>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<script src="assets/ymis-parse.js?build=2026.11.03.2"></script>
-<script src="assets/cub-progress.js?build=2026.11.03.2"></script>
-<script src="assets/form-generator.js?build=2026.11.03.2"></script>
+<script src="assets/ymis-parse.js?build=2026.11.03.3"></script>
+<script src="assets/cub-progress.js?build=2026.11.03.3"></script>
+<script src="assets/form-generator.js?build=2026.11.03.3"></script>
 <!-- Scout Admin 統一回報 widget（統一回報格式 v1，見 scout-admin SCOUT_ADMIN.md）：問題回報／意見回饋直達 scout-admin 後台。
      data-app="幼童軍進度追蹤"＝來源系統正式名稱；本 APP 各頁的「🐛💬 回報 · 意見」按鈕
      （登入前 welcome-nav／登入頁連結／登入後 header 常駐）一律經 openScoutReport() 開啟這個 widget 的 modal；
@@ -751,7 +751,7 @@ zh:{
   // 鍵值保留未刪，重啟時解除 HTML 註解即可。
   setup_h2:'📋 新旅團部署指南 (10分鐘)',setup_portal_card:'<h3 style="color:var(--blue)">🌟 主系統平台是什麼？</h3><p style="font-size:12px">本系統可獨立用，亦可接入 <b>scoutsystem-2.0 主系統平台</b>：Dashboard、考勤、財務、活動報名，單一登入。</p><p style="font-size:11px;margin-top:6px;background:#fff;padding:6px;border-radius:6px"><b>有主系統 ≠ 一定要接上</b>，兩條路並存。</p>',
   setup_map_card:'<h3>🗺️ 部署地圖</h3><p style="font-size:11px">旅團只做 3 樣：① 下載 Code.gs → 建 Sheet → 部署 ② 執行 initializeSheets（補齊設定並記錄最新版本）③ 把「旅團編號 + 部署 URL + API Key」交 APP ADMIN<br>Vercel 功能變數全部由 APP ADMIN 設定，旅團毋須（亦唔會）設定任何功能變數<br>軌道B 接入主系統：同時交主系統管理員</p><p style="font-size:10px;color:var(--red);margin-top:6px">⚠️ 功能變數由 APP ADMIN 設定：旅團毋須設定任何功能變數，SETUP 彈窗只會顯示要交嘅 API Key。</p>',
-  s1h:'下載最新 GS（2026.11.03.1）',s1p:"最新 GS 2026.11.03.1：改善登入驗證速度；本版無新增必要欄；建議更新後執行初始化，跨多版本升級必須執行；保留資料及 API Key",s1btn:'⬇️ 下載 Code.gs（GS 2026.11.03.1）',s2h:'建立 Google Sheet 並部署',s2p:"建新試算表 → 擴充功能 → Apps Script 貼上 Code.gs → 儲存 → 執行 initializeSheets 授權（建議每次更新後執行；跨多版本升級必須執行，保留資料及 API Key）→ 部署為網頁應用程式（執行身分我，任何人可存取；首次使用「忘記密碼」發信時 Google 會要求授權傳送電郵，請按提示允許）。Google 部署視窗提供部署網址；GS 彈窗及選單只提供 API Key，不顯示自動取得的網址；旅團編號毋須在 Sheet／Apps Script 預先設定",s3h:'提交給 APP ADMIN',s3p:"取得 API Key 及 Google 部署視窗提供的部署 URL 後，填寫下方接入申請（ADMIN FORM）。旅團編號直接在 ADMIN FORM 填寫，毋須在 GS 設定。API Key 可在「🔗 旅系統 → 🔑 顯示 API KEY（交 ADMIN）」查看",
+  s1h:'下載最新 GS（2026.11.03.2）',s1p:"最新 GS 2026.11.03.2：單一初始化入口及初始化閘口；本版須執行一次 initializeSheets 完成初始化；保留資料及 API Key",s1btn:'⬇️ 下載 Code.gs（GS 2026.11.03.2）',s2h:'建立 Google Sheet 並部署',s2p:"建新試算表 → 擴充功能 → Apps Script 貼上 Code.gs → 儲存 → 執行 initializeSheets 授權（建議每次更新後執行；跨多版本升級必須執行，保留資料及 API Key）→ 部署為網頁應用程式（執行身分我，任何人可存取；首次使用「忘記密碼」發信時 Google 會要求授權傳送電郵，請按提示允許）。Google 部署視窗提供部署網址；GS 彈窗及選單只提供 API Key，不顯示自動取得的網址；旅團編號毋須在 Sheet／Apps Script 預先設定",s3h:'提交給 APP ADMIN',s3p:"取得 API Key 及 Google 部署視窗提供的部署 URL 後，填寫下方接入申請（ADMIN FORM）。旅團編號直接在 ADMIN FORM 填寫，毋須在 GS 設定。API Key 可在「🔗 旅系統 → 🔑 顯示 API KEY（交 ADMIN）」查看",
   s_fl_h:'首次登入（預設管理員帳號）',s_fl_p:'登記完成後，首頁揀該旅團卡片 → 用「<b>👤 家長/成員</b>」分頁登入：<br>YMIS <b>1111111111</b>　密碼 <b>changeme</b>（initializeSheets 自動建立嘅預設管理員，唔好用「領袖=Email」分頁）<br>首次登入會<b>強制改密碼</b>（4-8 位）。之後喺「審批中心」批成員申請、喺「用戶管理」開返各領袖真電郵嘅帳號並設權限',
   // [主系統暫時隱藏 2026-10] s4h／s4p（軌道B 接主系統）保留未刪，對應步驟已註解隱藏。
   s4h:'軌道B：有主系統並想接上 - 額外提交給主系統管理員',s4p:'將同一組 URL+Key 交主系統管理員，填入旅團設定→元件設定 卡片 backend+apikey。之後成員點 Dashboard 卡片自動帶入身份，無需密碼',
@@ -910,7 +910,7 @@ en:{
   // [主系統暫時隱藏 2026-10] setup_portal_card／setup_map_card／s4h／s4p kept unused while the main-platform intro is hidden.
   setup_h2:'📋 New Troop Setup (10 min)',setup_portal_card:'<h3 style="color:var(--blue)">🌟 What is main system?</h3><p style="font-size:12px">This is a Tier 3 plugin, can be standalone or linked to <b>scoutsystem-2.0</b>: Dashboard, attendance, finance, events, SSO.</p><p style="font-size:11px;margin-top:6px;background:#fff;padding:6px;border-radius:6px"><b>Main system ≠ must link</b>, both routes co-exist.</p>',
   setup_map_card:'<h3>🗺️ Deployment Map</h3><p style="font-size:11px">Troops do only 3 things: ① download Code.gs → create Sheet → deploy ② run initializeSheets (required; records the latest initialisation version) ③ send “troop ID + deploy URL + API Key” to the APP ADMIN<br>All Vercel env vars are set by the APP ADMIN — troops never set any env var<br>Track B portal: also give to main system admin</p><p style="font-size:10px;color:var(--red);margin-top:6px">⚠️ Env vars are set by the APP ADMIN only; the setup dialog shows just the API Key you send.</p>',
-  s1h:'Download latest GS (2026.11.03.1)',s1p:"Latest GS 2026.11.03.1: Faster sign-in verification; no new required columns; run initialization after updates (required when skipping versions); data and API Keys are preserved",s1btn:'⬇️ Download Code.gs (GS 2026.11.03.1)',s2h:'Create Google Sheet & Deploy',s2p:"New spreadsheet → Extensions → Apps Script → paste Code.gs → Save → run initializeSheets for first-time setup of a new Sheet (recommended after each update; required when skipping versions; data and API Keys are preserved) → deploy as a web app (Me, Anyone; the first Forgot password email asks Google for permission to send mail — allow it). Google provides the deployment URL in its deployment dialog; GS dialogs and menus provide only the API Key, never an automatically discovered URL; no troop ID needs to be configured in the Sheet or Apps Script",s3h:'Submit to the APP ADMIN',s3p:"After obtaining the API Key and the deployment URL from Google, use the join request below (ADMIN FORM). Enter the troop ID directly in the ADMIN FORM; no GS setting is needed. Read the key under the troop-system API KEY menu",
+  s1h:'Download latest GS (2026.11.03.2)',s1p:"Latest GS 2026.11.03.2: Single initialization entry and init gate; run initializeSheets() once for this release; data and API Keys preserved",s1btn:'⬇️ Download Code.gs (GS 2026.11.03.2)',s2h:'Create Google Sheet & Deploy',s2p:"New spreadsheet → Extensions → Apps Script → paste Code.gs → Save → run initializeSheets for first-time setup of a new Sheet (recommended after each update; required when skipping versions; data and API Keys are preserved) → deploy as a web app (Me, Anyone; the first Forgot password email asks Google for permission to send mail — allow it). Google provides the deployment URL in its deployment dialog; GS dialogs and menus provide only the API Key, never an automatically discovered URL; no troop ID needs to be configured in the Sheet or Apps Script",s3h:'Submit to the APP ADMIN',s3p:"After obtaining the API Key and the deployment URL from Google, use the join request below (ADMIN FORM). Enter the troop ID directly in the ADMIN FORM; no GS setting is needed. Read the key under the troop-system API KEY menu",
   s_fl_h:'First login (default admin account)',s_fl_p:'After registration, pick your troop card on the home page → sign in on the <b>👤 Parent/Member</b> tab:<br>YMIS <b>1111111111</b>　password <b>changeme</b> (the default admin created automatically by initializeSheets — do not use the Leader = Email tab)<br>First login <b>forces a password change</b> (4-8 characters). Then approve member applications in Approvals and create each leader\'s own account (real email) in User Management',
   // [主系統暫時隱藏 2026-10] s4h／s4p kept unused while the main-platform intro is hidden.
   s4h:'Track B: with the main platform — also submit to the main-system admin',s4p:'Give the same URL + API Key to the main-system admin and fill in the card backend + apikey. Members then tap the Dashboard card and the identity is carried over automatically, no password',
@@ -1015,7 +1015,7 @@ let _ongoingRequests=new Set();
 let editingLogRecordId=null;
 
 /* 最新發佈：只列目前版本，不設逐級升級表。GS 同時回報程式及初始化版本。 */
-const LATEST_RELEASE=Object.freeze({updated:'2026-11-03',gsVersion:'2026.11.03.1',initializeRequired:false});
+const LATEST_RELEASE=Object.freeze({updated:'2026-11-03',gsVersion:'2026.11.03.2',initializeRequired:true});
 let backendReleaseState={troopId:'',status:'idle',reportedVersion:'',initializedGsVersion:'',error:''};
 let _releaseCheckSequence=0;
 function resetBackendRelease(){
