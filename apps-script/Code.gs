@@ -10,7 +10,7 @@
 // ============================================================
 const CUB_GS_VERSION = '2026.11.03.2';
 const CUB_GS_RELEASE_DATE = '2026-11-03';
-const CUB_GS_INIT_REQUIRED = true;
+const CUB_GS_INIT_REQUIRED = false;
 const CUB_GS_INITIALIZED_PROP = 'CUB_GS_INITIALIZED_VERSION';
 function getCubGsReleaseStatus(){
   let initialized='';

@@ -18,7 +18,7 @@ test('latest frontend release announcement still targets the current Apps Script
   assert.ok(gs, 'Apps Script exposes its latest GS version');
   assert.equal(release[1], '2026-11-03');
   assert.equal(release[2], gs[1], 'frontend required GS and backend reported GS must match');
-  assert.equal(release[3], 'true', 'this release requires initializeSheets once');
+  assert.equal(release[3], 'false', 'existing working Sheets need no reinitialization for this release');
   assert.ok(html.includes(`href="apps-script/Code.gs?gs=${gs[1]}"`), 'setup tab download link carries current GS version query to bust stale cache');
   assert.ok(html.includes('href="apps-script/Code.gs?gs=${encodeURIComponent(LATEST_RELEASE.gsVersion)}"'), 'release notice download link carries current GS version query');
   assert.match(gas, /setProperty\(CUB_GS_INITIALIZED_PROP,CUB_GS_VERSION\)/);

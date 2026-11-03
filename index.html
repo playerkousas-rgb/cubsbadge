@@ -1015,7 +1015,7 @@ let _ongoingRequests=new Set();
 let editingLogRecordId=null;
 
 /* 最新發佈：只列目前版本，不設逐級升級表。GS 同時回報程式及初始化版本。 */
-const LATEST_RELEASE=Object.freeze({updated:'2026-11-03',gsVersion:'2026.11.03.2',initializeRequired:true});
+const LATEST_RELEASE=Object.freeze({updated:'2026-11-03',gsVersion:'2026.11.03.2',initializeRequired:false});
 let backendReleaseState={troopId:'',status:'idle',reportedVersion:'',initializedGsVersion:'',error:''};
 let _releaseCheckSequence=0;
 function resetBackendRelease(){

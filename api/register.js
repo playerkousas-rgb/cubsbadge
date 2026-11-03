@@ -94,12 +94,16 @@ async function handler(req, res) {
   }
 
   // ── 新旅團申請入閘口：未初始化就 422 攔截，不轉發去 Admin，不洩漏 backendUrl ──
+  // 本版舊用戶 deferred（initRequired=false）：舊標記 2026.11.03.1 視為已初始化，不攔截；
+  // 僅空標記（從未 initializeSheets）才攔截，確保新部署必須先初始化。
   const probe = await probeAnonymousBackend(backendUrl);
-  if (probe && probe.initRequired === true) {
+  if (probe) {
     const gsVersion = String(probe.gsVersion || '');
     const initializedGsVersion = String(probe.initializedGsVersion || '');
-    if (initializedGsVersion !== gsVersion) {
-      console.warn(`[register] block uninitialized troop=${troopId} gs=${gsVersion} initialized=${initializedGsVersion}`);
+    const initRequired = probe.initRequired === true;
+    const needsInit = initRequired ? (initializedGsVersion !== gsVersion) : (!initializedGsVersion);
+    if (needsInit) {
+      console.warn(`[register] block uninitialized troop=${troopId} gs=${gsVersion} initialized=${initializedGsVersion || '(empty)'}`);
       return res.status(422).json({
         success: false,
         code: 'INIT_REQUIRED',
