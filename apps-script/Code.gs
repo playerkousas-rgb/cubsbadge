@@ -437,8 +437,12 @@ var CubPbkdf2=(()=>{var F=(t,e)=>()=>(e||t((e={exports:{}}).exports,e),e.exports
 */
 
 // PBKDF2-HMAC-SHA256, one 32-byte block; hashes are stored in the existing column.
-const PBKDF2_ITERATIONS=120000;
-const DUMMY_PASSWORD_HASH='pbkdf2$120000$00000000000000000000000000000000$2dd555d0a6332d090565bfd00b1de43947d66e4efbdd1bde8fed3856983d1966';
+// 迭代次數刻意維持在低水平：本系統只保護旅團進度（無敏感個人資料），而密碼政策本身是 4–8 位，
+// 再高的迭代次數既擋不到離線爆破，卻會令 Apps Script 登入長時間佔用執行配額（曾出現登入逾時）。
+// 雜湊字串內記錄了建立時的次數，所以舊的 120000 次雜湊照樣可以驗證，用戶毋須重設密碼。
+const PBKDF2_ITERATIONS=10000;
+// 帳號不存在／未設密碼時仍跑一次同等成本的 KDF（避免以回應時間探測帳號）；此值不對應任何密碼。
+const DUMMY_PASSWORD_HASH='pbkdf2$10000$00000000000000000000000000000000$2dd555d0a6332d090565bfd00b1de43947d66e4efbdd1bde8fed3856983d1966';
 function hexBytes_(hex){ const out=[]; for(let i=0;i<hex.length;i+=2) out.push(parseInt(hex.slice(i,i+2),16)); return out; }
 function pbkdf2HmacSha256_(password,salt,iterations){
   const key=Utilities.newBlob(String(password)).getBytes();
@@ -447,8 +451,10 @@ function pbkdf2HmacSha256_(password,salt,iterations){
 function isLegacyPasswordHash_(hash){return /^[0-9a-f]{64}$/i.test(String(hash||''));}
 function isPasswordHash_(hash){
   if(isLegacyPasswordHash_(hash)) return true;
-  const m=/^pbkdf2\$(\d{6,7})\$[0-9a-f]{32}\$[0-9a-f]{64}$/i.exec(String(hash||''));
-  return !!m && Number(m[1])>=100000 && Number(m[1])<=1000000;
+  // 接受任何由本程式寫出的迭代次數（現行 10000，舊版 120000），下限 1000 只為擋走垃圾值。
+  // 驗證時一律採用字串內記錄的次數，所以下調預設值不會令既有密碼失效。
+  const m=/^pbkdf2\$(\d{3,7})\$[0-9a-f]{32}\$[0-9a-f]{64}$/i.exec(String(hash||''));
+  return !!m && Number(m[1])>=1000 && Number(m[1])<=1000000;
 }
 function hashPasswordV2(password){
   // Two UUIDs provide independent random bits; hash to remove fixed UUID version bits.
