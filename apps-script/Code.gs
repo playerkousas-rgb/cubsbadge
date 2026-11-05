@@ -449,12 +449,17 @@ function pbkdf2HmacSha256_(password,salt,iterations){
   return toHex(CubPbkdf2.derive(key,salt,iterations));
 }
 function isLegacyPasswordHash_(hash){return /^[0-9a-f]{64}$/i.test(String(hash||''));}
+// 讀出雜湊字串內記錄的迭代次數（非 PBKDF2 格式回 0）。
+function passwordHashIterations_(hash){
+  const m=/^pbkdf2\$(\d{3,7})\$[0-9a-f]{32}\$[0-9a-f]{64}$/i.exec(String(hash||''));
+  return m?Number(m[1]):0;
+}
 function isPasswordHash_(hash){
   if(isLegacyPasswordHash_(hash)) return true;
   // 接受任何由本程式寫出的迭代次數（現行 10000，舊版 120000），下限 1000 只為擋走垃圾值。
   // 驗證時一律採用字串內記錄的次數，所以下調預設值不會令既有密碼失效。
-  const m=/^pbkdf2\$(\d{3,7})\$[0-9a-f]{32}\$[0-9a-f]{64}$/i.exec(String(hash||''));
-  return !!m && Number(m[1])>=1000 && Number(m[1])<=1000000;
+  const iterations=passwordHashIterations_(hash);
+  return iterations>=1000 && iterations<=1000000;
 }
 function hashPasswordV2(password){
   // Two UUIDs provide independent random bits; hash to remove fixed UUID version bits.
@@ -1178,7 +1183,11 @@ function handleLogin(loginId,password,superTicket){
     const valid=verifyPassword(password,stored);
     if(isLegacyPasswordHash_(stored)) verifyPassword(password,DUMMY_PASSWORD_HASH);
     if(!locked && user && row && isActiveStatus(row.status) && isPasswordHash_(row.password_hash) && valid){
-      if(isLegacyPasswordHash_(row.password_hash)) t.sheet.getRange(row.rowIndex,t.col.password_hash+1).setValue(hashPasswordV2(password));
+      // 成功登入時把雜湊收斂到現行設定：舊 SHA-256 及舊版 120,000 次 PBKDF2 都改寫一次，
+      // 之後每次登入都只需現行成本（10,000 次），既有用戶毋須自己改密碼。
+      // 由使用者已輸入的明文重算，不影響任何其他欄位。
+      const storedIterations=isLegacyPasswordHash_(row.password_hash)?0:passwordHashIterations_(row.password_hash);
+      if(storedIterations!==PBKDF2_ITERATIONS) t.sheet.getRange(row.rowIndex,t.col.password_hash+1).setValue(hashPasswordV2(password));
       props.deleteProperty(key);
       const token=createToken(user.ymis);
       t.sheet.getRange(row.rowIndex,t.col.last_login+1).setValue(now());

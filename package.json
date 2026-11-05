@@ -17,6 +17,7 @@
     "test:integrity": "node test/html-integrity.test.mjs",
     "dev": "node test/devserver.mjs",
     "lint": "node scripts/lint.mjs",
+    "bench:login": "node scripts/bench-login.mjs",
     "test:build": "node scripts/test-build.mjs"
   }
 }

@@ -102,18 +102,35 @@ test('PBKDF2 does not invoke a GAS HMAC service per iteration and matches standa
  }
 });
 
-test('舊版 120000 次雜湊仍可登入，新寫入的則是 10000 次（毋須全團重設密碼）',()=>{
+test('舊版 120000 次雜湊仍可登入，登入後收斂為 10000 次（毋須全團重設密碼）',()=>{
  const b=buildBackend();
  const salt='00112233445566778899aabbccddeeff';
  const legacy='pbkdf2$120000$'+salt+'$'+pbkdf2Sync('oldpass',Buffer.from(salt,'hex'),120000,32,'sha256').toString('hex');
  const row=new Array(USERS_HEADER.length).fill(''); row[0]='1234567899'; row[1]='舊帳戶'; row[3]='member'; row[4]=legacy; row[11]='active';
  b.__ss.sheets.Users.rows.push(row);
  assert.equal(login(b,'1234567899','oldpass').success,true,'舊 120000 次雜湊不可因下調預設值而失效');
- assert.equal(row[4],legacy,'成功登入不應該無故改寫雜湊');
+ assert.equal(row[4].split('$')[1],'10000','成功登入時一次性下調至現行次數，之後登入不再慢');
+ assert.equal(b.verifyPassword('oldpass',row[4]),true,'改寫後同一密碼仍要驗證得通');
+ const upgraded=row[4];
+ assert.equal(login(b,'1234567899','oldpass').success,true);
+ assert.equal(row[4],upgraded,'第二次登入不應再改寫雜湊');
  assert.equal(login(b,'1234567899','wrong').success,false);
  const fresh=b.hashPasswordV2('newpass');
  assert.equal(fresh.split('$')[1],'10000');
  assert.equal(b.isPasswordHash_(legacy),true,'120000 次格式仍在白名單內');
  assert.equal(b.isPasswordHash_(fresh),true);
  assert.equal(b.isPasswordHash_('pbkdf2$10$00000000000000000000000000000000$'+'0'.repeat(64)),false,'荒謬的低次數要拒絕');
+ assert.equal(b.passwordHashIterations_(legacy),120000);
+ assert.equal(b.passwordHashIterations_('not-a-hash'),0);
+});
+
+test('雜湊次數收斂到現行常數（低於常數者會被提升，屬加強而非削弱）',()=>{
+ const b=buildBackend();
+ const salt='00112233445566778899aabbccddeeff';
+ const low='pbkdf2$5000$'+salt+'$'+pbkdf2Sync('lowpass',Buffer.from(salt,'hex'),5000,32,'sha256').toString('hex');
+ const row=new Array(USERS_HEADER.length).fill(''); row[0]='1234567898'; row[1]='低成本帳戶'; row[3]='member'; row[4]=low; row[11]='active';
+ b.__ss.sheets.Users.rows.push(row);
+ assert.equal(login(b,'1234567898','lowpass').success,true);
+ assert.equal(row[4].split('$')[1],'10000','一律收斂到現行設定的次數');
+ assert.equal(b.verifyPassword('lowpass',row[4]),true);
 });
