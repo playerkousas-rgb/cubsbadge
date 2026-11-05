@@ -68,10 +68,12 @@ function makeSheet(name, header) {
     getName() { return sheet.name; },
     rows,
     appendRow(vals) {
-      // 新插入嘅工作表冇表頭：以傳入嘅欄數為準（貼近真 GAS 行為）
-      const target = header.length || (Array.isArray(vals) ? vals.length : 0);
+      // 真 GAS 的 appendRow 會原樣寫入所有欄；即使超出表頭欄數亦不會截斷
+      // （例如「待批完成」新增 col14 級別）。以 header 與傳入長度兩者較大者為準。
+      const values = Array.isArray(vals) ? vals : [vals];
+      const target = Math.max(header.length || 0, values.length);
       const row = [];
-      for (let i = 0; i < target; i++) row.push(vals[i] ?? '');
+      for (let i = 0; i < target; i++) row.push(values[i] ?? '');
       rows.push(row);
       return sheet;
     },

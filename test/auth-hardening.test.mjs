@@ -7,8 +7,8 @@ function seed(b,id,role='member',pw='old1') { const r=new Array(USERS_HEADER.len
 const login=(b,id,pw)=>result(b.handleLogin(id,pw));
 test('PBKDF2 matches Node reference, uses per-user 16 byte salt and accepts imported formats',()=>{
  const b=buildBackend(); const a=b.hashPasswordV2('測試pass'), c=b.hashPasswordV2('測試pass');
- assert.notEqual(a,c); const parts=a.split('$'); assert.equal(parts[1],'120000'); assert.equal(parts[2].length,32);
- assert.equal(parts[3],pbkdf2Sync('測試pass',Buffer.from(parts[2],'hex'),120000,32,'sha256').toString('hex'));
+ assert.notEqual(a,c); const parts=a.split('$'); assert.equal(parts[1],'10000'); assert.equal(parts[2].length,32);
+ assert.equal(parts[3],pbkdf2Sync('測試pass',Buffer.from(parts[2],'hex'),10000,32,'sha256').toString('hex'));
  assert.equal(b.verifyPassword('測試pass',a),true);assert.equal(b.verifyPassword('wrong',a),false);
  for(const [id,hash] of [['1234567801',sha256Hex('abcd')],['1234567802',a]]) {
    assert.equal(b.upsertUser({ymis:id,name:'test',password_hash:hash},'admin').success,true);
@@ -92,9 +92,45 @@ test('PBKDF2 does not invoke a GAS HMAC service per iteration and matches standa
  const b=buildBackend();
  b.Utilities.computeHmacSha256Signature=()=>{throw new Error('PBKDF2 must not call the GAS HMAC service');};
  const salt=Buffer.from('00ff0102030405060708090a0b0c0d0e','hex');
- for(const pw of ['changeme','測試密碼','abc'.repeat(50),'']){
-   const actual=b.pbkdf2HmacSha256_(pw,[...salt],120000);
-   const expected=pbkdf2Sync(pw,salt,120000,32,'sha256').toString('hex');
-   assert.equal(actual,expected);
+ // 現行 10000 次；同時保留 120000 次（舊雜湊）的標準向量，確保兩個世代都算得對
+ for(const iterations of [10000,120000]){
+   for(const pw of ['changeme','測試密碼']){
+     const actual=b.pbkdf2HmacSha256_(pw,[...salt],iterations);
+     const expected=pbkdf2Sync(pw,salt,iterations,32,'sha256').toString('hex');
+     assert.equal(actual,expected);
+   }
  }
+});
+
+test('舊版 120000 次雜湊仍可登入，登入後收斂為 10000 次（毋須全團重設密碼）',()=>{
+ const b=buildBackend();
+ const salt='00112233445566778899aabbccddeeff';
+ const legacy='pbkdf2$120000$'+salt+'$'+pbkdf2Sync('oldpass',Buffer.from(salt,'hex'),120000,32,'sha256').toString('hex');
+ const row=new Array(USERS_HEADER.length).fill(''); row[0]='1234567899'; row[1]='舊帳戶'; row[3]='member'; row[4]=legacy; row[11]='active';
+ b.__ss.sheets.Users.rows.push(row);
+ assert.equal(login(b,'1234567899','oldpass').success,true,'舊 120000 次雜湊不可因下調預設值而失效');
+ assert.equal(row[4].split('$')[1],'10000','成功登入時一次性下調至現行次數，之後登入不再慢');
+ assert.equal(b.verifyPassword('oldpass',row[4]),true,'改寫後同一密碼仍要驗證得通');
+ const upgraded=row[4];
+ assert.equal(login(b,'1234567899','oldpass').success,true);
+ assert.equal(row[4],upgraded,'第二次登入不應再改寫雜湊');
+ assert.equal(login(b,'1234567899','wrong').success,false);
+ const fresh=b.hashPasswordV2('newpass');
+ assert.equal(fresh.split('$')[1],'10000');
+ assert.equal(b.isPasswordHash_(legacy),true,'120000 次格式仍在白名單內');
+ assert.equal(b.isPasswordHash_(fresh),true);
+ assert.equal(b.isPasswordHash_('pbkdf2$10$00000000000000000000000000000000$'+'0'.repeat(64)),false,'荒謬的低次數要拒絕');
+ assert.equal(b.passwordHashIterations_(legacy),120000);
+ assert.equal(b.passwordHashIterations_('not-a-hash'),0);
+});
+
+test('雜湊次數收斂到現行常數（低於常數者會被提升，屬加強而非削弱）',()=>{
+ const b=buildBackend();
+ const salt='00112233445566778899aabbccddeeff';
+ const low='pbkdf2$5000$'+salt+'$'+pbkdf2Sync('lowpass',Buffer.from(salt,'hex'),5000,32,'sha256').toString('hex');
+ const row=new Array(USERS_HEADER.length).fill(''); row[0]='1234567898'; row[1]='低成本帳戶'; row[3]='member'; row[4]=low; row[11]='active';
+ b.__ss.sheets.Users.rows.push(row);
+ assert.equal(login(b,'1234567898','lowpass').success,true);
+ assert.equal(row[4].split('$')[1],'10000','一律收斂到現行設定的次數');
+ assert.equal(b.verifyPassword('lowpass',row[4]),true);
 });

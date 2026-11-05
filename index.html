@@ -4,8 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <meta name="theme-color" content="#FFD60A">
-<meta name="cubsbadge-build" content="2026.11.03.3">
-<script src="assets/frontend-freshness.js?build=2026.11.03.3" defer></script>
+<meta name="cubsbadge-build" content="2026.11.05.1">
+<script src="assets/frontend-freshness.js?build=2026.11.05.1" defer></script>
 <!-- App icon：金紫荊獎章（favicon + PWA / iOS 主畫面圖示） -->
 <!-- 使用 assets 內的高解像度圖示，避免 favicon／頁首圖示顯示模糊 -->
 <link rel="icon" type="image/png" sizes="256x256" href="assets/app-icon-256.png">
@@ -400,8 +400,8 @@ html[lang="en"] body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","No
       -->
       <div class="tutorial">
         <div class="steps">
-          <div class="step"><div class="step-number">1</div><div class="step-content"><h4 data-i18n="s1h">下載最新 GS（2026.11.03.2）</h4><p data-i18n="s1p">最新 GS 2026.11.03.2：單一初始化入口、新增初始化閘口及初始化警告；本版須執行一次 initializeSheets 初始化；保留資料及 API Key</p><a href="apps-script/Code.gs?gs=2026.11.03.2" download="Code.gs" class="btn btn-primary btn-sm" style="margin-top:6px" data-i18n="s1btn">⬇️ 下載 Code.gs（GS 2026.11.03.1）</a></div></div>
-          <div class="step"><div class="step-number">2</div><div class="step-content"><h4 data-i18n="s2h">建立 Google Sheet 並部署</h4><p data-i18n-html="s2p">建新試算表 → 擴充功能 → Apps Script 貼上 Code.gs → 儲存 → 執行 initializeSheets 授權（建議每次更新後執行；跨多版本升級必須執行，保留資料及 API Key）→ 部署為網頁應用程式（執行身分我，任何人可存取；首次使用「忘記密碼」發信時 Google 會要求授權傳送電郵，請按提示允許）。Google 部署視窗提供部署網址；GS 彈窗及選單只提供 API Key，不顯示自動取得的網址；旅團編號毋須在 Sheet／Apps Script 預先設定</p></div></div>
+          <div class="step"><div class="step-number">1</div><div class="step-content"><h4 data-i18n="s1h">下載最新 GS（2026.11.05.1）</h4><p data-i18n="s1p">最新 GS 2026.11.05.1：新增活動徽章初／中／高級別（A18、A26、A27、A29、A33、A35、A39）及批准分流修正；既有資料毋須重跑初始化（執行 initializeSheets 只會補「級別」表頭，不動任何紀錄）；保留資料及 API Key</p><a href="apps-script/Code.gs?gs=2026.11.05.1" download="Code.gs" class="btn btn-primary btn-sm" style="margin-top:6px" data-i18n="s1btn">⬇️ 下載 Code.gs（GS 2026.11.05.1）</a><p data-i18n-html="s1_copy" style="font-size:11px;line-height:1.65;background:#FFFBEB;border-left:3px solid var(--orange);padding:7px 9px;border-radius:6px;margin-top:8px">⚠️ 下載後 <b>不要</b>雙擊用瀏覽器開啟。請在檔案上按 <b>右鍵 → 開啟方式 → 純文字編輯器</b>（Windows：記事本 Notepad；Mac：TextEdit，並先選「格式 → 製成純文字」；或 VS Code），然後 <b>Ctrl+A 全選 → Ctrl+C 複製</b>。</p></div></div>
+          <div class="step"><div class="step-number">2</div><div class="step-content"><h4 data-i18n="s2h">建立 Google Sheet 並部署</h4><p data-i18n-html="s2p">建新試算表 → 擴充功能 → Apps Script → 在編輯器內 <b>Ctrl+A 全選</b>原有 <code>function myFunction() {}</code> 範本 → <b>Ctrl+V 貼上</b>（整段範本必須被完全蓋掉，貼上後應見到約 3,000 行、開頭是 <code>// ==== 幼童軍支部進度及行政平台</code>；若只有一兩行就係貼錯）→ Ctrl+S 儲存 → 執行 initializeSheets 授權（建議每次更新後執行；跨多版本升級必須執行，保留資料及 API Key）→ 部署為網頁應用程式（執行身分我，任何人可存取；首次使用「忘記密碼」發信時 Google 會要求授權傳送電郵，請按提示允許）。Google 部署視窗提供部署網址；GS 彈窗及選單只提供 API Key，不顯示自動取得的網址；旅團編號毋須在 Sheet／Apps Script 預先設定</p></div></div>
           <div class="step"><div class="step-number">3</div><div class="step-content"><h4 data-i18n="s3h">提交給 APP ADMIN</h4><p data-i18n="s3p">取得 API Key 及 Google 部署視窗提供的部署 URL 後，填寫下方接入申請（ADMIN FORM）。旅團編號直接在 ADMIN FORM 填寫，毋須在 GS 設定。API Key 可在「🔗 旅系統 → 🔑 顯示 API KEY（交 ADMIN）」查看</p></div></div>
           <div class="step"><div class="step-number">4</div><div class="step-content"><h4 data-i18n="s_fl_h">首次登入（預設管理員帳號）</h4><p data-i18n-html="s_fl_p">登記完成後，首頁揀該旅團卡片 → 用「<b>👤 家長/成員</b>」分頁登入：<br>YMIS <b>1111111111</b>　密碼 <b>changeme</b>（initializeSheets 自動建立嘅預設管理員，唔好用「領袖=Email」分頁）<br>首次登入會<b>強制改密碼</b>（4-8 位）。之後喺「審批中心」批成員申請、喺「用戶管理」開返各領袖真電郵嘅帳號並設權限</p></div></div>
           <!-- [主系統暫時隱藏 2026-10] 軌道B（接上主系統）未開放，完成後解除註解並自行重排步驟號（而家 4=首次登入、5=私隱選擇）：
@@ -704,9 +704,9 @@ html[lang="en"] body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","No
 </footer>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<script src="assets/ymis-parse.js?build=2026.11.03.3"></script>
-<script src="assets/cub-progress.js?build=2026.11.03.3"></script>
-<script src="assets/form-generator.js?build=2026.11.03.3"></script>
+<script src="assets/ymis-parse.js?build=2026.11.05.1"></script>
+<script src="assets/cub-progress.js?build=2026.11.05.1"></script>
+<script src="assets/form-generator.js?build=2026.11.05.1"></script>
 <!-- Scout Admin 統一回報 widget（統一回報格式 v1，見 scout-admin SCOUT_ADMIN.md）：問題回報／意見回饋直達 scout-admin 後台。
      data-app="幼童軍進度追蹤"＝來源系統正式名稱；本 APP 各頁的「🐛💬 回報 · 意見」按鈕
      （登入前 welcome-nav／登入頁連結／登入後 header 常駐）一律經 openScoutReport() 開啟這個 widget 的 modal；
@@ -751,7 +751,7 @@ zh:{
   // 鍵值保留未刪，重啟時解除 HTML 註解即可。
   setup_h2:'📋 新旅團部署指南 (10分鐘)',setup_portal_card:'<h3 style="color:var(--blue)">🌟 主系統平台是什麼？</h3><p style="font-size:12px">本系統可獨立用，亦可接入 <b>scoutsystem-2.0 主系統平台</b>：Dashboard、考勤、財務、活動報名，單一登入。</p><p style="font-size:11px;margin-top:6px;background:#fff;padding:6px;border-radius:6px"><b>有主系統 ≠ 一定要接上</b>，兩條路並存。</p>',
   setup_map_card:'<h3>🗺️ 部署地圖</h3><p style="font-size:11px">旅團只做 3 樣：① 下載 Code.gs → 建 Sheet → 部署 ② 執行 initializeSheets（補齊設定並記錄最新版本）③ 把「旅團編號 + 部署 URL + API Key」交 APP ADMIN<br>Vercel 功能變數全部由 APP ADMIN 設定，旅團毋須（亦唔會）設定任何功能變數<br>軌道B 接入主系統：同時交主系統管理員</p><p style="font-size:10px;color:var(--red);margin-top:6px">⚠️ 功能變數由 APP ADMIN 設定：旅團毋須設定任何功能變數，SETUP 彈窗只會顯示要交嘅 API Key。</p>',
-  s1h:'下載最新 GS（2026.11.03.2）',s1p:"最新 GS 2026.11.03.2：單一初始化入口及初始化閘口；本版須執行一次 initializeSheets 完成初始化；保留資料及 API Key",s1btn:'⬇️ 下載 Code.gs（GS 2026.11.03.2）',s2h:'建立 Google Sheet 並部署',s2p:"建新試算表 → 擴充功能 → Apps Script 貼上 Code.gs → 儲存 → 執行 initializeSheets 授權（建議每次更新後執行；跨多版本升級必須執行，保留資料及 API Key）→ 部署為網頁應用程式（執行身分我，任何人可存取；首次使用「忘記密碼」發信時 Google 會要求授權傳送電郵，請按提示允許）。Google 部署視窗提供部署網址；GS 彈窗及選單只提供 API Key，不顯示自動取得的網址；旅團編號毋須在 Sheet／Apps Script 預先設定",s3h:'提交給 APP ADMIN',s3p:"取得 API Key 及 Google 部署視窗提供的部署 URL 後，填寫下方接入申請（ADMIN FORM）。旅團編號直接在 ADMIN FORM 填寫，毋須在 GS 設定。API Key 可在「🔗 旅系統 → 🔑 顯示 API KEY（交 ADMIN）」查看",
+  s1h:'下載最新 GS（2026.11.05.1）',s1p:"最新 GS 2026.11.05.1：新增活動徽章初／中／高級別及批准分流修正；既有資料毋須重跑初始化（執行 initializeSheets 只會補「級別」表頭）；保留資料及 API Key",s1btn:'⬇️ 下載 Code.gs（GS 2026.11.05.1）',s2h:'建立 Google Sheet 並部署',s1_copy:"⚠️ 下載後<b>不要</b>雙擊用瀏覽器開啟。請在檔案上按<b>右鍵 → 開啟方式 → 純文字編輯器</b>（Windows：記事本 Notepad；Mac：TextEdit，並先選「格式 → 製成純文字」；或 VS Code），然後 <b>Ctrl+A 全選 → Ctrl+C 複製</b>。",s2p:"建新試算表 → 擴充功能 → Apps Script → 在編輯器內 <b>Ctrl+A 全選</b>原有 function myFunction() {} 範本 → <b>Ctrl+V 貼上</b>（整段範本必須被完全蓋掉；貼上後應見到約 3,000 行、開頭是 // ==== 幼童軍支部進度及行政平台，若只有一兩行就係貼錯或只貼了一部分）→ Ctrl+S 儲存 → 執行 initializeSheets 授權（建議每次更新後執行；跨多版本升級必須執行，保留資料及 API Key）→ 部署為網頁應用程式（執行身分我，任何人可存取；首次使用「忘記密碼」發信時 Google 會要求授權傳送電郵，請按提示允許）。Google 部署視窗提供部署網址；GS 彈窗及選單只提供 API Key，不顯示自動取得的網址；旅團編號毋須在 Sheet／Apps Script 預先設定",s3h:'提交給 APP ADMIN',s3p:"取得 API Key 及 Google 部署視窗提供的部署 URL 後，填寫下方接入申請（ADMIN FORM）。旅團編號直接在 ADMIN FORM 填寫，毋須在 GS 設定。API Key 可在「🔗 旅系統 → 🔑 顯示 API KEY（交 ADMIN）」查看",
   s_fl_h:'首次登入（預設管理員帳號）',s_fl_p:'登記完成後，首頁揀該旅團卡片 → 用「<b>👤 家長/成員</b>」分頁登入：<br>YMIS <b>1111111111</b>　密碼 <b>changeme</b>（initializeSheets 自動建立嘅預設管理員，唔好用「領袖=Email」分頁）<br>首次登入會<b>強制改密碼</b>（4-8 位）。之後喺「審批中心」批成員申請、喺「用戶管理」開返各領袖真電郵嘅帳號並設權限',
   // [主系統暫時隱藏 2026-10] s4h／s4p（軌道B 接主系統）保留未刪，對應步驟已註解隱藏。
   s4h:'軌道B：有主系統並想接上 - 額外提交給主系統管理員',s4p:'將同一組 URL+Key 交主系統管理員，填入旅團設定→元件設定 卡片 backend+apikey。之後成員點 Dashboard 卡片自動帶入身份，無需密碼',
@@ -910,7 +910,7 @@ en:{
   // [主系統暫時隱藏 2026-10] setup_portal_card／setup_map_card／s4h／s4p kept unused while the main-platform intro is hidden.
   setup_h2:'📋 New Troop Setup (10 min)',setup_portal_card:'<h3 style="color:var(--blue)">🌟 What is main system?</h3><p style="font-size:12px">This is a Tier 3 plugin, can be standalone or linked to <b>scoutsystem-2.0</b>: Dashboard, attendance, finance, events, SSO.</p><p style="font-size:11px;margin-top:6px;background:#fff;padding:6px;border-radius:6px"><b>Main system ≠ must link</b>, both routes co-exist.</p>',
   setup_map_card:'<h3>🗺️ Deployment Map</h3><p style="font-size:11px">Troops do only 3 things: ① download Code.gs → create Sheet → deploy ② run initializeSheets (required; records the latest initialisation version) ③ send “troop ID + deploy URL + API Key” to the APP ADMIN<br>All Vercel env vars are set by the APP ADMIN — troops never set any env var<br>Track B portal: also give to main system admin</p><p style="font-size:10px;color:var(--red);margin-top:6px">⚠️ Env vars are set by the APP ADMIN only; the setup dialog shows just the API Key you send.</p>',
-  s1h:'Download latest GS (2026.11.03.2)',s1p:"Latest GS 2026.11.03.2: Single initialization entry and init gate; run initializeSheets() once for this release; data and API Keys preserved",s1btn:'⬇️ Download Code.gs (GS 2026.11.03.2)',s2h:'Create Google Sheet & Deploy',s2p:"New spreadsheet → Extensions → Apps Script → paste Code.gs → Save → run initializeSheets for first-time setup of a new Sheet (recommended after each update; required when skipping versions; data and API Keys are preserved) → deploy as a web app (Me, Anyone; the first Forgot password email asks Google for permission to send mail — allow it). Google provides the deployment URL in its deployment dialog; GS dialogs and menus provide only the API Key, never an automatically discovered URL; no troop ID needs to be configured in the Sheet or Apps Script",s3h:'Submit to the APP ADMIN',s3p:"After obtaining the API Key and the deployment URL from Google, use the join request below (ADMIN FORM). Enter the troop ID directly in the ADMIN FORM; no GS setting is needed. Read the key under the troop-system API KEY menu",
+  s1h:'Download latest GS (2026.11.05.1)',s1p:"Latest GS 2026.11.05.1: activity-badge levels (beginner/intermediate/advanced) and the approval-routing fix; no mandatory reinitialisation for existing data (initializeSheets only adds the level column header); data and API Keys preserved",s1btn:'⬇️ Download Code.gs (GS 2026.11.05.1)',s2h:'Create Google Sheet & Deploy',s1_copy:"⚠️ Do <b>not</b> double-click and open the downloaded file in a browser. Right-click the file → <b>Open with → plain text editor</b> (Windows: Notepad; Mac: TextEdit with Format → Make Plain Text; or VS Code), then <b>Ctrl+A to select all → Ctrl+C to copy</b>.",s2p:"New spreadsheet → Extensions → Apps Script → press <b>Ctrl+A</b> to select the whole default function myFunction() {} template → <b>Ctrl+V to paste</b> (the template must be fully replaced; the file should now be ~3,000 lines starting with the platform banner comment (// ==== Cub Scout progress and admin platform) — if you only see a line or two, the paste failed or was truncated) → Ctrl+S to save → run initializeSheets for first-time setup of a new Sheet (recommended after each update; required when skipping versions; data and API Keys are preserved) → deploy as a web app (Me, Anyone; the first Forgot password email asks Google for permission to send mail — allow it). Google provides the deployment URL in its deployment dialog; GS dialogs and menus provide only the API Key, never an automatically discovered URL; no troop ID needs to be configured in the Sheet or Apps Script",s3h:'Submit to the APP ADMIN',s3p:"After obtaining the API Key and the deployment URL from Google, use the join request below (ADMIN FORM). Enter the troop ID directly in the ADMIN FORM; no GS setting is needed. Read the key under the troop-system API KEY menu",
   s_fl_h:'First login (default admin account)',s_fl_p:'After registration, pick your troop card on the home page → sign in on the <b>👤 Parent/Member</b> tab:<br>YMIS <b>1111111111</b>　password <b>changeme</b> (the default admin created automatically by initializeSheets — do not use the Leader = Email tab)<br>First login <b>forces a password change</b> (4-8 characters). Then approve member applications in Approvals and create each leader\'s own account (real email) in User Management',
   // [主系統暫時隱藏 2026-10] s4h／s4p kept unused while the main-platform intro is hidden.
   s4h:'Track B: with the main platform — also submit to the main-system admin',s4p:'Give the same URL + API Key to the main-system admin and fill in the card backend + apikey. Members then tap the Dashboard card and the identity is carried over automatically, no password',
@@ -1015,7 +1015,7 @@ let _ongoingRequests=new Set();
 let editingLogRecordId=null;
 
 /* 最新發佈：只列目前版本，不設逐級升級表。GS 同時回報程式及初始化版本。 */
-const LATEST_RELEASE=Object.freeze({updated:'2026-11-03',gsVersion:'2026.11.03.2',initializeRequired:false});
+const LATEST_RELEASE=Object.freeze({updated:'2026-11-05',gsVersion:'2026.11.05.1',initializeRequired:false});
 let backendReleaseState={troopId:'',status:'idle',reportedVersion:'',initializedGsVersion:'',error:''};
 let _releaseCheckSequence=0;
 function resetBackendRelease(){
@@ -1072,7 +1072,7 @@ function renderReleaseNotices(){
     const cardClass=state.status==='current'?'release-current':(state.status==='checking'?'release-checking':'');
     const title=inEn()?`📣 Latest update · ${LATEST_RELEASE.updated}`:`📣 最新更新公告｜${LATEST_RELEASE.updated}`;
     let statusText='';
-    if(isHome) statusText=LATEST_RELEASE.initializeRequired?(inEn()?'Each troop needs the required GS update and initialisation for this release.':'每個旅團須完成本版要求的 GS 更新及初始化。'):(inEn()?'No new required columns in this release. Running initializeSheets() after updating is recommended and required when skipping multiple versions. A troop already on GS '+LATEST_RELEASE.gsVersion+' needs no further change; an older GS still needs replacement and redeployment.':'本版無新增必要欄，建議更新後執行 initializeSheets()；跨多版本升級必須執行。旅團 GS 已是 '+LATEST_RELEASE.gsVersion+' 就不用再改；舊版 GS 仍須更換及重新部署。');
+    if(isHome) statusText=LATEST_RELEASE.initializeRequired?(inEn()?'Each troop needs the required GS update and initialisation for this release.':'每個旅團須完成本版要求的 GS 更新及初始化。'):(inEn()?'This release adds an optional level column (activity-badge beginner/intermediate/advanced). Everything works without reinitialising; running initializeSheets() only adds the header and never changes records. Reinitialisation is required when skipping multiple versions. A troop already on GS '+LATEST_RELEASE.gsVersion+' needs no further change; an older GS still needs replacement and redeployment.':'本版新增「級別」欄（活動徽章初／中／高級）；未重跑初始化亦照常運作，執行 initializeSheets() 只會補表頭、不動任何紀錄；跨多版本升級必須執行。旅團 GS 已是 '+LATEST_RELEASE.gsVersion+' 就不用再改；舊版 GS 仍須更換及重新部署。');
     else if(state.status==='demo') statusText=inEn()?'DEMO does not connect to a troop GS. A real troop still needs this update.':'示範模式不連接旅團 GS；正式旅團仍須完成這次更新。';
     else if(state.status==='checking') statusText=inEn()?'Checking the GS version deployed by this troop…':'正在核對此旅團實際部署的 GS 版本…';
     else if(state.status==='current') statusText=LATEST_RELEASE.initializeRequired?(inEn()?`✅ Verified: GS ${LATEST_RELEASE.gsVersion}; initialisation for this release is complete.`:`✅ 已核對：GS ${LATEST_RELEASE.gsVersion}，此版本的初始化亦已完成。`):(inEn()?`✅ Verified: GS ${LATEST_RELEASE.gsVersion}; no reinitialisation is required for this release.`:`✅ 已核對：GS ${LATEST_RELEASE.gsVersion}；本次更新毋須重跑初始化。`);
@@ -1917,7 +1917,7 @@ function renderProgressTab(){
         ${badge.segments.map(seg=>{
           if(seg.activityRequirement){
             const interest=CubProgress.getInterestStatus(seg,targetOtherFlat,itemsData);
-            const earned=interest.completed.map(ob=>`${ob.catalogueNo}. ${obName(ob)}${ob.levels?` (${otherLevelLabel(CubProgress.recordLevel(targetOtherFlat[ob.id]))})`:''}`).join('、')||(inEn()?'None recorded':'未記錄');
+            const earned=interest.completed.map(ob=>{ const recs=CubProgress.levelRecords(targetOtherFlat,ob.id); const lvls=Object.keys(recs).filter(k=>k).map(otherLevelLabel); return `${ob.catalogueNo}. ${obName(ob)}${lvls.length?` (${lvls.join(' / ')})`:''}`; }).join('、')||(inEn()?'None recorded':'未記錄');
             const excluded=interest.excluded.map(x=>`${x.badge.catalogueNo}. ${obName(x.badge)}`).join('、');
             const allowed=(seg.activityRequirement.allowedBadgeIds||[]).map(id=>CubProgress.findOtherBadge(itemsData,id)).filter(Boolean).map(ob=>`${ob.catalogueNo}. ${obName(ob)}`).join(inEn()?', ':'、');
             return `<div class="segment"><div class="segment-header"><h4>${escapeHtmlText(segName(seg))} <span style="font-weight:400;font-size:11px">(${interest.done}/${interest.total})</span></h4></div><div style="padding:10px 16px;font-size:11px;line-height:1.7;background:#F0F9FF">${escapeHtmlText(seg.requirement)}<br><b>${inEn()?'Allowed badges (from items.json)':'指定徽章（由 items.json 產生）'}：</b>${escapeHtmlText(allowed)}<br><b>${inEn()?'Recorded':'已記錄'}：</b>${escapeHtmlText(earned)}<br><b>${inEn()?'Distinct categories':'不同類別'}：</b>${interest.categories.length}/${interest.needed} ${interest.complete?'✓':''}${interest.excluded.length?`<br><b>${inEn()?'Not counted again at this stage':'本階段不重複計算'}：</b>${escapeHtmlText(excluded)}`:''}</div></div>`;
@@ -1941,7 +1941,7 @@ function renderProgressTab(){
   if(itemsData.otherBadges && itemsData.otherBadges.length>0){
     const otherFlat=otherBadgesMap[targetYmis]||{};
     const otherIds=itemsData.otherBadges.map(o=>o.id);
-    const otherDone=otherIds.filter(id=>otherFlat[id]).length;
+    const otherDone=otherIds.filter(id=>CubProgress.hasRecord(otherFlat,id)).length;
     const otherPct=otherIds.length?Math.round(otherDone/otherIds.length*100):0;
     html+=`<div class="badge-card" style="border:2px dashed var(--gold-dark)">
       <div class="badge-header" style="background:linear-gradient(135deg,#FFD54F 0%, #FFB300 100%)" onclick="toggleBadgeBody(this)">
@@ -1951,17 +1951,7 @@ function renderProgressTab(){
       <div class="badge-body">
         <div style="padding:10px 16px;font-size:11px;color:var(--text-light);background:#FFFBEB;border-bottom:1px solid var(--border)">${t('other_badges_hint')}</div>
         <div style="padding:8px 16px">
-          ${itemsData.otherBadges.map(ob=>{
-            const rec=otherFlat[ob.id]; const checked=!!rec; const dateVal=rec?.date||''; const editable=isLeader&&canUserTickRole(currentUser.role)&&canCurrentUserTickItem(ob.id);
-            return `<div class="item-row ${checked?'checked':''}" data-item-id="${ob.id}">
-              <input type="checkbox" class="checkbox" ${checked?'checked':''} ${editable?'':'disabled'} onchange="handleOtherBadgeToggle('${ob.id}','${escapeAttr(ob.name)}','${targetYmis}',this.checked)">
-              <div class="item-main"><div class="item-name">${ob.icon||''} ${escapeHtmlText(ob.catalogueNo)}. ${escapeHtmlText(obName(ob))}${ob.levels?`（${inEn()?'3 levels':'三級制'}${rec?` · ${otherLevelLabel(CubProgress.recordLevel(rec))}`:''}）`:''}</div><div class="item-meta">${escapeHtmlText(inEn()?(ob.categoryName_en||ob.categoryName):(ob.categoryName||''))} ${dateVal?`📅 ${dateVal}`:''} ${rec?.cert?`📜 ${escapeHtmlText(rec.cert)}`:''} - ${escapeHtmlText(obDesc(ob))}</div></div>
-              <div class="item-actions">
-                ${editable?`<input type="date" value="${dateVal}" max="${todayISO()}" onchange="handleOtherBadgeDate('${ob.id}','${escapeAttr(ob.name)}','${targetYmis}',this.value)"><input type="text" placeholder="${t('logm_cert')}" value="${escapeHtmlText(rec?.cert||'')}" style="width:90px;padding:4px 6px;font-size:11px;border:1px solid var(--border);border-radius:6px" onchange="handleOtherBadgeCert('${ob.id}','${escapeAttr(ob.name)}','${targetYmis}',this.value)">`:''}
-                <button class="info-btn" onclick="showSubDetail('${escapeAttr(obName(ob))}','${escapeAttr(obDesc(ob)+'\\n'+(itDetail(ob)||''))}')">ⓘ</button>
-              </div>
-            </div>`;
-          }).join('')}
+          ${itemsData.otherBadges.map(ob=>renderOtherBadgeRows(ob,otherFlat,targetYmis,isLeader)).join('')}
         </div>
       </div>
     </div>`;
@@ -1982,7 +1972,7 @@ function renderItemRow(item, flat, targetYmis, isLeaderView){
   const isParent=item.subItems && item.subItems.length>0;
   const targetOther=otherBadgesMap[targetYmis]||{};
   const checked=CubProgress.isItemComplete(item,flat,targetOther);
-  const linkedDates=CubProgress.completingBadgeIds(item).filter(id=>CubProgress.hasRecord(targetOther,id)).map(id=>targetOther[id]?.date||'').filter(Boolean).sort();
+  const linkedDates=CubProgress.completingBadgeIds(item).filter(id=>CubProgress.hasRecord(targetOther,id)).map(id=>{ const recs=CubProgress.levelRecords(targetOther,id); return Object.keys(recs).map(k=>CubProgress.recordDate(recs[k])).filter(Boolean).sort().pop()||''; }).filter(Boolean).sort();
   const dateVal=flat[item.id]||linkedDates[linkedDates.length-1]||'';
   const actuallyCanEdit=canUserTickRole(currentUser.role) && (isLeaderView) && canCurrentUserTickItem(item.id);
   const editable=actuallyCanEdit && !isMember();
@@ -2357,7 +2347,7 @@ async function renderRequestsTab(){
     const isLocal=req.status==='local_draft'; const itemDisp=displayNameForId(req.item_id, req.item_name||req.item_id);
     return `<div class="app-item" style="${isLocal?'border-left:3px solid var(--orange)':''}">
       <div class="app-item-info"><div style="font-weight:600">${escapeHtmlText(req.name||req.ymis)} <small style="color:var(--text-light)">(${escapeHtmlText(req.ymis)})</small> ${isLocal?`<span style="background:var(--orange);color:#fff;padding:2px 6px;border-radius:999px;font-size:9px">${t('req_local_draft')}</span>`:''}</div>
-      <div style="font-size:12px;margin:4px 0">📋 ${escapeHtmlText(itemDisp)} <small style="color:var(--text-light)">(${escapeHtmlText(req.item_id)})</small></div>
+      <div style="font-size:12px;margin:4px 0">📋 ${escapeHtmlText(itemDisp)} <small style="color:var(--text-light)">(${escapeHtmlText(req.item_id)})</small>${req.level?` <span style="background:var(--bg);border:1px solid var(--border);border-radius:999px;padding:0 6px;font-size:9px">${otherLevelLabel(req.level)}</span>`:''}</div>
       <div style="font-size:11px;color:var(--text-light)">${t('req_date_label')}${escapeHtmlText(req.requested_date||req.created_at)} | ${t('req_submitted')}${escapeHtmlText(req.created_at||'')}</div>
       ${req.evidence?`<div style="font-size:11px;background:#FAFAFA;padding:6px;border-radius:6px;margin-top:4px;border-left:2px solid var(--border)">📎 ${escapeHtmlText(req.evidence)}</div>`:''}</div>
       <div class="app-item-actions" style="flex-direction:column">${isLeader?`<label style="font-size:11px"><input type="checkbox" class="batch-check" data-req="${req.request_id}"> ${t('req_selected')}</label><button class="btn btn-sm btn-success" onclick="reviewSingleRequest('${req.request_id}','approved')">${t('approve')}</button><button class="btn btn-sm btn-danger" onclick="reviewSingleRequest('${req.request_id}','rejected')">${t('reject')}</button><input type="date" id="confirmDate_${req.request_id}" value="${req.requested_date||todayISO()}" style="font-size:11px;padding:3px;border:1px solid var(--border);border-radius:4px;margin-top:4px">`:`<span style="font-size:11px;color:var(--text-light)">${req.status==='pending'?t('req_pending_leader'):req.status==='local_draft'?t('req_saved_local'):req.status}</span>`}</div>
@@ -2385,13 +2375,32 @@ function showApprovalSubTab(which){
   const bv=document.getElementById('approvalBadgeView'); const lv=document.getElementById('approvalLogView'); const uv=document.getElementById('approvalUserView');
   if(bv) bv.style.display=which==='badge'?'block':'none'; if(lv) lv.style.display=which==='log'?'block':'none'; if(uv) uv.style.display=which==='user'?'block':'none';
 }
+function isActivityBadgeIdLocal(id){ return /^A\d{2}(-[A-Z0-9]+)*$/.test(String(id||'').trim()); }
+// 批准申請後的本地（未儲存）更新：活動徽章寫「其他獎章」，進度細項才寫「進度追蹤」。
+// 舊版一律寫進度追蹤，會令活動徽章批准後在前端「消失」，亦可能被 save 寫入錯誤工作表。
+function applyApprovedRequestLocally(req,date){
+  if(!req) return;
+  if(isActivityBadgeIdLocal(req.item_id)){
+    const parts=splitOtherKey(req.item_id);
+    const level=parts.level||CubProgress.normalizeLevelCode(req.level)||'';
+    const key=otherLevelKey(parts.id,level);
+    if(!otherBadgesMap[req.ymis]) otherBadgesMap[req.ymis]={};
+    const prev=otherBadgesMap[req.ymis][key]||{};
+    const rec={...prev,name:req.item_name||parts.id,date:date||req.requested_date||todayISO(),cert:prev.cert||'',note:prev.note||''};
+    if(level) rec.level=level;
+    otherBadgesMap[req.ymis][key]=rec;
+    persistOtherBadgeRecord(req.ymis,key,rec.name,rec,false).catch(()=>{});
+    return;
+  }
+  addOrUpdatePending(req.ymis,req.item_id,date,false);
+}
 async function reviewSingleRequest(reqId, decision){
   if(!confirm(tf('req_confirm_review',decision==='approved'?t('req_approved_word'):t('req_rejected_word')))) return;
   const dateInput=document.getElementById('confirmDate_'+reqId); const confirmedDate=dateInput?dateInput.value:todayISO();
   const local=pendingRequestsQueue.find(r=>r.request_id===reqId&&r.status==='local_draft');
   if(local){
     const key=LS.requests(currentTroopId,local.ymis); let arr=JSON.parse(localStorage.getItem(key)||'[]'); arr=arr.filter(x=>x.request_id!==reqId); localStorage.setItem(key,JSON.stringify(arr));
-    if(decision==='approved'){ addOrUpdatePending(local.ymis,local.item_id,confirmedDate,false); showToast(t('req_local_approved'),'success'); }
+    if(decision==='approved'){ applyApprovedRequestLocally(local,confirmedDate); showToast(t('req_local_approved'),'success'); }
     pendingRequestsQueue=pendingRequestsQueue.filter(r=>r.request_id!==reqId); renderRequestsTab(); updateSaveBar(); return;
   }
   try{
@@ -2407,7 +2416,7 @@ async function batchApprove(){
   let ok=0,fail=0;
   for(const ch of checks){
     const reqId=ch.dataset.req; const dateInput=document.getElementById('confirmDate_'+reqId); const confirmedDate=dateInput?dateInput.value:todayISO();
-    const req=pendingRequestsQueue.find(r=>r.request_id===reqId); if(req) addOrUpdatePending(req.ymis,req.item_id,confirmedDate,false);
+    const req=pendingRequestsQueue.find(r=>r.request_id===reqId); if(req) applyApprovedRequestLocally(req,confirmedDate);
     try{ const d=await apiRequest({action:'reviewRequest',token:currentToken,request_id:reqId,decision:'approved',confirmed_date:confirmedDate},{method:'POST',allowFail:true}); if(d.success) ok++; else fail++; }catch(e){ fail++; }
   }
   pendingRequestsQueue=pendingRequestsQueue.filter(r=>![...checks].some(c=>c.dataset.req===r.request_id));
@@ -2415,75 +2424,142 @@ async function batchApprove(){
   if(fail>0) showToast(tf('batch_retry_fmt',checks.length,fail),'warning'); else showToast(tf('batch_approve_added',checks.length),'success');
 }
 
-/* Other badges */
-function withOtherBadgeLevelNote(note,level,hasLevels){
-  const clean=String(note||'').replace(/\[CUB_LEVEL=[1-3]\]\s*/g,'').trim();
-  if(!hasLevels) return clean;
-  const safeLevel=Math.min(3,Math.max(1,Number(level)||1));
-  return `[CUB_LEVEL=${safeLevel}]${clean?' '+clean:''}`;
+/* Other badges（活動徽章及其他獎章；7 枚三級制徽章逐級記錄） */
+// 級別代碼：E 初級、I 中級、A 高級；'' = 整枚徽章（無級別的舊資料）。
+// 前端 map 用後綴鍵（otherBadgesMap[ymis]['A26-E']）與伺服器一致；舊資料仍用 'A26'。
+const OTHER_LEVEL_CODES=['E','I','A'];
+function otherLevelName(code){
+  const m={E:{zh:'初級',en:'Elementary'},I:{zh:'中級',en:'Intermediate'},A:{zh:'高級',en:'Advanced'}}[String(code||'').toUpperCase()];
+  return m?(inEn()?m.en:m.zh):'';
 }
-function otherLevelLabel(level){ return inEn()?`Level ${level}`:`第${level}級`; }
+function otherLevelLabel(code){ return otherLevelName(code)||String(code||''); }
+function otherBadgeLevelCodes(ob){ return (ob&&ob.levels)?OTHER_LEVEL_CODES.slice():['']; }
+function otherLevelKey(badgeId,level){ return level?`${badgeId}-${level}`:String(badgeId); }
+function splitOtherKey(key){
+  const m=/^(A\d{2})-(E|I|A)$/.exec(String(key||''));
+  return m?{id:m[1],level:m[2]}:{id:String(key||''),level:''};
+}
+function otherRecordFor(otherFlat,badgeId,level){
+  if(!otherFlat) return null;
+  const recs=CubProgress.levelRecords(otherFlat,badgeId);
+  return recs[level||'']||null;
+}
+// 讀取該級別的日期／證書：先看同一行（進度頁與活動徽章頁都有同一 key），再看「其他獎章」分頁的輸入框。
+function otherDateFromRow(key,fallback){
+  const row=document.querySelector(`[data-item-id="${key}"]`);
+  const input=row?row.querySelector('input[type="date"]'):null;
+  if(input&&input.value) return input.value;
+  const byId=document.getElementById('otherDate_'+key)?.value;
+  if(byId) return byId;
+  return fallback||todayISO();
+}
+function otherCertFromRow(key){
+  const row=document.querySelector(`[data-item-id="${key}"]`);
+  const input=row?row.querySelector('input[type="text"]'):null;
+  if(input) return input.value;
+  const byId=document.getElementById('otherCert_'+key);
+  return byId&&byId.value!==undefined?byId.value:'';
+}
+function renderOtherBadgeRows(ob,otherFlat,targetYmis,isLeader){
+  const editableBase=isLeader&&canUserTickRole(currentUser.role)&&canCurrentUserTickItem(ob.id);
+  return otherBadgeLevelCodes(ob).map(lv=>{
+    const key=otherLevelKey(ob.id,lv);
+    const rec=otherRecordFor(otherFlat,ob.id,lv)||null; const checked=!!rec; const dateVal=rec?.date||'';
+    const levelChip=lv?` <span style="background:var(--bg);border:1px solid var(--border);border-radius:999px;padding:0 6px;font-size:9px">${otherLevelLabel(lv)}</span>`:'';
+    return `<div class="item-row ${checked?'checked':''}" data-item-id="${key}">
+      <input type="checkbox" class="checkbox" ${checked?'checked':''} ${editableBase?'':'disabled'} onchange="handleOtherBadgeToggle('${key}','${escapeAttr(ob.name)}','${targetYmis}',this.checked)">
+      <div class="item-main"><div class="item-name">${ob.icon||''} ${escapeHtmlText(ob.catalogueNo)}. ${escapeHtmlText(obName(ob))}${levelChip}</div><div class="item-meta">${escapeHtmlText(inEn()?(ob.categoryName_en||ob.categoryName):(ob.categoryName||''))} ${dateVal?`📅 ${dateVal}`:''} ${rec?.cert?`📜 ${escapeHtmlText(rec.cert)}`:''}${lv?'':` - ${escapeHtmlText(obDesc(ob))}`}</div></div>
+      <div class="item-actions">
+        ${editableBase?`<input type="date" value="${dateVal}" max="${todayISO()}" onchange="handleOtherBadgeDate('${key}','${escapeAttr(ob.name)}','${targetYmis}',this.value)"><input type="text" placeholder="${t('logm_cert')}" value="${escapeHtmlText(rec?.cert||'')}" style="width:90px;padding:4px 6px;font-size:11px;border:1px solid var(--border);border-radius:6px" onchange="handleOtherBadgeCert('${key}','${escapeAttr(ob.name)}','${targetYmis}',this.value)">`:''}
+        <button class="info-btn" onclick="showSubDetail('${escapeAttr(obName(ob)+(lv?' '+otherLevelLabel(lv):''))}','${escapeAttr(obDesc(ob)+'\\n'+(itDetail(ob)||''))}')">ⓘ</button>
+      </div>
+    </div>`;
+  }).join('');
+}
 function renderOtherBadgesTab(){
   const c=document.getElementById('tab-other'); if(!c) return;
   if(!itemsData||!itemsData.otherBadges){ c.innerHTML=`<p>${t('loading')}</p>`; return; }
   const isLeader=canUserTickRole(currentUser.role); const targetYmis=isLeader?(selectedProgressYmis||currentUser.ymis):currentUser.ymis;
+  const otherFlat=otherBadgesMap[targetYmis]||{};
   let html=`<div class="filter-bar"><label style="font-size:12px;font-weight:600">${t('view_member')}</label><select id="otherMemberSelect" onchange="onOtherMemberChange(this.value)">${members.map(m=>`<option value="${m.ymis}" ${m.ymis===targetYmis?'selected':''}>${escapeHtmlText(m.name)} (${m.ymis})</option>`).join('')}</select><button class="btn btn-sm btn-secondary" onclick="loadOtherBadges()">${t('ob_load')}</button></div><div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px">`;
   itemsData.otherBadges.forEach(ob=>{
-    const rec=(otherBadgesMap[targetYmis]&&otherBadgesMap[targetYmis][ob.id])||null; const done=!!rec; const editable=isLeader&&canCurrentUserTickItem(ob.id);
-    const level=ob.levels?CubProgress.recordLevel(rec):0;
-    const levelControl=ob.levels?`<label style="font-size:10px;color:var(--text-light)">${inEn()?'Level':'級別'} <select id="otherLevel_${ob.id}" ${!editable?'disabled':''} style="padding:4px;border:1px solid var(--border);border-radius:6px">${[1,2,3].map(n=>`<option value="${n}" ${level===n?'selected':''}>${otherLevelLabel(n)}</option>`).join('')}</select></label>`:'';
-    html+=`<div class="other-card" style="${done?'border-color:var(--green);background:#F0FFF4':''}"><h4>${ob.icon||'⭐'} ${escapeHtmlText(obName(ob))} ${done?`<span style="background:var(--green);color:#fff;padding:2px 6px;border-radius:999px;font-size:10px">${t('other_done_chip')}</span>`:''}</h4><p style="font-size:11px;color:var(--text-light)">${escapeHtmlText(obDesc(ob))}</p><details style="font-size:11px;margin:6px 0"><summary>${inEn()?'Official requirement basis':'考驗依據'}</summary><p>${escapeHtmlText(itDetail(ob))}</p>${ob.sourceUrl?`<a href="${escapeAttr(ob.sourceUrl)}" target="_blank" rel="noopener noreferrer">${inEn()?'Open official Cub Scout scheme':'開啟官方幼童軍綱要'} ↗</a>`:''}</details><div style="margin-top:8px;display:flex;gap:6px;align-items:center;flex-wrap:wrap">${levelControl}<input type="date" id="otherDate_${ob.id}" value="${rec?.date||''}" style="padding:4px 6px;font-size:11px;border:1px solid var(--border);border-radius:6px" ${!editable?'disabled':''}><input type="text" id="otherCert_${ob.id}" placeholder="${t('logm_cert')}" value="${escapeHtmlText(rec?.cert||'')}" style="padding:4px 6px;font-size:11px;border:1px solid var(--border);border-radius:6px;width:110px" ${!editable?'disabled':''}>${editable?`<button class="btn btn-sm ${done?'btn-secondary':'btn-success'}" onclick="toggleOtherBadge('${ob.id}','${escapeAttr(ob.name)}','${targetYmis}')">${done?t('other_update'):t('other_done')}</button>`:''}</div></div>`;
+    const levels=otherBadgeLevelCodes(ob);
+    const done=levels.some(lv=>!!otherRecordFor(otherFlat,ob.id,lv));
+    const editable=isLeader&&canCurrentUserTickItem(ob.id);
+    const levelRows=levels.map(lv=>{
+      const key=otherLevelKey(ob.id,lv);
+      const rec=otherRecordFor(otherFlat,ob.id,lv)||null;
+      const checked=!!rec;
+      return `<div class="item-row ${checked?'checked':''}" data-item-id="${key}" style="margin:4px 0;padding:6px 8px">
+        <div class="item-main">
+          <div class="item-name">${lv?otherLevelLabel(lv):(inEn()?'Whole badge':'整枚徽章')} ${checked?`<span style="background:var(--green);color:#fff;padding:1px 6px;border-radius:999px;font-size:9px">${t('other_done_chip')}</span>`:''}</div>
+          <div class="item-meta">${rec?.date?`📅 ${rec.date}`:''}${rec?.cert?` 📜 ${escapeHtmlText(rec.cert)}`:''}</div>
+        </div>
+        <div class="item-actions">
+          <input type="date" id="otherDate_${key}" value="${rec?.date||''}" max="${todayISO()}" style="padding:4px 6px;font-size:11px;border:1px solid var(--border);border-radius:6px" ${!editable?'disabled':''}>
+          <input type="text" id="otherCert_${key}" placeholder="${t('logm_cert')}" value="${escapeHtmlText(rec?.cert||'')}" style="padding:4px 6px;font-size:11px;border:1px solid var(--border);border-radius:6px;width:96px" ${!editable?'disabled':''}>
+          ${editable?`<button class="btn btn-sm ${checked?'btn-secondary':'btn-success'}" onclick="toggleOtherBadge('${key}','${escapeAttr(ob.name)}','${targetYmis}')">${checked?t('other_update'):t('other_done')}</button>`:''}
+          ${editable&&checked?`<button class="btn btn-sm btn-outline" onclick="handleOtherBadgeToggle('${key}','${escapeAttr(ob.name)}','${targetYmis}',false)">${inEn()?'Remove':'取消'}</button>`:''}
+        </div>
+      </div>`;
+    }).join('');
+    html+=`<div class="other-card" style="${done?'border-color:var(--green);background:#F0FFF4':''}"><h4>${ob.icon||'⭐'} ${escapeHtmlText(obName(ob))} ${ob.levels?`<span style="font-size:9px;font-weight:400;color:var(--text-light)">${inEn()?'(3 levels)':'（三級制）'}</span>`:''}</h4><p style="font-size:11px;color:var(--text-light)">${escapeHtmlText(obDesc(ob))}</p><details style="font-size:11px;margin:6px 0"><summary>${inEn()?'Official requirement basis':'考驗依據'}</summary><p>${escapeHtmlText(itDetail(ob))}</p>${ob.sourceUrl?`<a href="${escapeAttr(ob.sourceUrl)}" target="_blank" rel="noopener noreferrer">${inEn()?'Open official Cub Scout scheme':'開啟官方幼童軍綱要'} ↗</a>`:''}</details><div style="margin-top:8px">${levelRows}</div></div>`;
   });
   html+='</div>'; c.innerHTML=html;
 }
 function onOtherMemberChange(ymis){ selectedProgressYmis=ymis; renderOtherBadgesTab(); }
 async function loadOtherBadges(){ renderOtherBadgesTab(); }
-async function persistOtherBadgeRecord(ymis,badgeId,name,record,uncomplete=false){
-  if(!canUserTickRole(currentUser.role)||!canCurrentUserTickItem(badgeId)) throw new Error(t('no_perm_other'));
-  const badge=CubProgress.findOtherBadge(itemsData,badgeId);
-  if(record){ record.note=withOtherBadgeLevelNote(record.note,badge&&badge.levels?CubProgress.recordLevel(record):0,badge&&badge.levels); }
-  const d=await apiRequest({action:'saveOtherBadge',token:currentToken,records:[{ymis,badgeId,name,date:record?.date||'',cert:record?.cert||'',note:record?.note||'',uncomplete}]},{method:'POST',allowFail:true});
+async function persistOtherBadgeRecord(ymis,key,name,record,uncomplete=false){
+  const parts=splitOtherKey(key);
+  if(!canUserTickRole(currentUser.role)||!canCurrentUserTickItem(parts.id)) throw new Error(t('no_perm_other'));
+  const d=await apiRequest({action:'saveOtherBadge',token:currentToken,records:[{ymis,badgeId:parts.id,level:parts.level,name,date:record?.date||'',cert:record?.cert||'',note:record?.note||'',uncomplete}]},{method:'POST',allowFail:true});
   if(!d.success) throw new Error(d.error||t('api_failed'));
   try{ localStorage.setItem(LS.cacheProgress(currentTroopId),JSON.stringify({flat:progressFlat,rich:progressRich,other:otherBadgesMap,members,logs:logRecords,logRequests,config:appConfig,savedAt:Date.now()})); }catch(e){}
   return d;
 }
-async function toggleOtherBadge(badgeId, name, targetYmis){
+async function toggleOtherBadge(key, name, targetYmis){
   if(!canUserTickRole(currentUser.role)){ showToast(t('no_perm'),'warning'); return; }
-  if(!canCurrentUserTickItem(badgeId)&&!canCurrentUserTickItem('OTHER')){ showToast(t('no_perm_other'),'warning'); return; }
-  const date=document.getElementById('otherDate_'+badgeId)?.value||todayISO(); const cert=document.getElementById('otherCert_'+badgeId)?.value||'';
-  const badge=CubProgress.findOtherBadge(itemsData,badgeId); const level=badge&&badge.levels?Number(document.getElementById('otherLevel_'+badgeId)?.value||1):0;
-  if(!otherBadgesMap[targetYmis]) otherBadgesMap[targetYmis]={}; const prev=otherBadgesMap[targetYmis][badgeId]?{...otherBadgesMap[targetYmis][badgeId]}:null;
-  const record={name,date,cert,note:prev?.note||'',level:level||prev?.level||0}; otherBadgesMap[targetYmis][badgeId]=record; renderOtherBadgesTab(); renderProgressTab();
-  try{ await persistOtherBadgeRecord(targetYmis,badgeId,name,record,false); showToast(t('other_badge_updated'),'success'); }
-  catch(e){ if(prev) otherBadgesMap[targetYmis][badgeId]=prev; else delete otherBadgesMap[targetYmis][badgeId]; showToast(t('upd_fail_colon')+e.message,'error'); renderOtherBadgesTab(); renderProgressTab(); }
-}
-async function handleOtherBadgeToggle(badgeId, name, targetYmis, checked){
-  if(!canCurrentUserTickItem(badgeId)&&!canCurrentUserTickItem('OTHER')){ showToast(t('no_perm_other'),'warning'); return; }
-  if(!canUserTickRole(currentUser.role)){ showToast(t('no_perm'),'error'); return; }
-  const prev=(otherBadgesMap[targetYmis]&&otherBadgesMap[targetYmis][badgeId])?{...otherBadgesMap[targetYmis][badgeId]}:null;
+  const parts=splitOtherKey(key);
+  if(!canCurrentUserTickItem(parts.id)&&!canCurrentUserTickItem('OTHER')){ showToast(t('no_perm_other'),'warning'); return; }
+  const date=otherDateFromRow(key)||todayISO(); const cert=otherCertFromRow(key);
   if(!otherBadgesMap[targetYmis]) otherBadgesMap[targetYmis]={};
-  const badge=CubProgress.findOtherBadge(itemsData,badgeId);
-  const record=checked?{name,date:todayISO(),cert:prev?.cert||'',note:prev?.note||'',level:badge&&badge.levels?CubProgress.recordLevel(prev):0}:null;
-  if(checked) otherBadgesMap[targetYmis][badgeId]=record; else delete otherBadgesMap[targetYmis][badgeId];
-  renderProgressTab();
-  try{ await persistOtherBadgeRecord(targetYmis,badgeId,name,record,!checked); }
-  catch(e){ if(prev) otherBadgesMap[targetYmis][badgeId]=prev; else delete otherBadgesMap[targetYmis][badgeId]; renderProgressTab(); showToast(t('upd_rollback_colon')+e.message,'error'); }
+  const prev=otherBadgesMap[targetYmis][key]?{...otherBadgesMap[targetYmis][key]}:null;
+  const record={name,date,cert,note:prev?.note||''};
+  if(parts.level) record.level=parts.level;
+  otherBadgesMap[targetYmis][key]=record; renderOtherBadgesTab(); renderProgressTab();
+  try{ await persistOtherBadgeRecord(targetYmis,key,name,record,false); showToast(t('other_badge_updated'),'success'); }
+  catch(e){ if(prev) otherBadgesMap[targetYmis][key]=prev; else delete otherBadgesMap[targetYmis][key]; showToast(t('upd_fail_colon')+e.message,'error'); renderOtherBadgesTab(); renderProgressTab(); }
 }
-async function handleOtherBadgeDate(badgeId, name, targetYmis, dateVal){
-  if(!canUserTickRole(currentUser.role)||!canCurrentUserTickItem(badgeId)){ showToast(t('no_perm_other'),'warning'); return; }
+async function handleOtherBadgeToggle(key, name, targetYmis, checked){
+  const parts=splitOtherKey(key);
+  if(!canCurrentUserTickItem(parts.id)&&!canCurrentUserTickItem('OTHER')){ showToast(t('no_perm_other'),'warning'); return; }
+  if(!canUserTickRole(currentUser.role)){ showToast(t('no_perm'),'error'); return; }
+  if(!otherBadgesMap[targetYmis]) otherBadgesMap[targetYmis]={};
+  const prev=otherBadgesMap[targetYmis][key]?{...otherBadgesMap[targetYmis][key]}:null;
+  const cert=otherCertFromRow(key);
+  const record=checked?{name,date:otherDateFromRow(key,todayISO()),cert:cert||prev?.cert||'',note:prev?.note||''}:null;
+  if(checked){ if(parts.level) record.level=parts.level; otherBadgesMap[targetYmis][key]=record; } else delete otherBadgesMap[targetYmis][key];
+  renderProgressTab(); renderOtherBadgesTab();
+  try{ await persistOtherBadgeRecord(targetYmis,key,name,record,!checked); }
+  catch(e){ if(prev) otherBadgesMap[targetYmis][key]=prev; else delete otherBadgesMap[targetYmis][key]; renderProgressTab(); renderOtherBadgesTab(); showToast(t('upd_rollback_colon')+e.message,'error'); }
+}
+async function handleOtherBadgeDate(key, name, targetYmis, dateVal){
+  if(!canUserTickRole(currentUser.role)||!canCurrentUserTickItem(splitOtherKey(key).id)){ showToast(t('no_perm_other'),'warning'); return; }
   if(!dateVal) return; if(!otherBadgesMap[targetYmis]) otherBadgesMap[targetYmis]={};
-  const prev=otherBadgesMap[targetYmis][badgeId]?{...otherBadgesMap[targetYmis][badgeId]}:null;
-  const record={name,date:dateVal,cert:prev?.cert||'',note:prev?.note||'',level:prev?.level||0}; otherBadgesMap[targetYmis][badgeId]=record;
-  try{ await persistOtherBadgeRecord(targetYmis,badgeId,name,record,false); renderProgressTab(); }
-  catch(e){ if(prev) otherBadgesMap[targetYmis][badgeId]=prev; else delete otherBadgesMap[targetYmis][badgeId]; renderProgressTab(); showToast(t('upd_fail_colon')+e.message,'error'); }
+  const prev=otherBadgesMap[targetYmis][key]?{...otherBadgesMap[targetYmis][key]}:null;
+  const record={...(prev||{}),name,date:dateVal,cert:prev?.cert||'',note:prev?.note||''};
+  const parts=splitOtherKey(key); if(parts.level) record.level=parts.level;
+  otherBadgesMap[targetYmis][key]=record; renderProgressTab(); renderOtherBadgesTab();
+  try{ await persistOtherBadgeRecord(targetYmis,key,name,record,false); }
+  catch(e){ if(prev) otherBadgesMap[targetYmis][key]=prev; else delete otherBadgesMap[targetYmis][key]; renderProgressTab(); renderOtherBadgesTab(); showToast(t('upd_fail_colon')+e.message,'error'); }
 }
-async function handleOtherBadgeCert(badgeId, name, targetYmis, certVal){
-  if(!canUserTickRole(currentUser.role)||!canCurrentUserTickItem(badgeId)){ showToast(t('no_perm_other'),'warning'); return; }
-  const prev=otherBadgesMap[targetYmis]&&otherBadgesMap[targetYmis][badgeId];
+async function handleOtherBadgeCert(key, name, targetYmis, certVal){
+  if(!canUserTickRole(currentUser.role)||!canCurrentUserTickItem(splitOtherKey(key).id)){ showToast(t('no_perm_other'),'warning'); return; }
+  const prev=otherBadgesMap[targetYmis]&&otherBadgesMap[targetYmis][key];
   if(!prev){ showToast(inEn()?'Mark the badge complete before entering certificate number.':'請先勾選完成獎章，再輸入證書編號','warning'); return; }
-  const record={...prev,name,cert:certVal}; otherBadgesMap[targetYmis][badgeId]=record;
-  try{ await persistOtherBadgeRecord(targetYmis,badgeId,name,record,false); }
-  catch(e){ otherBadgesMap[targetYmis][badgeId]=prev; renderProgressTab(); showToast(t('upd_fail_colon')+e.message,'error'); }
+  const record={...prev,name,cert:certVal}; otherBadgesMap[targetYmis][key]=record;
+  try{ await persistOtherBadgeRecord(targetYmis,key,name,record,false); }
+  catch(e){ otherBadgesMap[targetYmis][key]=prev; renderProgressTab(); showToast(t('upd_fail_colon')+e.message,'error'); }
 }
 
 /* Logs Tab - with parent/member claims */

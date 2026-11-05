@@ -9,7 +9,7 @@ const manifest = require('../data/frontend-release.json');
 const versionHandler = require('../api/frontend-version.js');
 const html = fs.readFileSync(new URL('../index.html', import.meta.url), 'utf8');
 const config = require('../vercel.json');
-const nextBuild = '2026.11.03.4';
+const nextBuild = '2026.11.99.1';
 
 function setup({ current = manifest.build, latest = current, url = 'https://cubsbadge.vercel.app/', store = new Map() } = {}) {
   const events = new Map(), documentEvents = new Map();

@@ -16,7 +16,7 @@ test('latest frontend release announcement still targets the current Apps Script
   assert.ok(release, 'frontend exposes one latest-release declaration');
   const gs = gas.match(/const CUB_GS_VERSION = '([^']+)'/);
   assert.ok(gs, 'Apps Script exposes its latest GS version');
-  assert.equal(release[1], '2026-11-03');
+  assert.equal(release[1], '2026-11-05');
   assert.equal(release[2], gs[1], 'frontend required GS and backend reported GS must match');
   assert.equal(release[3], 'false', 'existing working Sheets need no reinitialization for this release');
   assert.ok(html.includes(`href="apps-script/Code.gs?gs=${gs[1]}"`), 'setup tab download link carries current GS version query to bust stale cache');
@@ -42,7 +42,7 @@ test('GS version and initialization are independently verified; initialization i
 
   const before = json(backend.ecStatus('0082'));
   assert.equal(before.success, true);
-  assert.equal(before.gsVersion, '2026.11.03.2');
+  assert.equal(before.gsVersion, '2026.11.05.1');
   assert.equal(before.initializedGsVersion, '', 'new Code.gs alone must not count as initialized');
   assert.equal(before.gsInitializationCurrent, false);
 
@@ -52,7 +52,13 @@ test('GS version and initialization are independently verified; initialization i
   assert.equal(initialized.gsVersion, before.gsVersion);
   assert.equal(initialized.gsInitializationCurrent, true);
   assert.equal(backend.getApiKey(), apiKey, 'running initialization must not rotate the existing API key');
-  assert.deepEqual(snapshotRows(backend, preservedSheetNames), originalRows, 'initialization must not modify existing user records, including old IDs');
+  // 新增「級別」欄只會補一個表頭格（其他獎章 col8）；任何資料列、舊 ID、備註一律不變。
+  const afterInit = snapshotRows(backend, preservedSheetNames);
+  assert.deepEqual(afterInit['其他獎章'].map(r => r.slice(0,7)), originalRows['其他獎章'].map(r => r.slice(0,7)), 'initialization must not modify existing user records, including old IDs');
+  assert.equal(afterInit['其他獎章'][0][7], '級別', '新欄以空白表頭補上，不動舊資料列');
+  for (const name of preservedSheetNames.filter(n => n !== '其他獎章')) {
+    assert.deepEqual(afterInit[name], originalRows[name], `initialization must not modify existing ${name} records`);
+  }
   assert.deepEqual(sheets.SystemConfig.rows[1], originalConfig, 'an existing troop setting must not be overwritten by a default');
 
   const after = json(backend.ecStatus('0082'));
@@ -68,7 +74,9 @@ test('GS version and initialization are independently verified; initialization i
 
   backend.initializeSheets();
   assert.equal(backend.getApiKey(), apiKey, 're-running initialization remains safe and idempotent');
-  assert.deepEqual(snapshotRows(backend, preservedSheetNames), originalRows, 're-running initialization must also preserve every existing user value');
+  const reInit = snapshotRows(backend, preservedSheetNames);
+  assert.deepEqual(reInit, afterInit, 're-running initialization must also preserve every existing user value (including the new level header)');
+  assert.deepEqual(reInit['其他獎章'].map(r => r.slice(0,7)), originalRows['其他獎章'].map(r => r.slice(0,7)), 're-running initialization must not touch old other-badge rows');
   assert.deepEqual(sheets.SystemConfig.rows[1], originalConfig);
 });
 
