@@ -27,17 +27,70 @@
   function findOtherBadge(data, id) { return (data && data.otherBadges || []).find(badge => badge.id === id); }
   function findLegacyOtherBadge(data, id) { return (data && data.legacyOtherBadges || []).find(badge => badge.id === id); }
   function recordDate(record) { return record && typeof record === 'object' ? record.date || '' : record || ''; }
-  function recordLevel(record) {
+
+  // ---------------------------------------------------------------------------
+  // 級別（level）：官方 7 枚活動徽章分初／中／高三級 —— A18、A26、A27、A29、A33、A35、A39。
+  // 傳輸／儲存值：'E' 初級、'I' 中級、'A' 高級；'' = 整枚徽章（無級別的舊資料）。
+  // 伺服器回傳有級別的紀錄時用後綴鍵（otherBadges[ymis]['A26-E']），舊資料仍然用 'A26'。
+  // ---------------------------------------------------------------------------
+  const LEVEL_CODES = ['E', 'I', 'A'];
+  function normalizeLevelCode(value) {
+    if (value === null || value === undefined || value === '') return '';
+    const raw = String(value).trim().toUpperCase();
+    if (LEVEL_CODES.indexOf(raw) >= 0) return raw;
+    const n = Number(value);
+    if (Number.isInteger(n) && n >= 1 && n <= 3) return LEVEL_CODES[n - 1];
+    const map = {
+      '初': 'E', '初級': 'E', 'BASIC': 'E', 'ELEMENTARY': 'E',
+      '中': 'I', '中級': 'I', 'INTERMEDIATE': 'I',
+      '高': 'A', '高級': 'A', 'ADVANCED': 'A'
+    };
+    return map[raw] || '';
+  }
+  function recordLevelCode(record) {
     if (record && typeof record === 'object') {
-      const direct = Number(record.level);
-      if (Number.isInteger(direct) && direct >= 1 && direct <= 3) return direct;
+      const direct = normalizeLevelCode(record.level);
+      if (direct) return direct;
+      // 舊版把級別藏在備註標記 [CUB_LEVEL=n]（當時未有級別欄）
       const match = /\[CUB_LEVEL=([1-3])\]/.exec(String(record.note || ''));
-      if (match) return Number(match[1]);
+      if (match) return LEVEL_CODES[Number(match[1]) - 1];
     }
-    return 1;
+    return '';
+  }
+  function recordLevel(record) {
+    const code = recordLevelCode(record);
+    return code ? LEVEL_CODES.indexOf(code) + 1 : 1;
+  }
+  function levelKey(id, code) { return code ? `${id}-${code}` : String(id); }
+  function hasKey(records, key) {
+    return !!(records && Object.prototype.hasOwnProperty.call(records, key)
+      && records[key] !== null && records[key] !== undefined && records[key] !== '');
   }
   function hasRecord(records, id) {
-    return !!(records && Object.prototype.hasOwnProperty.call(records, id) && records[id] !== null && records[id] !== undefined && records[id] !== '');
+    if (hasKey(records, id)) return true;
+    return LEVEL_CODES.some(code => hasKey(records, `${id}-${code}`));
+  }
+  // 一枚徽章的各級紀錄：{ E: rec, I: rec, A: rec, '': 整枚徽章 }
+  // 無級別但有 [CUB_LEVEL=n] 標記的舊紀錄會歸入對應級別。
+  function levelRecords(records, id) {
+    const out = {};
+    if (!records) return out;
+    LEVEL_CODES.forEach(code => { if (hasKey(records, `${id}-${code}`)) out[code] = records[`${id}-${code}`]; });
+    if (hasKey(records, id)) {
+      const code = recordLevelCode(records[id]);
+      if (code) { if (out[code] === undefined) out[code] = records[id]; }
+      else out[''] = records[id];
+    }
+    return out;
+  }
+  // 最高已取級別（1–3）；無紀錄亦回 1（與舊版 recordLevel 行為一致）。
+  function highestLevel(records, id) {
+    const recs = levelRecords(records, id);
+    return LEVEL_CODES.reduce((max, code) => (recs[code] !== undefined ? Math.max(max, LEVEL_CODES.indexOf(code) + 1) : max), 1);
+  }
+  function baseBadgeId(id) {
+    const match = /^(A\d{2})-(E|I|A)$/.exec(String(id || ''));
+    return match ? match[1] : String(id || '');
   }
 
   function completingBadgeIds(item) {
@@ -69,7 +122,7 @@
           return candidateRequirement && (candidateRequirement.allowedBadgeIds || []).includes(badge.id);
         })).map(candidate => candidate.id);
         const stageIndex = allowedStages.indexOf(stage);
-        const level = recordLevel(otherFlat[badge.id]);
+        const level = highestLevel(otherFlat, badge.id);
         const uses = badge.levels ? Math.min(level, allowedStages.length) : 1;
         useHere = stageIndex >= 0 && stageIndex < uses;
         if (!useHere) reason = badge.levels
@@ -142,7 +195,8 @@
     const current = [], legacy = [], unknown = [];
     const visit = (records, isOther) => {
       for (const [id, value] of Object.entries(records || {})) {
-        const knownCurrent = isOther ? currentOtherIds.has(id) : currentIds.has(id);
+        // 其他獎章：後綴鍵（A26-E）屬於現行目錄，不應誤判為舊版／未知紀錄
+        const knownCurrent = isOther ? (currentOtherIds.has(id) || currentOtherIds.has(baseBadgeId(id))) : currentIds.has(id);
         const row = { id, value, date: recordDate(value), isOther, label: '舊版紀錄／不計完成度' };
         if (knownCurrent) current.push(row);
         else if (legacyIndex.has(id) || /^(?:L\d|ACT[-_]|LEGACY-CUB-)/.test(id)) legacy.push({ ...row, ...(legacyIndex.get(id) || { name: id, badge: '舊制' }) });
@@ -163,6 +217,7 @@
   return {
     leafItems, getBadgeItemIds, getAllItemIds, getSegmentItemIds,
     findBadge, findLegacyBadge, findOtherBadge, findLegacyOtherBadge,
+    LEVEL_CODES, normalizeLevelCode, recordLevelCode, levelKey, levelRecords, highestLevel, baseBadgeId,
     recordDate, recordLevel, hasRecord, completingBadgeIds, isItemComplete,
     getInterestStatus, getBadgeProgress, getOverallProgress,
     buildLegacyIndex, partitionRecords, getPermissionGroups

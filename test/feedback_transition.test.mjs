@@ -90,8 +90,12 @@ test('legacy transition data records P022/2026 Cub transition cases', () => {
 test('Apps Script preserves notes and writes Other Badge columns correctly', () => {
   const gas = fs.readFileSync('apps-script/Code.gs', 'utf8');
   assert.match(gas, /Object\.prototype\.hasOwnProperty\.call\(c,'note'\)/, 'progress save only overwrites note when supplied');
-  assert.match(gas, /sheet\.getRange\(i\+1,3\)\.setValue\(safeSheetText\(r\.name\|\|r\.badgeId,120\)\)/, 'other badge name column is updated as name');
-  assert.match(gas, /sheet\.getRange\(i\+1,4\)\.setValue\(r\.date\|\|''\)/, 'other badge date column is updated as date');
-  assert.match(gas, /sheet\.getRange\(i\+1,5\)\.setValue\(safeSheetText\(r\.cert\|\|'',60\)\)/, 'other badge cert column is updated as cert');
-  assert.match(gas, /if\(Object\.prototype\.hasOwnProperty\.call\(r,'note'\)\)/, 'other badge note is preserved unless supplied');
+  // 「其他獎章」欄位：col3=名稱、col4=完成日期、col5=證書、col6=備註、col8=級別（saveOtherBadge／
+  // 批准申請／進度表安全網共用 upsertOtherBadgeRecord_，所以在此 helper 內驗證欄位位置）。
+  assert.match(gas, /sheet\.getRange\(r, 3\)\.setValue\(safeSheetText\(name \|\| id, 120\)\)/, 'other badge name column is updated as name');
+  assert.match(gas, /sheet\.getRange\(r, 4\)\.setValue\(date\)/, 'other badge date column is updated as date');
+  assert.match(gas, /sheet\.getRange\(r, 5\)\.setValue\(safeSheetText\(cert, 60\)\)/, 'other badge cert column is updated as cert');
+  assert.match(gas, /if \(lv\) sheet\.getRange\(r, 8\)\.setValue\(lv\)/, 'other badge level is written to col8');
+  assert.match(gas, /Object\.prototype\.hasOwnProperty\.call\(r,'note'\)\?r\.note:undefined/, 'other badge note is preserved unless supplied');
+  assert.match(gas, /out\[y\]\[lv \? id \+ '-' \+ lv : id\] = rec/, 'load returns level-suffixed keys (A26-E) while legacy rows keep A26');
 });

@@ -8,8 +8,8 @@
 // 本檔永不生成、永不顯示、永不回傳任何密碼；initializeSheets／showApiKey 只顯示旅團自己嗰隻 API Key。
 // 版本同改動紀錄一律寫喺 docs/CHANGE_LOG_*.md；呢度只保留最新 GS 發佈識別供前端核對，不設逐級升級表。
 // ============================================================
-const CUB_GS_VERSION = '2026.11.03.2';
-const CUB_GS_RELEASE_DATE = '2026-11-03';
+const CUB_GS_VERSION = '2026.11.05.1';
+const CUB_GS_RELEASE_DATE = '2026-11-05';
 const CUB_GS_INIT_REQUIRED = false;
 const CUB_GS_INITIALIZED_PROP = 'CUB_GS_INITIALIZED_VERSION';
 function getCubGsReleaseStatus(){
@@ -324,8 +324,8 @@ const REQUIRED_SHEETS = [
   {name:'Applications', headers:['app_id','ymis','name','email','role','branch','status','applied_at','reviewed_by','reviewed_at','note']},
   {name:'Tokens', headers:['token','ymis','created_at','expires_at']},
   {name:'SystemConfig', headers:['key','value','updated_at','updated_by']},
-  {name:'待批完成', headers:['request_id','ymis','name','item_id','item_name','requested_date','evidence','status','created_at','reviewed_by','reviewed_at','review_note','confirmed_date']},
-  {name:'其他獎章', headers:['YMIS','獎章 ID','獎章名稱','完成日期','證書編號','備註','更新時間']},
+  {name:'待批完成', headers:['request_id','ymis','name','item_id','item_name','requested_date','evidence','status','created_at','reviewed_by','reviewed_at','review_note','confirmed_date','級別']},
+  {name:'其他獎章', headers:['YMIS','獎章 ID','獎章名稱','完成日期','證書編號','備註','更新時間','級別']},
   {name:'服務紀錄', headers:['record_id','YMIS','姓名','活動名稱','日期','時數','機構／地點','內容','核實領袖','狀態','備註']},
   {name:'操作紀錄', headers:['時間','操作者','操作','對象','詳情']},
   {name:'活動履歷', headers: LOG_HEADERS},
@@ -586,8 +586,10 @@ function initializeSheets() {
     cfgSheet.appendRow(['login_mode','standalone',now(),'system']);
     cfgSheet.appendRow(['admin_email',ADMIN_EMAIL,now(),'system']);
   }
-  ensureTable(ss, '待批完成', ['request_id','ymis','name','item_id','item_name','requested_date','evidence','status','created_at','reviewed_by','reviewed_at','review_note','confirmed_date'], null, X);
-  ensureTable(ss, '其他獎章', ['YMIS','獎章 ID','獎章名稱','完成日期','證書編號','備註','更新時間'], null, X);
+  ensureTable(ss, '待批完成', ['request_id','ymis','name','item_id','item_name','requested_date','evidence','status','created_at','reviewed_by','reviewed_at','review_note','confirmed_date','級別'], null, X);
+  // 其他獎章：col8「級別」= E／I／A（初／中／高級）；舊列留空 = 整枚徽章。
+  // 同一成員同一徽章可有多列（每級一列），upsert 鍵為 (YMIS, 獎章 ID, 級別)。
+  ensureTable(ss, '其他獎章', ['YMIS','獎章 ID','獎章名稱','完成日期','證書編號','備註','更新時間','級別'], null, X);
   ensureTable(ss, '服務紀錄', ['record_id','YMIS','姓名','活動名稱','日期','時數','機構／地點','內容','核實領袖','狀態','備註'], '#2E7D32', X);
   ensureTable(ss, '操作紀錄', ['時間','操作者','操作','對象','詳情'], null, X);
   ensureTable(ss, LOG_SHEET_NAME, LOG_HEADERS, null, X);
@@ -1784,11 +1786,11 @@ function handleLoad(loadUser){
   const members=getMembers();
   // pending requests
   const prSheet=tbl('待批完成'); const pending=[];
-  if(prSheet){ const data=prSheet.getDataRange().getValues(); for(let i=1;i<data.length;i++){ if(data[i][7].toString()==='pending'){ pending.push({request_id:data[i][0].toString(),ymis:data[i][1].toString(),name:data[i][2].toString(),item_id:data[i][3].toString(),item_name:data[i][4].toString(),requested_date:data[i][5]?formatDate(data[i][5]):'',evidence:data[i][6]?data[i][6].toString():'',status:'pending',created_at:data[i][8]?formatDate(data[i][8]):''}); } } }
+  if(prSheet){ const data=prSheet.getDataRange().getValues(); for(let i=1;i<data.length;i++){ if(data[i][7].toString()==='pending'){ const level=normalizeLevel_(data[i][13]); const rec={request_id:data[i][0].toString(),ymis:data[i][1].toString(),name:data[i][2].toString(),item_id:data[i][3].toString(),item_name:data[i][4].toString(),requested_date:data[i][5]?formatDate(data[i][5]):'',evidence:data[i][6]?data[i][6].toString():'',status:'pending',created_at:data[i][8]?formatDate(data[i][8]):''}; if(level) rec.level=level; pending.push(rec); } } }
   // other badges
-  // 新版：一併回傳第 6 欄「備註」（col1=YMIS, col2=獎章ID, col3=名稱, col4=日期, col5=證書, col6=備註, col7=更新時間）
-  const oSheet=tbl('其他獎章'); const other={};
-  if(oSheet){ const data=oSheet.getDataRange().getValues(); for(let i=1;i<data.length;i++){ const y=data[i][0].toString(); if(!y) continue; if(!other[y]) other[y]={}; other[y][data[i][1].toString()]={name:data[i][2]?data[i][2].toString():'',date:data[i][3]?formatDate(data[i][3]):'',cert:data[i][4]?data[i][4].toString():'',note:data[i][5]?data[i][5].toString():''}; } }
+  // col1=YMIS, col2=獎章ID, col3=名稱, col4=日期, col5=證書, col6=備註, col7=更新時間, col8=級別。
+  // 有級別的列用後綴鍵（'A26-E'），舊列（無級別）仍然用 'A26' —— 同一徽章多級不會互相覆蓋。
+  const other=buildOtherBadgesMap_();
   // 活動履歷回包（logsSupported 讓前端分辨後端是否已升級）
   const lSheet=tbl(LOG_SHEET_NAME);
   // 待批履歷（團員自行申報，logRequestsSupported 讓前端分辨後端是否已升級）
@@ -1804,6 +1806,17 @@ function handleSave(changes, confirmer){
   const sheet=tbl('進度追蹤'); if(!sheet) return jsonResponse({success:false,error:'Sheet not found'});
   let processed=0;
   changes.forEach(function(c){
+    // 安全網：活動徽章編號（A01–A42、A09-*、A25-*）永不寫入「進度追蹤」，
+    // 一律轉寫「其他獎章」，否則活動徽章頁及 getOtherBadges 都讀不到（「批准後消失」）。
+    // 舊前端 localStorage 內殘留的此類待存變更亦靠此處修正。
+    if(isActivityBadgeId_(c.itemId)){
+      const idLevel=splitBadgeIdLevel_(c.itemId, c.level);
+      if(c.uncomplete) deleteOtherBadgeRow_(c.ymis,idLevel.id,idLevel.level);
+      else upsertOtherBadgeRecord_(c.ymis,idLevel.id,c.name||idLevel.id,c.date||'',undefined,
+        Object.prototype.hasOwnProperty.call(c,'note')?safeSheetText(c.note,500):undefined,idLevel.level);
+      processed++;
+      return;
+    }
     const data=sheet.getDataRange().getValues(); let found=false;
     // 新版：只有請求「明確帶有」 note 欄才會改寫備註；
     // 舊前端不送 note 時保留 Sheet 內既有備註，不會被清空。
@@ -2073,16 +2086,176 @@ function handleDeleteMemberEntry(body,signedManager){
 function handleUpdateUserProfile(body,manager){ return handleUpdateMemberEntry(body,manager); }
 function handleDeleteUser(targetYmis,manager){ return handleDeleteMemberEntry({target_ymis:targetYmis},manager); }
 
+// ===== 活動徽章／級別（與 CUBBOOK 級別送交協議同步；版本號只記於 docs）=====
+// 官方第 21–27 頁有 7 枚活動徽章分初／中／高三級：A18、A26、A27、A29、A33、A35、A39。
+// 級別值：'' = 整枚徽章（舊資料）／'E' 初級／'I' 中級／'A' 高級。
+const BADGE_LEVEL_CODES_ = ['E','I','A'];
+
+// 活動／專科徽章編號：上游送交時用官方 badgeId，例如 A22、A25-PLASTIC、A09-CHILD-PROTECTION。
+// 注意：舊寫法 /^A\d{2}(-[A-Z]+)?$/ 認不到連字符內嵌的官方編號，
+// 會令 6 枚 A09-*（A09-ANTI-DECEPTION 等）批准後誤寫入「進度追蹤」而消失。
+function isActivityBadgeId_(id){
+  return /^A\d{2}(-[A-Z0-9]+)*$/.test(String(id || '').trim());
+}
+
+// 接受 'E'/'I'/'A'、1/2/3、初級/中級/高級；其他一律回空字串（= 整枚徽章）。
+function normalizeLevel_(level){
+  const raw = String(level == null ? '' : level).trim().toUpperCase();
+  if (!raw) return '';
+  if (BADGE_LEVEL_CODES_.indexOf(raw) >= 0) return raw;
+  const map = {
+    '1':'E', '2':'I', '3':'A',
+    '初':'E', '初級':'E', 'BASIC':'E', 'ELEMENTARY':'E',
+    '中':'I', '中級':'I', 'INTERMEDIATE':'I',
+    '高':'A', '高級':'A', 'ADVANCED':'A'
+  };
+  return map[raw] || '';
+}
+
+// A26-E 這類後綴只在同步 payload／回應出現，Sheet 內仍然是 A26 + 級別欄。
+function splitBadgeIdLevel_(badgeId, level){
+  let id = String(badgeId == null ? '' : badgeId).trim();
+  let lv = normalizeLevel_(level);
+  const m = /^(A\d{2})-(E|I|A)$/.exec(id);
+  if (m && !lv) { id = m[1]; lv = m[2]; }
+  return { id: id, level: lv };
+}
+
+// 舊版把級別藏在備註標記 [CUB_LEVEL=n]（當時未有級別欄）；讀取時照樣辨認。
+function levelFromNote_(note){
+  const m = /\[CUB_LEVEL=([1-3])\]/.exec(String(note || ''));
+  return m ? ['', 'E', 'I', 'A'][Number(m[1])] : '';
+}
+
+function rowText_(v){ return String(v == null ? '' : v).trim(); }
+
+// 在「其他獎章」資料內找一列：先配 (ymis, 獎章ID, 級別)，再配舊列的備註級別標記。
+function findOtherBadgeRow_(data, ymis, badgeId, level){
+  const y = rowText_(ymis), id = rowText_(badgeId), lv = normalizeLevel_(level);
+  let legacy = -1;
+  for (let i = 1; i < data.length; i++) {
+    if (rowText_(data[i][0]) !== y || rowText_(data[i][1]) !== id) continue;
+    const rowLevel = normalizeLevel_(data[i][7]);
+    if (rowLevel === lv) return i;
+    if (lv && !rowLevel && levelFromNote_(data[i][5]) === lv && legacy < 0) legacy = i;
+  }
+  return legacy;
+}
+
+// 其他獎章 upsert（saveOtherBadge／reviewRequest／handleSave 安全網共用）
+// 傳 undefined 的 date／cert／note 代表「保留原值」；date='' 亦不會清空既有日期。
+function upsertOtherBadgeRecord_(ymis, badgeId, name, date, cert, note, level){
+  const sheet = tbl('其他獎章'); if (!sheet) return { success: false, error: 'Sheet missing' };
+  const idLevel = splitBadgeIdLevel_(badgeId, level);
+  const id = idLevel.id, lv = idLevel.level;
+  const data = sheet.getDataRange().getValues();
+  const hit = findOtherBadgeRow_(data, ymis, id, lv);
+  if (hit > 0) {
+    const r = hit + 1;
+    sheet.getRange(r, 3).setValue(safeSheetText(name || id, 120));
+    if (date !== undefined && date !== null && date !== '') sheet.getRange(r, 4).setValue(date);
+    if (cert !== undefined && cert !== null) sheet.getRange(r, 5).setValue(safeSheetText(cert, 60));
+    if (note !== undefined && note !== null) sheet.getRange(r, 6).setValue(safeSheetText(note, 500));
+    if (lv) sheet.getRange(r, 8).setValue(lv);
+    sheet.getRange(r, 7).setValue(new Date());
+    return { success: true, updated: true, level: lv };
+  }
+  sheet.appendRow([
+    ymis, id, safeSheetText(name || id, 120), date || '',
+    safeSheetText(cert || '', 60), safeSheetText(note || '', 500), new Date(), lv
+  ]);
+  return { success: true, created: true, level: lv };
+}
+
+function deleteOtherBadgeRow_(ymis, badgeId, level){
+  const sheet = tbl('其他獎章'); if (!sheet) return false;
+  const idLevel = splitBadgeIdLevel_(badgeId, level);
+  const data = sheet.getDataRange().getValues();
+  const hit = findOtherBadgeRow_(data, ymis, idLevel.id, idLevel.level);
+  if (hit > 0) { sheet.deleteRow(hit + 1); return true; }
+  return false;
+}
+
+// 已核實紀錄（冪等用）：活動徽章 → 其他獎章；進度細項 → 進度追蹤。
+// 活動徽章舊列（無級別）視為整枚徽章已核實，可覆蓋任何級別的新送交。
+function isCompletionVerified_(ymis, itemId, level){
+  const y = rowText_(ymis), id = rowText_(itemId);
+  const lv = normalizeLevel_(level);
+  if (isActivityBadgeId_(id)) {
+    const sheet = tbl('其他獎章'); if (!sheet) return false;
+    const data = sheet.getDataRange().getValues();
+    for (let i = 1; i < data.length; i++) {
+      if (rowText_(data[i][0]) !== y || rowText_(data[i][1]) !== id) continue;
+      const rowLevel = normalizeLevel_(data[i][7]);
+      if (!lv || !rowLevel || rowLevel === lv) return true;
+    }
+    return false;
+  }
+  const pSheet = tbl('進度追蹤'); if (!pSheet) return false;
+  const pData = pSheet.getDataRange().getValues();
+  for (let i = 1; i < pData.length; i++) {
+    if (rowText_(pData[i][0]) === y && rowText_(pData[i][1]) === id) return true;
+  }
+  return false;
+}
+
+// 其他獎章 → { 'A26-E': {date,cert,...} }；舊列（無級別）仍然用 'A26' 鍵。
+function buildOtherBadgesMap_(onlyYmis){
+  const out = {};
+  const sheet = tbl('其他獎章'); if (!sheet) return out;
+  const data = sheet.getDataRange().getValues();
+  const filter = onlyYmis === undefined || onlyYmis === null ? '' : String(onlyYmis);
+  for (let i = 1; i < data.length; i++) {
+    const y = rowText_(data[i][0]); if (!y) continue;
+    if (filter && y !== filter) continue;
+    const id = rowText_(data[i][1]); if (!id) continue;
+    const lv = normalizeLevel_(data[i][7]);
+    const rec = {
+      name: data[i][2] ? String(data[i][2]) : '',
+      date: data[i][3] ? formatDate(data[i][3]) : '',
+      cert: data[i][4] ? String(data[i][4]) : '',
+      note: data[i][5] ? String(data[i][5]) : ''
+    };
+    if (lv) rec.level = lv;
+    if (!out[y]) out[y] = {};
+    out[y][lv ? id + '-' + lv : id] = rec;
+  }
+  return out;
+}
+
+// 待批完成 → 冪等鍵 (ymis, item_id, 級別)
 function handleRequestComplete(body, requesterYmis){
-  const sheet=tbl('待批完成'); if(!sheet) return jsonResponse({success:false,error:'Sheet not found'});
-  const reqId='REQ_'+Date.now()+'_'+Math.random().toString(36).substr(2,5);
-  const user=getUser(requesterYmis)||{name:body.name||requesterYmis};
-  sheet.appendRow([reqId,requesterYmis,user.name||body.name,body.itemId,body.itemName||body.itemId,body.requested_date||formatDate(new Date()),body.evidence||'','pending',now(),'','','', '']);
-  return jsonResponse({success:true,request_id:reqId});
+  body = body || {};
+  const sheet = tbl('待批完成'); if (!sheet) return jsonResponse({success:false,error:'Sheet not found'});
+  const idLevel = splitBadgeIdLevel_(body.itemId, body.level);
+  const itemId = idLevel.id, level = idLevel.level;
+  if (!itemId) return jsonResponse({success:false,error:'缺少項目編號'});
+  const requestedDate = String(body.requested_date || formatDate(new Date())).slice(0,10);
+  const y = rowText_(requesterYmis);
+
+  // 冪等 1：同一 (成員, 項目, 級別) 已有待批 → 回傳原申請，不再新增。
+  const data = sheet.getDataRange().getValues();
+  for (let i = 1; i < data.length; i++) {
+    if (rowText_(data[i][1]) !== y) continue;
+    if (rowText_(data[i][3]) !== itemId) continue;
+    if (normalizeLevel_(data[i][13]) !== level) continue;
+    if (rowText_(data[i][7]).toLowerCase() === 'pending') {
+      return jsonResponse({success:true,request_id:rowText_(data[i][0]),duplicate:true,level:level});
+    }
+  }
+  // 冪等 2：活動徽章已在「其他獎章」核實過 → 不再產生待批（避免重複批准同一枚）。
+  if (isActivityBadgeId_(itemId) && isCompletionVerified_(requesterYmis, itemId, level)) {
+    return jsonResponse({success:true,duplicate:true,already_verified:true,level:level});
+  }
+
+  const reqId = 'REQ_' + Date.now() + '_' + Math.random().toString(36).substr(2,5);
+  const user = getUser(requesterYmis) || { name: body.name || requesterYmis };
+  sheet.appendRow([reqId,requesterYmis,user.name||body.name||'',itemId,body.itemName||itemId,requestedDate,body.evidence||'','pending',now(),'','','','',level]);
+  return jsonResponse({success:true,request_id:reqId,duplicate:false,level:level});
 }
 function handleGetPendingRequests(){
   const sheet=tbl('待批完成'); const list=[];
-  if(sheet){ const data=sheet.getDataRange().getValues(); for(let i=1;i<data.length;i++){ if(data[i][7].toString()==='pending'){ list.push({request_id:data[i][0].toString(),ymis:data[i][1].toString(),name:data[i][2].toString(),item_id:data[i][3].toString(),item_name:data[i][4].toString(),requested_date:data[i][5]?formatDate(data[i][5]):'',evidence:data[i][6]?data[i][6].toString():'',status:'pending',created_at:data[i][8]?formatDate(data[i][8]):''}); } } }
+  if(sheet){ const data=sheet.getDataRange().getValues(); for(let i=1;i<data.length;i++){ if(data[i][7].toString()==='pending'){ const level=normalizeLevel_(data[i][13]); const rec={request_id:data[i][0].toString(),ymis:data[i][1].toString(),name:data[i][2].toString(),item_id:data[i][3].toString(),item_name:data[i][4].toString(),requested_date:data[i][5]?formatDate(data[i][5]):'',evidence:data[i][6]?data[i][6].toString():'',status:'pending',created_at:data[i][8]?formatDate(data[i][8]):''}; if(level) rec.level=level; list.push(rec); } } }
   return jsonResponse({success:true,requests:list});
 }
 function handleReviewRequest(reqId,decision,note,reviewer,confirmed_date){
@@ -2090,18 +2263,42 @@ function handleReviewRequest(reqId,decision,note,reviewer,confirmed_date){
   const data=sheet.getDataRange().getValues(); let row=null;
   for(let i=1;i<data.length;i++){ if(data[i][0].toString()===reqId){ row=data[i]; sheet.getRange(i+1,8).setValue(decision); sheet.getRange(i+1,10).setValue(sheetActor(reviewer)); sheet.getRange(i+1,11).setValue(now()); sheet.getRange(i+1,12).setValue(note||''); sheet.getRange(i+1,13).setValue(confirmed_date||formatDate(new Date())); break; } }
   if(!row) return jsonResponse({success:false,error:'找不到申請'});
-  if(decision==='approved'){
-    const pSheet=tbl('進度追蹤');
-    pSheet.appendRow([row[1],row[3],confirmed_date||row[5],new Date(),sheetActor(reviewer), '由申請轉入：'+(note||'')]);
-    return jsonResponse({success:true,message:'已批准並寫入進度'});
+  if(decision!=='approved') return jsonResponse({success:true,message:'已拒絕'});
+
+  const ymis=rowText_(row[1]);
+  const idLevel=splitBadgeIdLevel_(row[3], row[13]);
+  const itemId=idLevel.id, level=idLevel.level;
+  const itemName=rowText_(row[4])||itemId;
+  const doneDate=formatDate(confirmed_date||row[5]||new Date());
+
+  // 活動／專科徽章 → 「其他獎章」（upsert 鍵：成員 + 徽章 + 級別）。
+  // 若不分流，活動徽章會寫入「進度追蹤」，活動徽章頁永遠見不到、getOtherBadges 亦讀不到。
+  if(isActivityBadgeId_(itemId)){
+    const res=upsertOtherBadgeRecord_(ymis,itemId,itemName,doneDate,'',(note?'由申請轉入：'+note:'由申請轉入'),level);
+    if(!res.success) return jsonResponse(res);
+    return jsonResponse({success:true,message:'已批准並寫入其他獎章'+(level?'（'+level+'）':''),target:'其他獎章',level:level});
   }
-  return jsonResponse({success:true,message:'已拒絕'});
+
+  const pSheet=tbl('進度追蹤'); if(!pSheet) return jsonResponse({success:false,error:'進度追蹤 not found'});
+  const pData=pSheet.getDataRange().getValues();
+  for(let i=1;i<pData.length;i++){
+    if(rowText_(pData[i][0])===ymis && rowText_(pData[i][1])===itemId){
+      pSheet.getRange(i+1,3).setValue(doneDate);
+      pSheet.getRange(i+1,4).setValue(new Date());
+      pSheet.getRange(i+1,5).setValue(sheetActor(reviewer));
+      pSheet.getRange(i+1,6).setValue('由申請轉入：'+(note||''));
+      return jsonResponse({success:true,message:'已批准並更新進度',target:'進度追蹤'});
+    }
+  }
+  pSheet.appendRow([ymis,itemId,doneDate,new Date(),sheetActor(reviewer),'由申請轉入：'+(note||'')]);
+  return jsonResponse({success:true,message:'已批准並寫入進度',target:'進度追蹤'});
 }
 function handleGetOtherBadges(ymis){
   const sheet=tbl('其他獎章'); const list=[];
-  // 新版：一併回傳備註欄（col6）
-  if(sheet){ const data=sheet.getDataRange().getValues(); for(let i=1;i<data.length;i++){ if(data[i][0].toString()===ymis){ list.push({id:data[i][1].toString(),name:data[i][2].toString(),date:data[i][3]?formatDate(data[i][3]):'',cert:data[i][4]?data[i][4].toString():'',note:data[i][5]?data[i][5].toString():''}); } } }
-  return jsonResponse({success:true,other:list});
+  // 新版：連級別一起回傳。id 保持官方徽章編號（A26），另附 key（A26-E）及 level。
+  if(sheet){ const data=sheet.getDataRange().getValues(); for(let i=1;i<data.length;i++){ if(rowText_(data[i][0])===String(ymis)){ const level=normalizeLevel_(data[i][7]); const id=rowText_(data[i][1]); const rec={id:id,name:data[i][2].toString(),date:data[i][3]?formatDate(data[i][3]):'',cert:data[i][4]?data[i][4].toString():'',note:data[i][5]?data[i][5].toString():''}; if(level){ rec.level=level; rec.key=id+'-'+level; } list.push(rec); } } }
+  // otherBadges：與 load 相同的對照表（'A26-E' 後綴鍵），供上游直接取用。
+  return jsonResponse({success:true,other:list,otherBadges:buildOtherBadgesMap_(ymis)});
 }
 // ===== ：活動履歷（服務／活動／訓練班紀錄） =====
 function getLogRecordsList(viewerYmis,isReviewer){
@@ -2198,34 +2395,30 @@ function handleDeleteLogRecord(recordId, recorderYmis){
 }
 
 function handleSaveOtherBadge(records){
-  // 新版：逐欄更新，修正舊版把「完成日期」寫入第 3 欄（獎章名稱欄）的 bug。
-  // 其他獎章表欄位：col1=YMIS, col2=獎章ID, col3=獎章名稱, col4=完成日期, col5=證書編號, col6=備註, col7=更新時間
+  // 其他獎章表欄位：col1=YMIS, col2=獎章ID, col3=獎章名稱, col4=完成日期, col5=證書編號, col6=備註, col7=更新時間, col8=級別
+  // - 級別：E／I／A（初／中／高級）；空白 = 整枚徽章（舊資料）。upsert 鍵 = (YMIS, 獎章ID, 級別)。
   // - uncomplete=true → 刪除該列（取消完成）
   // - 只有請求明確帶有 note 才改寫備註（舊前端不送 note 時保留原有備註）
   // - 全部文字經 safeSheetText 防公式注入
   const sheet=tbl('其他獎章'); if(!sheet) return jsonResponse({success:false,error:'Sheet missing'});
-  let c=0;
+  if(!Array.isArray(records)) return jsonResponse({success:false,error:'沒有可儲存的紀錄'});
+  let c=0, failed=0;
   records.forEach(function(r){
-    const data=sheet.getDataRange().getValues(); let found=false;
-    for(let i=1;i<data.length;i++){
-      if(data[i][0].toString()===r.ymis && data[i][1].toString()===r.badgeId){
-        if(r.uncomplete){ sheet.deleteRow(i+1); found=true; c++; break; }
-        sheet.getRange(i+1,3).setValue(safeSheetText(r.name||r.badgeId,120));
-        sheet.getRange(i+1,4).setValue(r.date||'');
-        sheet.getRange(i+1,5).setValue(safeSheetText(r.cert||'',60));
-        if(Object.prototype.hasOwnProperty.call(r,'note')) sheet.getRange(i+1,6).setValue(safeSheetText(r.note||'',500));
-        sheet.getRange(i+1,7).setValue(new Date());
-        found=true; c++; break;
-      }
+    r=r||{};
+    const idLevel=splitBadgeIdLevel_(r.badgeId, r.level);
+    if(!rowText_(r.ymis)||!idLevel.id){ failed++; return; }
+    if(r.uncomplete){
+      if(deleteOtherBadgeRow_(r.ymis,idLevel.id,idLevel.level)) c++;
+      return;
     }
-    if(!found && !r.uncomplete){
-      sheet.appendRow([r.ymis,r.badgeId,safeSheetText(r.name||r.badgeId,120),r.date||'',safeSheetText(r.cert||'',60),Object.prototype.hasOwnProperty.call(r,'note')?safeSheetText(r.note||'',500):'',new Date()]);
-      c++;
-    }
+    const res=upsertOtherBadgeRecord_(
+      r.ymis, idLevel.id, r.name||idLevel.id, r.date||'', safeSheetText(r.cert||'',60),
+      Object.prototype.hasOwnProperty.call(r,'note')?r.note:undefined, idLevel.level
+    );
+    if(res.success) c++; else failed++;
   });
-  return jsonResponse({success:true,processed:c});
+  return jsonResponse({success:failed===0,processed:c,failed:failed});
 }
-
 // ===== ：活動履歷申報（團員自行申報 → 領袖審批）=====
 // Activity-log claims: members self-declare → leaders approve.
 // 流程：requestLogRecord（kind=new/edit）→ 待批履歷 sheet → reviewLogRequest 批准後寫入／更新「活動履歷」。

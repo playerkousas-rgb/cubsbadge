@@ -57,6 +57,24 @@ assert.match(element('homeBadgeList').innerHTML,/金紫荊獎章/);
 run('renderProgressTab()');
 const progressHtml=element('tab-progress').innerHTML;
 for (const text of ['1.1.1','4.4.2','A42','舊版紀錄／不計完成度','ACT-07','指定徽章（由 items.json 產生）','媒體製作章','本階段不重複計算']) assert.ok(progressHtml.includes(text), `progress output missing ${text}`);
+// 7 枚三級制活動徽章在「進度」頁同樣顯示三個子行（A18 舊資料以 [CUB_LEVEL=2] 標記 → 中級）
+for(const code of ['E','I','A']) assert.ok(progressHtml.includes(`data-item-id="A18-${code}"`), `progress output missing A18-${code} sub-row`);
+
+// 前端寫入契約：級別以 (badgeId, level) 送交，本地 map 用後綴鍵，不可再寫單一 A26 鍵蓋過其他級別
+{
+  const calls=[]; context.__otherCalls=calls;
+  context.__origApiRequest=run('apiRequest'); const origToast=run('showToast');
+  run("apiRequest=async (payload)=>{ __otherCalls.push(payload); return {success:true}; }; showToast=()=>{}; currentToken='tok';");
+  await run("handleOtherBadgeToggle('A26-E','射箭章','9000000001',true)");
+  assert.equal(calls.length,1);
+  assert.equal(calls[0].action,'saveOtherBadge');
+  assert.equal(calls[0].records[0].badgeId,'A26','官方徽章編號不可帶級別後綴寫入');
+  assert.equal(calls[0].records[0].level,'E','級別要走獨立欄位');
+  assert.equal(run("otherBadgesMap['9000000001']['A26-E'].level"),'E');
+  assert.equal(run("!!otherBadgesMap['9000000001']['A26']"),false,'不可同時建立單一 A26 鍵');
+  context.__origToast=origToast;
+  run("apiRequest=__origApiRequest; showToast=__origToast; delete otherBadgesMap['9000000001']['A26-E'];");
+}
 
 run('renderOverviewTab()');
 element('overviewBadgeSelect').value='P4'; element('overviewSegmentSelect').value='';
@@ -85,8 +103,16 @@ run("currentUser.role='group_leader'; currentUser.allowed_badges='*'");
 run('renderOtherBadgesTab()');
 assert.match(element('tab-other').innerHTML,/考驗依據/);
 assert.match(element('tab-other').innerHTML,/媒體製作章/);
-assert.match(element('tab-other').innerHTML,/otherLevel_A18/);
-assert.equal(run("withOtherBadgeLevelNote('[CUB_LEVEL=2] 家長備註',3,true)"),'[CUB_LEVEL=3] 家長備註');
+// 7 枚三級制活動徽章（A18…A39）在「其他獎章」頁顯示初／中／高三個子行
+for(const code of ['E','I','A']){ assert.match(element('tab-other').innerHTML,new RegExp(`otherDate_A18-${code}`)); }
+assert.match(element('tab-other').innerHTML,/初級/); assert.match(element('tab-other').innerHTML,/中級/); assert.match(element('tab-other').innerHTML,/高級/);
+assert.equal(run("CubProgress.recordLevelCode({level:'I'})"),'I');
+assert.equal(run("CubProgress.recordLevelCode({note:'[CUB_LEVEL=3] 舊資料'})"),'A','舊備註標記仍要讀得懂');
+assert.equal(run("CubProgress.levelKey('A26','E')"),'A26-E');
+assert.match(run("renderOtherBadgeRows(itemsData.otherBadges.find(b=>b.id==='A26'),{'A26-E':{date:'2026-03-01'},'A26-I':{date:'2026-05-01'}},'9000000001',true)"),/data-item-id="A26-I"/);
+// 逐級紀錄不可互相覆蓋，並要計入完成度（同一徽章只算一次）
+assert.equal(run("CubProgress.hasRecord({'A26-E':{date:'2026-03-01'}},'A26')"),true);
+assert.equal(run("CubProgress.highestLevel({'A26-E':{date:'2026-03-01'},'A26-I':{date:'2026-05-01'}},'A26')"),2);
 run('renderFormsTab()'); element('formMemberSelect').value='9000000001';
 for(const key of ['CURRENT_GBA','PT67','PT68','RECORD']){
   run(`generatePrintableForm('${key}')`);
@@ -99,15 +125,15 @@ run('renderInfoTab()');
 assert.match(element('tab-info').innerHTML,/prog\.scouting\.org\.hk\/cub/);
 
 run('renderReleaseNotices()');
-assert.match(element('homeReleaseNotice').innerHTML,/2026-11-03/);
-assert.match(element('homeReleaseNotice').innerHTML,/2026\.11\.03/);
+assert.match(element('homeReleaseNotice').innerHTML,/2026-11-05/);
+assert.match(element('homeReleaseNotice').innerHTML,/2026\.11\.05/);
 assert.match(element('homeReleaseNotice').innerHTML,/initializeSheets\(\)/);
 assert.match(element('homeReleaseNotice').innerHTML,/無須逐級/);
 run("currentTroopId='0082'; currentUser.ymis='TEST_LEADER'; resetBackendRelease(); applyBackendRelease({gsVersion:'cub-leaf',backendVersion:'cub-leaf'})");
 assert.equal(run('backendReleaseState.status'),'unknown');
 assert.match(element('mainReleaseNotice').innerHTML,/無法識別回報的 GS 版本/);
 assert.doesNotMatch(element('mainReleaseNotice').innerHTML,/download=/);
-run("applyBackendRelease({gsVersion:'2026.11.03.9',initializedGsVersion:'2026.11.03.9'})");
+run("applyBackendRelease({gsVersion:'2026.11.99.9',initializedGsVersion:'2026.11.99.9'})");
 assert.equal(run('backendReleaseState.status'),'ahead');
 assert.match(element('mainReleaseNotice').innerHTML,/請勿用此網站的舊下載覆蓋/);
 assert.doesNotMatch(element('mainReleaseNotice').innerHTML,/download=/);
