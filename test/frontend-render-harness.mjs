@@ -113,6 +113,17 @@ assert.match(run("renderOtherBadgeRows(itemsData.otherBadges.find(b=>b.id==='A26
 // 逐級紀錄不可互相覆蓋，並要計入完成度（同一徽章只算一次）
 assert.equal(run("CubProgress.hasRecord({'A26-E':{date:'2026-03-01'}},'A26')"),true);
 assert.equal(run("CubProgress.highestLevel({'A26-E':{date:'2026-03-01'},'A26-I':{date:'2026-05-01'}},'A26')"),2);
+// 部署教學必須教識用戶「右鍵純文字開啟 → 全選複製 → 貼上覆蓋範本」（2026-11-05 用户回報）
+assert.match(run("t('s1_copy')"),/右鍵/,'部署教學要講清楚右鍵開純文字檔');
+assert.match(run("t('s1_copy')"),/Ctrl\+A/,'部署教學要講全選複製');
+assert.match(run("t('s2p')"),/myFunction/,'要講明貼上會覆蓋原有 myFunction 範本');
+assert.match(run("t('s2p')"),/Ctrl\+A/);
+assert.match(run("t('s2p')"),/約 3,000 行|3,000 行/,'要教用戶如何確認貼上完整');
+run("currentLang='en'");
+assert.match(run("t('s1_copy')"),/plain text editor/,'英文版亦要有相同教學');
+assert.match(run("t('s2p')"),/Ctrl\+A/);
+run("currentLang='zh'");
+assert.ok(html.includes('data-i18n-html="s1_copy"'),'步驟 1 要有獨立提示元素');
 run('renderFormsTab()'); element('formMemberSelect').value='9000000001';
 for(const key of ['CURRENT_GBA','PT67','PT68','RECORD']){
   run(`generatePrintableForm('${key}')`);
