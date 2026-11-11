@@ -1,5 +1,5 @@
 // Health check endpoint - helps diagnose "找不到82的SHEET" issues
-const { getRegistry, getTroopConfig, normalizeToPadded4 } = require('./_lib/registry');
+const { getRegistry, getTroopConfig, normalizeToPadded4, getBackendProblem } = require('./_lib/registry');
 
 module.exports = async function handler(req, res) {
   if (!res.status) {
@@ -71,12 +71,21 @@ module.exports = async function handler(req, res) {
   };
 
   if (!config) {
+    // 分清「完全冇填」同「有填但格式錯」：後者唔需要加新變數，只需要改正現有值。
+    const problem = getBackendProblem(troopId);
+    health.troopFound = false;
+    health.backendConfigProblem = problem;   // {code,message}；只講問題，永不回值
     return res.status(404).json({
       ...health,
       success: false,
-      error: `Troop ${troopId} not found. 可能是 Vercel 環境變數未設定 TROOP_${normalized}_BACKEND / _APIKEY / _NAME。`,
+      code: problem ? 'BACKEND_INVALID' : 'TROOP_NOT_CONFIGURED',
+      error: problem
+        ? `Troop ${troopId} 的 TROOP_${normalized}_BACKEND 已填但無效：${problem.message}`
+        : `Troop ${troopId} not found. 可能是 Vercel 環境變數未設定 TROOP_${normalized}_BACKEND / _APIKEY / _NAME。`,
       receivedTroopId: troopId,
-      envVarHint: `APP ADMIN 檢查 Vercel 環境變數 TROOP_${normalized}_BACKEND / TROOP_${normalized}_APIKEY / TROOP_${normalized}_NAME 是否設定（全部由 APP ADMIN 設定，旅團毋須設定任何功能變數）`
+      envVarHint: problem
+        ? `APP ADMIN 修正 Vercel 環境變數 TROOP_${normalized}_BACKEND（只貼「部署 → 管理部署」的 /exec 網址：不要引號、空白、換行、/dev、?參數），儲存後必須 Redeploy。`
+        : `APP ADMIN 檢查 Vercel 環境變數 TROOP_${normalized}_BACKEND / TROOP_${normalized}_APIKEY / TROOP_${normalized}_NAME 是否設定（全部由 APP ADMIN 設定，旅團毋須設定任何功能變數）`
     });
   }
 

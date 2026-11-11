@@ -45,12 +45,37 @@ function verifySuperKey(provided) {
 }
 
 // ---------- TROOP_<id>_* 功能變數讀取（server-only）----------
+/**
+ * 清洗功能變數值：APP ADMIN 喺 Vercel 貼值時，好易連埋引號／角括號／前後空白／
+ * 換行一齊貼（"https://…/exec"、<https://…/exec>、'…'、…/exec\r\n）。
+ * 呢啲字元會令 URL 解析失敗，繼而被當成「未登記旅團」。
+ * 只做「明顯唔屬於值」的包裹字元去除，唔會猜測／改寫實際 URL。
+ */
+function cleanEnvValue(value) {
+  let v = String(value == null ? '' : value).trim();
+  // 貼上時常見的 Unicode 空白（NBSP / 全角空格 / 零寬）→ 普通空白後再 trim
+  v = v.replace(/[\u00A0\u2007\u202F\u3000\u200B\uFEFF]/g, ' ').trim();
+  // 去引號／角括號包裹：可以連續幾層（"https://…" 或 <"https://…">）
+  for (let i = 0; i < 3; i++) {
+    const before = v;
+    v = v.replace(/^["'`<>]+/, '').replace(/["'`<>]+$/, '').trim();
+    if (v === before) break;
+  }
+  // 中間夾咗換行（Vercel 貼多行）→ 取第一段非空行
+  if (/[\r\n]/.test(v)) v = v.split(/[\r\n]+/).map(s => s.trim()).filter(Boolean)[0] || '';
+  return v.trim();
+}
+
 function readTroopEnv(idUpper, suffix) {
   const idNoZero = normalizeStripped(idUpper);
   const idPadded = normalizeToPadded4(idUpper);
-  return process.env[`TROOP_${idUpper}_${suffix}`] ||
+  const raw = process.env[`TROOP_${idUpper}_${suffix}`] ||
          process.env[`TROOP_${idNoZero}_${suffix}`] ||
          process.env[`TROOP_${idPadded}_${suffix}`] || '';
+  const value = cleanEnvValue(raw);
+  // 只作診斷用：登記值存在但清洗後變空（例如只填了引號／空白）
+  if (raw && !value) return { value: '', rawHadValue: true, emptyAfterClean: true };
+  return { value, rawHadValue: !!String(raw || '').trim(), emptyAfterClean: false };
 }
 
 // ---------- GAS /exec URL 正規化 ----------
@@ -123,6 +148,7 @@ function backendMatches(storedBackend, providedBackend) {
 
 function getRegistry() {
   const registry = {};
+  const backendProblems = new Map();   // padded id → 問題清單（唔含 URL 值，只講「哪一部分唔合格」）
 
   // 淨係掃功能變數：TROOP_<id>_BACKEND / _APIKEY / _NAME（大小寫兼容、0082/82 兼容）
   const idsFromEnv = new Set();
@@ -132,29 +158,47 @@ function getRegistry() {
   });
 
   idsFromEnv.forEach(idUpper => {
-    const backendEnv = readTroopEnv(idUpper, 'BACKEND');
-    const apikeyEnv = readTroopEnv(idUpper, 'APIKEY');
-    const nameEnv = readTroopEnv(idUpper, 'NAME');
+    const backendRaw = readTroopEnv(idUpper, 'BACKEND');
+    const apikeyRaw = readTroopEnv(idUpper, 'APIKEY');
+    const nameRaw = readTroopEnv(idUpper, 'NAME');
 
-    const backend = normalizeGasUrl(backendEnv);
-    const apikey = apikeyEnv;
-    const name = nameEnv || `第 ${normalizeStripped(idUpper)} 旅`;
+    const backend = normalizeGasUrl(backendRaw.value);
+    const apikey = apikeyRaw.value;
+    const name = nameRaw.value || `第 ${normalizeStripped(idUpper)} 旅`;
 
     // 有 backend 先算有效旅團（backend = 後端GS 嘅 /exec URL）
-    if (!backend) return;
+    if (!backend) {
+      // 有填但清洗後為空（只填了引號／空白／換行）也要講清楚，唔可以當成「完全冇填」。
+      const hadRaw = backendRaw.rawHadValue || apikeyRaw.rawHadValue || nameRaw.rawHadValue;
+      if (hadRaw) {
+        backendProblems.set(
+          normalizeToPadded4(idUpper),
+          backendRaw.rawHadValue
+            ? diagnoseGasUrl(backendRaw.value || ' ')
+            : { code: 'NO_BACKEND', message: `只設定了 APIKEY／NAME，但沒有 TROOP_${normalizeToPadded4(idUpper)}_BACKEND；系統需要後端 /exec 網址才可以連線。` }
+        );
+      }
+      return;
+    }
 
     const entry = {
       name,
       backend,
       apikey,
       _env: {
-        backend: !!backendEnv,
-        apikey: !!apikeyEnv,
-        name: !!nameEnv,
+        backend: !!backendRaw.value,
+        apikey: !!apikeyRaw.value,
+        name: !!nameRaw.value,
         // 診斷用：功能變數填咗 Workspace 網域內網址（/a/<domain>/…），已自動轉公開網址。
-        domainScoped: isDomainScopedGasUrl(backendEnv)
-      }
+        domainScoped: isDomainScopedGasUrl(backendRaw.value)
+      },
+      // 診斷用：登記了但 URL 不合格（例如貼成 /dev、帶路徑／query、或根本不是 GAS URL）。
+      // 這類旅團唔會出現在可用清單，但仍然要講得出「你的功能變數有填，只是格式不對」。
+      backendValid: isValidGasUrl(backend)
     };
+    if (!entry.backendValid) {
+      backendProblems.set(normalizeToPadded4(idUpper), diagnoseGasUrl(backendRaw.value));
+    }
 
     const idNoZero = normalizeStripped(idUpper);
     const idPadded = normalizeToPadded4(idUpper);
@@ -170,11 +214,60 @@ function getRegistry() {
     });
   });
 
+  // 非列舉屬性：唔會影響 `for (const id in reg)` 或 Object.keys(...)，
+  // 只有診斷路徑（proxy 404、/api/health）會讀。
+  Object.defineProperty(registry, '_backendProblems', {
+    value: backendProblems, enumerable: false, configurable: true, writable: true
+  });
+
   return registry;
 }
 
 function getTroopsRegistry() {
   return getRegistry();
+}
+
+/**
+ * 診斷一個「有填但用唔到」的 TROOP_<id>_BACKEND 值。
+ * 只回問題代碼／中文說明，永不回傳值本身（同 health 一樣：只講「有冇設定」）。
+ * @returns {{code:string, message:string}}
+ */
+function diagnoseGasUrl(rawValue) {
+  const raw = cleanEnvValue(rawValue);
+  const original = String(rawValue == null ? '' : rawValue);
+  if (!original.trim()) return { code: 'EMPTY', message: 'TROOP_<id>_BACKEND 是空的（或只有引號／空白）。' };
+  if (!raw) return { code: 'EMPTY_AFTER_CLEAN', message: '功能變數值只有引號／空白／換行，清洗後是空的。' };
+  let u;
+  try { u = new URL(raw); } catch (e) {
+    return { code: 'NOT_A_URL', message: '不是有效網址：請貼上完整的 https://script.google.com/macros/s/…/exec（勿加說明文字或空格）。' };
+  }
+  if (u.protocol !== 'https:') return { code: 'NOT_HTTPS', message: '必須用 https://（http:// 會被拒）。' };
+  if (u.hostname !== 'script.google.com') {
+    return { code: 'WRONG_HOST', message: `主機必須是 script.google.com，但填了 ${u.hostname}。請用「部署 → 管理部署」提供的網址。` };
+  }
+  if (u.search || u.hash) return { code: 'HAS_QUERY_OR_HASH', message: '網址帶了 ? 參數或 # 片段，請只保留結尾為 /exec 的網址。' };
+  if (u.username || u.password || u.port) return { code: 'HAS_CREDENTIALS_OR_PORT', message: '網址含帳密或自訂 port，請用 Google 提供的原網址。' };
+  if (!/\/macros\/s\/[A-Za-z0-9_-]+\/exec$/.test(u.pathname) &&
+      !/^\/a\/[^/]+\/macros\/s\/[A-Za-z0-9_-]+\/exec$/.test(u.pathname) &&
+      !/^\/a\/macros\/[^/]+\/s\/[A-Za-z0-9_-]+\/exec$/.test(u.pathname)) {
+    if (/\/dev$/.test(u.pathname)) {
+      return { code: 'DEV_URL', message: '這是 /dev（測試部署）網址；系統只認 /exec（正式部署）。請貼 /exec 那條。' };
+    }
+    return { code: 'NOT_EXEC_PATH', message: '路徑必須是 /macros/s/<部署ID>/exec；請在「部署 → 管理部署」複製 Web 應用程式網址。' };
+  }
+  const m = u.pathname.match(/[A-Za-z0-9_-]{10,}/g);
+  if (!m) return { code: 'SHORT_DEPLOY_ID', message: '部署 ID 太短，似是被截斷；請重新複製完整網址。' };
+  return { code: 'UNKNOWN', message: '格式未能通過檢查；請重新複製「部署 → 管理部署」的 /exec 網址。' };
+}
+
+/** 該旅團的 backend 功能變數「有填但唔合格」時的診斷（冇問題回 null）。 */
+function getBackendProblem(troopId) {
+  if (troopId === undefined || troopId === null) return null;
+  const reg = getRegistry();
+  const problems = reg._backendProblems;
+  if (!problems || !problems.size) return null;
+  const padded = normalizeToPadded4(troopId);
+  return problems.get(padded) || problems.get(normalizeStripped(troopId)) || null;
 }
 
 function getTroopConfig(troopId) {
@@ -210,7 +303,7 @@ function getTroopConfig(troopId) {
 }
 
 function isValidGasUrl(urlString) {
-  const raw = String(urlString == null ? '' : urlString).trim();
+  const raw = cleanEnvValue(urlString);
   if (!raw) return false;
   // 本機 mock 後端（只限非生產環境，方便 devserver 預覽）
   try {
@@ -245,6 +338,9 @@ module.exports = {
   backendMatches,
   normalizeToPadded4,
   normalizeStripped,
+  cleanEnvValue,
+  diagnoseGasUrl,
+  getBackendProblem,
   getSuperKey,
   verifySuperKey,
   superKeyConfigured

@@ -1082,8 +1082,20 @@ function renderReleaseNotices(){
     else if(state.status==='initialize') statusText=inEn()?`⚠️ GS ${LATEST_RELEASE.gsVersion} is deployed, but initializeSheets() has not completed for this release (record: ${state.initializedGsVersion||'none'}). Run it once, then re-check.`:`⚠️ GS 已是 ${LATEST_RELEASE.gsVersion}，但此版本的 initializeSheets() 尚未完成（初始化紀錄：${state.initializedGsVersion||'未記錄'}）。請執行一次，然後重新檢查。`;
     else if(state.status==='error') statusText=inEn()?'⚠️ The GS version cannot be verified right now. Do not assume the update is complete; use Re-check later.':'⚠️ 暫時未能核對 GS 版本。請不要當作已經更新；稍後按「重新檢查」。';
     else statusText=inEn()?'Select a troop to verify its deployed GS version.':'選擇旅團後，系統會核對實際部署的 GS 版本。';
-    if(state.status==='ahead'||state.status==='unknown'){
-      host.innerHTML=`<section class="release-notice" role="status" aria-live="polite"><div class="release-head"><span>${title}</span></div><div class="release-status">${escapeHtmlText(statusText)}</div><button type="button" class="btn btn-sm btn-outline" onclick="checkBackendRelease()">🔄 ${inEn()?'Re-check':'重新檢查'}</button></section>`;
+    // 「核對不到」一定要講出真正原因，唔可以只叫用戶「稍後再試」——
+    // 最常見其實係旅團後端未接入（proxy 404）或後端未部署，兩者處理方法完全不同。
+    let reasonText='';
+    if(state.status==='error'&&state.error){
+      const raw=String(state.error);
+      const cause=/Unregistered or invalid troop|未見於可用清單|後端設定無效|TROOP_NOT_CONFIGURED|BACKEND_INVALID/i.test(raw)
+        ? (inEn()?'This troop has no usable backend yet, so there is no GS version to verify. Ask the APP ADMIN to finish the troop env vars, then Re-check (no need to change Code.gs).':'這個旅團的後端仍未接通，所以根本未有 GS 版本可以核對。請先完成旅團功能變數設定，再按「重新檢查」（毋須改 Code.gs）。')
+        : (inEn()?'Reason: ':'原因：');
+      reasonText=`<div style="font-size:11px;color:var(--text-light);margin-top:6px;word-break:break-word">${escapeHtmlText(cause)}${escapeHtmlText(raw.slice(0,300))}</div>`;
+    }
+    // ahead／unknown／error：版本未核實，一律唔提供下載（避免用戶用舊 Code.gs 覆蓋較新後端），
+    // 只保留「重新檢查」同（error 時）真正原因。
+    if(state.status==='ahead'||state.status==='unknown'||state.status==='error'){
+      host.innerHTML=`<section class="release-notice" role="status" aria-live="polite"><div class="release-head"><span>${title}</span></div><div class="release-status">${escapeHtmlText(statusText)}</div>${reasonText}<button type="button" class="btn btn-sm btn-outline" style="margin-top:8px" onclick="checkBackendRelease()">🔄 ${inEn()?'Re-check':'重新檢查'}</button></section>`;
       continue;
     }
     const steps=inEn()?[
@@ -1108,7 +1120,7 @@ function renderReleaseNotices(){
       LATEST_RELEASE.initializeRequired?'回到這裡按「重新檢查」，核對本版要求是否完成。':'新建 Sheet 首次使用仍須執行 initializeSheets()；已有正常 Sheet 今次更新毋須重跑。'
     ];
     const openSteps=!isHome&&actionNeeded?' open':'';
-    host.innerHTML=`<section class="release-notice ${cardClass}" role="status" aria-live="polite"><div class="release-head"><span>${title}</span><span class="release-chip">${inEn()?'Latest GS':'最新 GS'}：${LATEST_RELEASE.gsVersion}</span>${LATEST_RELEASE.initializeRequired?`<span class="release-chip required">${inEn()?'initializeSheets() required once':'必須執行 initializeSheets() 一次'}</span>`:''}</div><div class="release-summary">${inEn()?'Current release only — no sequential patch installation is needed.':'只列最新版本；無須逐級下載或安裝補丁。'}</div><div class="release-status">${escapeHtmlText(statusText)}</div><details${openSteps}><summary>${inEn()?'Update steps and download':'查看更新步驟及下載'}</summary><ol>${steps.map(step=>`<li>${escapeHtmlText(step)}</li>`).join('')}</ol><div class="release-actions"><a class="btn btn-sm btn-primary" href="apps-script/Code.gs?gs=${encodeURIComponent(LATEST_RELEASE.gsVersion)}" download="Code.gs">${inEn()?'⬇️ Download latest Code.gs':'⬇️ 下載最新 Code.gs'}</a>${!isHome&&currentTroopId&&!demo?`<button type="button" class="btn btn-sm btn-outline" onclick="checkBackendRelease()">🔄 ${inEn()?'Re-check':'重新檢查'}</button>`:''}</div></details></section>`;
+    host.innerHTML=`<section class="release-notice ${cardClass}" role="status" aria-live="polite"><div class="release-head"><span>${title}</span><span class="release-chip">${inEn()?'Latest GS':'最新 GS'}：${LATEST_RELEASE.gsVersion}</span>${LATEST_RELEASE.initializeRequired?`<span class="release-chip required">${inEn()?'initializeSheets() required once':'必須執行 initializeSheets() 一次'}</span>`:''}</div><div class="release-summary">${inEn()?'Current release only — no sequential patch installation is needed.':'只列最新版本；無須逐級下載或安裝補丁。'}</div><div class="release-status">${escapeHtmlText(statusText)}</div>${reasonText}<details${openSteps}><summary>${inEn()?'Update steps and download':'查看更新步驟及下載'}</summary><ol>${steps.map(step=>`<li>${escapeHtmlText(step)}</li>`).join('')}</ol><div class="release-actions"><a class="btn btn-sm btn-primary" href="apps-script/Code.gs?gs=${encodeURIComponent(LATEST_RELEASE.gsVersion)}" download="Code.gs">${inEn()?'⬇️ Download latest Code.gs':'⬇️ 下載最新 Code.gs'}</a>${!isHome&&currentTroopId&&!demo?`<button type="button" class="btn btn-sm btn-outline" onclick="checkBackendRelease()">🔄 ${inEn()?'Re-check':'重新檢查'}</button>`:''}</div></details></section>`;
   }
 }
 
@@ -1408,6 +1420,9 @@ async function loadTroops(){
     const r=await fetch('/api/troops');
     const d=r.ok?await r.json():null;
     let troops=(d&&d.troops)||{};
+    // 有填功能變數但格式無效嘅旅團：唔可以靜靜消失（APP ADMIN 會以為冇填到）。
+    // 卡片唔可以按（connected:false），只顯示問題，避免「見到旅團卡但一按就話未登記」。
+    const misconfigured=(d&&d.misconfigured)||{};
     // deduplicate 0082/82 for display: prefer padded
     const displayMap={}; const seenPadded=new Set();
     for(const id in troops){
@@ -1416,8 +1431,9 @@ async function loadTroops(){
       if(seenPadded.has(canonical)) continue;
       if(troops[id]&&troops[id].connected){ displayMap[canonical]=troops[id]; seenPadded.add(canonical); }
     }
-    if(Object.keys(displayMap).length===0){ grid.innerHTML=`<div style="grid-column:1/-1;text-align:center;padding:20px;color:var(--text-light)"><p>${inEn()?'No troops available':'暫無旅團資料 / No troops'}</p><p style="font-size:10px;margin-top:8px">${t('troop_none_admin')}</p><p style="font-size:11px;margin-top:10px;color:var(--orange)">⚠️ ${t('troop_stale_hint')}</p><button class="btn btn-sm btn-outline" style="margin-top:8px" onclick="forceReloadPage()">${t('home_reload')}</button></div>`; return; }
-    grid.innerHTML=Object.entries(displayMap).map(([id,t])=>`<div class="troop-card" onclick="selectTroop('${id}')"><div class="troop-id">${id}</div><div class="troop-name">${t.name||(inEn()?'Troop '+id:'第'+id+'旅')}</div><div style="font-size:9px;color:var(--text-light);margin-top:4px">✅</div></div>`).join('');
+    const brokenCards=Object.entries(misconfigured).map(([id,info])=>`<div class="troop-card" style="border:2px dashed var(--red);cursor:default;opacity:.85" title="${escapeHtmlText(info.problem||'')}"><div class="troop-id" style="color:var(--red)">${escapeHtmlText(id)}</div><div class="troop-name">${escapeHtmlText(info.name||('第'+id+'旅'))}</div><div style="font-size:9px;color:var(--red);margin-top:4px">⚠️ ${inEn()?'Env set but invalid':'功能變數已填但無效'}（${escapeHtmlText(info.problemCode||'INVALID')}）</div><div style="font-size:9px;color:var(--text-light);margin-top:3px;line-height:1.5">${escapeHtmlText(info.problem||'')}</div></div>`).join('');
+    if(Object.keys(displayMap).length===0){ grid.innerHTML=brokenCards+`<div style="grid-column:1/-1;text-align:center;padding:20px;color:var(--text-light)"><p>${inEn()?'No troops available':'暫無旅團資料 / No troops'}</p><p style="font-size:10px;margin-top:8px">${t('troop_none_admin')}</p><p style="font-size:11px;margin-top:10px;color:var(--orange)">⚠️ ${t('troop_stale_hint')}</p><button class="btn btn-sm btn-outline" style="margin-top:8px" onclick="forceReloadPage()">${t('home_reload')}</button></div>`; return; }
+    grid.innerHTML=brokenCards+Object.entries(displayMap).map(([id,t])=>`<div class="troop-card" onclick="selectTroop('${id}')"><div class="troop-id">${id}</div><div class="troop-name">${t.name||(inEn()?'Troop '+id:'第'+id+'旅')}</div><div style="font-size:9px;color:var(--text-light);margin-top:4px">✅</div></div>`).join('');
   }catch(e){
     console.error(e);
     grid.innerHTML=`<div style="grid-column:1/-1;text-align:center;padding:20px"><p style="color:var(--red);font-size:11px">${inEn()?'Load error':'載入出錯'}: ${e.message}</p><p style="font-size:10px;margin-top:8px;color:var(--text-light)">${t('troop_load_err_hint')}</p><p style="font-size:11px;margin-top:10px;color:var(--orange)">⚠️ ${t('troop_stale_hint')}</p><button class="btn btn-sm btn-outline" style="margin-top:8px" onclick="forceReloadPage()">${t('home_reload')}</button></div>`;

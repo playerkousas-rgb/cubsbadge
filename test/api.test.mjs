@@ -229,6 +229,99 @@ await check('proxy：未登記單位 → 404 連帶可行動提示', async () =>
   assert.ok(res.body.troubleshooting);
 });
 
+// ---- 2026-11-11 新旅團接入回報：卡片見到 0042，一按就「Unregistered or invalid troop ID」----
+// 根因：/api/troops 用「backend 有值」就算 connected，/api/proxy 用 isValidGasUrl 嚴格判斷，
+// 兩者唔一致；而且值貼錯（引號、/dev、換行）時，錯誤訊息一律叫用戶「檢查 0082 / 82」＋
+// 「找唔到82的SHEET」，完全誤導。
+await check('proxy：backend 值帶引號／尾隨換行（貼上常見）→ 清洗後照樣接通，唔可以當未登記', async () => {
+  clearEnv();
+  process.env.TROOP_0042_BACKEND = '  "https://script.google.com/macros/s/AKfycbQUOTEDxxxxxxxxxx/exec"\r\n';
+  process.env.TROOP_0042_APIKEY = 'sc_42_key';
+  let calledUrl = '';
+  stubFetch([['script.google.com', async (u) => { calledUrl = String(u); return { body: { success: true, gsVersion: '2026.11.05' } }; }]]);
+  try {
+    const handler = freshModule('../api/proxy.js');
+    const res = mockRes();
+    await handler(mockReq({ method: 'POST', body: { troopId: '0042', action: 'ecStatus' } }), res);
+    assert.equal(res.statusCode, 200, JSON.stringify(res.body));
+    assert.equal(res.body.success, true);
+    assert.ok(calledUrl.includes('/macros/s/AKfycbQUOTEDxxxxxxxxxx/exec'), '要打清洗後的 URL：' + calledUrl);
+    assert.ok(!calledUrl.includes('"'), '引號唔可以留喺 URL');
+    // 82 / 0042 都搵到同一團
+    const { getTroopConfig } = freshModule('../api/_lib/registry.js');
+    assert.equal(getTroopConfig('0042').backend, getTroopConfig('42').backend);
+  } finally { restoreFetch(); clearEnv(); }
+});
+
+await check('proxy：值有填但格式錯（/dev、非 GAS 網址）→ 講清楚係「設定無效」，唔可以叫用戶檢查 0082', async () => {
+  clearEnv();
+  process.env.TROOP_0042_BACKEND = 'https://script.google.com/macros/s/AKfycbDEVxxxxxxxxxx/dev';
+  const handler = freshModule('../api/proxy.js');
+  const res = mockRes();
+  await handler(mockReq({ method: 'POST', body: { troopId: '0042', action: 'ecStatus' } }), res);
+  assert.equal(res.statusCode, 404);
+  assert.equal(res.body.code, 'BACKEND_INVALID', '要有獨立錯誤碼，前端／APP ADMIN 分得出');
+  assert.equal(res.body.troubleshooting.envVarPresent, true, '要講明功能變數「有填」');
+  assert.equal(res.body.troubleshooting.problemCode, 'DEV_URL');
+  assert.match(res.body.error, /0042/, '要提返用戶自己嘅旅團編號');
+  assert.match(res.body.error, /\/exec/, '要講返正確格式');
+  assert.doesNotMatch(res.body.error, /0082 \/ 82/, '唔可以再叫 0042 嘅用戶去檢查 0082');
+  assert.doesNotMatch(res.body.troubleshooting.hint, /找不到82的SHEET|initializeSheets\(\).*未設定/, '唔可以誤導去 initializeSheets');
+  assert.ok(!JSON.stringify(res.body).includes('AKfycbDEV'), '診斷唔可以回傳 URL 值');
+  clearEnv();
+});
+
+await check('proxy／troups：「可用旅團」清單同 connected 一致 —— 無效設定唔會出現', async () => {
+  clearEnv();
+  process.env.TROOP_0082_BACKEND = 'https://script.google.com/macros/s/AKfycbOK82xxxxxxxxxxxx/exec';
+  process.env.TROOP_0042_BACKEND = 'https://script.google.com/macros/s/AKfycbDEVxxxxxxxxxx/dev';
+  const handler = freshModule('../api/proxy.js');
+  const res = mockRes();
+  await handler(mockReq({ method: 'POST', body: { troopId: '0110', action: 'ecStatus' } }), res);
+  assert.equal(res.statusCode, 404);
+  assert.deepEqual(res.body.troubleshooting.availableTroops, ['0082'], '無效嘅 0042 唔應該被當成可用');
+  const troopsHandler = freshModule('../api/troops.js');
+  const tRes = mockRes();
+  troopsHandler(mockReq({ method: 'GET', query: {} }), tRes);
+  assert.equal(tRes.body.troops['0082'].connected, true);
+  assert.equal(tRes.body.troops['0042'], undefined, '唔可以出現「卡片見到但你一按就話未登記」');
+  assert.ok(tRes.body.misconfigured && tRes.body.misconfigured['0042'], '要另外標示有填但無效，唔可以靜靜消失');
+  assert.equal(tRes.body.misconfigured['0042'].connected, false);
+  assert.equal(tRes.body.misconfigured['0042'].problemCode, 'DEV_URL');
+  assert.ok(!JSON.stringify(tRes.body).includes('AKfycbDEV'), '唔可以回傳 URL 值');
+  clearEnv();
+});
+
+await check('proxy：完全冇填 vs 有填但無效 → 兩種唔同錯誤碼（唔可以混為一談）', async () => {
+  clearEnv();
+  const handler = freshModule('../api/proxy.js');
+  const missing = mockRes();
+  await handler(mockReq({ method: 'POST', body: { troopId: '0042', action: 'ecStatus' } }), missing);
+  assert.equal(missing.statusCode, 404);
+  assert.equal(missing.body.code, 'TROOP_NOT_CONFIGURED');
+  assert.equal(missing.body.troubleshooting.envVarPresent, false);
+  assert.ok(!/後端設定無效/.test(missing.body.error));
+
+  process.env.TROOP_0042_BACKEND = '   ';
+  const blank = mockRes();
+  await handler(mockReq({ method: 'POST', body: { troopId: '0042', action: 'ecStatus' } }), blank);
+  assert.equal(blank.body.code, 'BACKEND_INVALID', '填了空白＝有填但無效');
+  clearEnv();
+});
+
+await check('health：backend 值無效 → 404 帶 BACKEND_INVALID 同問題代碼（唔回值）', async () => {
+  clearEnv();
+  process.env.TROOP_0042_BACKEND = 'https://script.google.com/macros/s/AKfycbDEVxxxxxxxxxx/dev';
+  const health = freshModule('../api/health.js');
+  const res = mockRes();
+  await health(mockReq({ query: { troopId: '0042', checkBackend: '0' } }), res);
+  assert.equal(res.statusCode, 404);
+  assert.equal(res.body.code, 'BACKEND_INVALID');
+  assert.equal(res.body.backendConfigProblem.code, 'DEV_URL');
+  assert.ok(!JSON.stringify(res.body).includes('AKfycbDEV'));
+  clearEnv();
+});
+
 await check('proxy：前端自帶 apikey 會被丟棄，一律用 registry 嗰條（§1）', async () => {
   clearEnv();
   process.env.TROOP_0082_BACKEND = 'https://script.google.com/macros/s/AKfycbREALXXXXXXXXXX/exec';

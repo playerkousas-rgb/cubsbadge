@@ -1,7 +1,7 @@
 // Vercel Serverless Function - Same-origin Proxy for Google Apps Script
 // 超管（隱藏維護帳戶）密碼只喺 Vercel 比對（SUPER_KEY），之後改送 action=superLogin
 //       （apikey 由 registry 注入）—— 密碼永遠唔會轉發去 leaf GS。
-const { getTroopConfig, getRegistry, normalizeToPadded4, normalizeStripped, isValidGasUrl } = require('./_lib/registry');
+const { getTroopConfig, getRegistry, normalizeToPadded4, normalizeStripped, isValidGasUrl, getBackendProblem } = require('./_lib/registry');
 const { isSuperAdminLoginId, verifySuperAdminLogin } = require('./_lib/superadmin');
 const { getScoutAdminApiUrl, isScoutAdminSuccess } = require('./_lib/scoutAdmin');
 
@@ -192,25 +192,52 @@ module.exports = async function handler(req, res) {
 
     const troopConfig = getTroopConfig(troopId);
     if (!troopConfig) {
+      // 三種完全不同的情況，唔可以再用同一句「請檢查旅團編號是否為 0082 / 82」：
+      //   A. 功能變數完全冇填         → 請 APP ADMIN 加 TROOP_<id>_BACKEND
+      //   B. 有填，但值清洗後為空     → 只有引號／空白／換行
+      //   C. 有填，但唔係合法 GAS URL → 逐項講清楚邊一部分唔合格（唔回值本身）
+      const padded = normalizeToPadded4(troopId);
+      const problem = getBackendProblem(troopId);
       let available = [];
       try {
         const reg = getRegistry();
         const uniq = new Set();
         Object.keys(reg).forEach(k => {
+          // 只有真正可用的旅團才算「可用」（同 /api/troops connected 一致）；
+          // 否則會叫 APP ADMIN 去試一個明知無效的編號。
+          if (reg[k] && reg[k].backendValid === false) return;
           const n = normalizeToPadded4(k);
           if (/^\d{4}$/.test(n) || /^\d+$/.test(k)) uniq.add(n);
         });
         available = Array.from(uniq).sort().slice(0, 20);
       } catch(e) {}
+
+      const configured = padded && !problem
+        ? `旅團 ${padded} 未見於可用清單。`
+        : '';
+      let message;
+      let hint;
+      if (problem) {
+        // B/C：功能變數有填，問題喺個值
+        message = `旅團 ${padded} 的後端設定無效（TROOP_${padded}_BACKEND 已填但格式不正確）：${problem.message} 可用旅團: ${available.join(', ') || '無'}`;
+        hint = `請 APP ADMIN 到 Vercel → Settings → Environment Variables 修正 TROOP_${padded}_BACKEND（只貼「部署 → 管理部署」的 /exec 網址，不要有引號、空白、/dev、?參數），儲存後必須 Redeploy 才會生效。`;
+      } else {
+        message = `Unregistered or invalid troop ID: ${troopId}. 系統找不到旅團 ${padded} 的後端設定（TROOP_${padded}_BACKEND）。${configured} 可用旅團: ${available.join(', ') || '無'}`;
+        hint = `請 APP ADMIN 在 Vercel 設定 TROOP_${padded}_BACKEND / TROOP_${padded}_APIKEY / TROOP_${padded}_NAME（0082 與 82 視為同一團），儲存後 Redeploy。若已設定仍未生效，先按「重新檢查」；旅團端另需執行過 initializeSheets()。`;
+      }
+
       return res.status(404).json({
         success: false,
-        error: `Unregistered or invalid troop ID: ${troopId}. 請檢查旅團編號是否為 0082 / 82？可用旅團: ${available.join(', ') || '無'}`,
+        code: problem ? 'BACKEND_INVALID' : 'TROOP_NOT_CONFIGURED',
+        error: message,
         troubleshooting: {
           requested: troopId,
-          normalizedPadded: normalizeToPadded4(troopId),
+          normalizedPadded: padded,
           normalizedStripped: normalizeStripped(troopId),
           availableTroops: available,
-          hint: '若你看到「找不到82的SHEET」，請確認 Vercel 環境變數 TROOP_0082_BACKEND 已正確設定，並且 Apps Script 已執行 initializeSheets()'
+          envVarPresent: !!problem,          // 有填但無效 = true；完全冇填 = false
+          problemCode: problem ? problem.code : null,
+          hint
         }
       });
     }

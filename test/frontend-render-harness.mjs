@@ -165,6 +165,33 @@ assert.match(element('mainReleaseNotice').innerHTML,/Verified/);
 run("fetch=async()=>({ok:true,status:200,text:async()=>JSON.stringify({success:true,gsVersion:LATEST_RELEASE.gsVersion,initializedGsVersion:LATEST_RELEASE.gsVersion})})");
 await run('checkBackendRelease()');
 assert.equal(run('backendReleaseState.status'),'current',run('backendReleaseState.error'));
+// 2026-11-11：/api/troops 回 misconfigured（有填但格式錯）→ 要顯示警示卡，唔可以靜靜消失
+run("currentLang='zh'");
+run("fetch=async()=>({ok:true,status:200,json:async()=>({troops:{'0082':{name:'第 82 旅',connected:true}},misconfigured:{'0042':{name:'第 42 旅',connected:false,backendConfigured:true,problemCode:'DEV_URL',problem:'這是 /dev（測試部署）網址；系統只認 /exec（正式部署）。'}}})})");
+await run('loadTroops()');
+{
+  const grid=element('troopGrid').innerHTML;
+  assert.match(grid,/0042/,'有填但無效嘅旅團要顯示，唔可以靜靜消失');
+  assert.match(grid,/DEV_URL/,'要顯示問題代碼');
+  assert.match(grid,/功能變數已填但無效/);
+  assert.match(grid,/0082/,'正常旅團照樣列出');
+  assert.doesNotMatch(grid,/onclick="selectTroop\('0042'\)"/,'無效旅團唔可以按（避免一按就話未登記）');
+}
+
+// 2026-11-11 用戶回報：後端未接通時只顯示「暫時未能核對 GS 版本」＋叫「稍後再試」，
+// 完全冇講原因（真實原因係 proxy 404「Unregistered or invalid troop ID」）。
+run("currentLang='zh'");
+run("fetch=async()=>({ok:false,status:404,text:async()=>JSON.stringify({success:false,code:'TROOP_NOT_CONFIGURED',error:'Unregistered or invalid troop ID: 0042. 系統找不到旅團 0042 的後端設定（TROOP_0042_BACKEND）。',troubleshooting:{hint:'請 APP ADMIN 設定 TROOP_0042_BACKEND'}})})");
+await run('checkBackendRelease()');
+assert.equal(run('backendReleaseState.status'),'error');
+{
+  const notice=element('mainReleaseNotice').innerHTML;
+  assert.match(notice,/暫時未能核對 GS 版本/,'保留原文，唔可以靜靜當成已更新');
+  assert.match(notice,/後端仍未接通/,'要講出真正原因（後端未接通），唔可以只叫稍後再試');
+  assert.match(notice,/重新檢查/,'仍然要有重新檢查按鈕');
+  assert.doesNotMatch(notice,/download=|apps-script\/Code\.gs/,'未核對到版本時唔可以叫人下載覆蓋後端');
+}
+
 run("currentLang='zh'; currentTroopId='DEMO'; currentUser.ymis='DEMO_LEADER'; resetBackendRelease()");
 
 // Regression coverage for user management's previously unreachable recovery and role-update paths.
