@@ -30,6 +30,22 @@
    - 旅團列表顯示紅色虛線警示卡（不可點擊），直接寫出問題代碼及修正方法。
    - 版本核對失敗（`error`）時，卡片除保留原文「暫時未能核對 GS 版本…請不要當作已經更新」外，會顯示**真正原因**；並改為**不提供 Code.gs 下載**（版本未核實時不應叫人覆蓋後端）。
 
+## 2b. 第二回報：`{"success":false,"error":"Unknown action: "}`
+
+這句是 **leaf GS 的 `doGet`/`doPost` 尾段**回覆（`apps-script/Code.gs`：`'Unknown action: '+action`）。
+注意冒號後面是空白 ⇒ 後端收到的 `action` 是空字串。
+
+成因（已修）：
+
+| 情況 | 舊行為 | 現在 |
+|---|---|---|
+| `action` 只在 query string（`POST /api/proxy?action=ecStatus`），body 冇 `action` | proxy 只讀 `payload.action`，於是轉發一個**冇 action** 的 body → GS 回 `Unknown action: ` | `payload.action` 會由已解析的 action 補回，再轉發 |
+| `action` 是空字串／純空白 | 視為有 action 照樣轉發 | 即時 400 `MISSING_ACTION`，講清楚要填 body 的 `action` |
+| 後端真的不認識該 action（打錯字／GS 版本舊） | 只回一句 `Unknown action: xxx`，前端亦唔顯示 troubleshooting | proxy 加 `troubleshooting.hint`（「後端連線正常，但唔識 action『xxx』…」），前端 `apiRequest` 會連 hint 一齊顯示，並且**不會**誤判為 Sheet／帳號問題 |
+
+另外提醒：直接 `GET <GAS /exec>` 而完全冇 `action` 參數，一樣會得到這句 —— 測試連線請用
+`/api/health?troopId=0042` 或網站上的「重新檢查」，唔好直接開 `/exec`。
+
 ## 3. 現在的正確處理流程（APP ADMIN）
 
 1. Vercel → Settings → Environment Variables，逐個檢查 `TROOP_0042_BACKEND` / `_APIKEY` / `_NAME`：

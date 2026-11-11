@@ -1248,7 +1248,12 @@ async function apiRequest(gasData, opts={}){
       const hint = json.troubleshooting ? ` - ${json.troubleshooting.hint||''}` : '';
       throw new Error((json.error||(inEn()?`Request failed ${resp.status}`:`請求失敗 ${resp.status}`))+hint);
     }
-    if(json.success===false && !allowFail) throw new Error(json.error||t('api_failed'));
+    // 後端「有回應但講失敗」時，proxy 可能附 troubleshooting.hint（例如 Unknown action、
+    // 帳號未開通、Sheet 問題）—— 要一齊顯示，否則用戶只見到一句冇線索嘅錯誤。
+    if(json.success===false && !allowFail){
+      const hint=json.troubleshooting&&json.troubleshooting.hint?` - ${json.troubleshooting.hint}`:'';
+      throw new Error((json.error||t('api_failed'))+hint);
+    }
     return json;
   }catch(err){
     clearTimeout(timer);

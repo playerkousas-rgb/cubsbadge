@@ -144,8 +144,14 @@ module.exports = async function handler(req, res) {
     const troopId = String(rawTroopId).trim();
     let action = payload.action || (req.query && req.query.action);
 
-    if (!action) {
-      return res.status(400).json({ success: false, error: 'Missing required parameter: action' });
+    // action 是空白／純空白 → 視同冇提供（唔可以送去後端，只會換回「Unknown action: 」）
+    if (!String(action == null ? '' : action).trim()) {
+      return res.status(400).json({
+        success: false,
+        code: 'MISSING_ACTION',
+        error: '請求缺少 action（動作）參數。請在請求 body 的 "action" 欄位指定要執行的動作，例如 ecStatus／load／getConfig。',
+        troubleshooting: { hint: 'action 不可以是空白；請用 body 的 action 欄位（query string 亦可，但優先 body）。' }
+      });
     }
 
     // ── 保留帳號登入：密碼（SUPER_KEY）只存在 Vercel 功能變數 ─────────
@@ -281,6 +287,25 @@ module.exports = async function handler(req, res) {
     }
     // 密碼同步只接受受信節點直接簽章／key，不可借用 proxy 的 key。
     if (action === 'setPw' || action === 'verifyPw') return res.status(403).json({success:false,code:'UNSUPPORTED_ACTION',error:'不支援此操作'});
+
+    // ── action 一定要連 body 一齊轉發 ────────────────────────────────────
+    // 舊版只讀 payload.action；若 action 只出現喺 query string（POST /api/proxy?action=xxx）
+    // 或 body 冇 action，就會轉發一個「冇 action」嘅 body，GS 回 {error:'Unknown action: '}
+    // —— 用戶只見到一句冇任何線索嘅錯誤（2026-11-11 回報）。
+    // 同時清走空字串／純空白 action，唔好當成有效值送去後端。
+    const actionClean = String(action == null ? '' : action).trim();
+    if (!actionClean) {
+      console.error(`[PROXY] refuse: empty action after normalisation troop=${troopId}`);
+      return res.status(400).json({
+        success: false,
+        code: 'MISSING_ACTION',
+        error: '請求缺少 action（動作）參數。請在請求 body 的 "action" 欄位指定要執行的動作，例如 ecStatus／load／getConfig。',
+        troubleshooting: { hint: 'action 不可以是空白；請用 body 的 action 欄位（query string 亦可，但優先 body）。' }
+      });
+    }
+    payload.action = actionClean;
+    action = actionClean;
+
     if (troopConfig.apikey) payload.apikey = troopConfig.apikey;
 
     const controller = new AbortController();
@@ -362,17 +387,28 @@ module.exports = async function handler(req, res) {
 
     if (jsonResult && jsonResult.success === false && jsonResult.error) {
       const errLower = String(jsonResult.error).toLowerCase();
+      // 後端講「唔識呢個 action」= 版本唔對／打錯字，唔係 Sheet 問題。
+      // 只回一句「Unknown action: 」用戶完全冇線索（2026-11-11 回報），要講清楚。
+      const unknownAction = /unknown action/i.test(String(jsonResult.error));
+      if (unknownAction) {
+        jsonResult.troubleshooting = {
+          hint: `後端連線正常（已成功打到旅團 GS），但後端唔識 action「${action}」。請確認 action 名稱有冇打錯，或旅團 Code.gs 版本過舊未支援此功能（更新 Code.gs 並重新部署）。`,
+          action,
+          troopId,
+          normalized: normalizeToPadded4(troopId)
+        };
+      }
       // 「找不到此帳號／找不到用戶」係登入授權問題，唔係工作表問題。
       // 掛「Sheet 缺工作表」提示會令用戶誤會後端連唔到（曾經有旅團因此報「連接不了後端」）。
       const isAccountNotFound = errLower.includes('找不到此帳號') || errLower.includes('找不到用戶') || errLower.includes('找不到成員') || errLower.includes('account not found');
-      const looksLikeSheetIssue = !isAccountNotFound && (errLower.includes('sheet') || errLower.includes('工作表') || errLower.includes('找不到'));
+      const looksLikeSheetIssue = !isAccountNotFound && !unknownAction && (errLower.includes('sheet') || errLower.includes('工作表') || errLower.includes('找不到'));
       if (looksLikeSheetIssue) {
         jsonResult.troubleshooting = {
           hint: `此錯誤通常表示 Google Sheet 缺少工作表或 ${troopId} 設定異常。請執行 initializeSheets()，並確認 TROOP_${normalizeToPadded4(troopId)}_BACKEND 指向正確的 Spreadsheet。`,
           troopId: troopId,
           normalized: normalizeToPadded4(troopId)
         };
-      } else if (isAccountNotFound) {
+      } else if (isAccountNotFound && !unknownAction) {
         jsonResult.troubleshooting = {
           hint: '後端連線正常；此帳號未開通。新旅團請以預設管理員（YMIS 1111111111）登入後於「用戶管理」開戶，成員可按「申請帳戶」。',
           troopId: troopId,

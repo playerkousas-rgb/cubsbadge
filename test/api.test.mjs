@@ -309,6 +309,58 @@ await check('proxy：完全冇填 vs 有填但無效 → 兩種唔同錯誤碼�
   clearEnv();
 });
 
+// ---- 2026-11-11 回報：{"success":false,"error":"Unknown action: "} ----
+// 根因：proxy 只讀 payload.action；若 action 只喺 query string（POST /api/proxy?action=xxx）
+// 或 body 冇 action，就會轉發「冇 action」嘅 body，GS 回「Unknown action: 」——冇任何線索。
+await check('proxy：action 只喺 query string 時，必須連 body 一齊轉發（唔可以變 Unknown action: ）', async () => {
+  clearEnv();
+  process.env.TROOP_0082_BACKEND = 'https://script.google.com/macros/s/AKfycbREALXXXXXXXXXX/exec';
+  let sentBody = null;
+  stubFetch([['script.google.com', async (u, o) => { sentBody = o.body ? JSON.parse(o.body) : null; return { body: { success: true } }; }]]);
+  try {
+    const handler = freshModule('../api/proxy.js');
+    const res = mockRes();
+    await handler(mockReq({ method: 'POST', query: { action: 'getConfig' }, body: { troopId: '0082', token: 't' } }), res);
+    assert.equal(res.statusCode, 200);
+    assert.equal(sentBody.action, 'getConfig', '轉發去 GS 的 body 一定要有 action');
+  } finally { restoreFetch(); clearEnv(); }
+});
+
+await check('proxy：action 空白／全空格 → 400 MISSING_ACTION，唔會轉發去後端', async () => {
+  clearEnv();
+  process.env.TROOP_0082_BACKEND = 'https://script.google.com/macros/s/AKfycbREALXXXXXXXXXX/exec';
+  let called = false;
+  stubFetch([['script.google.com', async () => { called = true; return { body: { success: true } }; }]]);
+  try {
+    const handler = freshModule('../api/proxy.js');
+    for (const action of ['', '   ', undefined]) {
+      const res = mockRes();
+      await handler(mockReq({ method: 'POST', query: { action }, body: { troopId: '0082', action, token: 't' } }), res);
+      assert.equal(res.statusCode, 400, `action=${JSON.stringify(action)}`);
+      assert.equal(res.body.code, 'MISSING_ACTION');
+      assert.match(res.body.error, /action/, '要講清楚缺少的是 action');
+    }
+    assert.equal(called, false, '空白 action 唔應該送去 GS（只會換回一句 Unknown action: ）');
+  } finally { restoreFetch(); clearEnv(); }
+});
+
+await check('proxy：後端回 Unknown action → 附可行動提示（唔會誤判為 Sheet／帳號問題）', async () => {
+  clearEnv();
+  process.env.TROOP_0082_BACKEND = 'https://script.google.com/macros/s/AKfycbREALXXXXXXXXXX/exec';
+  stubFetch([['script.google.com', async () => ({ body: { success: false, error: 'Unknown action: ' } })]]);
+  try {
+    const handler = freshModule('../api/proxy.js');
+    const res = mockRes();
+    await handler(mockReq({ method: 'POST', body: { troopId: '0082', action: 'notARealAction', token: 't' } }), res);
+    assert.equal(res.statusCode, 200);
+    const hint = res.body.troubleshooting && res.body.troubleshooting.hint;
+    assert.ok(hint && /唔識 action/.test(hint), '要講明後端唔識呢個 action：' + hint);
+    assert.match(hint, /notARealAction/, '要講返係邊個 action');
+    assert.match(hint, /後端連線正常/, '要講明連線其實正常');
+    assert.doesNotMatch(hint, /initializeSheets|找不到82的SHEET/, '唔可以誤判為 Sheet 問題');
+  } finally { restoreFetch(); clearEnv(); }
+});
+
 await check('health：backend 值無效 → 404 帶 BACKEND_INVALID 同問題代碼（唔回值）', async () => {
   clearEnv();
   process.env.TROOP_0042_BACKEND = 'https://script.google.com/macros/s/AKfycbDEVxxxxxxxxxx/dev';
