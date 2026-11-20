@@ -4,8 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <meta name="theme-color" content="#FFD60A">
-<meta name="cubsbadge-build" content="2026.11.20">
-<script src="assets/frontend-freshness.js?build=2026.11.20" defer></script>
+<meta name="cubsbadge-build" content="2026.11.20.1">
+<script src="assets/frontend-freshness.js?build=2026.11.20.1" defer></script>
 <!-- App icon：金紫荊獎章（favicon + PWA / iOS 主畫面圖示） -->
 <!-- 使用 assets 內的高解像度圖示，避免 favicon／頁首圖示顯示模糊 -->
 <link rel="icon" type="image/png" sizes="256x256" href="assets/app-icon-256.png">
@@ -718,9 +718,9 @@ html[lang="en"] body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","No
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="assets/ymis-export.js?build=2026.11.14.1"></script>
-<script src="assets/ymis-parse.js?build=2026.11.20"></script>
-<script src="assets/cub-progress.js?build=2026.11.20"></script>
-<script src="assets/form-generator.js?build=2026.11.20"></script>
+<script src="assets/ymis-parse.js?build=2026.11.20.1"></script>
+<script src="assets/cub-progress.js?build=2026.11.20.1"></script>
+<script src="assets/form-generator.js?build=2026.11.20.1"></script>
 <!-- Scout Admin 統一回報 widget（統一回報格式 v1，見 scout-admin SCOUT_ADMIN.md）：問題回報／意見回饋直達 scout-admin 後台。
      data-app="幼童軍進度追蹤"＝來源系統正式名稱；本 APP 各頁的「🐛💬 回報 · 意見」按鈕
      （登入前 welcome-nav／登入頁連結／登入後 header 常駐）一律經 openScoutReport() 開啟這個 widget 的 modal；
@@ -2153,7 +2153,7 @@ async function saveChanges(){
   let interval=null; const pendingSnapshot=[...pendingChanges];
   try{
     let p=10; interval=setInterval(()=>{ p=Math.min(p+15,90); progBar.style.width=p+'%'; },300);
-    const d=await apiRequest({action:'save',changes:pendingChanges,confirmer:currentUser.name},{method:'POST',allowFail:false});
+    const d=await apiRequest({action:'save',token:currentToken,changes:pendingSnapshot,confirmer:currentUser.name},{method:'POST',allowFail:false});
     clearInterval(interval); progBar.style.width='100%';
     if(d.success){
       txt.textContent=t('save_ok'); sub.textContent=tf('save_done_n',d.processed||pendingSnapshot.length);

@@ -33,6 +33,10 @@ const proxy = fs.readFileSync('api/proxy.js', 'utf8');
 const troops = fs.readFileSync('api/troops.js', 'utf8');
 
 console.log('=== 1. 版號統一（v6.0） ===');
+check('確認寫入雲端須隨 save 請求傳送當前登入憑證', () => {
+  assert.match(html, /apiRequest\(\{action:'save',(?=[^}]*\btoken:currentToken\b)[^}]*changes:pendingSnapshot/);
+});
+
 check('index.html 無殘留舊版號 v5.2 / v5.8', () => {
   assert.equal(/v5\.(2|8)\b/.test(html), false, '仍有舊版號字樣');
 });
