@@ -28,16 +28,19 @@
 
 ---
 
-## 現有旅團本次更新（2026-11-02）
+## 現有旅團本次更新（2026-11-20）
 
-- **領袖登入新增「忘記密碼」**：領袖分頁輸入登記電郵 → 收一次性重設碼 → 自訂新密碼。安全設計、限速同發信故障處理見 [docs/PASSWORD_RESET.md](docs/PASSWORD_RESET.md)。
-- 最新 GS 為 `2026.11.02`。旅團換上最新 `Code.gs` 並部署新版本後，**已有正常 Sheet 毋須執行 `initializeSheets()`**：新增嘅「密碼重設」工作表會喺第一次使用時自動補建，不會重設或遷移用戶資料、成員資料或 API Key。
+- **修正「授權勾選」對成員帳戶完全無效**：以前個別成員即使設為可勾選，後端只睇角色，寫入一律被拒；同時「授權勾選」會把領袖／管理員靜靜降為成員，只改權限（冇帶角色）的請求亦會清空角色欄。本版已修正，並在 `load` 回傳登入者最新權限，管理員改完即時生效。
+- **登入可用性**：兩個登入分頁都接受 YMIS 或 Email（舊版 YMIS 分頁把輸入截短至 10 字，管理員貼電郵必定失敗）、忘記密碼入口在兩個分頁都顯示、登入後頁首新增「🔑 更改密碼」，並提示「連續 5 次錯誤鎖定 15 分鐘」。
+- **活動履歷不會同步去 SCOUTBOOK／CUBBOOK**（設計如此：BOOK 只讀 `progress`／`flatProgress`／`otherBadges` 及待批申報）。詳見 [docs/CHANGE_LOG_v6.2_permissions.md](docs/CHANGE_LOG_v6.2_permissions.md)。
+- 最新 GS 為 `2026.11.20`。換上最新 `Code.gs` 並部署新版本後，**已有正常 Sheet 毋須執行 `initializeSheets()`**；本版沒有新增工作表或欄位，不會重設或遷移用戶資料、成員資料或 API Key。
+- **領袖登入「忘記密碼」**：領袖分頁輸入登記電郵 → 收一次性重設碼 → 自訂新密碼。安全設計、限速同發信故障處理見 [docs/PASSWORD_RESET.md](docs/PASSWORD_RESET.md)。
 - **換檔後請喺 Apps Script 編輯器執行一次 `testPasswordResetMail()`**，容許 Google「傳送電郵」授權並收測試信；此函式不寫工作表、不改帳號資料。未授權時前端會顯示全團發信故障提示，團長仍可喺「用戶管理」直接重設密碼。
 - 仍使用舊 GS 的旅團須換上最新 `Code.gs` 並部署新版本；舊 GS 無忘記密碼入口，前端會顯示明確升級提示。下方三步是**新建 Sheet 首次接入**，首次初始化仍不可省略。版本核對不會把舊初始化標記改成新值。
 
 ## 旅團做（佢哋只做 3 步，唔會掂功能變數）
 
-1. 建新 Google Sheet → 擴充功能 → Apps Script → 貼最新 `apps-script/Code.gs`（GS 2026.11.02）→ 儲存
+1. 建新 Google Sheet → 擴充功能 → Apps Script → 貼最新 `apps-script/Code.gs`（GS 2026.11.20）→ 儲存
 2. 執行 `initializeSheets()` → 授權
    - **生成／保留 API Key**（彈窗只提供 API Key，不顯示自動取得的部署 URL；不要求輸入或設定旅團編號）
    - 順手**清走舊版遺留喺指令碼屬性嘅 `SUPER_KEY`**（值只應該存在你嘅 Vercel）

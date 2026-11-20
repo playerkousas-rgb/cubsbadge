@@ -8,8 +8,8 @@
 // 本檔永不生成、永不顯示、永不回傳任何密碼；initializeSheets／showApiKey 只顯示旅團自己嗰隻 API Key。
 // 版本同改動紀錄一律寫喺 docs/CHANGE_LOG_*.md；呢度只保留最新 GS 發佈識別供前端核對，不設逐級升級表。
 // ============================================================
-const CUB_GS_VERSION = '2026.11.05.1';
-const CUB_GS_RELEASE_DATE = '2026-11-05';
+const CUB_GS_VERSION = '2026.11.20';
+const CUB_GS_RELEASE_DATE = '2026-11-20';
 const CUB_GS_INIT_REQUIRED = false;
 const CUB_GS_INITIALIZED_PROP = 'CUB_GS_INITIALIZED_VERSION';
 function getCubGsReleaseStatus(){
@@ -494,7 +494,16 @@ const CAN_MANAGE_ROLES = {
   'group_leader': ['branch_leader','member'],
   'branch_leader': ['member']
 };
-function canUserTick(r){ return CAN_TICK_ROLES.indexOf(r)>=0; }
+// 勾選權限：角色本身可勾選，或該帳戶在 Users 表「can_tick」欄被個別授權
+// （管理員在「用戶管理」按「授權勾選」）。
+// - 傳入字串＝角色（舊呼叫相容，只睇角色）
+// - 傳入用戶物件（getUser／login 回傳）＝角色 或 can_tick===true
+// 之前所有寫入閘門都只睇角色，令「授權勾選」對 member 帳戶完全無效（用戶回報：
+// 「權限已設定為可勾選但仍不能更新進度」）。
+function canUserTick(r){
+  if(r && typeof r==='object') return CAN_TICK_ROLES.indexOf(String(r.role||''))>=0 || r.can_tick===true;
+  return CAN_TICK_ROLES.indexOf(String(r||''))>=0;
+}
 function getRoleLevel(r){ return ROLE_HIERARCHY[r]||0; }
 function canManageRole(m,t){ return (CAN_MANAGE_ROLES[m]||[]).indexOf(t)>=0; }
 function canManageUser(manager,targetRole){ return manager && (manager.role==='super_admin' || canManageRole(manager.role,targetRole)); }
@@ -978,8 +987,10 @@ function doPost(e){
     // save & addMember 需要 apikey ( 向下兼容：若無 apikey 但有有效 token 也允許)
     if(action==='save' || action==='addMember' || action==='addUser' || action==='bulkAddUsers' || action==='saveOtherBadge'){
       if(body.token && (action==='save'||action==='saveOtherBadge')){
+        // 進度／其他獎章寫入：角色可勾選，或該帳戶已被個別「授權勾選」（can_tick）。
         const actor=getUser(validateToken(body.token));
-        if(!actor || !canUserTick(actor.role)) return jsonResponse({success:false,error:'需領袖權限'});
+        if(!actor) return jsonResponse({success:false,error:'Token 無效或過期'});
+        if(!canUserTick(actor)) return jsonResponse({success:false,error:'此帳號未有勾選進度權限，請聯絡旅長／管理員在「用戶管理」按「授權勾選」'});
       }
       const reqKey=body.apikey;
       if(reqKey && reqKey!==getApiKey()) return jsonResponse({success:false,error:'Invalid API Key'});
@@ -1168,6 +1179,8 @@ function handleLogin(loginId,password,superTicket){
   }
   let user=(/^\d{10}$/.test(loginId)||/^L\d+/i.test(loginId))? getUser(loginId): getUserByEmail(loginId);
   if(!user) user=getUser(loginId)||getUserByEmail(loginId);
+  // 內部 L 編號大小寫不相容：輸入 l0001 亦要搵到 L0001（只影響 L 編號，數字 YMIS 不變）
+  if(!user && /^L\d+$/i.test(loginId)) user=getUser(String(loginId).toUpperCase())||getUserByEmail(String(loginId).toLowerCase());
   const t=getUsersTable();
   if(!t) return jsonResponse({success:false,error:'系統尚未初始化（找不到 Users 工作表）'});
   const row=user?findUserRowByYmis(t,String(user.ymis)):null;
@@ -1636,11 +1649,17 @@ function handleUpdateUserRole(targetYmis,newRole,canTick,managerYmis, allowedBad
   if(normalizedSquadRole!==undefined&&VALID_SQUAD_ROLES.indexOf(normalizedSquadRole)<0) return jsonResponse({success:false,error:'無效的小隊職務'});
   const manager=managerOverride||getUser(managerYmis);
   if(!manager) return jsonResponse({success:false,error:'找不到管理員'});
+  // 角色只會喺「明確提供」同「有效」時才寫入：
+  //   舊版 updatePermissions／上游同步只送 can_tick／allowed_badges（冇 new_role），
+  //   以前會把 new_role=undefined 寫入 role 欄 → 靜靜將領袖／管理員降為 member。
+  const rawRole=String(newRole===undefined||newRole===null?'':newRole).trim();
+  if(rawRole && VALID_ROLES.indexOf(rawRole)<0) return jsonResponse({success:false,error:'無效角色：'+rawRole});
+  const roleProvided=!!rawRole;
   // super_admin 可以改任何人，admin 可改旅長／幼童軍領袖／成員，旅長可改幼童軍領袖／成員，幼童軍領袖可改成員
-  if(manager.role!=='super_admin' && !canManageRole(manager.role,newRole) && manager.role!=='admin') return jsonResponse({success:false,error:'權限不足，你的等級不可設定此角色'});
+  if(roleProvided && manager.role!=='super_admin' && !canManageRole(manager.role,rawRole) && manager.role!=='admin') return jsonResponse({success:false,error:'權限不足，你的等級不可設定此角色'});
   // 旅長全團只可有一位（換人流程：先將現任轉為其他角色，再升新人）
   // 拒絕時回傳現任旅長姓名（gslLockMsg）；更新同一人時以 exclude 自己避免自鎖
-  if(newRole==='group_leader'){
+  if(rawRole==='group_leader'){
     const cur=findActiveGroupLeader(targetYmis);
     if(cur) return jsonResponse({success:false,error:gslLockMsg(cur.name)});
   }
@@ -1649,14 +1668,20 @@ function handleUpdateUserRole(targetYmis,newRole,canTick,managerYmis, allowedBad
   for(let i=0;i<t.list.length;i++){
     const r=t.list[i];
     if(r.ymis===targetYmis && isActiveStatus(r.status)){
+      const targetRole=roleProvided?rawRole:String(r.role||'member');
+      if(manager.role!=='super_admin' && !canManageRole(manager.role,targetRole) && manager.role!=='admin') return jsonResponse({success:false,error:'權限不足，你的等級不可設定此角色'});
       const sheet=t.sheet;
       let squadRoleCol=-1;
       if(normalizedSquadRole!==undefined){
         squadRoleCol=ensureUserHeaders(sheet).indexOf('squad_role');
         if(squadRoleCol<0) return jsonResponse({success:false,error:'Users 表缺少 squad_role 欄'});
       }
-      sheet.getRange(r.rowIndex,t.col.role+1).setValue(newRole);
-      sheet.getRange(r.rowIndex,t.col.can_tick+1).setValue(canTick);
+      if(roleProvided) sheet.getRange(r.rowIndex,t.col.role+1).setValue(rawRole);
+      // can_tick 同樣只喺有提供時才寫（undefined 以前會清空欄位＝靜靜收回權限）
+      if(canTick!==undefined && canTick!==null){
+        const tickOn=canTick===true || String(canTick).toUpperCase()==='TRUE' || String(canTick)==='1';
+        sheet.getRange(r.rowIndex,t.col.can_tick+1).setValue(tickOn);
+      }
       sheet.getRange(r.rowIndex,t.col.auth_by+1).setValue(sheetActor(managerYmis));
       sheet.getRange(r.rowIndex,t.col.auth_date+1).setValue(now());
       if(squad!==undefined) sheet.getRange(r.rowIndex,t.col.squad+1).setValue(squad||'');
@@ -1664,16 +1689,12 @@ function handleUpdateUserRole(targetYmis,newRole,canTick,managerYmis, allowedBad
       // 處理細緻權限：若提供 allowedBadges，寫入 allowed_badges 欄
       if(allowedBadges!==undefined && allowedBadges!==null){
         sheet.getRange(r.rowIndex,t.col.allowed_badges+1).setValue(allowedBadges);
-      } else {
-        // 默認：領袖全部 (*)，成員無
-        if(!r.allowed_badges){
-          let def='*';
-          if(newRole==='member') def='';
-          else def='*';
-          sheet.getRange(r.rowIndex,t.col.allowed_badges+1).setValue(def);
-        }
+      } else if(roleProvided) {
+        // 默認：領袖全部 (*)，成員無（只喺明確改角色時才補預設，唔會蓋走既有權限）
+        const def=defaultAllowedBadges(rawRole);
+        if(!String(r.allowed_badges||'').trim()) sheet.getRange(r.rowIndex,t.col.allowed_badges+1).setValue(def);
       }
-      return jsonResponse({success:true});
+      return jsonResponse({success:true,role:targetRole,can_tick:(canTick===undefined||canTick===null)?!!r.can_tick:(canTick===true||String(canTick).toUpperCase()==='TRUE'||String(canTick)==='1')});
     }
   }
   return jsonResponse({success:false,error:'找不到用戶'});
@@ -1815,7 +1836,10 @@ function handleLoad(loadUser){
   // 未登入（apikey 載入）→ 不回傳待批申報；領袖 → 全部；團員 → 只見自己
   const logReqList=(lrSheet && loadUser) ? getLogRequestsList(isLogReviewer?null:loadUser.ymis) : [];
   const releaseStatus=getCubGsReleaseStatus();
-  return jsonResponse(Object.assign({success:true,members:members,progress:progress,flatProgress:flat,pendingRequests:pending,otherBadges:other,logs:getLogRecordsList(loadUser?(canUserTick(loadUser.role)?null:loadUser.ymis):null, !!loadUser&&canUserTick(loadUser.role)),logsSupported:!!lSheet,logRequests:logReqList,logRequestsSupported:!!lrSheet},releaseStatus));
+  // me：每次載入都回傳登入者「最新」角色／勾選授權，令管理員剛改完嘅權限即時生效，
+  // 唔需要對方登出再登入（舊前端只用登入嗰刻嘅快照）。
+  const me=loadUser?{ymis:loadUser.ymis,name:loadUser.name,role:loadUser.role,can_tick:!!loadUser.can_tick,allowed_badges:loadUser.allowed_badges||'',squad:loadUser.squad||'',squad_role:loadUser.squad_role||''}:null;
+  return jsonResponse(Object.assign({success:true,me:me,members:members,progress:progress,flatProgress:flat,pendingRequests:pending,otherBadges:other,logs:getLogRecordsList(loadUser?(canUserTick(loadUser.role)?null:loadUser.ymis):null, !!loadUser&&canUserTick(loadUser.role)),logsSupported:!!lSheet,logRequests:logReqList,logRequestsSupported:!!lrSheet},releaseStatus));
 }
 function handleSave(changes, confirmer){
   const sheet=tbl('進度追蹤'); if(!sheet) return jsonResponse({success:false,error:'Sheet not found'});

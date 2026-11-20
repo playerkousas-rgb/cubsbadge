@@ -242,7 +242,7 @@ test('管理員可執行 testPasswordResetMail() 觸發授權並驗證發信', (
   assert.equal(b.__ss.sheets.Users.rows.length, 1, '測試函式唔可以寫入任何帳號資料');
 });
 
-test('前端：登入頁領袖專用入口、兩步 modal、中英字典、版本識別一致', () => {
+test('前端：登入頁忘記密碼入口（兩個分頁都顯示）、兩步 modal、中英字典、版本識別一致', () => {
   const html = fs.readFileSync(new URL('../index.html', import.meta.url), 'utf8');
   const gs = fs.readFileSync(new URL('../apps-script/Code.gs', import.meta.url), 'utf8');
   const proxy = fs.readFileSync(new URL('../api/proxy.js', import.meta.url), 'utf8');
@@ -250,7 +250,9 @@ test('前端：登入頁領袖專用入口、兩步 modal、中英字典、版�
 
   assert.match(html, /id="forgotPwWrap"[^>]*style="display:none/);
   assert.match(html, /onclick="openForgotPasswordModal\(\);return false"/);
-  assert.match(html, /fpwWrap\.style\.display=\(type==='leader'\)\?'block':'none'/);
+  // 忘記密碼係電郵重設碼；管理員可能喺 YMIS 分頁登入，所以兩個分頁都要有入口。
+  assert.match(html, /if\(fpwWrap\) fpwWrap\.style\.display='block'/);
+  assert.match(html, /id="loginHelpHint"/, '登入頁要提示管理員／領袖用登記電郵及 5 次錯誤鎖定 15 分鐘');
   assert.ok(html.includes('id="forgotPasswordModal"') && html.includes('id="fpwStep1"') && html.includes('id="fpwStep2"'));
   assert.match(html, /action:'requestPasswordReset'/);
   assert.match(html, /action:'confirmPasswordReset'/);
@@ -268,7 +270,7 @@ test('前端：登入頁領袖專用入口、兩步 modal、中英字典、版�
   // 版本：HTML build = manifest；GS 版本 = 前端要求 = 下載連結
   assert.equal(html.match(/<meta name="cubsbadge-build" content="([^"]+)"/)[1], manifest.build);
   const gsVersion = gs.match(/const CUB_GS_VERSION = '([^']+)'/)[1];
-  assert.equal(gsVersion, '2026.11.05.1');
+  assert.equal(gsVersion, '2026.11.20');
   assert.ok(html.includes(`gsVersion:'${gsVersion}'`));
   assert.ok(html.includes(`href="apps-script/Code.gs?gs=${gsVersion}"`));
 

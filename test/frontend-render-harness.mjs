@@ -96,9 +96,13 @@ assert.equal(run('pendingChanges.length'),beforeDenied,'quick transfer must enfo
 run("currentUser.allowed_badges='P1'"); run("queueLegacyTransfers('9000000001')");
 assert.equal(run('pendingChanges.length'),beforeDenied+1,'authorised quick transfer should be staged');
 assert.equal(run("CubProgress.getOverallProgress(itemsData,progressFlat['9000000001'],otherBadgesMap['9000000001']).done"),run("CubProgress.getOverallProgress(itemsData,{'1.1.1':'2026-08-20','1.1.2':todayISO()},otherBadgesMap['9000000001']).done"),'transition records must not alter current completion');
-run("document.querySelectorAll=()=>[]; currentUser.role='member'; currentUser.allowed_badges='*'");
-assert.equal(run("canCurrentUserTickItem('1.1.1')"),false,'member role must not gain write permission from a crafted allowed_badges value');
-run("currentUser.role='group_leader'; currentUser.allowed_badges='*'");
+run("document.querySelectorAll=()=>[]; currentUser.role='member'; currentUser.allowed_badges='*'; currentUser.can_tick=false");
+assert.equal(run("canCurrentUserTickItem('1.1.1')"),false,'member role without a tick grant must not gain write permission from a crafted allowed_badges value');
+// 個別「授權勾選」（Users 表 can_tick，由伺服器回傳、前端不能自製）＝可勾進度
+run("currentUser.can_tick=true; currentUser.allowed_badges=''");
+assert.equal(run("canTickProgress()"),true,'an explicit per-account tick grant must enable progress ticking');
+assert.equal(run("canCurrentUserTickItem('1.1.1')"),true,'a tick-granted member defaults to all progress items');
+run("currentUser.can_tick=false; currentUser.role='group_leader'; currentUser.allowed_badges='*'");
 
 run('renderOtherBadgesTab()');
 assert.match(element('tab-other').innerHTML,/考驗依據/);
@@ -136,8 +140,8 @@ run('renderInfoTab()');
 assert.match(element('tab-info').innerHTML,/prog\.scouting\.org\.hk\/cub/);
 
 run('renderReleaseNotices()');
-assert.match(element('homeReleaseNotice').innerHTML,/2026-11-05/);
-assert.match(element('homeReleaseNotice').innerHTML,/2026\.11\.05/);
+assert.match(element('homeReleaseNotice').innerHTML,/2026-11-20/);
+assert.match(element('homeReleaseNotice').innerHTML,/2026\.11\.20/);
 assert.match(element('homeReleaseNotice').innerHTML,/initializeSheets\(\)/);
 assert.match(element('homeReleaseNotice').innerHTML,/無須逐級/);
 run("currentTroopId='0082'; currentUser.ymis='TEST_LEADER'; resetBackendRelease(); applyBackendRelease({gsVersion:'cub-leaf',backendVersion:'cub-leaf'})");
@@ -339,4 +343,52 @@ run("currentLang='zh'; currentTroopId='DEMO'; currentUser.ymis='DEMO_LEADER'; re
   context.location=locationBefore;
 }
 
-console.log('frontend-render-harness: OK — home, system introduction, welcome cross-links, bilingual copy, progress, legacy partition, interest lists, P4 overview, ticking, other badges, forms, information and latest-GS release notices rendered with the real inline script.');
+
+/* ---------- 用戶回報回歸（GS 2026.11.20）----------
+   ① 「權限已設定為可勾選」但勾唔到：授權勾選唔可以改角色，亦要真正開通勾選能力。
+   ② 登入分頁把 Email 剪短、管理員冇忘記密碼／更改密碼入口。 */
+{
+  run("__origApiRequestRpt=apiRequest; __origLoadUsersRpt=loadUsers; __rptCalls=[]; apiRequest=async(p)=>{__rptCalls.push(p);return {success:true};}; loadUsers=()=>{};");
+  await run("toggleCanTick('9000000009',true,'branch_leader')");
+  assert.equal(run("__rptCalls.filter(c=>c.action==='updateUserRole').length"),1,'授權勾選只發一個 updateUserRole 請求');
+  
+  assert.equal(run("__rptCalls.filter(c=>c.action==='updateUserRole')[0].target_ymis"),'9000000009');
+  assert.equal(run("__rptCalls.filter(c=>c.action==='updateUserRole')[0].new_role"),'branch_leader','授權勾選不可改寫角色（舊版硬送 member 會降級）');
+  assert.equal(run("__rptCalls.filter(c=>c.action==='updateUserRole')[0].can_tick"),true);
+  await run("toggleCanTick('9000000009',false,'admin')");
+  assert.equal(run("__rptCalls.filter(c=>c.action==='updateUserRole')[1].new_role"),'admin','收回勾選亦要保留原角色');
+  run("apiRequest=__origApiRequestRpt; loadUsers=__origLoadUsersRpt;");
+
+  // 進度頁：成員獲得「授權勾選」後，勾選框要真正可以操作（唔再被 disabled）
+  run("selectedProgressYmis='9000000001'; currentUser={ymis:'M0001',name:'家長',role:'member',can_tick:false,allowed_badges:''}; renderProgressTab();");
+  const rowOf=(id)=>run(`(document.getElementById('tab-progress').innerHTML.match(/<div class="item-row[^>]*data-item-id="${id}"[\\s\\S]{0,200}/)||[''])[0]`);
+  assert.ok(rowOf('1.1.1').includes('disabled'),'未授權的成員，進度勾選框必須停用');
+  run("currentUser={ymis:'M0001',name:'家長',role:'member',can_tick:true,allowed_badges:''}; renderProgressTab();");
+  const granted=rowOf('1.1.1');
+  assert.ok(granted.includes('onchange="handleCheckboxToggle'),'授權勾選後要可以勾選');
+  assert.ok(!granted.includes('disabled'),'授權勾選後勾選框不可再停用');
+  assert.match(element('tab-progress').innerHTML,/已獲授權勾選/);
+
+  // 登入分頁：兩邊都接受 Email（唔再 maxLength=10 剪短），忘記密碼入口兩個分頁都有
+  run("switchLoginType('member')");
+  assert.ok(element('loginId').maxLength>=100,'member 分頁要接受完整 Email');
+  assert.match(element('loginIdLabel').textContent,/Email/);
+  assert.equal(element('forgotPwWrap').style.display,'block','YMIS 分頁亦要有忘記密碼入口');
+  run("switchLoginType('leader')");
+  assert.equal(element('forgotPwWrap').style.display,'block');
+
+  // 登入後可自行更改密碼：按鈕 + modal + 走 changePassword（保留本機 session）
+  assert.ok(html.includes('id="myPwModal"'),'要有更改密碼 modal');
+  assert.ok(html.includes('onclick="openChangePwModal()"'),'要有更改密碼入口');
+  run("__origApiRequestPw=apiRequest; __pwCalls=[]; apiRequest=async(p)=>{__pwCalls.push(p);return {success:true};}; currentToken='tok'; currentUser={ymis:'L0009',name:'領袖',role:'branch_leader',can_tick:true,allowed_badges:'*'};");
+  run("document.getElementById('myPwOld').value='oldpw'; document.getElementById('myPwNew').value='newpw1'; document.getElementById('myPwNew2').value='newpw1';");
+  await run('submitChangePw()');
+  assert.equal(run("__pwCalls.filter(c=>c.action==='changePassword').length"),1);
+  
+  assert.equal(run("__pwCalls.filter(c=>c.action==='changePassword')[0].old_password"),'oldpw');
+  assert.equal(run("__pwCalls.filter(c=>c.action==='changePassword')[0].new_password"),'newpw1');
+  assert.equal(run("__pwCalls.filter(c=>c.action==='changePassword')[0].token"),'tok','改密碼要帶本機 token，後端會保留這條 session');
+  run("apiRequest=__origApiRequestPw");
+}
+
+console.log('frontend-render-harness: OK — home, system introduction, welcome cross-links, bilingual copy, progress, legacy partition, interest lists, P4 overview, ticking, other badges, forms, information, latest-GS release notices, tick-grant role preservation and in-app password change rendered with the real inline script.');
