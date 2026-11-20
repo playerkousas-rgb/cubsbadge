@@ -80,7 +80,7 @@ auth_date, created_at, last_login, status, allowed_badges, squad, squad_role, fo
 | squad | 小隊名稱（例如 紅隊） |
 | squad_role | 正式儲存值：`member`（隊員）／`sixer`（隊長）／`vice_captain`（副隊長）。請填代碼，不要填顯示名稱。 |
 | role | member / branch_leader / group_leader / admin |
-| can_tick | true / false（可否勾選進度，領袖用） |
+| can_tick | true / false（個別授權勾選進度；領袖角色本身已可勾選，成員需此欄為 true） |
 | password | 有填則開立可登入帳號（首次登入強制改密） |
 | note | 備註（僅提醒用，不寫入 Users 工作表） |
 
